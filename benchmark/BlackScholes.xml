@@ -1,0 +1,544 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf3 type="csdf" version="1.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="http://www.es.ele.tue.nl/sdf3/xsd/sdf3-csdf.xsd">
+<applicationGraph name='Black-scholes'>
+    <csdf name='Black-scholes' type='Black-scholes'>
+        <actor name='Join_2' type='a'>
+            <port type='in' name='out_channel_2' rate='1,0,0,0,0,0,0,0,0,0,0,0,0'/>
+            <port type='in' name='out_channel_5' rate='0,1,0,0,0,0,0,0,0,0,0,0,0'/>
+            <port type='in' name='out_channel_8' rate='0,0,1,0,0,0,0,0,0,0,0,0,0'/>
+            <port type='in' name='out_channel_11' rate='0,0,0,1,0,0,0,0,0,0,0,0,0'/>
+            <port type='in' name='out_channel_14' rate='0,0,0,0,1,0,0,0,0,0,0,0,0'/>
+            <port type='in' name='out_channel_17' rate='0,0,0,0,0,1,0,0,0,0,0,0,0'/>
+            <port type='in' name='out_channel_20' rate='0,0,0,0,0,0,1,0,0,0,0,0,0'/>
+            <port type='in' name='out_channel_23' rate='0,0,0,0,0,0,0,1,0,0,0,0,0'/>
+            <port type='in' name='out_channel_26' rate='0,0,0,0,0,0,0,0,1,0,0,0,0'/>
+            <port type='in' name='out_channel_29' rate='0,0,0,0,0,0,0,0,0,1,0,0,0'/>
+            <port type='in' name='out_channel_32' rate='0,0,0,0,0,0,0,0,0,0,1,0,0'/>
+            <port type='in' name='out_channel_35' rate='0,0,0,0,0,0,0,0,0,0,0,1,0'/>
+            <port type='in' name='out_channel_38' rate='0,0,0,0,0,0,0,0,0,0,0,0,1'/>
+            <port type='out' name='in_channel_39' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+            <port type='in'  name='out_RJoin_2' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+            <port type='out' name='in_RJoin_2' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+        </actor>
+        <channel name='RJoin_2' srcActor='Join_2' srcPort='in_RJoin_2' dstActor='Join_2' dstPort='out_RJoin_2' initialTokens='1'/>
+        <actor name='stat_results_3' type='a'>
+            <port type='in' name='out_channel_39' rate='13'/>
+            <port type='in'  name='out_Rstat_results_3' rate='1'/>
+            <port type='out' name='in_Rstat_results_3' rate='1'/>
+        </actor>
+        <channel name='Rstat_results_3' srcActor='stat_results_3' srcPort='in_Rstat_results_3' dstActor='stat_results_3' dstPort='out_Rstat_results_3' initialTokens='1'/>
+        <actor name='mt_gentable_4' type='a'>
+            <port type='out' name='in_channel_0' rate='624,624,624,624,624,624,624,624,624,624,624,624,624'/>
+            <port type='in'  name='out_Rmt_gentable_4' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+            <port type='out' name='in_Rmt_gentable_4' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+        </actor>
+        <channel name='Rmt_gentable_4' srcActor='mt_gentable_4' srcPort='in_Rmt_gentable_4' dstActor='mt_gentable_4' dstPort='out_Rmt_gentable_4' initialTokens='1'/>
+        <actor name='mt_genrand_5' type='a'>
+            <port type='in' name='out_channel_0' rate='624'/>
+            <port type='out' name='in_channel_1' rate='624'/>
+            <port type='in'  name='out_Rmt_genrand_5' rate='1'/>
+            <port type='out' name='in_Rmt_genrand_5' rate='1'/>
+        </actor>
+        <channel name='Rmt_genrand_5' srcActor='mt_genrand_5' srcPort='in_Rmt_genrand_5' dstActor='mt_genrand_5' dstPort='out_Rmt_genrand_5' initialTokens='1'/>
+        <actor name='Ablack_scholes_6' type='a'>
+            <port type='in' name='out_channel_1' rate='624,624,624,624,0'/>
+            <port type='out' name='in_channel_2' rate='0,0,0,0,1'/>
+            <port type='in'  name='out_RAblack_scholes_6' rate='1,1,1,1,1'/>
+            <port type='out' name='in_RAblack_scholes_6' rate='1,1,1,1,1'/>
+        </actor>
+        <channel name='RAblack_scholes_6' srcActor='Ablack_scholes_6' srcPort='in_RAblack_scholes_6' dstActor='Ablack_scholes_6' dstPort='out_RAblack_scholes_6' initialTokens='1'/>
+        <actor name='mt_gentable_7' type='a'>
+            <port type='out' name='in_channel_3' rate='624,624,624,624,624,624,624,624,624,624,624,624,624'/>
+            <port type='in'  name='out_Rmt_gentable_7' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+            <port type='out' name='in_Rmt_gentable_7' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+        </actor>
+        <channel name='Rmt_gentable_7' srcActor='mt_gentable_7' srcPort='in_Rmt_gentable_7' dstActor='mt_gentable_7' dstPort='out_Rmt_gentable_7' initialTokens='1'/>
+        <actor name='mt_genrand_8' type='a'>
+            <port type='in' name='out_channel_3' rate='624'/>
+            <port type='out' name='in_channel_4' rate='624'/>
+            <port type='in'  name='out_Rmt_genrand_8' rate='1'/>
+            <port type='out' name='in_Rmt_genrand_8' rate='1'/>
+        </actor>
+        <channel name='Rmt_genrand_8' srcActor='mt_genrand_8' srcPort='in_Rmt_genrand_8' dstActor='mt_genrand_8' dstPort='out_Rmt_genrand_8' initialTokens='1'/>
+        <actor name='Ablack_scholes_9' type='a'>
+            <port type='in' name='out_channel_4' rate='624,624,624,624,0'/>
+            <port type='out' name='in_channel_5' rate='0,0,0,0,1'/>
+            <port type='in'  name='out_RAblack_scholes_9' rate='1,1,1,1,1'/>
+            <port type='out' name='in_RAblack_scholes_9' rate='1,1,1,1,1'/>
+        </actor>
+        <channel name='RAblack_scholes_9' srcActor='Ablack_scholes_9' srcPort='in_RAblack_scholes_9' dstActor='Ablack_scholes_9' dstPort='out_RAblack_scholes_9' initialTokens='1'/>
+        <actor name='mt_gentable_10' type='a'>
+            <port type='out' name='in_channel_6' rate='624,624,624,624,624,624,624,624,624,624,624,624,624'/>
+            <port type='in'  name='out_Rmt_gentable_10' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+            <port type='out' name='in_Rmt_gentable_10' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+        </actor>
+        <channel name='Rmt_gentable_10' srcActor='mt_gentable_10' srcPort='in_Rmt_gentable_10' dstActor='mt_gentable_10' dstPort='out_Rmt_gentable_10' initialTokens='1'/>
+        <actor name='mt_genrand_11' type='a'>
+            <port type='in' name='out_channel_6' rate='624'/>
+            <port type='out' name='in_channel_7' rate='624'/>
+            <port type='in'  name='out_Rmt_genrand_11' rate='1'/>
+            <port type='out' name='in_Rmt_genrand_11' rate='1'/>
+        </actor>
+        <channel name='Rmt_genrand_11' srcActor='mt_genrand_11' srcPort='in_Rmt_genrand_11' dstActor='mt_genrand_11' dstPort='out_Rmt_genrand_11' initialTokens='1'/>
+        <actor name='Ablack_scholes_12' type='a'>
+            <port type='in' name='out_channel_7' rate='624,624,624,624,0'/>
+            <port type='out' name='in_channel_8' rate='0,0,0,0,1'/>
+            <port type='in'  name='out_RAblack_scholes_12' rate='1,1,1,1,1'/>
+            <port type='out' name='in_RAblack_scholes_12' rate='1,1,1,1,1'/>
+        </actor>
+        <channel name='RAblack_scholes_12' srcActor='Ablack_scholes_12' srcPort='in_RAblack_scholes_12' dstActor='Ablack_scholes_12' dstPort='out_RAblack_scholes_12' initialTokens='1'/>
+        <actor name='mt_gentable_13' type='a'>
+            <port type='out' name='in_channel_9' rate='624,624,624,624,624,624,624,624,624,624,624,624,624'/>
+            <port type='in'  name='out_Rmt_gentable_13' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+            <port type='out' name='in_Rmt_gentable_13' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+        </actor>
+        <channel name='Rmt_gentable_13' srcActor='mt_gentable_13' srcPort='in_Rmt_gentable_13' dstActor='mt_gentable_13' dstPort='out_Rmt_gentable_13' initialTokens='1'/>
+        <actor name='mt_genrand_14' type='a'>
+            <port type='in' name='out_channel_9' rate='624'/>
+            <port type='out' name='in_channel_10' rate='624'/>
+            <port type='in'  name='out_Rmt_genrand_14' rate='1'/>
+            <port type='out' name='in_Rmt_genrand_14' rate='1'/>
+        </actor>
+        <channel name='Rmt_genrand_14' srcActor='mt_genrand_14' srcPort='in_Rmt_genrand_14' dstActor='mt_genrand_14' dstPort='out_Rmt_genrand_14' initialTokens='1'/>
+        <actor name='Ablack_scholes_15' type='a'>
+            <port type='in' name='out_channel_10' rate='624,624,624,624,0'/>
+            <port type='out' name='in_channel_11' rate='0,0,0,0,1'/>
+            <port type='in'  name='out_RAblack_scholes_15' rate='1,1,1,1,1'/>
+            <port type='out' name='in_RAblack_scholes_15' rate='1,1,1,1,1'/>
+        </actor>
+        <channel name='RAblack_scholes_15' srcActor='Ablack_scholes_15' srcPort='in_RAblack_scholes_15' dstActor='Ablack_scholes_15' dstPort='out_RAblack_scholes_15' initialTokens='1'/>
+        <actor name='mt_gentable_16' type='a'>
+            <port type='out' name='in_channel_12' rate='624,624,624,624,624,624,624,624,624,624,624,624,624'/>
+            <port type='in'  name='out_Rmt_gentable_16' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+            <port type='out' name='in_Rmt_gentable_16' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+        </actor>
+        <channel name='Rmt_gentable_16' srcActor='mt_gentable_16' srcPort='in_Rmt_gentable_16' dstActor='mt_gentable_16' dstPort='out_Rmt_gentable_16' initialTokens='1'/>
+        <actor name='mt_genrand_17' type='a'>
+            <port type='in' name='out_channel_12' rate='624'/>
+            <port type='out' name='in_channel_13' rate='624'/>
+            <port type='in'  name='out_Rmt_genrand_17' rate='1'/>
+            <port type='out' name='in_Rmt_genrand_17' rate='1'/>
+        </actor>
+        <channel name='Rmt_genrand_17' srcActor='mt_genrand_17' srcPort='in_Rmt_genrand_17' dstActor='mt_genrand_17' dstPort='out_Rmt_genrand_17' initialTokens='1'/>
+        <actor name='Ablack_scholes_18' type='a'>
+            <port type='in' name='out_channel_13' rate='624,624,624,624,0'/>
+            <port type='out' name='in_channel_14' rate='0,0,0,0,1'/>
+            <port type='in'  name='out_RAblack_scholes_18' rate='1,1,1,1,1'/>
+            <port type='out' name='in_RAblack_scholes_18' rate='1,1,1,1,1'/>
+        </actor>
+        <channel name='RAblack_scholes_18' srcActor='Ablack_scholes_18' srcPort='in_RAblack_scholes_18' dstActor='Ablack_scholes_18' dstPort='out_RAblack_scholes_18' initialTokens='1'/>
+        <actor name='mt_gentable_19' type='a'>
+            <port type='out' name='in_channel_15' rate='624,624,624,624,624,624,624,624,624,624,624,624,624'/>
+            <port type='in'  name='out_Rmt_gentable_19' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+            <port type='out' name='in_Rmt_gentable_19' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+        </actor>
+        <channel name='Rmt_gentable_19' srcActor='mt_gentable_19' srcPort='in_Rmt_gentable_19' dstActor='mt_gentable_19' dstPort='out_Rmt_gentable_19' initialTokens='1'/>
+        <actor name='mt_genrand_20' type='a'>
+            <port type='in' name='out_channel_15' rate='624'/>
+            <port type='out' name='in_channel_16' rate='624'/>
+            <port type='in'  name='out_Rmt_genrand_20' rate='1'/>
+            <port type='out' name='in_Rmt_genrand_20' rate='1'/>
+        </actor>
+        <channel name='Rmt_genrand_20' srcActor='mt_genrand_20' srcPort='in_Rmt_genrand_20' dstActor='mt_genrand_20' dstPort='out_Rmt_genrand_20' initialTokens='1'/>
+        <actor name='Ablack_scholes_21' type='a'>
+            <port type='in' name='out_channel_16' rate='624,624,624,624,0'/>
+            <port type='out' name='in_channel_17' rate='0,0,0,0,1'/>
+            <port type='in'  name='out_RAblack_scholes_21' rate='1,1,1,1,1'/>
+            <port type='out' name='in_RAblack_scholes_21' rate='1,1,1,1,1'/>
+        </actor>
+        <channel name='RAblack_scholes_21' srcActor='Ablack_scholes_21' srcPort='in_RAblack_scholes_21' dstActor='Ablack_scholes_21' dstPort='out_RAblack_scholes_21' initialTokens='1'/>
+        <actor name='mt_gentable_22' type='a'>
+            <port type='out' name='in_channel_18' rate='624,624,624,624,624,624,624,624,624,624,624,624,624'/>
+            <port type='in'  name='out_Rmt_gentable_22' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+            <port type='out' name='in_Rmt_gentable_22' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+        </actor>
+        <channel name='Rmt_gentable_22' srcActor='mt_gentable_22' srcPort='in_Rmt_gentable_22' dstActor='mt_gentable_22' dstPort='out_Rmt_gentable_22' initialTokens='1'/>
+        <actor name='mt_genrand_23' type='a'>
+            <port type='in' name='out_channel_18' rate='624'/>
+            <port type='out' name='in_channel_19' rate='624'/>
+            <port type='in'  name='out_Rmt_genrand_23' rate='1'/>
+            <port type='out' name='in_Rmt_genrand_23' rate='1'/>
+        </actor>
+        <channel name='Rmt_genrand_23' srcActor='mt_genrand_23' srcPort='in_Rmt_genrand_23' dstActor='mt_genrand_23' dstPort='out_Rmt_genrand_23' initialTokens='1'/>
+        <actor name='Ablack_scholes_24' type='a'>
+            <port type='in' name='out_channel_19' rate='624,624,624,624,0'/>
+            <port type='out' name='in_channel_20' rate='0,0,0,0,1'/>
+            <port type='in'  name='out_RAblack_scholes_24' rate='1,1,1,1,1'/>
+            <port type='out' name='in_RAblack_scholes_24' rate='1,1,1,1,1'/>
+        </actor>
+        <channel name='RAblack_scholes_24' srcActor='Ablack_scholes_24' srcPort='in_RAblack_scholes_24' dstActor='Ablack_scholes_24' dstPort='out_RAblack_scholes_24' initialTokens='1'/>
+        <actor name='mt_gentable_25' type='a'>
+            <port type='out' name='in_channel_21' rate='624,624,624,624,624,624,624,624,624,624,624,624,624'/>
+            <port type='in'  name='out_Rmt_gentable_25' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+            <port type='out' name='in_Rmt_gentable_25' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+        </actor>
+        <channel name='Rmt_gentable_25' srcActor='mt_gentable_25' srcPort='in_Rmt_gentable_25' dstActor='mt_gentable_25' dstPort='out_Rmt_gentable_25' initialTokens='1'/>
+        <actor name='mt_genrand_26' type='a'>
+            <port type='in' name='out_channel_21' rate='624'/>
+            <port type='out' name='in_channel_22' rate='624'/>
+            <port type='in'  name='out_Rmt_genrand_26' rate='1'/>
+            <port type='out' name='in_Rmt_genrand_26' rate='1'/>
+        </actor>
+        <channel name='Rmt_genrand_26' srcActor='mt_genrand_26' srcPort='in_Rmt_genrand_26' dstActor='mt_genrand_26' dstPort='out_Rmt_genrand_26' initialTokens='1'/>
+        <actor name='Ablack_scholes_27' type='a'>
+            <port type='in' name='out_channel_22' rate='624,624,624,624,0'/>
+            <port type='out' name='in_channel_23' rate='0,0,0,0,1'/>
+            <port type='in'  name='out_RAblack_scholes_27' rate='1,1,1,1,1'/>
+            <port type='out' name='in_RAblack_scholes_27' rate='1,1,1,1,1'/>
+        </actor>
+        <channel name='RAblack_scholes_27' srcActor='Ablack_scholes_27' srcPort='in_RAblack_scholes_27' dstActor='Ablack_scholes_27' dstPort='out_RAblack_scholes_27' initialTokens='1'/>
+        <actor name='mt_gentable_28' type='a'>
+            <port type='out' name='in_channel_24' rate='624,624,624,624,624,624,624,624,624,624,624,624,624'/>
+            <port type='in'  name='out_Rmt_gentable_28' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+            <port type='out' name='in_Rmt_gentable_28' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+        </actor>
+        <channel name='Rmt_gentable_28' srcActor='mt_gentable_28' srcPort='in_Rmt_gentable_28' dstActor='mt_gentable_28' dstPort='out_Rmt_gentable_28' initialTokens='1'/>
+        <actor name='mt_genrand_29' type='a'>
+            <port type='in' name='out_channel_24' rate='624'/>
+            <port type='out' name='in_channel_25' rate='624'/>
+            <port type='in'  name='out_Rmt_genrand_29' rate='1'/>
+            <port type='out' name='in_Rmt_genrand_29' rate='1'/>
+        </actor>
+        <channel name='Rmt_genrand_29' srcActor='mt_genrand_29' srcPort='in_Rmt_genrand_29' dstActor='mt_genrand_29' dstPort='out_Rmt_genrand_29' initialTokens='1'/>
+        <actor name='Ablack_scholes_30' type='a'>
+            <port type='in' name='out_channel_25' rate='624,624,624,624,0'/>
+            <port type='out' name='in_channel_26' rate='0,0,0,0,1'/>
+            <port type='in'  name='out_RAblack_scholes_30' rate='1,1,1,1,1'/>
+            <port type='out' name='in_RAblack_scholes_30' rate='1,1,1,1,1'/>
+        </actor>
+        <channel name='RAblack_scholes_30' srcActor='Ablack_scholes_30' srcPort='in_RAblack_scholes_30' dstActor='Ablack_scholes_30' dstPort='out_RAblack_scholes_30' initialTokens='1'/>
+        <actor name='mt_gentable_31' type='a'>
+            <port type='out' name='in_channel_27' rate='624,624,624,624,624,624,624,624,624,624,624,624,624'/>
+            <port type='in'  name='out_Rmt_gentable_31' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+            <port type='out' name='in_Rmt_gentable_31' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+        </actor>
+        <channel name='Rmt_gentable_31' srcActor='mt_gentable_31' srcPort='in_Rmt_gentable_31' dstActor='mt_gentable_31' dstPort='out_Rmt_gentable_31' initialTokens='1'/>
+        <actor name='mt_genrand_32' type='a'>
+            <port type='in' name='out_channel_27' rate='624'/>
+            <port type='out' name='in_channel_28' rate='624'/>
+            <port type='in'  name='out_Rmt_genrand_32' rate='1'/>
+            <port type='out' name='in_Rmt_genrand_32' rate='1'/>
+        </actor>
+        <channel name='Rmt_genrand_32' srcActor='mt_genrand_32' srcPort='in_Rmt_genrand_32' dstActor='mt_genrand_32' dstPort='out_Rmt_genrand_32' initialTokens='1'/>
+        <actor name='Ablack_scholes_33' type='a'>
+            <port type='in' name='out_channel_28' rate='624,624,624,624,0'/>
+            <port type='out' name='in_channel_29' rate='0,0,0,0,1'/>
+            <port type='in'  name='out_RAblack_scholes_33' rate='1,1,1,1,1'/>
+            <port type='out' name='in_RAblack_scholes_33' rate='1,1,1,1,1'/>
+        </actor>
+        <channel name='RAblack_scholes_33' srcActor='Ablack_scholes_33' srcPort='in_RAblack_scholes_33' dstActor='Ablack_scholes_33' dstPort='out_RAblack_scholes_33' initialTokens='1'/>
+        <actor name='mt_gentable_34' type='a'>
+            <port type='out' name='in_channel_30' rate='624,624,624,624,624,624,624,624,624,624,624,624,624'/>
+            <port type='in'  name='out_Rmt_gentable_34' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+            <port type='out' name='in_Rmt_gentable_34' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+        </actor>
+        <channel name='Rmt_gentable_34' srcActor='mt_gentable_34' srcPort='in_Rmt_gentable_34' dstActor='mt_gentable_34' dstPort='out_Rmt_gentable_34' initialTokens='1'/>
+        <actor name='mt_genrand_35' type='a'>
+            <port type='in' name='out_channel_30' rate='624'/>
+            <port type='out' name='in_channel_31' rate='624'/>
+            <port type='in'  name='out_Rmt_genrand_35' rate='1'/>
+            <port type='out' name='in_Rmt_genrand_35' rate='1'/>
+        </actor>
+        <channel name='Rmt_genrand_35' srcActor='mt_genrand_35' srcPort='in_Rmt_genrand_35' dstActor='mt_genrand_35' dstPort='out_Rmt_genrand_35' initialTokens='1'/>
+        <actor name='Ablack_scholes_36' type='a'>
+            <port type='in' name='out_channel_31' rate='624,624,624,624,0'/>
+            <port type='out' name='in_channel_32' rate='0,0,0,0,1'/>
+            <port type='in'  name='out_RAblack_scholes_36' rate='1,1,1,1,1'/>
+            <port type='out' name='in_RAblack_scholes_36' rate='1,1,1,1,1'/>
+        </actor>
+        <channel name='RAblack_scholes_36' srcActor='Ablack_scholes_36' srcPort='in_RAblack_scholes_36' dstActor='Ablack_scholes_36' dstPort='out_RAblack_scholes_36' initialTokens='1'/>
+        <actor name='mt_gentable_37' type='a'>
+            <port type='out' name='in_channel_33' rate='624,624,624,624,624,624,624,624,624,624,624,624,624'/>
+            <port type='in'  name='out_Rmt_gentable_37' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+            <port type='out' name='in_Rmt_gentable_37' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+        </actor>
+        <channel name='Rmt_gentable_37' srcActor='mt_gentable_37' srcPort='in_Rmt_gentable_37' dstActor='mt_gentable_37' dstPort='out_Rmt_gentable_37' initialTokens='1'/>
+        <actor name='mt_genrand_38' type='a'>
+            <port type='in' name='out_channel_33' rate='624'/>
+            <port type='out' name='in_channel_34' rate='624'/>
+            <port type='in'  name='out_Rmt_genrand_38' rate='1'/>
+            <port type='out' name='in_Rmt_genrand_38' rate='1'/>
+        </actor>
+        <channel name='Rmt_genrand_38' srcActor='mt_genrand_38' srcPort='in_Rmt_genrand_38' dstActor='mt_genrand_38' dstPort='out_Rmt_genrand_38' initialTokens='1'/>
+        <actor name='Ablack_scholes_39' type='a'>
+            <port type='in' name='out_channel_34' rate='624,624,624,624,0'/>
+            <port type='out' name='in_channel_35' rate='0,0,0,0,1'/>
+            <port type='in'  name='out_RAblack_scholes_39' rate='1,1,1,1,1'/>
+            <port type='out' name='in_RAblack_scholes_39' rate='1,1,1,1,1'/>
+        </actor>
+        <channel name='RAblack_scholes_39' srcActor='Ablack_scholes_39' srcPort='in_RAblack_scholes_39' dstActor='Ablack_scholes_39' dstPort='out_RAblack_scholes_39' initialTokens='1'/>
+        <actor name='mt_gentable_40' type='a'>
+            <port type='out' name='in_channel_36' rate='624,624,624,624,624,624,624,624,624,624,624,624,624'/>
+            <port type='in'  name='out_Rmt_gentable_40' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+            <port type='out' name='in_Rmt_gentable_40' rate='1,1,1,1,1,1,1,1,1,1,1,1,1'/>
+        </actor>
+        <channel name='Rmt_gentable_40' srcActor='mt_gentable_40' srcPort='in_Rmt_gentable_40' dstActor='mt_gentable_40' dstPort='out_Rmt_gentable_40' initialTokens='1'/>
+        <actor name='mt_genrand_41' type='a'>
+            <port type='in' name='out_channel_36' rate='624'/>
+            <port type='out' name='in_channel_37' rate='624'/>
+            <port type='in'  name='out_Rmt_genrand_41' rate='1'/>
+            <port type='out' name='in_Rmt_genrand_41' rate='1'/>
+        </actor>
+        <channel name='Rmt_genrand_41' srcActor='mt_genrand_41' srcPort='in_Rmt_genrand_41' dstActor='mt_genrand_41' dstPort='out_Rmt_genrand_41' initialTokens='1'/>
+        <actor name='Ablack_scholes_42' type='a'>
+            <port type='in' name='out_channel_37' rate='624,624,624,624,0'/>
+            <port type='out' name='in_channel_38' rate='0,0,0,0,1'/>
+            <port type='in'  name='out_RAblack_scholes_42' rate='1,1,1,1,1'/>
+            <port type='out' name='in_RAblack_scholes_42' rate='1,1,1,1,1'/>
+        </actor>
+        <channel name='RAblack_scholes_42' srcActor='Ablack_scholes_42' srcPort='in_RAblack_scholes_42' dstActor='Ablack_scholes_42' dstPort='out_RAblack_scholes_42' initialTokens='1'/>
+        <channel name='channel_0' srcActor='mt_gentable_4' srcPort='in_channel_0' dstActor='mt_genrand_5' dstPort='out_channel_0' size='1' initialTokens='0'/>
+        <channel name='channel_1' srcActor='mt_genrand_5' srcPort='in_channel_1' dstActor='Ablack_scholes_6' dstPort='out_channel_1' size='1' initialTokens='0'/>
+        <channel name='channel_2' srcActor='Ablack_scholes_6' srcPort='in_channel_2' dstActor='Join_2' dstPort='out_channel_2' size='1' initialTokens='0'/>
+        <channel name='channel_3' srcActor='mt_gentable_7' srcPort='in_channel_3' dstActor='mt_genrand_8' dstPort='out_channel_3' size='1' initialTokens='0'/>
+        <channel name='channel_4' srcActor='mt_genrand_8' srcPort='in_channel_4' dstActor='Ablack_scholes_9' dstPort='out_channel_4' size='1' initialTokens='0'/>
+        <channel name='channel_5' srcActor='Ablack_scholes_9' srcPort='in_channel_5' dstActor='Join_2' dstPort='out_channel_5' size='1' initialTokens='0'/>
+        <channel name='channel_6' srcActor='mt_gentable_10' srcPort='in_channel_6' dstActor='mt_genrand_11' dstPort='out_channel_6' size='1' initialTokens='0'/>
+        <channel name='channel_7' srcActor='mt_genrand_11' srcPort='in_channel_7' dstActor='Ablack_scholes_12' dstPort='out_channel_7' size='1' initialTokens='0'/>
+        <channel name='channel_8' srcActor='Ablack_scholes_12' srcPort='in_channel_8' dstActor='Join_2' dstPort='out_channel_8' size='1' initialTokens='0'/>
+        <channel name='channel_9' srcActor='mt_gentable_13' srcPort='in_channel_9' dstActor='mt_genrand_14' dstPort='out_channel_9' size='1' initialTokens='0'/>
+        <channel name='channel_10' srcActor='mt_genrand_14' srcPort='in_channel_10' dstActor='Ablack_scholes_15' dstPort='out_channel_10' size='1' initialTokens='0'/>
+        <channel name='channel_11' srcActor='Ablack_scholes_15' srcPort='in_channel_11' dstActor='Join_2' dstPort='out_channel_11' size='1' initialTokens='0'/>
+        <channel name='channel_12' srcActor='mt_gentable_16' srcPort='in_channel_12' dstActor='mt_genrand_17' dstPort='out_channel_12' size='1' initialTokens='0'/>
+        <channel name='channel_13' srcActor='mt_genrand_17' srcPort='in_channel_13' dstActor='Ablack_scholes_18' dstPort='out_channel_13' size='1' initialTokens='0'/>
+        <channel name='channel_14' srcActor='Ablack_scholes_18' srcPort='in_channel_14' dstActor='Join_2' dstPort='out_channel_14' size='1' initialTokens='0'/>
+        <channel name='channel_15' srcActor='mt_gentable_19' srcPort='in_channel_15' dstActor='mt_genrand_20' dstPort='out_channel_15' size='1' initialTokens='0'/>
+        <channel name='channel_16' srcActor='mt_genrand_20' srcPort='in_channel_16' dstActor='Ablack_scholes_21' dstPort='out_channel_16' size='1' initialTokens='0'/>
+        <channel name='channel_17' srcActor='Ablack_scholes_21' srcPort='in_channel_17' dstActor='Join_2' dstPort='out_channel_17' size='1' initialTokens='0'/>
+        <channel name='channel_18' srcActor='mt_gentable_22' srcPort='in_channel_18' dstActor='mt_genrand_23' dstPort='out_channel_18' size='1' initialTokens='0'/>
+        <channel name='channel_19' srcActor='mt_genrand_23' srcPort='in_channel_19' dstActor='Ablack_scholes_24' dstPort='out_channel_19' size='1' initialTokens='0'/>
+        <channel name='channel_20' srcActor='Ablack_scholes_24' srcPort='in_channel_20' dstActor='Join_2' dstPort='out_channel_20' size='1' initialTokens='0'/>
+        <channel name='channel_21' srcActor='mt_gentable_25' srcPort='in_channel_21' dstActor='mt_genrand_26' dstPort='out_channel_21' size='1' initialTokens='0'/>
+        <channel name='channel_22' srcActor='mt_genrand_26' srcPort='in_channel_22' dstActor='Ablack_scholes_27' dstPort='out_channel_22' size='1' initialTokens='0'/>
+        <channel name='channel_23' srcActor='Ablack_scholes_27' srcPort='in_channel_23' dstActor='Join_2' dstPort='out_channel_23' size='1' initialTokens='0'/>
+        <channel name='channel_24' srcActor='mt_gentable_28' srcPort='in_channel_24' dstActor='mt_genrand_29' dstPort='out_channel_24' size='1' initialTokens='0'/>
+        <channel name='channel_25' srcActor='mt_genrand_29' srcPort='in_channel_25' dstActor='Ablack_scholes_30' dstPort='out_channel_25' size='1' initialTokens='0'/>
+        <channel name='channel_26' srcActor='Ablack_scholes_30' srcPort='in_channel_26' dstActor='Join_2' dstPort='out_channel_26' size='1' initialTokens='0'/>
+        <channel name='channel_27' srcActor='mt_gentable_31' srcPort='in_channel_27' dstActor='mt_genrand_32' dstPort='out_channel_27' size='1' initialTokens='0'/>
+        <channel name='channel_28' srcActor='mt_genrand_32' srcPort='in_channel_28' dstActor='Ablack_scholes_33' dstPort='out_channel_28' size='1' initialTokens='0'/>
+        <channel name='channel_29' srcActor='Ablack_scholes_33' srcPort='in_channel_29' dstActor='Join_2' dstPort='out_channel_29' size='1' initialTokens='0'/>
+        <channel name='channel_30' srcActor='mt_gentable_34' srcPort='in_channel_30' dstActor='mt_genrand_35' dstPort='out_channel_30' size='1' initialTokens='0'/>
+        <channel name='channel_31' srcActor='mt_genrand_35' srcPort='in_channel_31' dstActor='Ablack_scholes_36' dstPort='out_channel_31' size='1' initialTokens='0'/>
+        <channel name='channel_32' srcActor='Ablack_scholes_36' srcPort='in_channel_32' dstActor='Join_2' dstPort='out_channel_32' size='1' initialTokens='0'/>
+        <channel name='channel_33' srcActor='mt_gentable_37' srcPort='in_channel_33' dstActor='mt_genrand_38' dstPort='out_channel_33' size='1' initialTokens='0'/>
+        <channel name='channel_34' srcActor='mt_genrand_38' srcPort='in_channel_34' dstActor='Ablack_scholes_39' dstPort='out_channel_34' size='1' initialTokens='0'/>
+        <channel name='channel_35' srcActor='Ablack_scholes_39' srcPort='in_channel_35' dstActor='Join_2' dstPort='out_channel_35' size='1' initialTokens='0'/>
+        <channel name='channel_36' srcActor='mt_gentable_40' srcPort='in_channel_36' dstActor='mt_genrand_41' dstPort='out_channel_36' size='1' initialTokens='0'/>
+        <channel name='channel_37' srcActor='mt_genrand_41' srcPort='in_channel_37' dstActor='Ablack_scholes_42' dstPort='out_channel_37' size='1' initialTokens='0'/>
+        <channel name='channel_38' srcActor='Ablack_scholes_42' srcPort='in_channel_38' dstActor='Join_2' dstPort='out_channel_38' size='1' initialTokens='0'/>
+        <channel name='channel_39' srcActor='Join_2' srcPort='in_channel_39' dstActor='stat_results_3' dstPort='out_channel_39' size='1' initialTokens='0'/>
+    </csdf>
+
+    <csdfProperties>
+        <actorProperties actor='Join_2'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='202642,23952,16299,11920,31943,39335,34939,49788,33249,24203,38950,27275,11970'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='stat_results_3'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='245051'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_gentable_4'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='114158,43644,156583,23453,31235,30075,26290,23949,22364,17482,19308,17627,17549'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_genrand_5'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='282970'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='Ablack_scholes_6'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='684832,708245,722490,776872,44174'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_gentable_7'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='115204,80752,138791,160391,42879,102969,101673,106196,91570,150324,135356,137576,100472'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_genrand_8'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='298525'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='Ablack_scholes_9'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='859106,648826,679190,657483,17217'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_gentable_10'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='127004,33543,47257,39212,27791,30927,31457,23582,20958,20657,22936,20404,21940'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_genrand_11'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='468194'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='Ablack_scholes_12'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='769286,786882,766592,763837,17605'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_gentable_13'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='116764,43977,35681,25757,26950,28107,23999,22723,19249,17425,18132,19361,19014'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_genrand_14'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='455294'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='Ablack_scholes_15'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='775039,776884,758251,773413,21078'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_gentable_16'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='120857,169193,78740,126213,49665,71802,30895,46746,86417,98168,123517,155488,21600'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_genrand_17'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='311186'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='Ablack_scholes_18'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='670683,670845,673393,672247,19713'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_gentable_19'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='147331,49278,137165,127665,133530,117433,22628,124995,50272,18807,17734,16165,20872'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_genrand_20'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='283191'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='Ablack_scholes_21'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='782810,781326,780581,761791,26710'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_gentable_22'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='106687,50214,29647,12710,26356,28198,28214,13436,21285,18097,13235,17018,17859'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_genrand_23'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='243800'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='Ablack_scholes_24'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='773110,763371,763610,778841,24027'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_gentable_25'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='110184,45326,27371,18588,27155,21981,21905,28975,28263,24361,26346,19938,21952'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_genrand_26'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='296064'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='Ablack_scholes_27'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='794868,819129,797787,796167,26922'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_gentable_28'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='75367,25989,15568,17776,20669,14336,15289,23381,14456,14628,13312,13261,12444'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_genrand_29'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='200403'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='Ablack_scholes_30'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='832269,689703,678852,659475,16066'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_gentable_31'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='77287,25679,18484,11089,19517,16555,17878,13162,15179,14494,12691,12582,15816'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_genrand_32'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='211792'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='Ablack_scholes_33'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='671221,677983,697065,709781,17040'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_gentable_34'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='86169,33096,15500,13278,11510,25871,17571,4406,17595,13119,14721,11915,12760'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_genrand_35'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='186423'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='Ablack_scholes_36'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='330785,304776,339209,311607,18231'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_gentable_37'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='73572,36518,13122,18274,15988,14036,13143,15369,39405,15966,12595,12933,12084'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_genrand_38'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='221157'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='Ablack_scholes_39'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='355335,136113,110116,114959,18041'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_gentable_40'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='79319,25979,14901,12999,9860,13867,9847,11954,10887,9508,10650,11567,11302'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='mt_genrand_41'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='178876'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='Ablack_scholes_42'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='353346,355601,113549,110037,11926'/>
+            </processor>
+        </actorProperties>
+    </csdfProperties>
+
+</applicationGraph>
+
+</sdf3>
