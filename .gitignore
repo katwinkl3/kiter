@@ -26,3 +26,12 @@
 *.exe
 *.out
 *.app
+
+# Temporary files
+*~
+\#*\#
+
+# sdf3
+sdf3bench
+sdfg_throughput.zip
+script/
