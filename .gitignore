@@ -35,3 +35,9 @@
 sdf3bench
 sdfg_throughput.zip
 script/
+
+# result
+/*.log
+
+/debug
+/release
