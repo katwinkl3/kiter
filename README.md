@@ -10,6 +10,33 @@ Just ```make``` should do the job.
 
 ## Use it.
 
+The command is :
+
+```
+./release/bin/kiter -f <input-file> -a <algorithm>
+```
+```input-file``` is an SDF3-like XML file, and ```algorithm``` the algorithm to apply.
+
+Available algorithms are automatically listed if no algorithm provided :
+```
+[toky@zebulon kiter]$ ./release/bin/kiter -f AGB5CSDF/autogen1.xml 
+ Unsupported algorithm (-a NAME), list of supported algorithms is 
+ - 1PeriodicThroughput : Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.
+ - 2PeriodicThroughput : Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.
+ - NKPeriodicThroughput : Optimal Throughput evaluation of CSDF by using N-periodic method.
+ - NPeriodicThroughput : Optimal Throughput evaluation of SDF by using Munier1993 method.
+ - NCleanPeriodicThroughput : Optimal Throughput evaluation of SDF by using Munier1993 method combined with deGroote2012 reduction.
+ - KPeriodicThroughput : Optimal Throughput evaluation of CSDF by K-Periodic scheduling method 1.
+ - KBisPeriodicThroughput : Optimal Throughput evaluation of CSDF by K-Periodic scheduling method 2.
+ - KTerPeriodicThroughput : Optimal Throughput evaluation of CSDF by K-Periodic scheduling method 3.
+ - PrintInfos : Just print some graph informations.
+ - deGrooteThroughput : Throughput analysis from deGroote2012 paper except event graph reduction.
+ - deGrooteCleanThroughput : Throughput analysis from deGroote2012 paper.
+```
+
+### Example
+
+
 ```
 [toky@localhost kiter]$ ./release/bin/kiter -f benchmark/BlackScholes.xml -aKPeriodicThroughput
 Run KPeriodicThroughput
@@ -19,6 +46,7 @@ KPeriodicThroughput duration=0.000546
 ```
 
 The throughput is computed using the same method as SDF3-ANALYSIS Version "27 September 2010".
+
 
 ## Run the benchmark
 
