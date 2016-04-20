@@ -57,6 +57,17 @@ Then ```make benchmark``` should do the job.
 
 This repos also includes several benchmarks like AGB5CSDF and IB5CSDF.
 
+```
+AGB5CSDF:
+autogen1.xml  autogen2.xml  autogen3.xml  autogen4.xml  autogen5.xml
+
+benchmark:
+21.xml  BlackScholes.xml  Echo.xml  H264.xml  JPEG2000.xml  new_benchmark.xml  Pdectect.xml  sample.xml
+
+benchmark_sized:
+Black-scholes.xml  Echo.xml  H264.xml  JPEG2000.xml  Pdectect.xml
+```
+
 
 ## Known dependencies
 * Boost

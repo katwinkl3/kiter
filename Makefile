@@ -37,11 +37,12 @@ sdfg_throughput.zip :
 ${SDF3_BENCHMARK} : sdfg_throughput.zip
 	mkdir -p ${SDF3_BENCHMARK}
 	cp sdfg_throughput.zip ${SDF3_BENCHMARK}/
-	cd ${SDF3_BENCHMARK} ; unzip sdfg_throughput.zip 
-	cd ${SDF3_BENCHMARK} ; unzip graphs/graphs1/graphs.zip; for f in *.xml ; do mv $$f one_$$f ; done
-	cd ${SDF3_BENCHMARK} ; unzip graphs/graphs2/graphs.zip; for f in graph*.xml ; do mv $$f two_$$f ; done
-	cd ${SDF3_BENCHMARK} ; unzip graphs/graphs3/graphs.zip; for f in graph*.xml ; do mv $$f three_$$f ; done
-	cd ${SDF3_BENCHMARK} ; unzip graphs/graphs4/graphs.zip; for f in graph*.xml ; do mv $$f four_$$f ; done
+	cd ${SDF3_BENCHMARK} && unzip sdfg_throughput.zip 
+	cd ${SDF3_BENCHMARK} && unzip graphs/graphs1/graphs.zip; for f in *.xml ; do mv $$f one_$$f ; done
+	cd ${SDF3_BENCHMARK} && unzip graphs/graphs2/graphs.zip; for f in graph*.xml ; do mv $$f two_$$f ; done
+	cd ${SDF3_BENCHMARK} && unzip graphs/graphs3/graphs.zip; for f in graph*.xml ; do mv $$f three_$$f ; done
+	cd ${SDF3_BENCHMARK} && unzip graphs/graphs4/graphs.zip; for f in graph*.xml ; do mv $$f four_$$f ; done
+	cd ${SDF3_BENCHMARK} && rm graphs scripts sdfg_throughput.zip -rf
 
 sdf.log:  ./release/bin/kiter Makefile ${SDF3_BENCHMARK}
 	rm -f $@
