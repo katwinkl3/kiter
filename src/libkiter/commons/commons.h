@@ -133,8 +133,6 @@ Str join(It begin, const It end, const Str &sep)
 
 
 
-//inline bool insInteger(double v){double intpart; return (modf(v, &intpart) >= 0.0) && (modf(v, &intpart) <= 0.0);}
-
 inline bool isInteger(TIME_UNIT v){
     TIME_UNIT intpart;
     TIME_UNIT remain = std::modf((TIME_UNIT)  v, (TIME_UNIT*) &intpart);
@@ -142,10 +140,7 @@ inline bool isInteger(TIME_UNIT v){
     return ( (TIME_UNIT) remain >= (TIME_UNIT) 0.0) && ((TIME_UNIT)  remain <= (TIME_UNIT)  0.0);
 }
 
-//inline bool isInteger(double v) {double intpart; return (modf(v, &intpart) >= 0.0) && (modf(v, &intpart) <= 0.0);}
-//inline bool isInteger(TIME_UNIT v) {
-//    TIME_UNIT intpart; return (modf((double)v, (double*)&intpart) >= (TIME_UNIT) 0.0) && (modf((double)v, (double*)&intpart) <= (TIME_UNIT)0.0);
-//}
+
 
 std::string convBase    (   unsigned long       v,
                             long                base);
@@ -216,7 +211,7 @@ std::vector<std::string> split(const std::string &s, char delim) ;
 std::vector<std::string> splitSDF3List(const std::string &s);
 
 int fibo (int index);
-void recmkdir(std::string dir) ;
+ 
 const std::string runCmd( const std::string sendme , TIME_UNIT timeout) ;
 
 

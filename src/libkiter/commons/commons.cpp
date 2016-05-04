@@ -149,12 +149,6 @@ bool is_readable( const std::string & file )
      return fib_n;
  }
 
-
- void recmkdir(std::string dir) {
-     system (std::string("mkdir -p " + dir).c_str());
- }
-
-
  const std::string runCmd( const std::string com , TIME_UNIT  max_time ) {
 
 	 std::string sendme = com;
