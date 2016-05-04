@@ -32,7 +32,7 @@ inline double tock() {
     return diff;
 }
 //!< List of algorithms
-#define ALGORITHMS_COUNT 11
+#define ALGORITHMS_COUNT 12
 algo_t algorithmslist[ALGORITHMS_COUNT]   =
                     {
 
@@ -51,7 +51,9 @@ algo_t algorithmslist[ALGORITHMS_COUNT]   =
 		      { "KBisPeriodicThroughput"           , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method 2.",
 			algorithms::compute_KperiodicBis_throughput} ,
 		      { "KTerPeriodicThroughput"           , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method 3.",
-			algorithms::compute_KperiodicTer_throughput} ,
+			algorithms::compute_KperiodicTer_throughput} ,		     
+		      { "PrintKPeriodicThroughput"           , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method X with starting times.",
+			algorithms::print_kperiodic_scheduling} ,		      
 		      { "PrintInfos"                       , "Just print some graph informations.",
 			printers::printInfos},
 		      { "deGrooteThroughput"               , "Throughput analysis from deGroote2012 paper except event graph reduction.",
