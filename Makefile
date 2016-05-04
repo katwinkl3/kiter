@@ -10,7 +10,7 @@ SDF3_BINARY_ROOT := /home/toky/these/tools/sdf3/build/release/Linux/bin/
 SDF3ANALYSIS_CSDF :=  timeout 180  ${SDF3_BINARY_ROOT}/sdf3analysis-csdf
 SDF3ANALYSIS_SDF := timeout 180   ${SDF3_BINARY_ROOT}/sdf3analysis-sdf
 SDF3_BENCHMARK := ./sdf3bench/
-KITER := timeout 60 ./release/bin/kiter
+KITER := timeout 180 ./release/bin/kiter
 
 all: release_build debug_build
 	@echo "###########"" ENTER IN all: build #####################"
@@ -18,6 +18,10 @@ clean:
 	rm -Rf release debug
 
 benchmark :  sdf.log  csdf.log csdf_sized.log
+
+travis_test: ${SDF3_BENCHMARK}
+	for f in  benchmark/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput -a 1PeriodicThroughput -a KPeriodicThroughput -a KBisPeriodicThroughput -a KTerPeriodicThroughput  >> $@ ; done
+	for f in  benchmark_sized/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput -a KBisPeriodicThroughput -a KTerPeriodicThroughput  >> $@  ;  done
 
 csdf.log:  ./release/bin/kiter Makefile 
 	rm -f $@
