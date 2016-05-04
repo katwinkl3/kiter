@@ -2,6 +2,7 @@
 
 Kiter is an iterative algorithm based on K-periodic scheduling to compute the throughput of a CSDFG.
 
+Build status: [![Build Status](https://travis-ci.org/bbodin/kiter.svg?branch=master)](https://travis-ci.org/bbodin/kiter)
 
 
 ## Compile it.
