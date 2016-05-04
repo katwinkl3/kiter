@@ -20,8 +20,8 @@ clean:
 benchmark :  sdf.log  csdf.log csdf_sized.log
 
 travis_test: ${SDF3_BENCHMARK}
-	for f in  benchmark/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput -a 1PeriodicThroughput -a KPeriodicThroughput -a KBisPeriodicThroughput -a KTerPeriodicThroughput  >> $@ ; done
-	for f in  benchmark_sized/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput -a KBisPeriodicThroughput -a KTerPeriodicThroughput  >> $@  ;  done
+	for f in  benchmark/*.xml ; do echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput -a 1PeriodicThroughput -a KPeriodicThroughput -a KBisPeriodicThroughput -a KTerPeriodicThroughput  ; done
+	for f in  benchmark_sized/*.xml ; do echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput -a KBisPeriodicThroughput -a KTerPeriodicThroughput ;  done
 
 csdf.log:  ./release/bin/kiter Makefile 
 	rm -f $@
