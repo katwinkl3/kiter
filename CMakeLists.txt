@@ -38,7 +38,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
 #  ######### BOOST ##########
 
 SET(Boost_USE_STATIC_LIBS  TRUE)
-FIND_PACKAGE( Boost 1.33.0 COMPONENTS graph filesystem system QUIET) # remove REQUIRED to check by hand !
+FIND_PACKAGE( Boost 1.33.0 COMPONENTS graph  system QUIET) # remove REQUIRED to check by hand !
 
 
 IF (EXISTS "/usr/include/boost141/boost/")
@@ -50,32 +50,8 @@ IF (NOT Boost_INCLUDE_DIR)
 ENDIF()
 	
 
-	IF (EXISTS /usr/lib64/boost141/libboost_filesystem-mt.a)
-		SET(Boost_FILESYSTEM_LIBRARY "/usr/lib64/boost141/libboost_filesystem-mt.a")
-	ELSEIF (EXISTS /usr/lib/boost141/libboost_filesystem-mt.a)
-		SET(Boost_FILESYSTEM_LIBRARY "/usr/lib/boost141/libboost_filesystem-mt.a")
-	ELSE () 
-		IF (NOT Boost_FILESYSTEM_LIBRARY) 
-		message( FATAL_ERROR "libboost_filesystem not found !!") 
-		ENDIF()
-	ENDIF()
-
-
-	IF (EXISTS /usr/lib64/boost141/libboost_system-mt.a)
-		SET(Boost_SYSTEM_LIBRARY "/usr/lib64/boost141/libboost_system-mt.a")
-	ELSEIF (EXISTS /usr/lib/boost141/libboost_filesystem-mt.a)
-		SET(Boost_SYSTEM_LIBRARY "/usr/lib/boost141/libboost_system-mt.a")
-	ELSE() 
-		IF (NOT Boost_SYSTEM_LIBRARY) 
-			SET (Boost_SYSTEM_LIBRARY "") 
-		ENDIF()
-	ENDIF()
-
-
 
 MESSAGE ( STATUS "Boost INCLUDES           = ${Boost_INCLUDE_DIR}" )
-MESSAGE ( STATUS "Boost FILESYSTEM_LIBRARY = ${Boost_FILESYSTEM_LIBRARY}"  )
-MESSAGE ( STATUS "Boost SYSTEM_LIBRARY     = ${Boost_SYSTEM_LIBRARY}" )
 
 
 
@@ -95,11 +71,11 @@ SET(CMAKE_CXX_FLAGS_RELEASE "")
 
 
 # errors checking in all mode
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic-errors -ansi  -Wextra  -Werror")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic-errors -ansi  -Wextra  -Werror   -Wunused  -Wno-error=unused-result")
 
 # some errors checking in debug mode
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pedantic-errors -ansi  -Wextra  -Werror")
-SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wformat=2 -Winit-self -Wmissing-include-dirs -Wswitch-default    -Wswitch-enum    -Wunused      -Wno-endif-labels ")
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wformat=2 -Winit-self -Wmissing-include-dirs -Wswitch-default    -Wswitch-enum       -Wno-endif-labels ")
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wcast-qual    -Wcast-align      -Wno-packed   -Wmissing-format-attribute -Wredundant-decls")
 
 # fix 64bit warning failure

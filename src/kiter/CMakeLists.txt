@@ -11,7 +11,7 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
 #          ######### SCDUMP EXEC ##########
 
 ADD_EXECUTABLE         (kiter  ${kiter_sources})
-TARGET_LINK_LIBRARIES  (kiter libkiter ${Boost_FILESYSTEM_LIBRARY} -lz)
+TARGET_LINK_LIBRARIES  (kiter libkiter -lz)
 
 
 #
