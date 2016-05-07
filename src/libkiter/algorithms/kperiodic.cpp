@@ -40,7 +40,9 @@ bool sameset(models::Dataflow* const dataflow, std::set<Edge> *cc1 , std::set<Ed
 std::string cc2string  (models::Dataflow* const dataflow,std::set<Edge>* cc) {
     std::ostringstream returnStream;
     for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end() ; it++ ) {
-        returnStream <<  dataflow->getEdgeName(*it) <<  " (" << dataflow->getVertexName(dataflow->getEdgeSource(*it)) << "->" << dataflow->getVertexName(dataflow->getEdgeTarget(*it)) << "), ";
+        returnStream <<  dataflow->getEdgeName(*it) <<
+	  " (" << dataflow->getVertexName(dataflow->getEdgeSource(*it)) << "->"
+	       << dataflow->getVertexName(dataflow->getEdgeTarget(*it)) << "), ";
     }
     return returnStream.str();
 
@@ -1199,7 +1201,10 @@ void algorithms::compute_KperiodicTer_throughput    (models::Dataflow* const dat
         while (true) {
             iteration_count++;
             updateVectorWithFineNi(dataflow,&kvector,&(result.second));
-            std::pair<TIME_UNIT, std::set<Edge> > resultprime = KSchedule(dataflow,&kvector);
+	    {ForEachVertex(dataflow,v) {
+		VERBOSE_INFO("New vector " << dataflow->getVertexName(v) << " = " << kvector[v]  << "( Ni=" << dataflow->getNi(v) << ")" );
+	      }}
+	    std::pair<TIME_UNIT, std::set<Edge> > resultprime = KSchedule(dataflow,&kvector);
             if (sameset(dataflow,&(resultprime.second),&(result.second)))  {
                 VERBOSE_INFO("Critical circuit is the same");
                 result = resultprime;
