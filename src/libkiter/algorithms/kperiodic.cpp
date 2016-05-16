@@ -57,6 +57,7 @@ void print_function    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC
     models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
 
     std::cout << eg->printXML();
+    std::cout << eg->printTikz();
 
     eg->computeStartingTime (res);
     TIME_UNIT omega = 1 / res ;
