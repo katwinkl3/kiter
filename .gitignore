@@ -41,3 +41,7 @@ script/
 
 /debug
 /release
+
+# Eclipse files
+.cproject
+.project
