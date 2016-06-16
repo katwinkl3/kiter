@@ -29,9 +29,6 @@ models::EventGraph* generateKPeriodicEventGraph               (models::Dataflow 
 
  std::map<Vertex,EXEC_COUNT>  get_Kvector(models::Dataflow *  const);
 void                compute_Kperiodic_throughput              (models::Dataflow *  const , parameters_list_t);
-void                compute_KperiodicBis_throughput              (models::Dataflow *  const , parameters_list_t);
-
-void 				compute_KperiodicTer_throughput   			 (models::Dataflow* const dataflow, parameters_list_t) ;
 
     void                compute_1Kperiodic_throughput   		  (models::Dataflow* const  dataflow, parameters_list_t);
     void                compute_2Kperiodic_throughput             (models::Dataflow* const  dataflow, parameters_list_t);

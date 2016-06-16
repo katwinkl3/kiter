@@ -20,20 +20,20 @@ clean:
 benchmark :  sdf.log  csdf.log csdf_sized.log
 
 travis_test: ${SDF3_BENCHMARK}
-	for f in  benchmark/*.xml ; do echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput -a 1PeriodicThroughput -a KPeriodicThroughput -a KBisPeriodicThroughput -a KTerPeriodicThroughput  ; done
-	for f in  benchmark_sized/*.xml ; do echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput -a KBisPeriodicThroughput -a KTerPeriodicThroughput ;  done
+	for f in  benchmark/*.xml ; do echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
+	for f in  benchmark_sized/*.xml ; do echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput ;  done
 
 csdf.log:  ./release/bin/kiter Makefile 
 	rm -f $@
 	@echo "==============================================================================================="
 	@echo "==============================================================================================="
-	for f in  benchmark/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput -a 1PeriodicThroughput -a KPeriodicThroughput -a KBisPeriodicThroughput -a KTerPeriodicThroughput  >> $@ ; ${SDF3ANALYSIS_CSDF}  --graph $$f  --algo throughput  >> $@ || true ; done 
+	for f in  benchmark/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput -a 1PeriodicThroughput -a KPeriodicThroughput  >> $@ ; if [ -d ${SDF3_BINARY_ROOT} ];then  ${SDF3ANALYSIS_CSDF}  --graph $$f  --algo throughput  >> $@ || true; fi ; done 
 
 csdf_sized.log:  ./release/bin/kiter Makefile
 	rm -f $@
 	@echo "==============================================================================================="
 	@echo "==============================================================================================="
-	for f in  benchmark_sized/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput -a KBisPeriodicThroughput -a KTerPeriodicThroughput  >> $@  ; ${SDF3ANALYSIS_CSDF}  --graph $$f  --algo throughput  >> $@ || true  ; done 
+	for f in  benchmark_sized/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput   >> $@  ; if [ -x ${SDF3_BINARY_ROOT} ];then  ${SDF3ANALYSIS_CSDF}  --graph $$f  --algo throughput  >> $@ || true; fi  ; done 
 
 sdfg_throughput.zip :
 	wget http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_throughput.zip
@@ -48,11 +48,11 @@ ${SDF3_BENCHMARK} : sdfg_throughput.zip
 	cd ${SDF3_BENCHMARK} && unzip graphs/graphs4/graphs.zip; for f in graph*.xml ; do mv $$f four_$$f ; done
 	cd ${SDF3_BENCHMARK} && rm graphs scripts sdfg_throughput.zip -rf
 
-sdf.log:  ./release/bin/kiter Makefile ${SDF3_BENCHMARK}
+sdf.log:  ./release/bin/kiter Makefile 
 	rm -f $@
 	@echo "==============================================================================================="
 	@echo "==============================================================================================="
-	for f in  ${SDF3_BENCHMARK}/*.xml ; do echo === $$f  >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput -a KBisPeriodicThroughput -a KTerPeriodicThroughput  -a deGrooteThroughput >> $@ ; ${SDF3ANALYSIS_SDF}  --graph $$f  --algo throughput  >> $@ || true ;  done
+	for f in  ${SDF3_BENCHMARK}/*.xml ; do echo === $$f  >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput  -a deGrooteThroughput >> $@ ; if [ -d ${SDF3_BINARY_ROOT} ];then ${SDF3ANALYSIS_SDF}  --graph $$f  --algo throughput  >> $@ || true ; fi ;  done
 
 release_build : release/Makefile
 	@echo "###########"" ENTER IN realease_build : release/Makefile  #####################"

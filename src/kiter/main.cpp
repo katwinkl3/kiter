@@ -32,9 +32,9 @@ inline double tock() {
     return diff;
 }
 //!< List of algorithms
-#define ALGORITHMS_COUNT 12
-algo_t algorithmslist[ALGORITHMS_COUNT]   =
-                    {
+//#define ALGORITHMS_COUNT 10
+
+std::vector<algo_t> algorithmslist =               {
 
 		      { "1PeriodicThroughput"              , "Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.",
 			algorithms::compute_1Kperiodic_throughput} ,
@@ -46,12 +46,8 @@ algo_t algorithmslist[ALGORITHMS_COUNT]   =
 			algorithms::compute_NPeriodic_throughput} ,
 		      { "NCleanPeriodicThroughput"         , "Optimal Throughput evaluation of SDF by using Munier1993 method combined with deGroote2012 reduction.",
 			algorithms::compute_NCleanPeriodic_throughput} ,
-		      { "KPeriodicThroughput"              , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method 1.",
-			algorithms::compute_Kperiodic_throughput} ,
-		      { "KBisPeriodicThroughput"           , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method 2.",
+		      { "KPeriodicThroughput"              , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method 2.",
 			algorithms::compute_KperiodicBis_throughput} ,
-		      { "KTerPeriodicThroughput"           , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method 3.",
-			algorithms::compute_KperiodicTer_throughput} ,		     
 		      { "PrintKPeriodicThroughput"           , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method X with starting times.",
 			algorithms::print_kperiodic_scheduling} ,		      
 		      { "PrintInfos"                       , "Just print some graph informations.",
@@ -62,6 +58,8 @@ algo_t algorithmslist[ALGORITHMS_COUNT]   =
 			algorithms::compute_deGrooteClean_throughput}
 
                     };
+
+ 
 
 
 inline void activate_verbose(const std::string p) {
@@ -132,14 +130,14 @@ int main (int argc, char **argv)
 
     // Step 4 = Apply selected algorithm
     bool nothing = true;
-    for (int i = 0 ; i < ALGORITHMS_COUNT ; i++) {
+    for ( std::vector<algo_t>::iterator lit = algorithmslist.begin() ; lit != algorithmslist.end() ; lit++ ) {
         for ( std::vector<std::string>::iterator it = algos.begin() ; it != algos.end() ; it++ ) {
-            if (*it == algorithmslist[i].name) {
-               std::cout << "Run " << algorithmslist[i].name << std::endl;
+            if (*it == lit->name) {
+               std::cout << "Run " << lit->name << std::endl;
                tock();
-               algorithmslist[i].fun(csdf,parameters);
+               lit->fun(csdf,parameters);
                double duration = tock();
-               std::cout << algorithmslist[i].name  << " duration=" << duration << std::endl;
+               std::cout << lit->name  << " duration=" << duration << std::endl;
                nothing = false;
             }
         }
@@ -147,11 +145,10 @@ int main (int argc, char **argv)
 
     if (nothing) {
             std::cout << " Unsupported algorithm (-a NAME), list of supported algorithms is " << std::endl;
-            for (int j = 0 ; j < ALGORITHMS_COUNT ; j++) {
-                std::cout << " - " <<  algorithmslist[j].name  << " : " << algorithmslist[j].desc << std::endl;
+	    for ( std::vector<algo_t>::iterator lit = algorithmslist.begin() ; lit != algorithmslist.end() ; lit++ ) {	      
+                std::cout << " - " <<  lit->name  << " : " << lit->desc << std::endl;
             }
             exit(1);
-
     }
 
     exit(0);

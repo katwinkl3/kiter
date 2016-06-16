@@ -947,7 +947,7 @@ std::map<Vertex,EXEC_COUNT> algorithms::get_Kvector(models::Dataflow *  const da
     return kvector;
 }
 
-void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const dataflow, parameters_list_t) {
+void algorithms::compute_KperiodicSlow_throughput    (models::Dataflow* const dataflow, parameters_list_t) {
 
     EXEC_COUNT iteration_count = 0;
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
@@ -1006,7 +1006,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
  * Compute K-periodic schedule by using an update module
  *
  */
-void algorithms::compute_KperiodicBis_throughput    (models::Dataflow* const dataflow, parameters_list_t  parameters  ) {
+void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const dataflow, parameters_list_t  parameters  ) {
 
 
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
@@ -1182,7 +1182,7 @@ void algorithms::compute_KperiodicBis_throughput    (models::Dataflow* const dat
  * Compute K-periodic schedule by using an update module
  *
  */
-void algorithms::compute_KperiodicTer_throughput    (models::Dataflow* const dataflow, parameters_list_t) {
+void algorithms::compute_KperiodicSlow2_throughput    (models::Dataflow* const dataflow, parameters_list_t) {
 
     EXEC_COUNT iteration_count = 0;
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
