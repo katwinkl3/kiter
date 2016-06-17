@@ -73,3 +73,24 @@ Black-scholes.xml  Echo.xml  H264.xml  JPEG2000.xml  Pdectect.xml
 ## Known dependencies
 * Boost
 * LibXml2
+
+## Related publications
+
+```
+@inproceedings{DBLP:conf/dac/BodinKD16,
+  author    = {Bruno Bodin and
+               Alix Munier Kordon and
+               Beno{\^{\i}}t Dupont de Dinechin},
+  title     = {Optimal and fast throughput evaluation of {CSDF}},
+  booktitle = {Proceedings of the 53rd Annual Design Automation Conference, {DAC}
+               2016, Austin, TX, USA, June 5-9, 2016},
+  pages     = {160},
+  year      = {2016},
+  crossref  = {DBLP:conf/dac/2016},
+  url       = {http://doi.acm.org/10.1145/2897937.2898056},
+  doi       = {10.1145/2897937.2898056},
+  timestamp = {Fri, 27 May 2016 09:17:23 +0200},
+  biburl    = {http://dblp.uni-trier.de/rec/bib/conf/dac/BodinKD16},
+  bibsource = {dblp computer science bibliography, http://dblp.org}
+}
+```
