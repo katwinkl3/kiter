@@ -1,9 +1,7 @@
 language: cpp
 
-before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y libboost-all-dev
 sudo: required
+
 addons:
   apt:
     sources:
@@ -11,8 +9,14 @@ addons:
     packages:
     - gcc-5
     - g++-5
- script:
+
+install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y libboost-all-dev
+
+script:
   - sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc
+  - sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-5 /usr/bin/g++
   - gcc --version
   - make
   - make travis_test
