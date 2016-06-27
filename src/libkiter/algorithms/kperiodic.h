@@ -43,6 +43,9 @@ void                compute_Kperiodic_throughput              (models::Dataflow 
 
     TIME_UNIT compute_Kperiodic_optimal_throughput    (models::Dataflow* const dataflow) ;
 
+    
+    void compute_KperiodicSlow_throughput    (models::Dataflow* const dataflow, parameters_list_t) ;
+    void compute_KperiodicSlow2_throughput    (models::Dataflow* const dataflow, parameters_list_t) ;
 
     void print_1periodic_eventgraph                                 (models::Dataflow* const  dataflow, parameters_list_t);
     void print_2periodic_eventgraph                                 (models::Dataflow* const  dataflow, parameters_list_t);

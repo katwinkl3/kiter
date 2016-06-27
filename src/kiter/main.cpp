@@ -47,7 +47,7 @@ std::vector<algo_t> algorithmslist =               {
 		      { "NCleanPeriodicThroughput"         , "Optimal Throughput evaluation of SDF by using Munier1993 method combined with deGroote2012 reduction.",
 			algorithms::compute_NCleanPeriodic_throughput} ,
 		      { "KPeriodicThroughput"              , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method 2.",
-			algorithms::compute_KperiodicBis_throughput} ,
+			algorithms::compute_Kperiodic_throughput} ,
 		      { "PrintKPeriodicThroughput"           , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method X with starting times.",
 			algorithms::print_kperiodic_scheduling} ,		      
 		      { "PrintInfos"                       , "Just print some graph informations.",
