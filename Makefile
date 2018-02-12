@@ -6,11 +6,23 @@
 SHELL = /bin/bash
 
 CPU_COUNT := $(shell cat /proc/cpuinfo |grep processor |wc -l)
-SDF3_BINARY_ROOT := /home/toky/these/tools/sdf3/build/release/Linux/bin/
+SDF3_BENCHMARK := ./sdf3bench/
+SDF3_ROOT := ./sdf3/
+SDF3_BINARY_ROOT := ${SDF3_ROOT}/sdf3/build/release/Linux/bin/
 SDF3ANALYSIS_CSDF :=  timeout 180  ${SDF3_BINARY_ROOT}/sdf3analysis-csdf
 SDF3ANALYSIS_SDF := timeout 180   ${SDF3_BINARY_ROOT}/sdf3analysis-sdf
-SDF3_BENCHMARK := ./sdf3bench/
 KITER := timeout 180 ./release/bin/kiter
+
+
+info :
+	@echo "----------------------------------------"
+	@echo SDF3_ROOT is [${SDF3_ROOT}]
+	@echo SDF3_BINARY_ROOT is [${SDF3_BINARY_ROOT}]
+	@echo "----------------------------------------"
+	@echo "make build"
+	@echo "make travis_test"
+	@echo "make sdf3_build"
+	@echo "----------------------------------------"
 
 all: release_build debug_build
 	@echo "###########"" ENTER IN all: build #####################"
@@ -37,6 +49,18 @@ csdf_sized.log:  ./release/bin/kiter Makefile
 
 sdfg_throughput.zip :
 	wget http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_throughput.zip
+
+sdf3-140724.zip :
+	wget http://www.es.ele.tue.nl/sdf3/download/files/releases/sdf3-140724.zip
+
+sdf3_build : ${SDF3_BINARY_ROOT} ${SDF3_BENCHMARK}
+
+${SDF3_BINARY_ROOT} : sdf3-140724.zip 
+	mkdir -p ${SDF3_ROOT}
+	cp sdf3-140724.zip ${SDF3_ROOT}
+	cd ${SDF3_ROOT} && unzip -o sdf3-140724.zip
+	cd ${SDF3_ROOT}/sdf3/ && make
+
 
 ${SDF3_BENCHMARK} : sdfg_throughput.zip
 	mkdir -p ${SDF3_BENCHMARK}

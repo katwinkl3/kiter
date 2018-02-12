@@ -35,6 +35,8 @@
 sdf3bench
 sdfg_throughput.zip
 script/
+sdf3-140724.zip
+sdf3/
 
 # result
 /*.log
