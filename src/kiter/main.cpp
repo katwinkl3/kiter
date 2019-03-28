@@ -17,6 +17,7 @@
 #include <algorithms/kperiodic.h>
 #include <algorithms/nperiodic.h>
 #include <algorithms/degroote.h>
+#include <algorithms/symbolicExecution.h>
 
 struct algo_t {
 	std::string name;
@@ -55,7 +56,11 @@ std::vector<algo_t> algorithmslist =               {
 		      { "deGrooteThroughput"               , "Throughput analysis from deGroote2012 paper except event graph reduction.",
 			algorithms::compute_deGroote_throughput},
 		      { "deGrooteCleanThroughput"          , "Throughput analysis from deGroote2012 paper.",
-			algorithms::compute_deGrooteClean_throughput}
+			algorithms::compute_deGrooteClean_throughput},
+		      { "SymbolicExecution"                       , "Execute task in ASAP fashion and print out the scheduling.",
+		    algorithms::symbolic_execution},
+		      { "Packet"                       , "Execute task in ASAP fashion and print out the scheduling.",
+		    algorithms::packet_list}
 
                     };
 

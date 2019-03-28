@@ -103,7 +103,7 @@ typedef boost::property < boost::vertex_index1_t,      unsigned int,   /* vertex
         boost::property < boost::vertex_discover_time_t, TIME_UNIT    /* vertex_discover_time_t(execution time) */
         > > > > > > EventGraphVertexProperties;
 
-typedef boost::property < boost::edge_weight_t,TIME_UNIT, /* edge_weight_t(w)        */
+typedef boost::property < boost::edge_weight_t,TOKEN_UNIT, /* edge_weight_t(w)        */
         boost::property < boost::edge_index_t,ARRAY_INDEX,  /* edge_index_t(channel_id)        */
         boost::property < boost::edge_color_t,bool,  /* edge_color_t(strictness)        */
         boost::property < boost::edge_weight2_t, TIME_UNIT ,  /* edge_weight2_t (d) */
@@ -269,7 +269,7 @@ public :
     SchedulingEvent  getSchedulingEvent(EventGraphVertex v){ return SchedulingEvent(getTaskId(v),getPhase(v),getExecution(v));}
     ARRAY_INDEX getChannelId(EventGraphEdge e)                       { return boost::get(boost::get(boost::edge_index, this->getG()), e);}
     inline void setChannelId(EventGraphEdge e,ARRAY_INDEX id )                       {  boost::put(boost::edge_index, this->getG(), e, id);}
-    inline TIME_UNIT getWeight(EventGraphEdge e)                       { return boost::get(boost::get(boost::edge_weight, this->getG()), e);}
+    inline TOKEN_UNIT getWeight(EventGraphEdge e)                       { return boost::get(boost::get(boost::edge_weight, this->getG()), e);}
     inline bool getStrictness(EventGraphEdge e)                       { return boost::get(boost::get(boost::edge_color, this->getG()), e);}
     inline TIME_UNIT getFlow(EventGraphEdge e)        { return boost::get(boost::edge_flow, this->getG(), e);}
 

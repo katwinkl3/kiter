@@ -7,7 +7,7 @@
 
 #ifndef NPERIODIC_H_
 #define NPERIODIC_H_
-
+namespace models { class EventGraph;}
 namespace algorithms{
 
 	models::EventGraph* 						generateNPeriodicEventGraph         (models::Dataflow *  const) ;
