@@ -23,6 +23,7 @@ void algorithms::packet_list(models::Dataflow* const  dataflow, parameters_list_
 		//STEP 1 - Generate Event Graph
 		VERBOSE_INFO("N-Periodic EventGraph generation");
 		models::EventGraph* eg = generateNPeriodicEventGraph(dataflow);
+		eg->FullConnectionned();
 		VERBOSE_INFO("NPeriodic EventGraph generation Done, edges = " << eg->getConstraintsCount() << " vertex = " << eg->getEventCount());
 
 		std::vector < models::EventGraphVertex > to_execute;
@@ -37,8 +38,9 @@ void algorithms::packet_list(models::Dataflow* const  dataflow, parameters_list_
 			VERBOSE_INFO( "edge " << c << " has weight=" << eg->getWeight(c) << " and Duration=" << eg->getDuration(c));
 			buffers[c] = eg->getWeight(c);
 		}}
-
-		std::cout << "#SRC,DEST,PACKET_ID,BANK_ID,DEP1,DEP2,..." << std::endl;
+		std::cout << "#NUM_ROWS,NUM_COLS,NUM_BANKS" << std::endl;
+		std::cout << "4,4,1" << std::endl;
+		std::cout << "#SRC,DEST,DURATION,PACKET_ID,BANK_ID,DEP1,DEP2,..." << std::endl;
 	    VERBOSE_INFO("Start of symbolic execution.");
 
 	    ARRAY_INDEX packet_id = 0;
@@ -82,8 +84,8 @@ void algorithms::packet_list(models::Dataflow* const  dataflow, parameters_list_
 						ARRAY_INDEX pid = edge_ids[outc] ;
 						ARRAY_INDEX bid = 0 ;
 
-						std::cout << src << "," ;
-						std::cout << dst << "," ;
+						std::cout << src % 16 << "," ;
+						std::cout << dst % 16 << "," ;
 						std::cout << duration << "," ;
 						std::cout << pid << "," ;
 						std::cout << bid  ;

@@ -138,11 +138,11 @@ int main (int argc, char **argv)
     for ( std::vector<algo_t>::iterator lit = algorithmslist.begin() ; lit != algorithmslist.end() ; lit++ ) {
         for ( std::vector<std::string>::iterator it = algos.begin() ; it != algos.end() ; it++ ) {
             if (*it == lit->name) {
-               std::cout << "Run " << lit->name << std::endl;
+               VERBOSE_INFO ("Run " << lit->name);
                tock();
                lit->fun(csdf,parameters);
                double duration = tock();
-               std::cout << lit->name  << " duration=" << duration << std::endl;
+               VERBOSE_INFO (lit->name  << " duration=" << duration);
                nothing = false;
             }
         }
