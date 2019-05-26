@@ -35,7 +35,7 @@ void algorithms::packet_list(models::Dataflow* const  dataflow, parameters_list_
 			to_execute.push_back(e);
 		}}
 		{ForEachConstraint(eg, c){
-			VERBOSE_INFO( "edge " << c << " has weight=" << eg->getWeight(c) << " and Duration=" << eg->getDuration(c));
+			VERBOSE_DEBUG( "edge " << c << " has weight=" << eg->getWeight(c) << " and Duration=" << eg->getDuration(c));
 			buffers[c] = eg->getWeight(c);
 		}}
 		std::cout << "#NUM_ROWS,NUM_COLS,NUM_BANKS" << std::endl;
@@ -48,22 +48,21 @@ void algorithms::packet_list(models::Dataflow* const  dataflow, parameters_list_
 
 			bool can_execute = false;
 
-			VERBOSE_INFO ("Remains " << to_execute.size());
+			VERBOSE_DEBUG ("Remains " << to_execute.size());
 			// One more to execute
 			for (auto it = to_execute.begin() ; it != to_execute.end() ; it ++) {
 				auto e = *it;
-				VERBOSE_INFO ("try " << e);
+				VERBOSE_DEBUG ("try " << e);
 				can_execute = true;
 				{ForEachInputs (eg, e , inc){
 					if (buffers[inc] <= 0) {
-						VERBOSE_INFO ("  Cannot " << e << " buffer " << inc);
+						VERBOSE_DEBUG ("  Cannot " << e << " buffer " << inc);
 						can_execute = false;
 						break;
 					}
 				}}
 
 				if (can_execute) {
-					VERBOSE_INFO("Execute " << e);
 					ids[e] = ids.size();
 
 					std::vector <ARRAY_INDEX> deps ;
@@ -74,15 +73,22 @@ void algorithms::packet_list(models::Dataflow* const  dataflow, parameters_list_
 						}
 					}}
 
+					ARRAY_INDEX src = eg->getTaskId(e) ;
+
+					VERBOSE_INFO("Execute " << e << " : Task id = " << src << " with " << deps.size() << " deps");
+
+
 					{ForEachOutputs (eg, e , outc){
 
 						buffers[outc] += 1;
 						edge_ids[outc] = packet_id++;
-						ARRAY_INDEX src = eg->getTaskId(e) ;
 						ARRAY_INDEX dst = eg->getConstraint(outc) ._t.getTaskId();
 						TIME_UNIT duration = eg->getDuration(outc);
 						ARRAY_INDEX pid = edge_ids[outc] ;
 						ARRAY_INDEX bid = 0 ;
+
+
+						VERBOSE_INFO("   - output to " << dst << " , duration = " << duration);
 
 						std::cout << src % 16 << "," ;
 						std::cout << dst % 16 << "," ;
@@ -90,11 +96,15 @@ void algorithms::packet_list(models::Dataflow* const  dataflow, parameters_list_
 						std::cout << pid << "," ;
 						std::cout << bid  ;
 
+
+
 						for (auto dep : deps) {
 							std::cout << ","  << dep ;
 						}
 						std::cout << std::endl;
 					}}
+
+
 					to_execute.erase(it);
 
 					break;

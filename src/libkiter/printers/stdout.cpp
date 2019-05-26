@@ -32,7 +32,7 @@ void printers::printGraph    (models::Dataflow* const  dataflow, parameters_list
       
       returnStream << "  t_" << tid << " [" << std::endl;
       returnStream << "    shape=circle," << std::endl;
-      returnStream << "    label = \" " << dataflow->getVertexName(t) << "(id:" << tid << ")" << "\"" << std::endl;
+      returnStream << "    label = \" " << dataflow->getVertexName(t) << "(id:" << tid << " duration:" << dataflow->getVertexDuration(t) << ")" << "\"" << std::endl;
       
       returnStream  << "  ];" << std::endl;
       returnStream << std::endl;
@@ -45,8 +45,8 @@ void printers::printGraph    (models::Dataflow* const  dataflow, parameters_list
       ARRAY_INDEX edgeOut = dataflow->getVertexId(dataflow->getEdgeTarget(c));
       returnStream << "  t_" << edgeIn << " -> t_" << edgeOut << " [";
       returnStream << std::endl;
-      returnStream << "    headlabel=\"" << dataflow->getEdgeIn(c) << "\"," << std::endl;
-      returnStream << "    taillabel=\"" << dataflow->getEdgeOut(c) << "\"," << std::endl;
+      returnStream << "    headlabel=\"" << dataflow->getEdgeOut(c) << "\"," << std::endl;
+      returnStream << "    taillabel=\"" << dataflow->getEdgeIn(c) << "\"," << std::endl;
       returnStream << " ] ;" << std::endl;
     }}
   returnStream << std::endl;
