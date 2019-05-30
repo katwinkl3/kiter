@@ -53,6 +53,8 @@ std::vector<algo_t> algorithmslist =               {
 			algorithms::print_kperiodic_scheduling} ,		      
 		      { "PrintInfos"                       , "Just print some graph informations.",
 			printers::printInfos},
+		      { "PrintGraph"                       , "Print DOT file",
+			printers::printGraph},
 		      { "deGrooteThroughput"               , "Throughput analysis from deGroote2012 paper except event graph reduction.",
 			algorithms::compute_deGroote_throughput},
 		      { "deGrooteCleanThroughput"          , "Throughput analysis from deGroote2012 paper.",
