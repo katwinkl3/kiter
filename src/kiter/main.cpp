@@ -60,7 +60,9 @@ std::vector<algo_t> algorithmslist =               {
 		      { "SymbolicExecution"                       , "Execute task in ASAP fashion and print out the scheduling.",
 		    algorithms::symbolic_execution},
 		      { "Packet"                       , "Execute task in ASAP fashion and print out the scheduling.",
-		    algorithms::packet_list}
+		    algorithms::packet_list},
+		      { "SymbolicExecutionWP"                       , "Execute task in ASAP fashion and print out the scheduling.",
+		    algorithms::symbolic_execution_with_packets}
 
                     };
 
