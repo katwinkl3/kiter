@@ -47,3 +47,9 @@ sdf3/
 # Eclipse files
 .cproject
 .project
+.settings/
+
+# generation
+/*.txt
+/*.png
+/*.dot
