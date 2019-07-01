@@ -18,11 +18,14 @@ using namespace models;
 
 void print_packet_line (ARRAY_INDEX src, ARRAY_INDEX dst, TIME_UNIT duration, ARRAY_INDEX pid, std::vector <ARRAY_INDEX> deps , bool verb = false ) {
 
+	VERBOSE_ASSERT(src > 0, "unsupported ids for mapping");
+	VERBOSE_ASSERT(dst > 0, "unsupported ids for mapping");
+
 	ARRAY_INDEX bid = 0 ;
 	if (verb) std::cout << "src=" ;
-	std::cout << src % 16 << "," ;
+	std::cout << (src - 1) % 16 << "," ;
 	if (verb) std::cout << "dst=";
-	std::cout << dst % 16 << "," ;
+	std::cout << (dst - 1) % 16 << "," ;
 	if (verb) std::cout << "dur=";
 	std::cout << duration << "," ;
 	if (verb) std::cout << "pid=";
@@ -130,9 +133,13 @@ void algorithms::packet_list(models::Dataflow* const  dataflow, parameters_list_
 
 
 void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph, parameters_list_t param_list) {
-	// Need RV.
+
+
+	// We need the repetition vector to proceed.
 	VERBOSE_ASSERT(computeRepetitionVector(graph),"inconsistent graph");
 
+
+	// psize is the number of byte per packet to be send.
 	TOKEN_UNIT psize = 0;
 	if (param_list.count("psize") == 1) {
 		std::string str_value = param_list["psize"];
@@ -141,16 +148,17 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 	}
 
 
-	// Store task to execute by number of execution.
+	// We store the total number of execution, the number of execution per task id
 	EXEC_COUNT total = 0 ;
 	std::vector < EXEC_COUNT >  remained_execution (graph->getMaxVertexId());
+
 	{ForEachVertex(graph,t) {
 		EXEC_COUNT Ni =  graph->getNi(t) ;
 		remained_execution[graph->getVertexId(t)] = Ni ;
 		total += Ni ;
 	}}
 
-	// Store buffer content.
+	// This is the number of token per buffer
 	std::vector < EXEC_COUNT >  buffer_content (graph->getMaxEdgeId());
 	{ForEachChannel(graph,c) {
 		buffer_content[graph->getEdgeId(c)] = graph->getPreload(c);
@@ -172,7 +180,10 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 
 
 	while (total > 0) {
+
+
 		{ForEachVertex(graph,t) {
+
 			ARRAY_INDEX vId = graph->getVertexId(t);
 			bool can_execute = false;
 			if ( remained_execution [vId] > 0) {
@@ -215,11 +226,15 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 
 						VERBOSE_DEBUG(" - Produce " << datatotransfert << " by packet of " << psize);
 
-						for ( ; datatotransfert > 0 ; datatotransfert -= psize) {
+
+						for (ARRAY_INDEX previous = 0 ; datatotransfert > 0 ; datatotransfert -= psize) {
 							packet_ids[outE] = packet_count++;
 							ARRAY_INDEX pid = packet_ids[outE] ;
-							print_packet_line ( src,  dst,  duration,  pid, deps ) ;
+							std::vector <ARRAY_INDEX> subdeps = deps ;
+							if (previous) subdeps.push_back(previous);
+							print_packet_line ( src,  dst,  duration,  pid, subdeps ) ;
 							duration = 0;
+							previous = pid;
 						}
 					}}
 
@@ -227,6 +242,8 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 			}
 
 		}}
+
+
 	}
 
     VERBOSE_INFO("End of symbolic execution.");
