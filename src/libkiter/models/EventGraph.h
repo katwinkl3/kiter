@@ -83,7 +83,7 @@ inline bool operator!=(const SchedulingEvent& lh, const SchedulingEvent& rh) {re
 struct SchedulingEventConstraint {
     SchedulingEvent _s;
     SchedulingEvent _t;
-    TIME_UNIT       _w;
+  TIME_UNIT       _w; // Weight is TIME_UNIT and must keep it like that !
     TIME_UNIT       _d;
     ARRAY_INDEX     _id;
 
@@ -103,7 +103,7 @@ typedef boost::property < boost::vertex_index1_t,      unsigned int,   /* vertex
         boost::property < boost::vertex_discover_time_t, TIME_UNIT    /* vertex_discover_time_t(execution time) */
         > > > > > > EventGraphVertexProperties;
 
-typedef boost::property < boost::edge_weight_t,TOKEN_UNIT, /* edge_weight_t(w)        */
+typedef boost::property < boost::edge_weight_t,TIME_UNIT, /* edge_weight_t(w)        */ // Weight is TIME_UNIT and must keep it like that !
         boost::property < boost::edge_index_t,ARRAY_INDEX,  /* edge_index_t(channel_id)        */
         boost::property < boost::edge_color_t,bool,  /* edge_color_t(strictness)        */
         boost::property < boost::edge_weight2_t, TIME_UNIT ,  /* edge_weight2_t (d) */
@@ -237,7 +237,7 @@ public :
     inline void setStrictness(EventGraphEdge e, bool s)        { boost::put(boost::edge_color, this->getG(), e, s);}
     inline void setFlow(EventGraphEdge e, TIME_UNIT s)        { boost::put(boost::edge_flow, this->getG(), e, s);}
 private :
-    inline void setWeight(EventGraphEdge e, TIME_UNIT w)       { boost::put(boost::edge_weight, this->getG(), e, w);}
+    inline void setWeight(EventGraphEdge e, TIME_UNIT w)       { boost::put(boost::edge_weight, this->getG(), e, w);} // Weight is TIME_UNIT and must keep it like that !
     inline void setDuration(EventGraphEdge e, TIME_UNIT d)     { boost::put(boost::edge_weight2, this->getG(), e, d);}
 
 
@@ -269,7 +269,7 @@ public :
     SchedulingEvent  getSchedulingEvent(EventGraphVertex v){ return SchedulingEvent(getTaskId(v),getPhase(v),getExecution(v));}
     ARRAY_INDEX getChannelId(EventGraphEdge e)                       { return boost::get(boost::get(boost::edge_index, this->getG()), e);}
     inline void setChannelId(EventGraphEdge e,ARRAY_INDEX id )                       {  boost::put(boost::edge_index, this->getG(), e, id);}
-    inline TOKEN_UNIT getWeight(EventGraphEdge e)                       { return boost::get(boost::get(boost::edge_weight, this->getG()), e);}
+    inline TIME_UNIT getWeight(EventGraphEdge e)                       { return boost::get(boost::get(boost::edge_weight, this->getG()), e);} // Weight is TIME_UNIT and must keep it like that !
     inline bool getStrictness(EventGraphEdge e)                       { return boost::get(boost::get(boost::edge_color, this->getG()), e);}
     inline TIME_UNIT getFlow(EventGraphEdge e)        { return boost::get(boost::edge_flow, this->getG(), e);}
 

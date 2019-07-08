@@ -62,7 +62,7 @@ void algorithms::packet_list(models::Dataflow* const  dataflow, parameters_list_
 		}}
 		{ForEachConstraint(eg, c){
 			VERBOSE_DEBUG( "edge " << c << " has weight=" << eg->getWeight(c) << " and Duration=" << eg->getDuration(c));
-			buffers[c] = eg->getWeight(c);
+			buffers[c] = (long int) (eg->getWeight(c)); // TODO : confusion here between weight and delay
 		}}
 		std::cout << "#NUM_ROWS,NUM_COLS,NUM_BANKS" << std::endl;
 		std::cout << "4,4,1" << std::endl;
