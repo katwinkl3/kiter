@@ -52,6 +52,7 @@ ENDIF()
 
 
 MESSAGE ( STATUS "Boost INCLUDES           = ${Boost_INCLUDE_DIR}" )
+MESSAGE ( STATUS "Boost VERSION            = ${Boost_VERSION}" )
 
 
 
