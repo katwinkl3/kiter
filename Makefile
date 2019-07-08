@@ -24,7 +24,8 @@ info :
 	@echo "make sdf3_build"
 	@echo "----------------------------------------"
 
-all: release_build debug_build
+all : build
+build: release_build debug_build
 	@echo "###########"" ENTER IN all: build #####################"
 clean:
 	rm -Rf release debug
