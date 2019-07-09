@@ -25,8 +25,10 @@ info :
 	@echo "----------------------------------------"
 
 all : build
+	@echo "###########"" ENTER IN $@ : $^  #####################"
+	
 build: release_build debug_build
-	@echo "###########"" ENTER IN all: build #####################"
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 clean:
 	rm -Rf release debug
 
@@ -82,21 +84,21 @@ sdf.log:  ./release/bin/kiter Makefile
 	for f in  ${SDF3_BENCHMARK}/*.xml ; do echo === $$f  >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput  -a deGrooteThroughput >> $@ ; if [ -d ${SDF3_BINARY_ROOT} ];then ${SDF3ANALYSIS_SDF}  --graph $$f  --algo throughput  >> $@ || true ; fi ;  done
 
 release_build : release/Makefile
-	@echo "###########"" ENTER IN realease_build : release/Makefile  #####################"
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	@$(MAKE) -C release all
 
 
 debug_build : debug/Makefile
-	@echo "###########"" ENTER IN realease_build : release/Makefile  #####################"
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	@$(MAKE) -C debug all 
 
 release/Makefile: CMakeLists.txt
-	@echo "###########"" ENTER IN build/Makefile: CMakeLists.txt #####################"
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	@mkdir -p release
 	@pushd release && cmake -D CMAKE_BUILD_TYPE=Release .. && popd
 
 debug/Makefile: CMakeLists.txt
-	@echo "###########"" ENTER IN build/Makefile: CMakeLists.txt #####################"
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	@mkdir -p debug
 	@pushd debug && cmake -D CMAKE_BUILD_TYPE=Debug .. && popd
 

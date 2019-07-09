@@ -126,14 +126,14 @@ int main (int argc, char **argv)
 
     if (!csdf) {
         VERBOSE_ERROR("Error with XML file.");
-    	std::cout << " No input file or enable to read it, please us -f FILENAME." << std::endl;
+    	std::cerr << " No input file or enable to read it, please us -f FILENAME." << std::endl;
     	exit(1);
     }
 
 
     // Step 2 = Check parameters
     for ( parameters_list_t::iterator it = parameters.begin() ; it != parameters.end() ; it++ ) {
-        VERBOSE_ERROR("Unknown parameter found !");
+        VERBOSE_INFO("Additionnal parameter found: '" << it->first << "' = '" << it->second << "'");
     }
 
 
@@ -153,9 +153,9 @@ int main (int argc, char **argv)
     }
 
     if (nothing) {
-            std::cout << " Unsupported algorithm (-a NAME), list of supported algorithms is " << std::endl;
+            std::cerr << " Unsupported algorithm (-a NAME), list of supported algorithms is " << std::endl;
 	    for ( std::vector<algo_t>::iterator lit = algorithmslist.begin() ; lit != algorithmslist.end() ; lit++ ) {	      
-                std::cout << " - " <<  lit->name  << " : " << lit->desc << std::endl;
+                std::cerr << " - " <<  lit->name  << " : " << lit->desc << std::endl;
             }
             exit(1);
     }
