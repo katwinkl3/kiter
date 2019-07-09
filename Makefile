@@ -8,6 +8,8 @@ SHELL = /bin/bash
 CPU_COUNT := $(shell cat /proc/cpuinfo |grep processor |wc -l)
 SDF3_BENCHMARK := ./sdf3bench/
 SDF3_MEM_BENCHMARK := ./sdf3mem/
+SDF3_CS_BENCHMARK := ./sdf3cs/
+
 SDF3_ROOT := ./sdf3/
 SDF3_BINARY_ROOT := ${SDF3_ROOT}/sdf3/build/release/Linux/bin/
 SDF3ANALYSIS_CSDF :=  timeout 180  ${SDF3_BINARY_ROOT}/sdf3analysis-csdf
@@ -62,13 +64,21 @@ sdf3-140724.zip :
 sdfg_buffersizing.zip :
 	wget http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_buffersizing.zip
 
-sdf3_build : ${SDF3_BINARY_ROOT} ${SDF3_BENCHMARK}
+sdfg_designflow_case_study.zip:
+	wget http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_designflow_case_study.zip
+
+sdf3_build : ${SDF3_BINARY_ROOT} ${SDF3_BENCHMARK} ${SDF3_MEM_BENCHMARK}  ${SDF3_CS_BENCHMARK}
 
 ${SDF3_BINARY_ROOT} : sdf3-140724.zip 
 	mkdir -p ${SDF3_ROOT}
 	cp sdf3-140724.zip ${SDF3_ROOT}
 	cd ${SDF3_ROOT} && unzip -o sdf3-140724.zip
 	cd ${SDF3_ROOT}/sdf3/ && make
+
+${SDF3_CS_BENCHMARK} : sdfg_designflow_case_study.zip
+	mkdir -p $@
+	cp $< $@/
+	cd $@ && unzip $<
 
 ${SDF3_MEM_BENCHMARK} : sdfg_buffersizing.zip
 	mkdir -p $@

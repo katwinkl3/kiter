@@ -39,6 +39,9 @@ script/
 sdf3-140724.zip
 sdf3/
 sdf3mem/
+sdf3cs/
+sdfg_designflow_case_study.zip
+
 # result
 /*.log
 
