@@ -1,0 +1,215 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Name       : Scheduling 
+%% Definition : Scheduling drawing extension
+%% Version    : 0.1
+%% Author     : Bodman
+
+%% USAGE 
+
+%% \begin{scheduling}{TASK_COUNT}{TIME_RANGE}{SCALE}{TICK}
+%% \addperiodictask{INDEX}{NAME}{DURATION}{START}{OMEGA}{SUP OCC}
+%% \end{scheduling}      
+
+%% in periodic task name, some functions could be used :
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\RequirePackage{calc}
+\RequirePackage{tikz}
+\usetikzlibrary{backgrounds,calc,math}
+\RequirePackage{fp}
+\typeout{------------------------------------------------------------------}
+\typeout{-------------------- Scheduling package ...-----------------------}
+\typeout{------------------------------------------------------------------}
+\typeout{------------------ My pgf version is: \pgfversion -------------------------}
+\typeout{------------------------------------------------------------------}
+
+\definecolor{executionColor}{rgb}{0.60, 1, 0.60}
+\definecolor{executionFictiveColor}{rgb}{1, 0.5, 0}
+
+\@ifundefined{tikzset}{%
+\typeout{Oh Dear .. i'm in trouble with you configuration...}
+\newcounter{stepdraw}
+\newenvironment{scheduling}[4]{
+\centering\textbf{Scheduling package failed}
+}{%
+}
+\newcommand{\taskname}[2]{}
+\newcommand{\addperiodictask}[6]{}
+\newcommand{\addperiodicaltask}[5]{}
+
+}{%
+\def\ressource#1#2{  #2/\schedscale  - #1/\schedscale  + 0.5  /\schedscale } 
+\def\aboveSched{  \rcount/\schedscale + 0.5  /\schedscale }            
+\def\belowSched{  - 0.5  /\schedscale } 
+     % \r (ressource) : Define vertical node position 
+
+\newcommand{\timerangeoffset}[2]{
+\timerangescale{#1} + \timerangescale{#2} / 2
+}
+
+\newcommand{\timerangescale}[1]{
+#1cm / \schedscale
+}
+
+
+\newcounter{taskcount}
+
+
+\def\heigthratio{1}
+\def\boxheigth{1cm*\heigthratio/\schedscale}
+
+\def\mainsheduling{
+
+% drawing set (OK)
+\tikzset{
+    whiteblock/.style={rectangle,rounded corners,draw=black, line width = 0,top color=executionColor!0, bottom color=executionColor!30, inner sep=0, minimum height=\boxheigth, text centered},
+    block/.style={rectangle,rounded corners,draw=black, line width = 0,top color=executionColor!30, bottom color=executionColor, inner sep=0, minimum height=\boxheigth, text centered},
+    blockfictif/.style={rectangle,dotted,rounded corners,draw=black, line width = 0,top color=white, bottom color=executionFictiveColor!50, inner sep=0, minimum height=\boxheigth, text centered},
+    blank/.style={ inner sep=0, minimum size=\boxheigth, line width = 0},
+    premier/.style={block,top color=executionColor!30, bottom color=executionColor, thick},
+    suivant/.style={block,top color=executionColor!05, bottom color=executionColor!50}
+}  
+
+% grid (OK)
+\draw[step=1/\schedscale,help lines] (0,0) grid (\timerangescale{\schedsize} ,\rcount/\schedscale);
+ 	% Main axis
+        \draw (0, 0) -- (\timerangescale{\schedsize}, 0);
+        % values
+        \ifnum\schedtick>0
+        \foreach \x in {0,\schedtick,...,\schedsize} {
+            \node at (\timerangescale{\x}, -1em) {\x};
+        }
+        \fi
+	% ticks
+        \ifnum\schedtick>0
+        \foreach \x in {0,\schedtick,...,\schedsize} {
+            \draw (\timerangescale{\x}, 2pt) -- (\timerangescale{\x}, -2pt);
+        }
+        \fi
+\def\tasklabelshift{-.5}
+\tiny % keep it for the moment ( TODO : change to font dep to boxheight)
+}
+
+
+%%%%%% SCHEDULING ENVIRONNEMENT %%%%%%
+\newenvironment{scheduling}[4]{%\scheduling{taskcount}{timerange}{scale}
+  \begin{tikzpicture}[node distance=0cm, auto]%,background rectangle/.style={fill=black!10}, show background rectangle
+    \def\rcount{#1}% Task/Row     count
+    \def\schedsize{#2}% Time/Columns count
+    \def\schedscale{#3}% ratio/scale
+    \def\schedtick{#4}% ratio/scale
+    \mainsheduling% Call main scheduling function 
+}{%
+  \end{tikzpicture}% close tikz open by mainscheduling function
+}
+
+
+\newcounter{exec}
+\newcounter{tmpcocc}     
+
+\newcommand{\smalltimeset}[4]{%
+ \def\timesetname{#2} 
+ \def\timesetpos{#1}
+ \def\mytimesetpos{\timesetpos/\schedscale} 
+ \def\uppos{\ressource{#3}{\rcount}}
+ \def\lowpos{\ressource{#4}{\rcount}} 
+ \def\upperpos{\ressource{0}{\rcount}}
+ \def\lowerpos{\ressource{\rcount}{\rcount}} 
+
+ \node[blank,minimum width=1cm] at  (\mytimesetpos,\upperpos) (tag) {\timesetname};
+\draw[line width=2pt] (\mytimesetpos,\uppos - 0.5  /\schedscale) -- (\mytimesetpos, \lowpos- 0.5  /\schedscale);
+}
+
+\newcommand{\timeset}[2]{%
+ \def\timesetname{#2} 
+ \def\timesetpos{#1}
+ \def\mytimesetpos{\timesetpos/\schedscale} 
+ \def\upperpos{\ressource{0}{\rcount}}
+ \def\lowerpos{\ressource{\rcount}{\rcount}} 
+
+ \node[blank,minimum width=1cm] at  (\mytimesetpos,\upperpos) (tag) {\timesetname};
+\draw[line width=2pt] (\mytimesetpos,\upperpos - 0.5  /\schedscale) -- (\mytimesetpos, \lowerpos- 0.5  /\schedscale);
+}
+
+\newcommand{\taskname}[3][]{ % \taskname{index}{name}
+ \def\tname{#3} 
+ \def\tcount{#2}
+ \def\tval{\ressource{\tcount}{\rcount}} 
+ \node[blank,minimum width=1cm,#1] at  (\tasklabelshift,\tval) (tag) {\tname};
+}
+
+
+
+\newcommand{\addexecution}[5][block]{% \addexecution{name}{taskcount}{lenght}{start}
+
+ \def\tname{#3} 
+ \def\tcount{#2} 
+ \def\tlen{#4} 
+ \def\tstart{#5cm} 
+% \def\mystart{#4cm}
+  % Add 1 task to task counter
+  \def\tval{\ressource{\tcount}{\rcount}} 
+
+  % Add task executions
+    %\def\mystart{\timerangeoffset{\tstart/\schedscale}{\tlen}} 
+    \def\mystart{\timerangeoffset{\tstart/\schedscale + 0 * 0}{\tlen}} 
+    \node[#1, minimum width=\timerangescale{\tlen}] at (\mystart, \tval)  (exec) {\tname};
+ 
+} 
+
+\newcommand{\schedCol}[1]{ 
+ \def\tstart{#1cm}  
+ \def\mystart{\timerangeoffset{\tstart/\schedscale + 0 * 0}{0}} 
+\draw[color=black,line width=1pt,] (\mystart,\aboveSched) -- (\mystart,\belowSched);
+}
+
+\newcommand{\schedRule}[4][]{ 
+ \def\tstart{#2cm}  
+ \def\tend{#3cm}  
+ \def\mystart{\timerangeoffset{\tstart/\schedscale + 0 * 0}{0}} 
+ \def\myend{\timerangeoffset{\tend/\schedscale + 0 * 0}{0}} 
+ \draw[color=black,line width=0.5pt] (\mystart,\aboveSched) edge[<->,#1] node {#4} (\myend,\aboveSched);
+}
+
+\newcommand{\schedDownRule}[4][]{ 
+ \def\tstart{#2cm}  
+ \def\tend{#3cm}  
+ \def\mystart{\timerangeoffset{\tstart/\schedscale + 0 * 0}{0}} 
+ \def\myend{\timerangeoffset{\tend/\schedscale + 0 * 0}{0}} 
+ \draw[color=black,line width=0.5pt] (\mystart,\belowSched) edge[<->,below,#1] node {#4} (\myend,\belowSched);
+}
+
+
+\newcommand{\addperiodictask}[7][block]{% \addperiodictask[block]{name}{taskcount}{lenght}{start}{omega}{occurences}
+
+ \def\tname{#3} 
+ \def\tcount{#2} 
+ \def\tlen{#4} 
+ \def\tstart{#5cm} 
+ \def\tomega{#6} 
+ \def\tocc{#7} 
+ \def\cocc{ERROR}
+  % Add 1 task to task counter
+  \def\tval{\ressource{\tcount}{\rcount}} 
+
+  % Add task definition
+  %\node[blank,minimum width=1cm] at  (-0.5,\tval) (tag) {\tname};
+
+  % Add task executions
+  \def\maxexec{\schedsize }
+  \foreach \x in {0,...,\tocc} {
+    \setcounter{tmpcocc}{\x}
+    \addtocounter{tmpcocc}{1}
+    \def\cocc{\arabic{tmpcocc}}
+    \def\mystart{\timerangeoffset{\tstart/\schedscale + \tomega * \x}{\tlen}} 
+    \node[#1, minimum width=\timerangescale{\tlen}] at (\mystart, \tval)  (exec) {\tname};
+  }
+
+} 
+
+
+
+}
