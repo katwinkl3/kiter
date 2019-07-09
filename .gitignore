@@ -32,12 +32,13 @@
 \#*\#
 
 # sdf3
-sdf3bench
+sdf3bench/
+sdfg_buffersizing.zip
 sdfg_throughput.zip
 script/
 sdf3-140724.zip
 sdf3/
-
+sdf3mem/
 # result
 /*.log
 
