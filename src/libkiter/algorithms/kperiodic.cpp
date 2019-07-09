@@ -48,23 +48,17 @@ std::string cc2string  (models::Dataflow* const dataflow,std::set<Edge>* cc) {
 
 }
 
-
-void print_function    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT res ) {
-
+std::string print_schedule (models::EventGraph* eg, models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT res ) {
+	std::ostringstream returnStream;
 
     TIME_UNIT SCHEDULING_SIZE = 26;
-    //STEP 1 - Generate Event Graph
-    models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
-
-    std::cout << eg->printXML();
-    std::cout << eg->printTikz();
 
     eg->computeStartingTime (res);
     TIME_UNIT omega = 1 / res ;
-    std::cout << "\\begin{scheduling}{" << dataflow->getVerticesCount() <<  "}{" << SCHEDULING_SIZE <<  "}{3.2}{5}" << std::endl;
+    returnStream << "\\begin{scheduling}{" << dataflow->getVerticesCount() <<  "}{" << SCHEDULING_SIZE <<  "}{3.2}{5}" << std::endl;
 
     {ForEachVertex(dataflow,v) {
-        std::cout << "\\taskname{"  << dataflow->getVertexId(v) <<  "}{"  << dataflow->getVertexName(v) <<  "}" << "% ki=" << kvector[v] << std::endl;
+    	returnStream << "\\taskname{"  << dataflow->getVertexId(v) <<  "}{"  << dataflow->getVertexName(v) <<  "}" << "% ki=" << kvector[v] << std::endl;
     }}
 
     {ForEachEvent(eg,e) {
@@ -75,7 +69,7 @@ void print_function    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC
         Vertex v = dataflow->getVertexById(ti);
         TIME_UNIT duration = dataflow->getVertexDuration(v,tp);
         if (start + duration <= SCHEDULING_SIZE){
-            std::cout << "\\addexecution[premier]{"  << ti <<  "}{$"  << dataflow->getVertexName(v) <<  "_"  << tp <<  "$}{"  << duration <<  "}{"  << start <<  "}" << std::endl;
+        	returnStream << "\\addexecution[premier]{"  << ti <<  "}{$"  << dataflow->getVertexName(v) <<  "_"  << tp <<  "$}{"  << duration <<  "}{"  << start <<  "}" << std::endl;
         }
     }}
 
@@ -90,14 +84,26 @@ void print_function    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC
         TIME_UNIT iteration = 0;
         while ((start + period * (iteration + 1) + duration) <= SCHEDULING_SIZE) {
             iteration += 1;
-            //std::cout << "\\addexecution[suivant]{"  << ti <<  "}{$"  << dataflow->getVertexName(v) <<  "_"  << tp <<  "$}{"  << duration <<  "}{"  << start + period * iteration <<  "}" << std::endl;
+            //returnStream << "\\addexecution[suivant]{"  << ti <<  "}{$"  << dataflow->getVertexName(v) <<  "_"  << tp <<  "$}{"  << duration <<  "}{"  << start + period * iteration <<  "}" << std::endl;
         }
         if (iteration > 0) {
-            std::cout << "\\addperiodictask[suivant]{"  << ti <<  "}{$"  << dataflow->getVertexName(v) <<  "_"  << tp <<  "$}{"  << duration <<  "}{"  << start + period <<  "}{"  << period  <<  "}{"  << iteration - 1 <<   "}" << std::endl;
+        	returnStream << "\\addperiodictask[suivant]{"  << ti <<  "}{$"  << dataflow->getVertexName(v) <<  "_"  << tp <<  "$}{"  << duration <<  "}{"  << start + period <<  "}{"  << period  <<  "}{"  << iteration - 1 <<   "}" << std::endl;
         }
     }}
 
-    std::cout << "\\end{scheduling}"  << std::endl;
+    returnStream << "\\end{scheduling}"  << std::endl;
+    return returnStream.str();
+}
+void print_function    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT res , bool printXML = false, bool printTikz = false , bool printSchedule = false ) {
+
+
+    //STEP 1 - Generate Event Graph
+    models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
+
+    if (printXML)      std::cout << eg->printXML();
+    if (printTikz)     std::cout << eg->printTikz();
+    if (printSchedule) std::cout << print_schedule(eg,dataflow,kvector,res);
+
 }
 void algorithms::print_kperiodic_scheduling    (models::Dataflow* const  dataflow, parameters_list_t param_list) {
 
@@ -115,7 +121,7 @@ void algorithms::print_kperiodic_scheduling    (models::Dataflow* const  dataflo
         }
     }}
     std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
-    print_function    ( dataflow, kvector , result.first );
+    print_function    ( dataflow, kvector , result.first , true, true, true);
     VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
 
     if (result.second.size() != 0) {
@@ -125,7 +131,7 @@ void algorithms::print_kperiodic_scheduling    (models::Dataflow* const  dataflo
             iteration_count++;
             updateVectorWithLocalNi(dataflow,&kvector,&(result.second));
             std::pair<TIME_UNIT, std::set<Edge> > resultprime = KSchedule(dataflow,&kvector);
-            print_function    ( dataflow, kvector , resultprime.first );
+            print_function    ( dataflow, kvector , resultprime.first , true, true, true);
             VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(resultprime.second)) <<  "");
             if (sameset(dataflow,&(resultprime.second),&(result.second)))  {
                 VERBOSE_INFO("Critical circuit is the same");
@@ -799,9 +805,12 @@ void algorithms::compute_2Kperiodic_throughput            (models::Dataflow* con
 }
 
 
-void algorithms::compute_1Kperiodic_throughput            (models::Dataflow* const  dataflow, parameters_list_t) {
+void algorithms::compute_1Kperiodic_throughput            (models::Dataflow* const  dataflow, parameters_list_t param_list) {
 
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
+
+    bool printRequired = (param_list.count("print") == 1);
+
 
     // STEP 0.2 - Assert SDF
     std::map<Vertex,EXEC_COUNT> kvector;
@@ -811,9 +820,13 @@ void algorithms::compute_1Kperiodic_throughput            (models::Dataflow* con
 
     std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
 
-    TIME_UNIT res = result.first;
-    std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
-    std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
+    if (printRequired) {
+    	print_function    ( dataflow, kvector , result.first , false,false,true);
+    } else {
+    	TIME_UNIT res = result.first;
+    	std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
+    	std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
+    }
 
 }
 
