@@ -6,10 +6,10 @@
  *
  *
  */
-extern "C" {
+
 #include <libxml2/libxml/tree.h>
 #include <libxml2/libxml/parser.h>
-}
+
 #include <commons/SDF3Wrapper.h>
 #include <commons/commons.h>
 #include <commons/verbose.h>
