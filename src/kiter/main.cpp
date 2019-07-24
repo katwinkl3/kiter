@@ -15,6 +15,7 @@
 #include <models/Dataflow.h>
 #include <printers/stdout.h>
 #include <algorithms/kperiodic.h>
+#include <algorithms/software_noc.h>
 #include <algorithms/nperiodic.h>
 #include <algorithms/degroote.h>
 #include <algorithms/symbolicExecution.h>
@@ -63,9 +64,10 @@ std::vector<algo_t> algorithmslist =               {
 		    algorithms::symbolic_execution},
 		      { "Packet"                       , "Execute task in ASAP fashion and print out the scheduling.",
 		    algorithms::packet_list},
+		      { "SoftwareControlledNoC"                       , "Perform NoC scheduling after deciding task mapping and routing.",
+		    algorithms::software_noc},
 		      { "SymbolicExecutionWP"                       , "Execute task in ASAP fashion and print out the scheduling.",
 		    algorithms::symbolic_execution_with_packets}
-
                     };
 
  
