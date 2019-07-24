@@ -5,7 +5,7 @@
  *      Author: toky
  */
 
-
+#include <models/NoC.h>
 #include <vector>
 #include <printers/stdout.h>
 #include <commons/verbose.h>
@@ -74,11 +74,23 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
         	std::cout << " out:" << to->getEdgeName(e)  << "[" << to->getEdgeIn(e) << "]" << std::endl;
         }}
     }}
-/*
+
+
+    NoC noc (4,4,1);
+    auto list = noc.get_route(0,15);
+
+    for (auto e : list) {
+    	std::cout << e << " --> " ;
+    }
+
+	std::cout << std::endl;
+
+    /*
     std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
 */
 
  }
+
 
 
 
