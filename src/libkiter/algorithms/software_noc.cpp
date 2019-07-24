@@ -18,23 +18,67 @@
 void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list_t) {
 
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
-    VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+   // VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
 
     // STEP 0.2 - Assert SDF
-    std::map<Vertex,EXEC_COUNT> kvector;
+    models::Dataflow* to = new models::Dataflow(*dataflow);
+    auto c = to->getFirstEdge();
+
+    auto source = to->getEdgeSource(c);
+    auto target = to->getEdgeTarget(c);
+
+
+    auto inrate = to->getEdgeIn(c);
+    auto outrate = to->getEdgeOut(c);
+
+    to->removeEdge(to->getFirstEdge());
+    auto middle = to->addVertex();
+    auto e1 = to->addEdge(source, middle);
+    auto e2 = to->addEdge(middle, target);
+    to->setEdgeInPhases(e1,{inrate});
+    to->setEdgeOutPhases(e2,{outrate});
+
+    to->setEdgeOutPhases(e1,{1});
+    to->setEdgeInPhases(e2,{1});
+
+
+    to->setName("Spectrum!!!");
+
+
+	std::cout << " ================ " <<  dataflow->getName() <<  " ===================== " << std::endl;
+
+
+	// Note: getEdgeOut and getEdgeIn are Output and input Rates of a buffer
     {ForEachVertex(dataflow,t) {
-        kvector[t] = dataflow->getNi(t);
+    	std::cout << " vertex:" << dataflow->getVertexName(t) << ":" << dataflow->getVertexId(t) << std::endl;
+        {ForInputEdges(dataflow,t,e) {
+        	std::cout << " in:" << dataflow->getEdgeName(e) << "[" << dataflow->getEdgeOut(e) << "]" << std::endl;
+        }}
+        {ForOutputEdges(dataflow,t,e) {
+        	std::cout << " out:" << dataflow->getEdgeName(e)  << "[" << dataflow->getEdgeIn(e) << "]" << std::endl;
+        }}
     }}
 
+
+	std::cout << " ================ " <<  to->getName() <<  " ===================== " << std::endl;
+
+
+	// Note: getEdgeOut and getEdgeIn are Output and input Rates of a buffer
+    {ForEachVertex(to,t) {
+    	std::cout << " vertex:" << to->getVertexName(t) << ":" << to->getVertexId(t) << std::endl;
+        {ForInputEdges(to,t,e) {
+        	std::cout << " in:" << to->getEdgeName(e) << "[" << to->getEdgeOut(e) << "]" << std::endl;
+        }}
+        {ForOutputEdges(to,t,e) {
+        	std::cout << " out:" << to->getEdgeName(e)  << "[" << to->getEdgeIn(e) << "]" << std::endl;
+        }}
+    }}
 /*
     std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
 */
 
-    TIME_UNIT res = 100;//result.first;
-    std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
-    std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
-}
+ }
 
 
 
