@@ -14,6 +14,7 @@
 #include <algorithms/normalization.h>
 #include <algorithms/software_noc.h>
 #include <algorithms/repetition_vector.h>
+#include <algorithms/kperiodic.h>
 
 void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list_t) {
 
@@ -23,7 +24,11 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
     // STEP 0.2 - Assert SDF
     models::Dataflow* to = new models::Dataflow(*dataflow);
+
+	algorithms::compute_Kperiodic_throughput    (dataflow, {}  );
+
     auto c = to->getFirstEdge();
+	auto oldid = to->getEdgeId(c);
 
     auto source = to->getEdgeSource(c);
     auto target = to->getEdgeTarget(c);
@@ -34,7 +39,7 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
     to->removeEdge(to->getFirstEdge());
     auto middle = to->addVertex();
-    auto e1 = to->addEdge(source, middle);
+    auto e1 = to->addEdge(source, middle,oldid);
     auto e2 = to->addEdge(middle, target);
     to->setEdgeInPhases(e1,{inrate});
     to->setEdgeOutPhases(e2,{outrate});
@@ -42,6 +47,17 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
     to->setEdgeOutPhases(e1,{1});
     to->setEdgeInPhases(e2,{1});
 
+    to->setEdgeInputPortName(e1,"a");
+    to->setEdgeOutputPortName(e1,"b");
+    to->setEdgeInputPortName(e2,"c");
+    to->setEdgeOutputPortName(e2,"d");
+    to->setTokenSize(e1,1);
+    to->setPreload(e1,0);
+    to->setTokenSize(e2,1);
+    to->setPreload(e2,0);
+    to->setReentrancyFactor(middle,1);
+
+    to->setVertexName(middle,"middle");
 
     to->setName("Spectrum!!!");
 
@@ -68,10 +84,10 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
     {ForEachVertex(to,t) {
     	std::cout << " vertex:" << to->getVertexName(t) << ":" << to->getVertexId(t) << std::endl;
         {ForInputEdges(to,t,e) {
-        	std::cout << " in:" << to->getEdgeName(e) << "[" << to->getEdgeOut(e) << "]" << std::endl;
+        	std::cout << " in:" << to->getEdgeName(e) << "[" << to->getEdgeOut(e) << "]"  << to->getEdgeId(e) << std::endl;
         }}
         {ForOutputEdges(to,t,e) {
-        	std::cout << " out:" << to->getEdgeName(e)  << "[" << to->getEdgeIn(e) << "]" << std::endl;
+        	std::cout << " out:" << to->getEdgeName(e)  << "[" << to->getEdgeIn(e) << "]"  << to->getEdgeId(e) << std::endl;
         }}
     }}
 
@@ -84,11 +100,13 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
     }
 
 	std::cout << std::endl;
+	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 
+	// To fix
+	// algorithms::compute_Kperiodic_throughput    (to, {}  );
     /*
     std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
 */
-
  }
 
 
