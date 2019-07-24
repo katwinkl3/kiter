@@ -27,37 +27,39 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
 	algorithms::compute_Kperiodic_throughput    (dataflow, {}  );
 
+	// We store infos about edge to be deleted
     auto c = to->getFirstEdge();
-	auto oldid = to->getEdgeId(c);
-
     auto source = to->getEdgeSource(c);
     auto target = to->getEdgeTarget(c);
-
-
     auto inrate = to->getEdgeIn(c);
     auto outrate = to->getEdgeOut(c);
+    auto preload = to->getPreload(c);  // preload is M0
 
-    to->removeEdge(to->getFirstEdge());
+    // we delete
+    to->removeEdge(c);
+
+
+
+    // we create a new vertex "middle"
     auto middle = to->addVertex();
-    auto e1 = to->addEdge(source, middle,oldid);
-    auto e2 = to->addEdge(middle, target);
-    to->setEdgeInPhases(e1,{inrate});
-    to->setEdgeOutPhases(e2,{outrate});
-
-    to->setEdgeOutPhases(e1,{1});
-    to->setEdgeInPhases(e2,{1});
-
-    to->setEdgeInputPortName(e1,"a");
-    to->setEdgeOutputPortName(e1,"b");
-    to->setEdgeInputPortName(e2,"c");
-    to->setEdgeOutputPortName(e2,"d");
-    to->setTokenSize(e1,1);
-    to->setPreload(e1,0);
-    to->setTokenSize(e2,1);
-    to->setPreload(e2,0);
-    to->setReentrancyFactor(middle,1);
-
     to->setVertexName(middle,"middle");
+    to->setPhasesQuantity(middle,1); // number of state for the actor, only one in SDF
+    to->setVertexDuration(middle,{100000}); // is specify for every state , only one for SDF.
+    //to->setReentrancyFactor(middle,1);
+
+
+    // we create a new edge between source and middle,
+    auto e1 = to->addEdge(source, middle);
+    to->setEdgeInPhases(e1,{inrate});  // we specify the production rates for the buffer
+    to->setEdgeOutPhases(e1,{1}); // and the consumption rate (as many rates as states for the associated task)
+
+    to->setPreload(e1,preload);  // preload is M0
+
+
+    auto e2 = to->addEdge(middle, target);
+    to->setEdgeOutPhases(e2,{outrate});
+    to->setEdgeInPhases(e2,{1});
+    to->setPreload(e2,0);  // preload is M0
 
     to->setName("Spectrum!!!");
 
@@ -103,7 +105,7 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 
 	// To fix
-	// algorithms::compute_Kperiodic_throughput    (to, {}  );
+	 algorithms::compute_Kperiodic_throughput    (to, {}  );
     /*
     std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
 */
