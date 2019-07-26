@@ -10,11 +10,14 @@
 
 
 #include <commons/commons.h>
+#include <string>
+
 namespace models {
 	class Dataflow;
 }
 
 namespace printers {
+std::string GenerateDOT    (models::Dataflow* const  dataflow );
 void printGraph         (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
 void printInfos         (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
 }

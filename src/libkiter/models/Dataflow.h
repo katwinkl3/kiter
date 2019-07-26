@@ -293,12 +293,12 @@ public:
 			auto middle = addVertex();
 
 			std::stringstream ss;
-			ss << "mid_" << source << "," << target << "_" << e;
+			ss << "mid-" << source << "," << target << "-" << e;
 			setVertexName(middle,ss.str());
 
 			setPhasesQuantity(middle,1); // number of state for the actor, only one in SDF
 			setVertexDuration(middle,{1}); // is specify for every state , only one for SDF.
-			//to->setReentrancyFactor(middle,1);
+			setReentrancyFactor(middle,1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
 
 			// we create a new edge between source and middle,
 			auto e1 = addEdge(source_vtx, middle);

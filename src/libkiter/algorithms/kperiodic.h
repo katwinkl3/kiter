@@ -10,6 +10,7 @@
 
 namespace algorithms {
 
+std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> generateKperiodicSchedule    (models::Dataflow* const dataflow , bool verbose) ;
     void print_kperiodic_scheduling    (models::Dataflow* const  dataflow, parameters_list_t);
   void generateKperiodicSelfloop(models::Dataflow * const dataflow , EXEC_COUNT ki, models::EventGraph* g  , Vertex t  );
 

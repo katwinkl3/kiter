@@ -10,7 +10,7 @@
 #include <printers/stdout.h>
 
 
-void printers::printGraph    (models::Dataflow* const  dataflow, parameters_list_t ) {
+std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
 
   std::ostringstream returnStream;
   
@@ -53,7 +53,14 @@ void printers::printGraph    (models::Dataflow* const  dataflow, parameters_list
   
   returnStream <<  "}" << std::endl;
   
-  std::cout << returnStream.str();
+  return returnStream.str();
+
+}
+
+
+void printers::printGraph    (models::Dataflow* const  dataflow, parameters_list_t ) {
+
+  std::cout << printers::GenerateDOT    ( dataflow ) ;
 
 }
 

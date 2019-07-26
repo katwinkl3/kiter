@@ -7,6 +7,7 @@
 
 #include <models/NoC.h>
 #include <vector>
+#include <iostream>
 #include <printers/stdout.h>
 #include <commons/verbose.h>
 #include <models/Dataflow.h>
@@ -24,17 +25,11 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 	algorithms::compute_Kperiodic_throughput(dataflow, {});
 
 	//Original graph
-	std::cout << " ================ " <<  dataflow->getName() <<  " ===================== " << std::endl;
-	// Note: getEdgeOut and getEdgeIn are Output and input Rates of a buffer	    
-	{ForEachVertex(dataflow,t) {
-    		std::cout << " vertex:" << dataflow->getVertexName(t) << ":" << dataflow->getVertexId(t) << std::endl;
-	        {ForInputEdges(dataflow,t,e) {
-        		std::cout << " in:" << dataflow->getEdgeName(e) << "[" << dataflow->getEdgeOut(e) << "]" << std::endl;
-		}}
-		{ForOutputEdges(dataflow,t,e) {
-        		std::cout << " out:" << dataflow->getEdgeName(e)  << "[" << dataflow->getEdgeIn(e) << "]" << std::endl; 
-		}}
-	}}
+	std::string inputdot = printers::GenerateDOT (dataflow);
+	 std::ofstream outfile;
+	 outfile.open("input.dot");
+	 outfile << inputdot;
+	 outfile.close();
 
 	std::cout << " ================ " <<  to->getName() <<  " ===================== EDGE CONTENT" << std::endl;
 	//Store the current edges list first
@@ -48,6 +43,14 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
     	NoC *noc = new NoC(4, 4, 1);
 	for(auto e: edges_list)
 		to->addPathNode(e, noc);
+
+
+	std::string outputdot = printers::GenerateDOT (to);
+
+	 outfile.open("output.dot");
+	 outfile << outputdot;
+	 outfile.close();
+
 	std::cout << " ================ " <<  to->getName() <<  " ===================== " << std::endl;
 
 	// Note: getEdgeOut and getEdgeIn are Output and input Rates of a buffer
@@ -63,9 +66,27 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
 	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 	// To fix: RUN 
-	algorithms::compute_Kperiodic_throughput    (to, {}  );
 
+	auto persched =  algorithms::generateKperiodicSchedule   (to , false) ;
+	std::cout << "Size = "<< persched.size() << std::endl;
 
+	for (auto  key : persched) {
+		auto task = key.first;
+		TIME_UNIT HP =    ( persched[task].first * to->getNi(task) ) / ( persched[task].second.size() *  to->getPhasesQuantity(task)) ;
+		std::cout << "Task " <<  to->getVertexName(task) <<  " : duration=" <<  to->getVertexDuration(task) <<  " period=" <<  persched[task].first << " HP=" << HP << " Ni=" << to->getNi(task)<< " starts=[ ";
+
+		for (auto  skey : persched[key.first].second) {
+
+			std::cout << skey << " " ;
+		}
+		std::cout << "]" << std::endl;
+
+	}
+
+	// outfile.open("output.latex");
+	// outfile <<  generateLatexKperiodicSchedule    (to , false) ;
+
+//	 outfile.close();
 
     //NoC noc (4,4,1);
 /*
