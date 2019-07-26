@@ -17,99 +17,88 @@
 #include <algorithms/kperiodic.h>
 
 void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list_t) {
+	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 
-    VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
-   // VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+	// STEP 0.2 - Assert SDF
+	models::Dataflow* to = new models::Dataflow(*dataflow);
+	algorithms::compute_Kperiodic_throughput(dataflow, {});
 
-
-    // STEP 0.2 - Assert SDF
-    models::Dataflow* to = new models::Dataflow(*dataflow);
-
-	algorithms::compute_Kperiodic_throughput    (dataflow, {}  );
-
-	// We store infos about edge to be deleted
-    auto c = to->getFirstEdge();
-    auto source = to->getEdgeSource(c);
-    auto target = to->getEdgeTarget(c);
-    auto inrate = to->getEdgeIn(c);
-    auto outrate = to->getEdgeOut(c);
-    auto preload = to->getPreload(c);  // preload is M0
-
-    // we delete
-    to->removeEdge(c);
-
-
-
-    // we create a new vertex "middle"
-    auto middle = to->addVertex();
-    to->setVertexName(middle,"middle");
-    to->setPhasesQuantity(middle,1); // number of state for the actor, only one in SDF
-    to->setVertexDuration(middle,{100000}); // is specify for every state , only one for SDF.
-    //to->setReentrancyFactor(middle,1);
-
-
-    // we create a new edge between source and middle,
-    auto e1 = to->addEdge(source, middle);
-    to->setEdgeInPhases(e1,{inrate});  // we specify the production rates for the buffer
-    to->setEdgeOutPhases(e1,{1}); // and the consumption rate (as many rates as states for the associated task)
-
-    to->setPreload(e1,preload);  // preload is M0
-
-
-    auto e2 = to->addEdge(middle, target);
-    to->setEdgeOutPhases(e2,{outrate});
-    to->setEdgeInPhases(e2,{1});
-    to->setPreload(e2,0);  // preload is M0
-
-    to->setName("Spectrum!!!");
-
-
+	//Original graph
 	std::cout << " ================ " <<  dataflow->getName() <<  " ===================== " << std::endl;
+	// Note: getEdgeOut and getEdgeIn are Output and input Rates of a buffer	    
+	{ForEachVertex(dataflow,t) {
+    		std::cout << " vertex:" << dataflow->getVertexName(t) << ":" << dataflow->getVertexId(t) << std::endl;
+	        {ForInputEdges(dataflow,t,e) {
+        		std::cout << " in:" << dataflow->getEdgeName(e) << "[" << dataflow->getEdgeOut(e) << "]" << std::endl;
+		}}
+		{ForOutputEdges(dataflow,t,e) {
+        		std::cout << " out:" << dataflow->getEdgeName(e)  << "[" << dataflow->getEdgeIn(e) << "]" << std::endl; 
+		}}
+	}}
 
+	std::cout << " ================ " <<  to->getName() <<  " ===================== EDGE CONTENT" << std::endl;
+	//Store the current edges list first
+	std::vector<Edge> edges_list;
+	{ForEachEdge(to,e) {
+		std::cout << to->getVertexId(to->getEdgeSource(e)) << "->" << to->getVertexId(to->getEdgeTarget(e)) << ":name:" << to->getEdgeName(e) << "[" << to->getEdgeIn(e) << "]" << "[" << to->getEdgeOut(e) << "]" << to->getEdgeId(e) << std::endl;
+		edges_list.push_back(e);
+	}}
 
-	// Note: getEdgeOut and getEdgeIn are Output and input Rates of a buffer
-    {ForEachVertex(dataflow,t) {
-    	std::cout << " vertex:" << dataflow->getVertexName(t) << ":" << dataflow->getVertexId(t) << std::endl;
-        {ForInputEdges(dataflow,t,e) {
-        	std::cout << " in:" << dataflow->getEdgeName(e) << "[" << dataflow->getEdgeOut(e) << "]" << std::endl;
-        }}
-        {ForOutputEdges(dataflow,t,e) {
-        	std::cout << " out:" << dataflow->getEdgeName(e)  << "[" << dataflow->getEdgeIn(e) << "]" << std::endl;
-        }}
-    }}
-
-
+	//Init NoC and add intermediate nodes
+    	NoC *noc = new NoC(4, 4, 1);
+	for(auto e: edges_list)
+		to->addPathNode(e, noc);
 	std::cout << " ================ " <<  to->getName() <<  " ===================== " << std::endl;
 
-
 	// Note: getEdgeOut and getEdgeIn are Output and input Rates of a buffer
-    {ForEachVertex(to,t) {
-    	std::cout << " vertex:" << to->getVertexName(t) << ":" << to->getVertexId(t) << std::endl;
-        {ForInputEdges(to,t,e) {
-        	std::cout << " in:" << to->getEdgeName(e) << "[" << to->getEdgeOut(e) << "]"  << to->getEdgeId(e) << std::endl;
-        }}
-        {ForOutputEdges(to,t,e) {
-        	std::cout << " out:" << to->getEdgeName(e)  << "[" << to->getEdgeIn(e) << "]"  << to->getEdgeId(e) << std::endl;
-        }}
-    }}
+	{ForEachVertex(to,t) {
+		std::cout << " vertex:" << to->getVertexName(t) << ":" << to->getVertexId(t) << std::endl;
+		{ForInputEdges(to,t,e){						    
+			std::cout << " in:" << to->getEdgeName(e) << "[" << to->getEdgeOut(e) << "]"  << to->getEdgeId(e) << std::endl;
+		}}
+		{ForOutputEdges(to,t,e) {
+			std::cout << " out:" << to->getEdgeName(e)  << "[" << to->getEdgeIn(e) << "]"  << to->getEdgeId(e) << std::endl;
+		}}
+	}}
+
+	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
+	// To fix: RUN 
+	algorithms::compute_Kperiodic_throughput    (to, {}  );
 
 
-    NoC noc (4,4,1);
-    auto list = noc.get_route(0,15);
 
+    //NoC noc (4,4,1);
+/*
+    auto list = noc->get_route(0,15);
     for (auto e : list) {
     	std::cout << e << " --> " ;
     }
-
+	std::cout << "\n";
+    auto list2 = noc->get_route(15,0);
+    for (auto e : list2) {
+    	std::cout << e << " --> " ;
+    }
 	std::cout << std::endl;
-	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
+*/
 
-	// To fix
-	 algorithms::compute_Kperiodic_throughput    (to, {}  );
-    /*
+	    /*
     std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
 */
- }
+
+	//std::cout << " 222222222222 " <<  to->getName() <<  " ===================== EDGE CONTENT" << std::endl;
+/*
+	// Note: getEdgeOut and getEdgeIn are Output and input Rates of a buffer
+    {ForEachEdge(to,e) {
+        	std::cout << to->getVertexId(to->getEdgeSource(e)) << "->" << to->getVertexId(to->getEdgeTarget(e)) << ":name:" << to->getEdgeName(e) << "[" << to->getEdgeOut(e) << "]"  << to->getEdgeId(e) << std::endl;
+
+	to->addPathNode(e, noc);
+	std::cout << "done\n";
+    }}
+*/
+
+
+
+}
 
 
 

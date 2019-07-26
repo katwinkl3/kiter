@@ -21,6 +21,8 @@
 #include <string>
 #include <commons/commons.h>
 #include <commons/verbose.h>
+#include <models/NoC.h>
+#include <sstream>
 
 
 #define TXT_NEW_EDGE_ERROR "NEW_EDGE_ERROR"
@@ -252,6 +254,79 @@ public:
 	inline  unsigned int			getVertexDegree		(const Vertex t)		{return (int) boost::degree(t.v,this->getG());}
 	inline  unsigned int			getVertexInDegree	(const Vertex t)		{return (int) boost::in_degree(t.v,this->getG());}
 	inline  unsigned int			getVertexOutDegree	(const Vertex t)		{return (int) boost::out_degree(t.v,this->getG());}
+
+
+
+	//remove the current edge between nodes
+	//add intermediate nodes based on the path between them	
+	void addPathNode(Edge c, NoC* noc)
+	{
+		// We store infos about edge to be deleted
+		auto source_vtx = getEdgeSource(c);
+		auto target_vtx = getEdgeTarget(c);
+
+		//Find the core index
+		auto source = getVertexId(source_vtx)-1;
+		auto target = getVertexId(target_vtx)-1;
+
+		//Core mapping, modulo scheduling
+		source = source % noc->getMeshSize();
+		target = target % noc->getMeshSize();
+
+		//use the inrate and route of the edges ans use it when creating the edges
+		auto inrate = getEdgeIn(c);
+		auto outrate = getEdgeOut(c);
+		auto preload = getPreload(c);  // preload is M0
+
+		bool flag = true;
+		if (source == target) //ignore this case
+			return;
+
+		// we delete the edge
+		removeEdge(c);
+
+		//for every link in the path, add a corresponding node
+		auto list = noc->get_route(source, target);
+		for (auto e : list) {
+			//std::cout << e << " --> " ;
+			// we create a new vertex "middle"
+			auto middle = addVertex();
+
+			std::stringstream ss;
+			ss << "mid_" << source << "," << target << "_" << e;
+			setVertexName(middle,ss.str());
+
+			setPhasesQuantity(middle,1); // number of state for the actor, only one in SDF
+			setVertexDuration(middle,{1}); // is specify for every state , only one for SDF.
+			//to->setReentrancyFactor(middle,1);
+
+			// we create a new edge between source and middle,
+			auto e1 = addEdge(source_vtx, middle);
+
+			if(flag)
+			{
+				setEdgeInPhases(e1,{inrate});  // we specify the production rates for the buffer
+				flag = false;
+			}
+			else
+			{
+				setEdgeInPhases(e1,{1});
+			}
+
+			setEdgeOutPhases(e1,{1}); // and the consumption rate (as many rates as states for the associated task)
+			setPreload(e1,preload);  // preload is M0
+
+			source_vtx = middle;
+		}
+
+		//find the final edge
+		auto e2 = addEdge(source_vtx, target_vtx);
+		setEdgeOutPhases(e2,{outrate});
+		setEdgeInPhases(e2,{1});
+		setPreload(e2,0);  // preload is M0
+		setName("Spectrum!!!");
+	}
+
 protected:
 	inline  BoostDataflow& 			getG				()						{return this->g;}
 
