@@ -89,7 +89,7 @@ public :
 
 			}
 		}
-		std::cout << "dim=" << XSIZE << "X" << YSIZE << ",edges=" << _vedges.size() << ",medges=" << _medges.size() << std::endl;
+		VERBOSE_INFO( "dim=" << XSIZE << "X" << YSIZE << ",edges=" << _vedges.size() << ",medges=" << _medges.size() );
 	}
 	std::vector<edge>& edges () {
 		return _vedges;
