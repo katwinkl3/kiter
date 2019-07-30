@@ -291,6 +291,7 @@ public :
                 bool            solveWithCoin       ();
                 bool            solveWithCplex      ();
                 bool            solveWithGurobi     ();
+                bool            solveWith           ();
                 void            generateGLPKProblem ();
     			bool			rowIsReach			(const string n);
                 int             getRowCount         ();

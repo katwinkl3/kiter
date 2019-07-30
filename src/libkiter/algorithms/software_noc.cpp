@@ -17,6 +17,78 @@
 #include <algorithms/repetition_vector.h>
 #include <algorithms/kperiodic.h>
 
+
+	//remove the current edge between nodes
+	//add intermediate nodes based on the path between them
+void addPathNode(models::Dataflow* d, Edge c, NoC* noc)
+	{
+		// We store infos about edge to be deleted
+		auto source_vtx = d->getEdgeSource(c);
+		auto target_vtx = d->getEdgeTarget(c);
+
+		//Find the core index
+		auto source = d->getVertexId(source_vtx)-1;
+		auto target = d->getVertexId(target_vtx)-1;
+
+		//Core mapping, modulo scheduling
+		source = source % noc->getMeshSize();
+		target = target % noc->getMeshSize();
+
+		//use the inrate and route of the edges ans use it when creating the edges
+		auto inrate = d->getEdgeIn(c);
+		auto outrate = d->getEdgeOut(c);
+		auto preload = d->getPreload(c);  // preload is M0
+
+		bool flag = true;
+		if (source == target) //ignore this case
+			return;
+
+		// we delete the edge
+		d->removeEdge(c);
+
+		//for every link in the path, add a corresponding node
+		auto list = noc->get_route(source, target);
+		for (auto e : list) {
+			//std::cout << e << " --> " ;
+			// we create a new vertex "middle"
+			auto middle = d->addVertex();
+
+			std::stringstream ss;
+			ss << "mid-" << source << "," << target << "-" << e;
+			d->setVertexName(middle,ss.str());
+
+			d->setPhasesQuantity(middle,1); // number of state for the actor, only one in SDF
+			d->setVertexDuration(middle,{1}); // is specify for every state , only one for SDF.
+			d->setReentrancyFactor(middle,1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
+
+			// we create a new edge between source and middle,
+			auto e1 = d->addEdge(source_vtx, middle);
+
+			if(flag)
+			{
+				d->setEdgeInPhases(e1,{inrate});  // we specify the production rates for the buffer
+				flag = false;
+			}
+			else
+			{
+				d->setEdgeInPhases(e1,{1});
+			}
+
+			d->setEdgeOutPhases(e1,{1}); // and the consumption rate (as many rates as states for the associated task)
+			d->setPreload(e1,preload);  // preload is M0
+
+			source_vtx = middle;
+		}
+
+		//find the final edge
+		auto e2 = d->addEdge(source_vtx, target_vtx);
+		d->setEdgeOutPhases(e2,{outrate});
+		d->setEdgeInPhases(e2,{1});
+		d->setPreload(e2,0);  // preload is M0
+
+	}
+
+
 void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list_t param_list) {
 
 
@@ -47,9 +119,9 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
 	//Init NoC and add intermediate nodes
     	NoC *noc = new NoC(4, 4, 1);
-	for(auto e: edges_list)
-		to->addPathNode(e, noc);
-
+	for(auto e: edges_list) {
+		addPathNode(to, e, noc);
+	}
 
 	std::string outputdot = printers::GenerateDOT (to);
 
@@ -73,7 +145,7 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 	// To fix: RUN 
 
-	auto persched =  algorithms::generateKperiodicSchedule   (to , false) ;
+	std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>>  persched =  algorithms::generateKperiodicSchedule   (to , false) ;
 	std::cerr << "Size = "<< persched.size() << std::endl;
 
 	for (auto  key : persched) {

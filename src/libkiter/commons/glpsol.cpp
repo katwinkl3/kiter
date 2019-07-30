@@ -401,6 +401,21 @@ void GLPSol::writeMPSProblem() { // TODO : HUGE BUG FROM GENERRATION TO FIX
 }
 
 
+bool            GLPSol::solveWith      () {
+#ifdef __GUROBILIB__
+	return solveWithGurobi();
+#else
+	#ifdef __CPLEXLIB__
+		return solveWithCplex();
+	#else
+		#ifdef __COINLIB__
+			return solveWithCoin();
+		#else
+			return solve();
+		#endif
+	#endif
+#endif
+}
 bool            GLPSol::solveWithGurobi      () {
 #ifdef __GUROBILIB__
 	generateGLPKProblem();

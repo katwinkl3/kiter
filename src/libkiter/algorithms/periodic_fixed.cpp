@@ -791,7 +791,7 @@ void algorithms::compute_periodic_fixed_memory   (models::Dataflow* const  dataf
     // bool sol = g.solve(ilp_params);
     VERBOSE_INFO("[CSDF K-periodic with fixed start times]  Start");
 
-    bool sol = g.solveWithCoin();
+    bool sol = g.solveWith();
 
     VERBOSE_INFO("[CSDF K-periodic with fixed start times]  Solved");
 

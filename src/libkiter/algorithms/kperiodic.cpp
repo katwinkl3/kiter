@@ -234,7 +234,6 @@ models::EventGraph* algorithms::generateKPeriodicEventGraph(models::Dataflow * c
     // DEFINITION DES CONTRAINTES DE PRECEDENCES
     //******************************************************************
     {ForEachChannel(dataflow,c) {
-        VERBOSE_INFO("one more edge ... ");
         generateKPeriodicConstraint(dataflow , kValues,   g ,  c);
     }}
 

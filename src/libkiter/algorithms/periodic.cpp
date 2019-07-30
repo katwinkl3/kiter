@@ -481,7 +481,7 @@ void algorithms::compute_csdf_1periodic_memory   (models::Dataflow* const  dataf
 		g.writeMPSProblem();
 		return;
 	}
-	bool sol = g.solveWithCoin();
+	bool sol = g.solveWith();
 
 	VERBOSE_INFO("[CSDF K-periodic]  Solved");
 

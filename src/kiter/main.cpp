@@ -14,11 +14,14 @@
 #include <models/EventGraph.h>
 #include <models/Dataflow.h>
 #include <printers/stdout.h>
+#include <algorithms/periodic.h>
+#include <algorithms/periodic_fixed.h>
 #include <algorithms/kperiodic.h>
 #include <algorithms/software_noc.h>
 #include <algorithms/nperiodic.h>
 #include <algorithms/degroote.h>
 #include <algorithms/symbolicExecution.h>
+#include <algorithms/backpressure.h>
 
 struct algo_t {
 	std::string name;
@@ -34,7 +37,7 @@ inline double tock() {
     return diff;
 }
 //!< List of algorithms
-//#define ALGORITHMS_COUNT 10
+
 
 std::vector<algo_t> algorithmslist =               {
 
@@ -67,8 +70,37 @@ std::vector<algo_t> algorithmslist =               {
 		      { "SoftwareControlledNoC"                       , "Perform NoC scheduling after deciding task mapping and routing.",
 		    algorithms::software_noc},
 		      { "SymbolicExecutionWP"                       , "Execute task in ASAP fashion and print out the scheduling.",
-		    algorithms::symbolic_execution_with_packets}
-                    };
+		    algorithms::symbolic_execution_with_packets},
+			{ "PeriodicSizing"                  , "Minimal Buffer size estimation by periodic scheduling method.",
+					algorithms::compute_csdf_1periodic_memory} ,
+			{ "BurstSizing"                    , "Minimal Buffer size estimation by periodic scheduling with BURST policy.",
+					algorithms::compute_burst_memory} ,
+			{ "AverageSizing"                  , "Minimal Buffer size estimation by periodic scheduling with AVERAGE policy.",
+					algorithms::compute_average_memory} ,
+			{ "MinMaxSizing"                  , "Minimal Buffer size estimation by periodic scheduling with MINMAX policy.",
+					algorithms::compute_minmax_memory} ,
+			{ "WiggersSizing"                  , "Minimal Buffer size estimation by periodic scheduling with Wiggers policy.",
+					algorithms::compute_wiggers_memory} ,
+			{ "1PeriodicSizing"                  , "Minimal Buffer size estimation by periodic scheduling method.",
+					algorithms::compute_1Periodic_memory} ,
+			{ "NPeriodicSizing"              , "Optimal Sizing evaluation of SDF by using N-Periodic method.",
+					algorithms::compute_NPeriodic_memory} ,
+			{ "KPeriodicSizing"              , "Optimal Sizing evaluation of SDF by using K-Periodic method.",
+					algorithms::compute_KPeriodic_memory} ,
+			{ "PrintPeriodic"                   , "Print reduced XML version and DOT definition of the event graph produced by periodic method.",
+					algorithms::print_periodic_eventgraph  },
+			{ "Print2Periodic"                   , "Print reduced XML version and DOT definition of the event graph produced by periodic method.",
+					algorithms::print_2periodic_eventgraph  },
+			{ "Print1Periodic"                   , "Print reduced XML version and DOT definition of the event graph produced by periodic method.",
+					algorithms::print_1periodic_eventgraph  },
+			{ "PrintNPeriodic"                   , "Print reduced XML version and DOT definition of the event graph produced by periodic method.",
+					algorithms::print_Nperiodic_eventgraph  },
+			{ "PrintNKPeriodic"                   , "Print reduced XML version and DOT definition of the event graph produced by periodic method.",
+					algorithms::print_NKperiodic_eventgraph  },
+			{ "BackPressureSizing"              , "Buffer sizing method from Wiggers et al DAC 2007 paper.",
+					algorithms::compute_backpressure_memory_sizing}
+                  
+};
 
  
 
@@ -137,6 +169,29 @@ int main (int argc, char **argv)
     for ( parameters_list_t::iterator it = parameters.begin() ; it != parameters.end() ; it++ ) {
         VERBOSE_INFO("Additionnal parameter found: '" << it->first << "' = '" << it->second << "'");
     }
+
+    // Step 3 - Compute maximum periodic throughput
+
+    TIME_UNIT FREQUENCY = 0;
+
+    if (parameters.find("FREQUENCY") != parameters.end() ) {
+        VERBOSE_ASSERT(parameters.find("FREQUENCY") != parameters.end() , "FREQUENCY is not set, need one." );
+        FREQUENCY = commons::fromString<TIME_UNIT>(parameters["FREQUENCY"]);
+        VERBOSE_ASSERT(FREQUENCY > 0,"Need a postive FREQUENCY, '"<< parameters["FREQUENCY"] << "' is not .");
+    } else {
+
+    if (parameters.find("RATIO") != parameters.end() ) {
+        FREQUENCY = algorithms::optimal_1periodic_throughput(csdf);
+    }
+    }
+
+    if (parameters.find("RATIO") != parameters.end() ) {
+        FREQUENCY = FREQUENCY * commons::fromString<TIME_UNIT>(parameters["RATIO"]);
+    }
+
+    csdf->setPeriod(1.0 / FREQUENCY );
+    VERBOSE_INFO("PERIOD =" << csdf->getPeriod());
+
 
 
     // Step 4 = Apply selected algorithm

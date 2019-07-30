@@ -483,7 +483,7 @@ void algorithms::KPeriodic_memory   (models::Dataflow* const  dataflow,  std::ma
         g.writeMPSProblem();
         return;
     }
-    bool sol = g.solveWithCoin();
+    bool sol = g.solveWith();
 
     VERBOSE_INFO("Solved, gathering results ...");
 
