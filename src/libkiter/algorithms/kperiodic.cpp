@@ -52,26 +52,13 @@ std::string cc2string  (models::Dataflow* const dataflow,std::set<Edge>* cc) {
 std::string print_schedule (models::EventGraph* eg, models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT res ) {
 	std::ostringstream returnStream;
 
-    TIME_UNIT SCHEDULING_SIZE = 26;
 
     eg->computeStartingTime (res);
     TIME_UNIT omega = 1 / res ;
-    returnStream << "\\begin{scheduling}{" << dataflow->getVerticesCount() <<  "}{" << SCHEDULING_SIZE <<  "}{3.2}{5}" << std::endl;
+    returnStream << "\\begin{scheduling}{" << dataflow->getVerticesCount() <<  "}{" << 0 <<  "}{3.2}{5}" << std::endl;
 
     {ForEachVertex(dataflow,v) {
-    	returnStream << "\\taskname{"  << dataflow->getVertexId(v) <<  "}{"  << dataflow->getVertexName(v) <<  "}" << "% ki=" << kvector[v] << std::endl;
-    }}
-
-    {ForEachEvent(eg,e) {
-        models::SchedulingEvent se = eg->getEvent(e);
-        EXEC_COUNT ti = se.getTaskId();
-        EXEC_COUNT tp = se.getTaskPhase();
-        TIME_UNIT start = eg->getStartingTime(e);
-        Vertex v = dataflow->getVertexById(ti);
-        TIME_UNIT duration = dataflow->getVertexDuration(v,tp);
-        if (start + duration <= SCHEDULING_SIZE){
-        	returnStream << "\\addexecution[premier]{"  << ti <<  "}{$"  << dataflow->getVertexName(v) <<  "_"  << tp <<  "$}{"  << duration <<  "}{"  << start <<  "}" << std::endl;
-        }
+    	returnStream << "\\taskname{"  << dataflow->getVertexId(v) <<  "}{"  << dataflow->getVertexName(v) <<  "}" << "% ki=" << kvector[v]   << " Ni=" << dataflow->getNi(v)  << std::endl;
     }}
 
     {ForEachEvent(eg,e) {
@@ -82,14 +69,10 @@ std::string print_schedule (models::EventGraph* eg, models::Dataflow* const  dat
         Vertex v = dataflow->getVertexById(ti);
         TIME_UNIT duration = dataflow->getVertexDuration(v,tp);
         TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
-        TIME_UNIT iteration = 0;
-        while ((start + period * (iteration + 1) + duration) <= SCHEDULING_SIZE) {
-            iteration += 1;
-            //returnStream << "\\addexecution[suivant]{"  << ti <<  "}{$"  << dataflow->getVertexName(v) <<  "_"  << tp <<  "$}{"  << duration <<  "}{"  << start + period * iteration <<  "}" << std::endl;
-        }
-        if (iteration > 0) {
-        	returnStream << "\\addperiodictask[suivant]{"  << ti <<  "}{$"  << dataflow->getVertexName(v) <<  "_"  << tp <<  "$}{"  << duration <<  "}{"  << start + period <<  "}{"  << period  <<  "}{"  << iteration - 1 <<   "}" << std::endl;
-        }
+        //if (start + duration <= SCHEDULING_SIZE){
+        returnStream << kvector[v]  << " *  " << dataflow->getPhasesQuantity(v) <<  " * " <<  omega <<  "/" <<  dataflow->getNi(v)  << std::endl;
+        	returnStream << "\\addexecution[premier]{"  << ti <<  "}{$"  << dataflow->getVertexName(v) <<  "_"  << tp <<  "$}{duration = "  << duration <<  "}{ start="  << start <<  "}{ period="  << period <<  "}"  << std::endl;
+        //}
     }}
 
     returnStream << "\\end{scheduling}"  << std::endl;

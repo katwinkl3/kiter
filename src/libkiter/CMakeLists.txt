@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
  
+FIND_PACKAGE( GLPK   REQUIRED )
+FIND_PACKAGE( GUROBI )
+
 #
 #  ######### COMPILE FLAGS ##########
 #
@@ -51,9 +54,15 @@ SET(LIBKITER_FLAGS "-Wconversion -Wfloat-equal  ${CMAKE_CXX_FLAGS_DEBUG} ")
 
 #          ######### API         ##########
 ADD_LIBRARY			   (libkiter STATIC  ${commons_sources} ${models_sources} ${printers_sources} ${algorithms_sources})
-TARGET_LINK_LIBRARIES  (libkiter rt  ${LIBXML2_LIBRARIES} ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} )
+TARGET_LINK_LIBRARIES  (libkiter rt  ${LIBXML2_LIBRARIES} ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${GLPK_LIBRARIES}  )
 set_property(TARGET libkiter PROPERTY FRAMEWORK ON)
 
+if(GUROBI_FOUND)
+    message(STATUS "GUROBI FOUND")
+    target_include_directories(libkiter PRIVATE ${GUROBI_INCLUDE_DIRS} )
+    TARGET_LINK_LIBRARIES( libkiter ${GUROBI_LIBRARIES} )
+    target_compile_definitions(libkiter PRIVATE __GUROBILIB__=1)
+endif(GUROBI_FOUND)
 
  
 

@@ -18,7 +18,7 @@ std::string add_block ( std::string name , TIME_UNIT start, TIME_UNIT duration, 
 		return returnStream.str();
 }
 
-std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  dataflow, std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> periodic_scheduling , double xscale , double yscale ) {
+std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  dataflow, std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> periodic_scheduling , bool full,  double xscale , double yscale ) {
 
   std::ostringstream returnStream;
 
@@ -66,7 +66,7 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
       for (EXEC_COUNT iter = 0 ; ((starts[0] + period * iter)) < last_execution_end_at ; iter++) {
     	  for (auto  start : starts) {
     		  bool fill = (execution_index >= Ni) ;
-
+    		  if (!full) if (!fill) iter = (EXEC_COUNT) std::round(last_execution_end_at);
     		  returnStream << add_block ( dataflow->getVertexName(t) + std::to_string(execution_index++),
     				  xscale * (start + period * iter),
 					  xscale * (duration),  node_height,   current_task_y_pos,  line_width , fill ) ;

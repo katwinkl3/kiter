@@ -32,7 +32,7 @@ ENDIF()
 #  ######### MODULES PART ##########
 #
 
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/modules/")
 
 
 #  ######### BOOST ##########

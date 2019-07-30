@@ -17,12 +17,18 @@
 #include <algorithms/repetition_vector.h>
 #include <algorithms/kperiodic.h>
 
-void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list_t) {
+void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list_t param_list) {
+
+
+	double xscale  = 1;
+	double yscale = 1;
+	 if (param_list.count("xscale") == 1) xscale = std::stod(param_list["xscale"]);
+	 if (param_list.count("yscale") == 1) yscale = std::stod(param_list["yscale"]);
+
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);
-	algorithms::compute_Kperiodic_throughput(dataflow, {});
 
 	//Original graph
 	std::string inputdot = printers::GenerateDOT (dataflow);
@@ -31,11 +37,11 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 	 outfile << inputdot;
 	 outfile.close();
 
-	std::cout << " ================ " <<  to->getName() <<  " ===================== EDGE CONTENT" << std::endl;
+	std::cerr << " ================ " <<  to->getName() <<  " ===================== EDGE CONTENT" << std::endl;
 	//Store the current edges list first
 	std::vector<Edge> edges_list;
 	{ForEachEdge(to,e) {
-		std::cout << to->getVertexId(to->getEdgeSource(e)) << "->" << to->getVertexId(to->getEdgeTarget(e)) << ":name:" << to->getEdgeName(e) << "[" << to->getEdgeIn(e) << "]" << "[" << to->getEdgeOut(e) << "]" << to->getEdgeId(e) << std::endl;
+		std::cerr << to->getVertexId(to->getEdgeSource(e)) << "->" << to->getVertexId(to->getEdgeTarget(e)) << ":name:" << to->getEdgeName(e) << "[" << to->getEdgeIn(e) << "]" << "[" << to->getEdgeOut(e) << "]" << to->getEdgeId(e) << std::endl;
 		edges_list.push_back(e);
 	}}
 
@@ -51,16 +57,16 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 	 outfile << outputdot;
 	 outfile.close();
 
-	std::cout << " ================ " <<  to->getName() <<  " ===================== " << std::endl;
+	std::cerr << " ================ " <<  to->getName() <<  " ===================== " << std::endl;
 
 	// Note: getEdgeOut and getEdgeIn are Output and input Rates of a buffer
 	{ForEachVertex(to,t) {
-		std::cout << " vertex:" << to->getVertexName(t) << ":" << to->getVertexId(t) << std::endl;
+		std::cerr << " vertex:" << to->getVertexName(t) << ":" << to->getVertexId(t) << std::endl;
 		{ForInputEdges(to,t,e){						    
-			std::cout << " in:" << to->getEdgeName(e) << "[" << to->getEdgeOut(e) << "]"  << to->getEdgeId(e) << std::endl;
+			std::cerr << " in:" << to->getEdgeName(e) << "[" << to->getEdgeOut(e) << "]"  << to->getEdgeId(e) << std::endl;
 		}}
 		{ForOutputEdges(to,t,e) {
-			std::cout << " out:" << to->getEdgeName(e)  << "[" << to->getEdgeIn(e) << "]"  << to->getEdgeId(e) << std::endl;
+			std::cerr << " out:" << to->getEdgeName(e)  << "[" << to->getEdgeIn(e) << "]"  << to->getEdgeId(e) << std::endl;
 		}}
 	}}
 
@@ -68,20 +74,24 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 	// To fix: RUN 
 
 	auto persched =  algorithms::generateKperiodicSchedule   (to , false) ;
-	std::cout << "Size = "<< persched.size() << std::endl;
+	std::cerr << "Size = "<< persched.size() << std::endl;
 
 	for (auto  key : persched) {
 		auto task = key.first;
 		TIME_UNIT HP =    ( persched[task].first * to->getNi(task) ) / ( persched[task].second.size() *  to->getPhasesQuantity(task)) ;
-		std::cout << "Task " <<  to->getVertexName(task) <<  " : duration=" <<  to->getVertexDuration(task) <<  " period=" <<  persched[task].first << " HP=" << HP << " Ni=" << to->getNi(task)<< " starts=[ ";
+		std::cerr << "Task " <<  to->getVertexName(task) <<  " : duration=" <<  to->getVertexDuration(task) <<  " period=" <<  persched[task].first << " HP=" << HP << " Ni=" << to->getNi(task)<< " starts=[ ";
 
 		for (auto  skey : persched[key.first].second) {
 
-			std::cout << skey << " " ;
+			std::cerr << skey << " " ;
 		}
-		std::cout << "]" << std::endl;
+		std::cerr << "]" << std::endl;
 
 	}
+
+
+
+	std::cout <<  printers::PeriodicScheduling2DOT    (to, persched, false,  xscale , yscale);
 
 	// outfile.open("output.latex");
 	// outfile <<  generateLatexKperiodicSchedule    (to , false) ;
