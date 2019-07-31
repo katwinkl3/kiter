@@ -18,10 +18,9 @@
 #include <algorithms/kperiodic.h>
 #include <cstdlib>
 
-
 	//remove the current edge between nodes
 	//add intermediate nodes based on the path between them
-void addPathNode(models::Dataflow* d, Edge c, NoC* noc)
+void addPathNode(models::Dataflow* d, Edge c, NoC* noc,  std::map< unsigned int,std::vector<Vertex> > & returnValue)
 	{
 		// We store infos about edge to be deleted
 		auto source_vtx = d->getEdgeSource(c);
@@ -56,6 +55,7 @@ void addPathNode(models::Dataflow* d, Edge c, NoC* noc)
 
 			std::stringstream ss;
 			ss << "mid-" << source << "," << target << "-" << e;
+			returnValue[(unsigned int)e].push_back(middle);
 			d->setVertexName(middle,ss.str());
 
 			d->setPhasesQuantity(middle,1); // number of state for the actor, only one in SDF
@@ -102,7 +102,6 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);
-	algorithms::compute_Kperiodic_throughput(dataflow, {});
 	std::map< unsigned int, std::vector<Vertex> > conflictEdges;
 
 	int total_conflict = 0;
@@ -124,8 +123,9 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
 	//Init NoC and add intermediate nodes
     	NoC *noc = new NoC(4, 4, 1);
-	for(auto e: edges_list)
-		to->addPathNode(e, noc, conflictEdges);
+	for(auto e: edges_list) {
+		addPathNode(to, e, noc,conflictEdges);
+	}
 
 	std::string outputdot = printers::GenerateDOT (to);
 
@@ -151,22 +151,24 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
 	std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>>  persched =  algorithms::generateKperiodicSchedule   (to , false) ;
 	std::cerr << "Size = "<< persched.size() << std::endl;
-
-
 	TIME_UNIT HP = 0.0;
 	for (auto  key : persched) {
 		auto task = key.first;
-		//TIME_UNIT 
+		//TIME_UNIT
 		HP =    ( persched[task].first * to->getNi(task) ) / ( persched[task].second.size() *  to->getPhasesQuantity(task)) ;
 		std::cout << "Task " <<  to->getVertexName(task) <<  " : duration=" <<  to->getVertexDuration(task) <<  " period=" <<  persched[task].first << " HP=" << HP << " Ni=" << to->getNi(task)<< " starts=[ ";
 
 		for (auto  skey : persched[task].second) {
 
-			std::cerr << skey << " " ;
+			std::cout << skey << " " ;
 		}
-		std::cerr << "]" << std::endl;
+		std::cout << "]" << std::endl;
 
 	}
+
+
+
+	std::cout <<  printers::PeriodicScheduling2DOT    (to, persched, false,  xscale , yscale);
 
 
 	for (auto  key : conflictEdges) {
@@ -220,8 +222,11 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 		}
 	}
 
+
+
 	std::cout << "total_conflict=" << total_conflict << "\n";
-	std::cout <<  printers::PeriodicScheduling2DOT    (to, persched, false,  xscale , yscale);
+
+
 
 	// outfile.open("output.latex");
 	// outfile <<  generateLatexKperiodicSchedule    (to , false) ;
@@ -261,26 +266,28 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
 }
 
+
+
 LARGE_INT algorithms::gcdExtended(LARGE_INT x, LARGE_INT y, LARGE_INT *a, LARGE_INT *b)
-{ 
-    // Base Case 
-    if (x == 0) 
-    { 
-        *a = 0; 
-        *b = 1; 
-        return y; 
-    } 
-  
-    LARGE_INT a1, b1; // To store results of recursive call 
-    LARGE_INT gcd = gcdExtended(y%x, x, &a1, &b1); 
-  
-    // Update x and y using results of recursive 
-    // call 
-    *a = b1 - (y/x) * a1; 
-    *b = a1; 
-  
-    return gcd; 
-} 
+{
+    // Base Case
+    if (x == 0)
+    {
+        *a = 0;
+        *b = 1;
+        return y;
+    }
+
+    LARGE_INT a1, b1; // To store results of recursive call
+    LARGE_INT gcd = gcdExtended(y%x, x, &a1, &b1);
+
+    // Update x and y using results of recursive
+    // call
+    *a = b1 - (y/x) * a1;
+    *b = a1;
+
+    return gcd;
+}
 
 
 bool algorithms::isConflictPresent(LARGE_INT HP, TIME_UNIT si, LARGE_INT ni, TIME_UNIT sj, LARGE_INT nj)
