@@ -11,6 +11,7 @@
 #include <vector>
 #include <numeric>
 #include <iostream>
+#include <sstream>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/properties.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -21,8 +22,6 @@
 #include <string>
 #include <commons/commons.h>
 #include <commons/verbose.h>
-#include <models/NoC.h>
-#include <sstream>
 
 
 #define TXT_NEW_EDGE_ERROR "NEW_EDGE_ERROR"
