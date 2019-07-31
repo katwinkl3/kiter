@@ -259,7 +259,7 @@ public:
 
 	//remove the current edge between nodes
 	//add intermediate nodes based on the path between them	
-	void addPathNode(Edge c, NoC* noc)
+	void addPathNode(Edge c, NoC* noc, std::map< unsigned int, std::vector<Vertex> > & returnValue)
 	{
 		// We store infos about edge to be deleted
 		auto source_vtx = getEdgeSource(c);
@@ -294,6 +294,9 @@ public:
 
 			std::stringstream ss;
 			ss << "mid-" << source << "," << target << "-" << e;
+
+			returnValue[(unsigned int)e].push_back(middle); 
+
 			setVertexName(middle,ss.str());
 
 			setPhasesQuantity(middle,1); // number of state for the actor, only one in SDF

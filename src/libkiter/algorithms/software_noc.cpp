@@ -16,6 +16,7 @@
 #include <algorithms/software_noc.h>
 #include <algorithms/repetition_vector.h>
 #include <algorithms/kperiodic.h>
+#include <cstdlib>
 
 void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list_t) {
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
@@ -23,13 +24,16 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);
 	algorithms::compute_Kperiodic_throughput(dataflow, {});
+	std::map< unsigned int, std::vector<Vertex> > conflictEdges;
+
+	int total_conflict = 0;
 
 	//Original graph
 	std::string inputdot = printers::GenerateDOT (dataflow);
-	 std::ofstream outfile;
-	 outfile.open("input.dot");
-	 outfile << inputdot;
-	 outfile.close();
+	std::ofstream outfile;
+	outfile.open("input.dot");
+	outfile << inputdot;
+	outfile.close();
 
 	std::cout << " ================ " <<  to->getName() <<  " ===================== EDGE CONTENT" << std::endl;
 	//Store the current edges list first
@@ -42,7 +46,7 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 	//Init NoC and add intermediate nodes
     	NoC *noc = new NoC(4, 4, 1);
 	for(auto e: edges_list)
-		to->addPathNode(e, noc);
+		to->addPathNode(e, noc, conflictEdges);
 
 
 	std::string outputdot = printers::GenerateDOT (to);
@@ -70,18 +74,79 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 	auto persched =  algorithms::generateKperiodicSchedule   (to , false) ;
 	std::cout << "Size = "<< persched.size() << std::endl;
 
+
+	TIME_UNIT HP = 0.0;
 	for (auto  key : persched) {
 		auto task = key.first;
-		TIME_UNIT HP =    ( persched[task].first * to->getNi(task) ) / ( persched[task].second.size() *  to->getPhasesQuantity(task)) ;
+		//TIME_UNIT 
+		HP =    ( persched[task].first * to->getNi(task) ) / ( persched[task].second.size() *  to->getPhasesQuantity(task)) ;
 		std::cout << "Task " <<  to->getVertexName(task) <<  " : duration=" <<  to->getVertexDuration(task) <<  " period=" <<  persched[task].first << " HP=" << HP << " Ni=" << to->getNi(task)<< " starts=[ ";
 
-		for (auto  skey : persched[key.first].second) {
+		for (auto  skey : persched[task].second) {
 
 			std::cout << skey << " " ;
 		}
 		std::cout << "]" << std::endl;
 
 	}
+
+
+
+	for (auto  key : conflictEdges) {
+		auto edge_id = key.first;
+		auto mysize = conflictEdges[edge_id].size();
+		if(mysize > 1)
+		{
+			//std::cout << "potential conflict=" << mysize << "\n";
+			for(unsigned int i = 0; i < mysize; i++)
+			{
+				for(unsigned int j = 0; j < mysize; j++)
+				{
+					if (i <= j) //ignore the upper triangle
+						continue;
+					auto taski = conflictEdges[edge_id][i];
+					auto taskj = conflictEdges[edge_id][j];
+					auto ni = to->getNi(taski);
+					auto nj = to->getNi(taskj);
+
+					std::vector<TIME_UNIT> si_vec, sj_vec;
+
+					for (auto  skey : persched[taski].second) {
+						si_vec.push_back(skey);
+					}
+					for (auto  skey : persched[taskj].second) {
+						sj_vec.push_back(skey);
+					}
+
+					for(unsigned int si_i = 0; si_i < si_vec.size(); si_i++)
+					{
+						for(unsigned int sj_i = 0; sj_i < sj_vec.size(); sj_i++)
+						{
+							auto si =  persched[taski].second[si_i];
+							auto sj =  persched[taskj].second[sj_i];
+
+							if( isConflictPresent((LARGE_INT) HP, si, (LARGE_INT) ni, sj, (LARGE_INT) nj) )
+							{
+								std::cout << "conflict between " << to->getVertexName(taski) << " and " << to->getVertexName(taskj) << "\n";
+								total_conflict += 1;
+								break;
+							}
+						}
+					}
+
+					//std::cout << "Task " <<  to->getVertexName(task) <<  " : duration=" <<  to->getVertexDuration(task) << " Ni=" << to->getNi(task)<< " starts=[ ";
+					//for (auto  skey : persched[taski].second) {
+					//	std::cout << skey << " " ;
+					//}
+				}
+			}
+		}
+	}
+
+
+
+	std::cout << "total_conflict=" << total_conflict << "\n";
+
 
 	// outfile.open("output.latex");
 	// outfile <<  generateLatexKperiodicSchedule    (to , false) ;
@@ -121,7 +186,90 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
 }
 
+LARGE_INT algorithms::gcdExtended(LARGE_INT x, LARGE_INT y, LARGE_INT *a, LARGE_INT *b)
+{ 
+    // Base Case 
+    if (x == 0) 
+    { 
+        *a = 0; 
+        *b = 1; 
+        return y; 
+    } 
+  
+    LARGE_INT a1, b1; // To store results of recursive call 
+    LARGE_INT gcd = gcdExtended(y%x, x, &a1, &b1); 
+  
+    // Update x and y using results of recursive 
+    // call 
+    *a = b1 - (y/x) * a1; 
+    *b = a1; 
+  
+    return gcd; 
+} 
 
+
+bool algorithms::isConflictPresent(LARGE_INT HP, TIME_UNIT si, LARGE_INT ni, TIME_UNIT sj, LARGE_INT nj)
+{
+	LARGE_INT temp1, temp2;
+	LARGE_INT cj, ci, soln_j, soln_i; //constant values that need to be found
+
+	LARGE_INT lhs = (LARGE_INT)(si - sj) * ni * nj;
+	LARGE_INT rhs_term1 = HP * ni; //*cj
+	LARGE_INT rhs_term2 = HP * nj; //*ci
+	LARGE_INT rhs_gcd = HP * gcdExtended(myabs(ni), myabs(nj), &temp1, &temp2);
+
+	if(si == sj) //if start time is same conflict
+	{
+		return true;
+	}
+
+	if (myabs(lhs) % rhs_gcd != 0)
+	{
+		//std::cout << "mod is false\n";
+		return false; //No integral solutions exist as the division will yield floating point
+	}
+	else //check if any other solution exists
+	{
+		//first divide by gcd to simplify the equation
+		lhs /= rhs_gcd;
+		rhs_term1 /= rhs_gcd;
+		rhs_term2 /= rhs_gcd;
+
+		//find initial solution (cj, ci) for the equation:  cj*a + ci*b = m
+		//cj*abs(rhs_term1) + ci*abs(rhs_term2) = gcd( abs(rhs_term1), abs(rhs_term2)) = 1
+
+		//original equation is:
+		//cj*abs(rhs_term1) - ci*abs(rhs_term2) = lhs
+		std::cout << "new_gcd=" << gcdExtended(myabs(rhs_term1), myabs(rhs_term2), &cj, &ci) << "\n";
+		//Apart from multiplying by lhs, Value for cj remains as it is in the original equation, while ci needs to be multiplied by (-1)
+		cj = cj * lhs;
+		ci = ci * lhs * (-1);
+
+		unsigned int m = 0;
+		for(; ; m++)
+		{
+			//Value for cj remains as it is in the original equation, while ci needs to be multiplied by (-1)
+			soln_j = cj + m * rhs_term2;
+			soln_i = ci - m * rhs_term1;
+
+			std::cout << "solution is ci=" << soln_i << ",cj=" << soln_j;
+
+			if (soln_i >=0 && soln_i < ni && soln_j >= 0 && soln_j < nj)
+			{
+				std::cout << ", true\n";
+				return true;
+			}
+			if (soln_i < 0 || soln_j > nj) //break as solution value is decreasing
+			{
+				std::cout << ", false\n";
+				return false;
+			}
+			std::cout << "\n";
+		}
+		std::cout << ", false\n";
+		return false;
+	}
+}
 
 
 /*
