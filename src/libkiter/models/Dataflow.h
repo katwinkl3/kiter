@@ -266,6 +266,8 @@ public :
 	void set_read_only() {readonly = true;}
 	void set_normalize() {normalizationisdone = true;}
 	void set_repetition_vector() {repetitionvectorisdone = true;}
+	void set_writable() {readonly = false;}
+	void reset_repetition_vector() {repetitionvectorisdone = false;}
 
 	bool is_read_only() {return readonly;}
 	bool is_normalized() {return normalizationisdone ;}

@@ -124,11 +124,13 @@ void addDependency(models::Dataflow* d, const Vertex vi, const Vertex vj, EXEC_C
 
 	ni /= gcd_value;
 	nj /= gcd_value;
-
+	if (d->is_read_only()) {
+		d->set_writable();
+	}
 	auto e1 = d->addEdge(vi, vj);
 	auto e2 = d->addEdge(vj, vi);
 
-	gcd_value = 2*gcdExtended((LARGE_INT) ni, (LARGE_INT) nj, &a, &b);
+	gcd_value = ni + nj - gcdExtended((LARGE_INT) ni, (LARGE_INT) nj, &a, &b);
 
 	d->setEdgeOutPhases(e1,{(TOKEN_UNIT)ni});
 	d->setEdgeInPhases(e1,{(TOKEN_UNIT)nj});
@@ -136,7 +138,10 @@ void addDependency(models::Dataflow* d, const Vertex vi, const Vertex vj, EXEC_C
 
 	d->setEdgeOutPhases(e2,{(TOKEN_UNIT)nj});
 	d->setEdgeInPhases(e2,{(TOKEN_UNIT)ni});
-	d->setPreload(e2,gcd_value);  // preload is M0
+	d->setPreload(e2,0);  // preload is M0
+
+	std::cout << "Win=" << ni << " Wout=" << nj << " Mo=" << gcd_value << std::endl;
+
 }
 
 
@@ -275,6 +280,82 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 	}
 
 	std::cout << "total_conflict=" << total_conflict << "\n";
+	to->reset_repetition_vector();
+	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
+
+	std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>>  persched2 =  algorithms::generateKperiodicSchedule   (to , false) ;
+	for (auto  key : persched2) {
+		auto task = key.first;
+		//TIME_UNIT
+		HP =    ( persched2[task].first * to->getNi(task) ) / ( persched2[task].second.size() *  to->getPhasesQuantity(task)) ;
+		std::cout << "Task " <<  to->getVertexName(task) <<  " : duration=" <<  to->getVertexDuration(task) <<  " period=" <<  persched2[task].first << " HP=" << HP << " Ni=" << to->getNi(task)<< " starts=[ ";
+
+		for (auto  skey : persched2[task].second) {
+
+			std::cout << skey << " " ;
+		}
+		std::cout << "]" << std::endl;
+
+	}
+
+	for (auto  key : conflictEdges) {
+			auto edge_id = key.first;
+			auto mysize = conflictEdges[edge_id].size();
+			if(mysize > 1)
+			{
+				//std::cout << "potential conflict=" << mysize << "\n";
+				for(unsigned int i = 0; i < mysize; i++)
+				{
+					for(unsigned int j = 0; j < mysize; j++)
+					{
+						if (i <= j) //ignore the upper triangle
+							continue;
+						auto taski = conflictEdges[edge_id][i].first;
+						auto taskj = conflictEdges[edge_id][j].first;
+
+						auto ni = to->getNi(taski);
+						auto nj = to->getNi(taskj);
+
+						auto srci = conflictEdges[edge_id][i].second;
+						auto srcj = conflictEdges[edge_id][j].second;
+
+						auto src_ni = to->getNi(srci);
+						auto src_nj = to->getNi(srcj);
+
+						//check if any of the starting times match
+						std::vector<TIME_UNIT> si_vec, sj_vec;
+						for (auto  skey : persched[taski].second) {
+							si_vec.push_back(skey);
+						}
+						for (auto  skey : persched[taskj].second) {
+							sj_vec.push_back(skey);
+						}
+
+						for(unsigned int si_i = 0; si_i < si_vec.size(); si_i++)
+						{
+							for(unsigned int sj_i = 0; sj_i < sj_vec.size(); sj_i++)
+							{
+								auto si =  persched[taski].second[si_i];
+								auto sj =  persched[taskj].second[sj_i];
+
+								if( isConflictPresent((LARGE_INT) HP, si, (LARGE_INT) ni, sj, (LARGE_INT) nj) )
+								{
+									std::cout << "conflict between " << to->getVertexName(taski) << " and " << to->getVertexName(taskj) << "\n";
+									total_conflict += 1;
+
+									addDependency(to, srci, srcj, src_ni, src_nj);
+
+									// create a buffer
+									// the
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
 }
 
 
