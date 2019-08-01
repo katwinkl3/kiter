@@ -18,92 +18,140 @@
 #include <algorithms/kperiodic.h>
 #include <cstdlib>
 
-	//remove the current edge between nodes
-	//add intermediate nodes based on the path between them
-void addPathNode(models::Dataflow* d, Edge c, NoC* noc,  std::map< unsigned int,std::vector<Vertex> > & returnValue)
-	{
-		// We store infos about edge to be deleted
-		auto source_vtx = d->getEdgeSource(c);
-		auto target_vtx = d->getEdgeTarget(c);
 
-		//Find the core index
-		auto source = d->getVertexId(source_vtx)-1;
-		auto target = d->getVertexId(target_vtx)-1;
+LARGE_INT gcdExtended(LARGE_INT x, LARGE_INT y, LARGE_INT *a, LARGE_INT *b)
+{
+    // Base Case
+    if (x == 0)
+    {
+        *a = 0;
+        *b = 1;
+        return y;
+    }
 
-		//Core mapping, modulo scheduling
-		source = source % noc->getMeshSize();
-		target = target % noc->getMeshSize();
+    LARGE_INT a1, b1; // To store results of recursive call
+    LARGE_INT gcd = gcdExtended(y%x, x, &a1, &b1);
 
-		//use the inrate and route of the edges ans use it when creating the edges
-		auto inrate = d->getEdgeIn(c);
-		auto outrate = d->getEdgeOut(c);
-		auto preload = d->getPreload(c);  // preload is M0
+    // Update x and y using results of recursive
+    // call
+    *a = b1 - (y/x) * a1;
+    *b = a1;
 
-		bool flag = true;
-		if (source == target) //ignore this case
-			return;
+    return gcd;
+}
 
-		// we delete the edge
-		d->removeEdge(c);
 
-		//for every link in the path, add a corresponding node
-		auto list = noc->get_route(source, target);
-		for (auto e : list) {
-			//std::cout << e << " --> " ;
-			// we create a new vertex "middle"
-			auto middle = d->addVertex();
+//remove the current edge between nodes
+//add intermediate nodes based on the path between them
+void addPathNode(models::Dataflow* d, Edge c, NoC* noc,  std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > & returnValue)
+{
+	// We store infos about edge to be deleted
+	auto source_vtx = d->getEdgeSource(c);
+	auto target_vtx = d->getEdgeTarget(c);
 
-			std::stringstream ss;
-			ss << "mid-" << source << "," << target << "-" << e;
-			returnValue[(unsigned int)e].push_back(middle);
-			d->setVertexName(middle,ss.str());
+	//Find the core index
+	auto source = d->getVertexId(source_vtx)-1;
+	auto target = d->getVertexId(target_vtx)-1;
 
-			d->setPhasesQuantity(middle,1); // number of state for the actor, only one in SDF
-			d->setVertexDuration(middle,{1}); // is specify for every state , only one for SDF.
-			d->setReentrancyFactor(middle,1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
+	//Core mapping, modulo scheduling
+	source = source % noc->getMeshSize();
+	target = target % noc->getMeshSize();
 
-			// we create a new edge between source and middle,
-			auto e1 = d->addEdge(source_vtx, middle);
+	//use the inrate and route of the edges ans use it when creating the edges
+	auto inrate = d->getEdgeIn(c);
+	auto outrate = d->getEdgeOut(c);
+	auto preload = d->getPreload(c);  // preload is M0
 
-			if(flag)
-			{
-				d->setEdgeInPhases(e1,{inrate});  // we specify the production rates for the buffer
-				flag = false;
-			}
-			else
-			{
-				d->setEdgeInPhases(e1,{1});
-			}
+	bool flag = true;
+	if (source == target) //ignore this case
+		return;
 
-			d->setEdgeOutPhases(e1,{1}); // and the consumption rate (as many rates as states for the associated task)
-			d->setPreload(e1,preload);  // preload is M0
+	// we delete the edge
+	d->removeEdge(c);
 
-			source_vtx = middle;
+	//for every link in the path, add a corresponding node
+	auto list = noc->get_route(source, target);
+	for (auto e : list) {
+		//std::cout << e << " --> " ;
+		// we create a new vertex "middle"
+		auto middle = d->addVertex();
+
+		std::stringstream ss;
+		ss << "mid-" << source << "," << target << "-" << e;
+
+		std::pair<Vertex, Vertex> pair_temp;
+		pair_temp.first = middle;
+		pair_temp.second = source_vtx;
+
+		returnValue[(unsigned int)e].push_back(pair_temp);
+		d->setVertexName(middle,ss.str());
+
+		d->setPhasesQuantity(middle,1); // number of state for the actor, only one in SDF
+		d->setVertexDuration(middle,{1}); // is specify for every state , only one for SDF.
+		d->setReentrancyFactor(middle,1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
+
+		// we create a new edge between source and middle,
+		auto e1 = d->addEdge(source_vtx, middle);
+
+		if(flag)
+		{
+			d->setEdgeInPhases(e1,{inrate});  // we specify the production rates for the buffer
+			flag = false;
+		}
+		else
+		{
+			d->setEdgeInPhases(e1,{1});
 		}
 
-		//find the final edge
-		auto e2 = d->addEdge(source_vtx, target_vtx);
-		d->setEdgeOutPhases(e2,{outrate});
-		d->setEdgeInPhases(e2,{1});
-		d->setPreload(e2,0);  // preload is M0
+		d->setEdgeOutPhases(e1,{1}); // and the consumption rate (as many rates as states for the associated task)
+		d->setPreload(e1,preload);  // preload is M0
 
+		source_vtx = middle;
 	}
 
+	//find the final edge
+	auto e2 = d->addEdge(source_vtx, target_vtx);
+	d->setEdgeOutPhases(e2,{outrate});
+	d->setEdgeInPhases(e2,{1});
+	d->setPreload(e2,0);  // preload is M0
+}
 
-void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list_t param_list) {
+
+void addDependency(models::Dataflow* d, const Vertex vi, const Vertex vj, EXEC_COUNT ni, EXEC_COUNT nj)
+{
+	LARGE_INT a, b;
+	auto gcd_value = gcdExtended((LARGE_INT) ni, (LARGE_INT) nj, &a, &b);
+
+	ni /= gcd_value;
+	nj /= gcd_value;
+
+	auto e1 = d->addEdge(vi, vj);
+	auto e2 = d->addEdge(vj, vi);
+
+	gcd_value = 2*gcdExtended((LARGE_INT) ni, (LARGE_INT) nj, &a, &b);
+
+	d->setEdgeOutPhases(e1,{(TOKEN_UNIT)ni});
+	d->setEdgeInPhases(e1,{(TOKEN_UNIT)nj});
+	d->setPreload(e1,gcd_value);  // preload is M0
+
+	d->setEdgeOutPhases(e2,{(TOKEN_UNIT)nj});
+	d->setEdgeInPhases(e2,{(TOKEN_UNIT)ni});
+	d->setPreload(e2,gcd_value);  // preload is M0
+}
 
 
+void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list_t param_list)
+{
 	double xscale  = 1;
 	double yscale = 1;
-	 if (param_list.count("xscale") == 1) xscale = std::stod(param_list["xscale"]);
-	 if (param_list.count("yscale") == 1) yscale = std::stod(param_list["yscale"]);
+	if (param_list.count("xscale") == 1) xscale = std::stod(param_list["xscale"]);
+	if (param_list.count("yscale") == 1) yscale = std::stod(param_list["yscale"]);
 
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);
-	std::map< unsigned int, std::vector<Vertex> > conflictEdges;
-
+	std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEdges;
 	int total_conflict = 0;
 
 	//Original graph
@@ -166,10 +214,7 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
 	}
 
-
-
 	std::cout <<  printers::PeriodicScheduling2DOT    (to, persched, false,  xscale , yscale);
-
 
 	for (auto  key : conflictEdges) {
 		auto edge_id = key.first;
@@ -183,13 +228,20 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 				{
 					if (i <= j) //ignore the upper triangle
 						continue;
-					auto taski = conflictEdges[edge_id][i];
-					auto taskj = conflictEdges[edge_id][j];
+					auto taski = conflictEdges[edge_id][i].first;
+					auto taskj = conflictEdges[edge_id][j].first;
+
 					auto ni = to->getNi(taski);
 					auto nj = to->getNi(taskj);
 
-					std::vector<TIME_UNIT> si_vec, sj_vec;
+					auto srci = conflictEdges[edge_id][i].second;
+					auto srcj = conflictEdges[edge_id][j].second;
 
+					auto src_ni = to->getNi(srci);
+					auto src_nj = to->getNi(srcj);
+
+					//check if any of the starting times match
+					std::vector<TIME_UNIT> si_vec, sj_vec;
 					for (auto  skey : persched[taski].second) {
 						si_vec.push_back(skey);
 					}
@@ -208,96 +260,28 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 							{
 								std::cout << "conflict between " << to->getVertexName(taski) << " and " << to->getVertexName(taskj) << "\n";
 								total_conflict += 1;
+
+								addDependency(to, srci, srcj, src_ni, src_nj);
+
+								// create a buffer 
+								// the 
 								break;
 							}
 						}
 					}
-
-					//std::cout << "Task " <<  to->getVertexName(task) <<  " : duration=" <<  to->getVertexDuration(task) << " Ni=" << to->getNi(task)<< " starts=[ ";
-					//for (auto  skey : persched[taski].second) {
-					//	std::cout << skey << " " ;
-					//}
 				}
 			}
 		}
 	}
 
-
-
 	std::cout << "total_conflict=" << total_conflict << "\n";
-
-
-
-	// outfile.open("output.latex");
-	// outfile <<  generateLatexKperiodicSchedule    (to , false) ;
-
-//	 outfile.close();
-
-    //NoC noc (4,4,1);
-/*
-    auto list = noc->get_route(0,15);
-    for (auto e : list) {
-    	std::cout << e << " --> " ;
-    }
-	std::cout << "\n";
-    auto list2 = noc->get_route(15,0);
-    for (auto e : list2) {
-    	std::cout << e << " --> " ;
-    }
-	std::cout << std::endl;
-*/
-
-	    /*
-    std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
-*/
-
-	//std::cout << " 222222222222 " <<  to->getName() <<  " ===================== EDGE CONTENT" << std::endl;
-/*
-	// Note: getEdgeOut and getEdgeIn are Output and input Rates of a buffer
-    {ForEachEdge(to,e) {
-        	std::cout << to->getVertexId(to->getEdgeSource(e)) << "->" << to->getVertexId(to->getEdgeTarget(e)) << ":name:" << to->getEdgeName(e) << "[" << to->getEdgeOut(e) << "]"  << to->getEdgeId(e) << std::endl;
-
-	to->addPathNode(e, noc);
-	std::cout << "done\n";
-    }}
-*/
-
-
-
-}
-
-
-
-LARGE_INT algorithms::gcdExtended(LARGE_INT x, LARGE_INT y, LARGE_INT *a, LARGE_INT *b)
-{
-    // Base Case
-    if (x == 0)
-    {
-        *a = 0;
-        *b = 1;
-        return y;
-    }
-
-    LARGE_INT a1, b1; // To store results of recursive call
-    LARGE_INT gcd = gcdExtended(y%x, x, &a1, &b1);
-
-    // Update x and y using results of recursive
-    // call
-    *a = b1 - (y/x) * a1;
-    *b = a1;
-
-    return gcd;
 }
 
 
 bool algorithms::isConflictPresent(LARGE_INT HP, TIME_UNIT si, LARGE_INT ni, TIME_UNIT sj, LARGE_INT nj)
 {
 	LARGE_INT temp1, temp2;
-	LARGE_INT cj, ci, soln_j, soln_i; //constant values that need to be found
-
 	LARGE_INT lhs = (LARGE_INT)(si - sj) * ni * nj;
-	LARGE_INT rhs_term1 = HP * ni; //*cj
-	LARGE_INT rhs_term2 = HP * nj; //*ci
 	LARGE_INT rhs_gcd = HP * gcdExtended(myabs(ni), myabs(nj), &temp1, &temp2);
 
 	if(si == sj) //if start time is same conflict
@@ -307,11 +291,20 @@ bool algorithms::isConflictPresent(LARGE_INT HP, TIME_UNIT si, LARGE_INT ni, TIM
 
 	if (myabs(lhs) % rhs_gcd != 0)
 	{
-		//std::cout << "mod is false\n";
 		return false; //No integral solutions exist as the division will yield floating point
 	}
 	else //check if any other solution exists
 	{
+		return true; //there exists a solution for sure
+	}
+}
+
+
+		/*
+	LARGE_INT rhs_term1 = HP * ni; 
+	LARGE_INT rhs_term2 = HP * nj;
+
+	//LARGE_INT cj, ci, soln_j, soln_i; //constant values that need to be found
 		//first divide by gcd to simplify the equation
 		lhs /= rhs_gcd;
 		rhs_term1 /= rhs_gcd;
@@ -350,8 +343,7 @@ bool algorithms::isConflictPresent(LARGE_INT HP, TIME_UNIT si, LARGE_INT ni, TIM
 		}
 		std::cout << ", false\n";
 		return false;
-	}
-}
+		*/
 
 
 /*

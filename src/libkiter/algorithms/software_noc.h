@@ -7,7 +7,7 @@
 
 #ifndef SOFTWARE_NOC_H_
 #define SOFTWARE_NOC_H_
-typedef long LARGE_INT;
+typedef long int LARGE_INT;
 namespace algorithms {
 
 
@@ -19,8 +19,7 @@ inline LARGE_INT myabs(LARGE_INT a)
 }
     void software_noc (models::Dataflow* const dataflow, parameters_list_t);
 	//Find co-efficients a and b such that ax + by = gcd(x, y)
-	LARGE_INT gcdExtended(LARGE_INT x, LARGE_INT y, LARGE_INT *a, LARGE_INT *b);
-
+	//LARGE_INT gcdExtended(LARGE_INT x, LARGE_INT y, LARGE_INT *a, LARGE_INT *b);
 	bool isConflictPresent(LARGE_INT HP, TIME_UNIT si, LARGE_INT ni, TIME_UNIT sj, LARGE_INT nj);
 
 /*
