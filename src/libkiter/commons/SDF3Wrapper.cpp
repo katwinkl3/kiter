@@ -56,6 +56,7 @@ namespace commons {
         for (unsigned int i = 1 ; i <= phases.size() ; i++) {
             	   cons.push_back(commons::fromString<TOKEN_UNIT>(phases[i-1]));
         }
+
         to->setEdgeOutPhases(c,cons);
 
     }
@@ -102,14 +103,20 @@ namespace commons {
 
                      if (type == "in") {
                          Edge pEdge = to->getInputEdgeByPortName(pVertex,name);
-                         if (pEdge != NULL_EDGE)
+                         if (pEdge != NULL_EDGE) {
                              readSDF3OutputSpec(to,pEdge,rate);
+                         } else {
+                        	 VERBOSE_ERROR ("You file is not valid, could not find edge " << name);
+                         }
                      } else
 
                      if (type == "out") {
                          Edge pEdge = to->getOutputEdgeByPortName(pVertex,name);
-                         if (pEdge != NULL_EDGE)
+                         if (pEdge != NULL_EDGE) {
                              readSDF3InputSpec(to,pEdge,rate);
+                         } else {
+                        	 VERBOSE_ERROR ("You file is not valid, could not find edge " << name);
+                         }
                      } else {
                          VERBOSE_FAILURE();
                      }
@@ -467,6 +474,7 @@ namespace commons {
                      }
 
                      if (checkReentrancy(csdf,cur_node)) {
+                    	 VERBOSE_DEBUG("checkReentrancy(csdf,cur_node) returns TRUE");
                     	 //arc de reetrance
                     	 to->setReentrancyFactor(to->getVertexByName(sourceName),1);
                      } else {
