@@ -11,6 +11,7 @@
 #include <map>
 #include <vector>
 #include <commons/verbose.h>
+#include <commons/NoCGraph.h>
 
 typedef unsigned long  bank_id_t;
 typedef unsigned long  node_id_t;
@@ -32,17 +33,28 @@ private :
 	int MESH_SIZE;
 	std::map<std::pair<node_id_t,node_id_t>,edge> _medges;
 	std::vector<edge> _vedges;
-	NoC () : _XSIZE(1), _YSIZE(1), _BANKCOUNT(1) {} ;
+	NoCGraph* g;
+
+	NoC () : _XSIZE(1), _YSIZE(1), _BANKCOUNT(1) {g = new NoCGraph(1);} ;
+
 public :
 	int size () {return _XSIZE * _YSIZE;}
 	int bank_count () {return _BANKCOUNT;}
 	int getMeshSize () {return MESH_SIZE;}
+
+	void printPaths(int s, int d) 
+	{
+		auto length = get_route(s, d).size();
+		g->printAllPaths((int)s + MESH_SIZE, (int)d + MESH_SIZE, (int)length);
+	}
 
 	//the routers are from (0 to (NXN)-1)
 	//while the cores are marked from (NXN) to 2*(NXN) - 1
 
 	NoC (int XSIZE, int YSIZE, int BANKCOUNT) : _XSIZE(XSIZE), _YSIZE(YSIZE), _BANKCOUNT(BANKCOUNT)  {
 		MESH_SIZE = (XSIZE*YSIZE);
+		g = new NoCGraph((int)MESH_SIZE*2);
+
 		for (int X = 0 ; X < XSIZE ; X ++) {
 
 			for (int Y = 0 ; Y < YSIZE ; Y ++) {
@@ -51,12 +63,16 @@ public :
 				int core_id = source + MESH_SIZE;
 
 				//add edges between source core and router
-				edge ep = edge(_medges.size(), core_id , source);
+				edge ep = edge(_medges.size(), core_id, source);
 				_medges.insert({std::pair<node_id_t,node_id_t>(core_id , source),ep});
 				_vedges.push_back(ep);
+				g->addEdge(core_id, source);
+
+
 				edge e = edge(_medges.size(), source, core_id);
 				_medges.insert({std::pair<node_id_t,node_id_t>(source, core_id),e});
 				_vedges.push_back(e);
+				g->addEdge(source, core_id);
 
 
 				if (X < (XSIZE - 1)) {
@@ -65,26 +81,27 @@ public :
 					edge e = edge(_medges.size(), source, dest_right);
 					_medges.insert({std::pair<node_id_t,node_id_t>( source, dest_right),e});
 					_vedges.push_back(e);
+					g->addEdge(source, dest_right);
 
-					edge ep = edge(_medges.size(), dest_right , source);
+					edge ep = edge(_medges.size(), dest_right, source);
 					_medges.insert({std::pair<node_id_t,node_id_t>(  dest_right , source),ep});
 					_vedges.push_back(ep);
-
+					g->addEdge(dest_right, source);
 				}
 
 				if (Y < (YSIZE - 1)) {
 					int dest_bottom = X + (Y+1) * XSIZE ;
-					{
-						edge e = edge(_medges.size(), source, dest_bottom);
-						_medges.insert({std::pair<node_id_t,node_id_t>( source, dest_bottom),e});
-						_vedges.push_back(e);
-					}
-					{
-						edge e = edge(_medges.size(), dest_bottom ,  source );
-						_medges.insert({std::pair<node_id_t,node_id_t>( dest_bottom ,  source),e});
-						_vedges.push_back(e);
-					}
-
+					
+					edge e = edge(_medges.size(), source, dest_bottom);
+					_medges.insert({std::pair<node_id_t,node_id_t>( source, dest_bottom),e});
+					_vedges.push_back(e);
+					g->addEdge(source, dest_bottom);
+					
+					
+					edge ep = edge(_medges.size(), dest_bottom, source);
+					_medges.insert({std::pair<node_id_t,node_id_t>( dest_bottom ,  source),ep});
+					_vedges.push_back(ep);
+					g->addEdge(dest_bottom, source);
 				}
 
 			}

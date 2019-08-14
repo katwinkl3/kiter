@@ -17,7 +17,7 @@
 #include <algorithms/repetition_vector.h>
 #include <algorithms/kperiodic.h>
 #include <cstdlib>
-
+#include <boost/math/common_factor.hpp>
 
 LARGE_INT gcdExtended(LARGE_INT x, LARGE_INT y, LARGE_INT *a, LARGE_INT *b)
 {
@@ -205,11 +205,14 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 	std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>>  persched =  algorithms::generateKperiodicSchedule   (to , false) ;
 	std::cerr << "Size = "<< persched.size() << std::endl;
 	TIME_UNIT HP = 0.0;
+	unsigned long LCM = 1;
 	for (auto  key : persched) {
 		auto task = key.first;
 		//TIME_UNIT
 		HP =    ( persched[task].first * to->getNi(task) ) / ( persched[task].second.size() *  to->getPhasesQuantity(task)) ;
 		std::cout << "Task " <<  to->getVertexName(task) <<  " : duration=" <<  to->getVertexDuration(task) <<  " period=" <<  persched[task].first << " HP=" << HP << " Ni=" << to->getNi(task)<< " starts=[ ";
+
+		LCM = boost::math::lcm(LCM, to->getNi(task));
 
 		for (auto  skey : persched[task].second) {
 
@@ -219,11 +222,16 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
 	}
 
+	LCM = boost::math::lcm(LCM, (unsigned long)HP);
+	std::cout << "LCM=" << LCM << "\n";
+
 	std::cout <<  printers::PeriodicScheduling2DOT    (to, persched, false,  xscale , yscale);
 
+	unsigned long max_router_size = 0;
 	for (auto  key : conflictEdges) {
 		auto edge_id = key.first;
 		auto mysize = conflictEdges[edge_id].size();
+		max_router_size = std::max(max_router_size, mysize);
 		if(mysize > 1)
 		{
 			//std::cout << "potential conflict=" << mysize << "\n";
@@ -278,6 +286,12 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 			}
 		}
 	}
+
+
+	std::cout << "max_router_size=" << max_router_size << "\n";
+	std::cout << "GGGGGGGGGGGG\n";
+	noc->printPaths(0,5);
+
 
 	std::cout << "total_conflict=" << total_conflict << "\n";
 	to->reset_repetition_vector();
