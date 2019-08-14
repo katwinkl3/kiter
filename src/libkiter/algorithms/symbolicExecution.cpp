@@ -40,97 +40,6 @@ void print_packet_line (ARRAY_INDEX src, ARRAY_INDEX dst, TIME_UNIT duration, AR
 }
 
 
-void algorithms::packet_list(models::Dataflow* const  dataflow, parameters_list_t ) {
-
-		// STEP 0.1 - PRE
-		VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
-		VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-
-		//STEP 1 - Generate Event Graph
-		VERBOSE_INFO("N-Periodic EventGraph generation");
-		models::EventGraph* eg = generateNPeriodicEventGraph(dataflow);
-		eg->FullConnectionned();
-		VERBOSE_INFO("NPeriodic EventGraph generation Done, edges = " << eg->getConstraintsCount() << " vertex = " << eg->getEventCount());
-
-		std::vector < models::EventGraphVertex > to_execute;
-		std::map < models::EventGraphVertex , ARRAY_INDEX > ids;
-		std::map < models::EventGraphEdge , TOKEN_UNIT > buffers;
-		std::map < models::EventGraphEdge , ARRAY_INDEX > edge_ids;
-
-		{ForEachEvent(eg, e){
-			to_execute.push_back(e);
-		}}
-		{ForEachConstraint(eg, c){
-			VERBOSE_DEBUG( "edge " << c << " has weight=" << eg->getWeight(c) << " and Duration=" << eg->getDuration(c));
-			buffers[c] = (long int) (eg->getWeight(c)); // TODO : confusion here between weight and delay
-		}}
-		std::cout << "#NUM_ROWS,NUM_COLS,NUM_BANKS" << std::endl;
-		std::cout << "4,4,1" << std::endl;
-		std::cout << "#SRC,DEST,DURATION,PACKET_ID,BANK_ID,DEP1,DEP2,..." << std::endl;
-	    VERBOSE_INFO("Start of symbolic execution.");
-
-	    ARRAY_INDEX packet_id = 0;
-		while (to_execute.size()) {
-
-			bool can_execute = false;
-
-			VERBOSE_DEBUG ("Remains " << to_execute.size());
-			// One more to execute
-			for (auto it = to_execute.begin() ; it != to_execute.end() ; it ++) {
-				auto e = *it;
-				VERBOSE_DEBUG ("try " << e);
-				can_execute = true;
-				{ForEachInputs (eg, e , inc){
-					if (buffers[inc] <= 0) {
-						VERBOSE_DEBUG ("  Cannot " << e << " buffer " << inc);
-						can_execute = false;
-						break;
-					}
-				}}
-
-				if (can_execute) {
-					ids[e] = ids.size();
-
-					std::vector <ARRAY_INDEX> deps ;
-					{ForEachInputs (eg, e , inc){
-						buffers[inc] -= 1;
-						if (eg->getWeight(inc) == 0) {
-							deps.push_back(edge_ids[inc]);
-						}
-					}}
-
-					ARRAY_INDEX src = eg->getTaskId(e) ;
-
-					VERBOSE_INFO("Execute " << e << " : Task id = " << src << " with " << deps.size() << " deps");
-
-
-					{ForEachOutputs (eg, e , outc){
-
-						buffers[outc] += 1;
-						edge_ids[outc] = packet_id++;
-						ARRAY_INDEX dst = eg->getConstraint(outc) ._t.getTaskId();
-						TIME_UNIT duration = eg->getDuration(outc);
-						ARRAY_INDEX pid = edge_ids[outc] ;
-
-
-						print_packet_line ( src,  dst,  duration,  pid, deps ) ;
-					}}
-
-
-					to_execute.erase(it);
-
-					break;
-				}
-
-			}
-
-			if (!can_execute) FAILED ("Nothing executed, should never happen.");
-		}
-
-	    VERBOSE_INFO("End of symbolic execution.");
-
-}
-
 
 void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph, parameters_list_t param_list) {
 
@@ -140,23 +49,37 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 
 
 	// psize is the number of byte per packet to be send.
-	TOKEN_UNIT psize = 0;
+	EXEC_COUNT psize = 0;
 	if (param_list.count("psize") == 1) {
 		std::string str_value = param_list["psize"];
 		psize =  commons::fromString<EXEC_COUNT> ( str_value );
 
+	} else {
+		VERBOSE_WARNING("The 'psize' parameter has not been provided, packet has unlimited size.");
 	}
+	VERBOSE_INFO("packets size = " << psize);
+
+	// psize is the number of byte per packet to be send.
+	EXEC_COUNT iteration_count = 1;
+	if (param_list.count("iteration") == 1) {
+		std::string str_value = param_list["iteration"];
+		iteration_count =  commons::fromString<EXEC_COUNT> ( str_value );
+
+	} else {
+		VERBOSE_WARNING("The 'iteration' parameter has not been provided, only one iteration is generated.");
+	}
+	VERBOSE_INFO("packets iteration count = " << iteration_count);
 
 
 	// We store the total number of execution, the number of execution per task id
 	EXEC_COUNT total = 0 ;
 	std::vector < EXEC_COUNT >  remained_execution (graph->getMaxVertexId());
 
-	{ForEachVertex(graph,t) {
-		EXEC_COUNT Ni =  graph->getNi(t) ;
-		remained_execution[graph->getVertexId(t)] = Ni ;
+	for (Vertex v : graph->vertices()) {
+		EXEC_COUNT Ni =  graph->getNi(v) * iteration_count ;
+		remained_execution[graph->getVertexId(v)] = Ni ;
 		total += Ni ;
-	}}
+	}
 
 	// This is the number of token per buffer
 	std::vector < EXEC_COUNT >  buffer_content (graph->getMaxEdgeId());
@@ -182,7 +105,7 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 	while (total > 0) {
 
 
-		{ForEachVertex(graph,t) {
+		for (Vertex t : graph->vertices()) {
 
 			ARRAY_INDEX vId = graph->getVertexId(t);
 			bool can_execute = false;
@@ -241,7 +164,7 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 				}
 			}
 
-		}}
+		}
 
 
 	}

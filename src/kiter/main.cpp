@@ -65,8 +65,6 @@ std::vector<algo_t> algorithmslist =               {
 			algorithms::compute_deGrooteClean_throughput},
 		      { "SymbolicExecution"                       , "Execute task in ASAP fashion and print out the scheduling.",
 		    algorithms::symbolic_execution},
-		      { "Packet"                       , "Execute task in ASAP fashion and print out the scheduling.",
-		    algorithms::packet_list},
 		      { "SoftwareControlledNoC"                       , "Perform NoC scheduling after deciding task mapping and routing.",
 		    algorithms::software_noc},
 		      { "SymbolicExecutionWP"                       , "Execute task in ASAP fashion and print out the scheduling.",
