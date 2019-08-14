@@ -312,6 +312,7 @@ inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
 	inline  void					removeEdge   		(const Edge c)			{		ASSERT_WRITABLE(); boost::remove_edge(c.e,this->getG());}
 
 public :
+	inline  boost::integer_range<VertexD>                 vertices()      			{ return this->getG().vertex_set() ;} // This function is added because it can be used with foreach.
 	inline  std::pair<edge_iterator,edge_iterator>   		getEdges() 				{ return boost::edges(this->getG());}
 	inline  std::pair<vertex_iterator,vertex_iterator>  	getVertices()    		{ return boost::vertices(this->getG());}
 	inline  std::pair<in_edge_iterator,in_edge_iterator>  	getInputEdges(Vertex t) { return boost::in_edges (t.v,this->getG());}
