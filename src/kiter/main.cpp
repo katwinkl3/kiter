@@ -22,6 +22,7 @@
 #include <algorithms/degroote.h>
 #include <algorithms/symbolicExecution.h>
 #include <algorithms/backpressure.h>
+#include <algorithms/mappings.h>
 
 struct algo_t {
 	std::string name;
@@ -40,6 +41,8 @@ inline double tock() {
 
 
 std::vector<algo_t> algorithmslist =               {
+		{ "randomMapping"           , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.",
+				algorithms::mapping::randomMapping} ,
 		{ "PrintKPeriodicExpansionGraph"           , "Print the Expansion graph for the throughput evaluation of CSDF by K-Periodic scheduling. You can specify values for K.",
 				algorithms::print_kperiodic_expansion_graph} ,
 		{ "PrintKPeriodicThroughput"           , "Throughput evaluation of CSDF by K-Periodic scheduling. You can specify values for K.",

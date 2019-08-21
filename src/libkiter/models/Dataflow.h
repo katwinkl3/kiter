@@ -22,6 +22,7 @@
 #include <string>
 #include <commons/commons.h>
 #include <commons/verbose.h>
+#include <models/NoC.h>
 
 
 #define TXT_NEW_EDGE_ERROR "NEW_EDGE_ERROR"
@@ -37,6 +38,7 @@ namespace boost
 	enum vertex_phaseduration_t { vertex_phaseduration      };
 	enum vertex_Zi_t { vertex_Zi      };
 	enum vertex_Ni_t { vertex_Ni      };
+	enum vertex_mapping_t { vertex_mapping      };
 	enum vertex_reentrancy_t { vertex_reentrancy      };
 	enum edge_input_port_name_t        { edge_input_port_name             };
 	enum edge_output_port_name_t       { edge_output_port_name            };
@@ -51,6 +53,7 @@ namespace boost
 
 	BOOST_INSTALL_PROPERTY(vertex,   phasecount  );
 	BOOST_INSTALL_PROPERTY(vertex,   phaseduration  );
+	BOOST_INSTALL_PROPERTY(vertex,   mapping  );
 	BOOST_INSTALL_PROPERTY(vertex,   Zi  );
 	BOOST_INSTALL_PROPERTY(vertex,   Ni  );
 	BOOST_INSTALL_PROPERTY(vertex,   reentrancy  );
@@ -71,10 +74,11 @@ namespace boost
 typedef boost::property < boost::vertex_name_t,       std::string ,                              // Task name
 		boost::property < boost::vertex_index2_t,     ARRAY_INDEX   ,                            // Task id
 		boost::property < boost::vertex_Zi_t,     TOKEN_UNIT   ,                            // NORMALIZATION : ZI
+		boost::property < boost::vertex_mapping_t,     node_id_t   ,                            // mapping task to core id
 		boost::property < boost::vertex_Ni_t,     EXEC_COUNT   ,                            // Repetition Vector : Ni
 		boost::property < boost::vertex_phaseduration_t, std::vector<TIME_UNIT>   ,             // Task phase durations
 		boost::property < boost::vertex_reentrancy_t,     EXEC_COUNT   ,                         // maximum reentacy (0 : never)
-		boost::property < boost::vertex_phasecount_t, EXEC_COUNT    > > > > > > > vertexProperties;  // Task phase count
+		boost::property < boost::vertex_phasecount_t, EXEC_COUNT    > > > > > > > > vertexProperties;  // Task phase count
 
 typedef boost::property < boost::edge_name_t, std::string,                                    // buffer name
 		boost::property < boost::edge_input_port_name_t, std::string,                         // input port name
@@ -241,6 +245,7 @@ private :
 	ARRAY_INDEX   auto_vertex_num;
 	ARRAY_INDEX   auto_edge_num;
 	TIME_UNIT     normalized_period;
+	NoC           noc;
 
 
 	/* all about getters */
@@ -261,8 +266,13 @@ protected:
 
 
 public :
-	Dataflow		(int nVertex = 0)		: readonly(false), normalizationisdone(false), repetitionvectorisdone(false), g(nVertex), graph_name("noname"), graph_id(0) ,  auto_vertex_num (1) , auto_edge_num (1) , normalized_period(0) {VERBOSE_ASSERT(nVertex == 0,TXT_NO_IMPLEMENTATION);}
+	Dataflow		(int nVertex = 0)		: readonly(false), normalizationisdone(false), repetitionvectorisdone(false),
+	g(nVertex), graph_name("noname"), graph_id(0) ,  auto_vertex_num (1) , auto_edge_num (1) ,
+	normalized_period(0), noc (4,4,1) {
+		VERBOSE_ASSERT(nVertex == 0,TXT_NO_IMPLEMENTATION);
+	}
 
+	const NoC* getNoC() { return &this->noc;};
 	void set_read_only() {readonly = true;}
 	void set_normalize() {normalizationisdone = true;}
 	void set_repetition_vector() {repetitionvectorisdone = true;}
@@ -404,6 +414,11 @@ public :
 
 
 public :
+    inline void                 setMapping (const Vertex t,
+                                           const node_id_t core_id)    {boost::put(boost::vertex_mapping, this->getG(), t.v, core_id);}
+        inline node_id_t           getMapping (const Vertex t )         {return boost::get(get(boost::vertex_mapping, this->getG()), t.v);}
+
+
     inline void                 setZi (const Vertex t,
                                        const EXEC_COUNT Zi)    {ASSERT_NOT_NORMALIZED(); boost::put(boost::vertex_Zi, this->getG(), t.v, Zi);}
     inline EXEC_COUNT           getZi (const Vertex t )         {ASSERT_NORMALIZED(); return boost::get(get(boost::vertex_Zi, this->getG()), t.v);}

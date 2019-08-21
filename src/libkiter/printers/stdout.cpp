@@ -150,7 +150,10 @@ void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list
 
               {ForEachTask(dataflow,t) {
 		  total += dataflow->getNi(t) ;
-                  std::cout << " - " <<  dataflow->getVertexName(t) << " N=" << dataflow->getNi(t) << std::endl;
+                  std::cout << " - " <<  dataflow->getVertexName(t)
+                		  << " N=" << dataflow->getNi(t)
+						  << " Mapping=" << dataflow->getMapping(t)
+                		  << std::endl;
 
               }}
 

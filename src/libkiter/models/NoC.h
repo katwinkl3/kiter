@@ -13,7 +13,7 @@
 #include <commons/verbose.h>
 
 typedef unsigned long  bank_id_t;
-typedef unsigned long  node_id_t;
+typedef          long  node_id_t;
 typedef unsigned long edge_id_t;
 typedef std::vector<edge_id_t> route_t;
 
@@ -34,7 +34,7 @@ private :
 	std::vector<edge> _vedges;
 	NoC () : _XSIZE(1), _YSIZE(1), _BANKCOUNT(1) {} ;
 public :
-	int size () {return _XSIZE * _YSIZE;}
+	int size () const {return _XSIZE * _YSIZE;}
 	int bank_count () {return _BANKCOUNT;}
 	int getMeshSize () {return MESH_SIZE;}
 
