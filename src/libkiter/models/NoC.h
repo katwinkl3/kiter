@@ -29,26 +29,25 @@ struct edge {
 class NoC {
 private :
 	int _XSIZE, _YSIZE, _BANKCOUNT;
-	int MESH_SIZE;
 	std::map<std::pair<node_id_t,node_id_t>,edge> _medges;
 	std::vector<edge> _vedges;
 	NoC () : _XSIZE(1), _YSIZE(1), _BANKCOUNT(1) {} ;
 public :
 	int size () const {return _XSIZE * _YSIZE;}
 	int bank_count () {return _BANKCOUNT;}
-	int getMeshSize () {return MESH_SIZE;}
+	int getMeshSize () {return size();}
 
 	//the routers are from (0 to (NXN)-1)
 	//while the cores are marked from (NXN) to 2*(NXN) - 1
 
 	NoC (int XSIZE, int YSIZE, int BANKCOUNT) : _XSIZE(XSIZE), _YSIZE(YSIZE), _BANKCOUNT(BANKCOUNT)  {
-		MESH_SIZE = (XSIZE*YSIZE);
+
 		for (int X = 0 ; X < XSIZE ; X ++) {
 
 			for (int Y = 0 ; Y < YSIZE ; Y ++) {
 
 				int source = X + Y * XSIZE ;
-				int core_id = source + MESH_SIZE;
+				int core_id = source + this->size();
 
 				//add edges between source core and router
 				edge ep = edge(_medges.size(), core_id , source);
@@ -95,7 +94,7 @@ public :
 		return _vedges;
 	}
 
-	edge_id_t find_edge (node_id_t src,node_id_t dst) {
+	edge_id_t find_edge (node_id_t src,node_id_t dst) const {
 
 		//Remove the min operation as edge A->B is different from edge B->A
 		//auto res = _medges.find (std::pair<node_id_t,node_id_t>(std::min(src,dst),std::max(src,dst))) ;
@@ -104,7 +103,7 @@ public :
 		ERROR ();
 	}
 
-	route_t get_route (node_id_t src,node_id_t dst) {
+	route_t get_route (node_id_t src,node_id_t dst) const {
 
 		auto srcx = src % _XSIZE;
 		auto srcy  = src / _XSIZE;
@@ -112,8 +111,8 @@ public :
 		auto dsty = dst / _XSIZE;
 		route_t res;
 
-		node_id_t src_core = src + MESH_SIZE;
-		node_id_t dst_core = dst + MESH_SIZE;
+		node_id_t src_core = src + this->size();
+		node_id_t dst_core = dst + this->size();
 
 		edge_id_t t_e = find_edge (src_core, src);
 		res.push_back(t_e);
