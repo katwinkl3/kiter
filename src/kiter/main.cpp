@@ -120,7 +120,7 @@ int main (int argc, char **argv)
 
 	// ** default arguments
 	std::string filename = "";
-	std::vector<std::string> algos;
+	std::vector<std::pair<std::string,parameters_list_t>> algos;
 	parameters_list_t parameters;
 	commons::set_verbose_mode(commons::WARNING_LEVEL); // default verbose mode is ...
 
@@ -131,7 +131,8 @@ int main (int argc, char **argv)
     		filename = optarg;
     	}
     	if (c == 'a') {
-    		algos.push_back(optarg);
+    		algos.push_back(std::pair<std::string,parameters_list_t>(optarg,parameters));
+    		parameters.clear();
     	}
     	if (c == 'v') {
     		activate_verbose(optarg);
@@ -199,11 +200,12 @@ int main (int argc, char **argv)
     // Step 4 = Apply selected algorithm
     bool nothing = true;
     for ( std::vector<algo_t>::iterator lit = algorithmslist.begin() ; lit != algorithmslist.end() ; lit++ ) {
-        for ( std::vector<std::string>::iterator it = algos.begin() ; it != algos.end() ; it++ ) {
-            if (*it == lit->name) {
+        for ( std::vector<std::pair<std::string,parameters_list_t>>::iterator it = algos.begin() ; it != algos.end() ; it++ ) {
+            if ((*it).first == lit->name) {
                VERBOSE_INFO ("Run " << lit->name);
                tock();
-               lit->fun(csdf,parameters);
+               (*it).second.insert(parameters.begin(),parameters.end());
+               lit->fun(csdf,(*it).second);
                double duration = tock();
                VERBOSE_INFO (lit->name  << " duration=" << duration);
                nothing = false;
