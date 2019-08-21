@@ -40,7 +40,10 @@ inline double tock() {
 
 
 std::vector<algo_t> algorithmslist =               {
-
+		{ "PrintKPeriodicExpansionGraph"           , "Print the Expansion graph for the throughput evaluation of CSDF by K-Periodic scheduling. You can specify values for K.",
+				algorithms::print_kperiodic_expansion_graph} ,
+		{ "PrintKPeriodicThroughput"           , "Throughput evaluation of CSDF by K-Periodic scheduling. You can specify values for K.",
+				algorithms::print_kperiodic_scheduling} ,
 		      { "1PeriodicThroughput"              , "Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.",
 			algorithms::compute_1Kperiodic_throughput} ,
 		      { "2PeriodicThroughput"              , "Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.",
@@ -53,8 +56,6 @@ std::vector<algo_t> algorithmslist =               {
 			algorithms::compute_NCleanPeriodic_throughput} ,
 		      { "KPeriodicThroughput"              , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method 2.",
 			algorithms::compute_Kperiodic_throughput} ,
-		      { "PrintKPeriodicThroughput"           , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method X with starting times.",
-			algorithms::print_kperiodic_scheduling} ,		      
 		      { "PrintInfos"                       , "Just print some graph informations.",
 			printers::printInfos},
 		      { "PrintGraph"                       , "Print DOT file",

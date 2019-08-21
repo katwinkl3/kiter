@@ -252,6 +252,7 @@ void algorithms::compute_csdf_1periodic_memory   (models::Dataflow* const  dataf
 
 
 	commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
+    VERBOSE_INFO("Please note you can specify the INTEGERSOLVING and ILPGENERATIONONLY parameters.");
 
 	if (params.find("INTEGERSOLVING")!= params.end() ) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
 
