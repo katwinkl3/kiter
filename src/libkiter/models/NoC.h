@@ -48,6 +48,8 @@ public :
 		g->printAllPaths((int)s + MESH_SIZE, (int)d + MESH_SIZE, (int)length);
 	}
 
+	void generateShortestPaths() { g->generateAllShortestPaths(); }
+
 	//the routers are from (0 to (NXN)-1)
 	//while the cores are marked from (NXN) to 2*(NXN) - 1
 
