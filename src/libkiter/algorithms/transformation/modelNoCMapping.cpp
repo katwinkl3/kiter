@@ -92,17 +92,13 @@ void addPathNode(models::Dataflow* d, Edge c, std::map< unsigned int, std::vecto
 
 
 models::Dataflow* algorithms::transformation::modelNoCMapping(models::Dataflow* const  dataflow) {
-	double xscale  = 1;
-	double yscale = 1;
-	if (param_list.count("xscale") == 1) xscale = std::stod(param_list["xscale"]);
-	if (param_list.count("yscale") == 1) yscale = std::stod(param_list["yscale"]);
 
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);
 	std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEdges;
-	int total_conflict = 0;
+
 
 	//Original graph
 	std::string inputdot = printers::GenerateDOT (dataflow);

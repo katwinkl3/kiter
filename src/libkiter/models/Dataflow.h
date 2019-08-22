@@ -307,7 +307,9 @@ inline	 Edge addEdge(const Vertex from, const Vertex to,const  ARRAY_INDEX id)
 inline 	Vertex 				addVertex			() 							{
 	ASSERT_WRITABLE();
 	Vertex nt = Vertex(boost::add_vertex(this->getG()));
+	//std::cout << "orig:" << nt << ",vtx_id:" << auto_vertex_num << "\n";
 	this->setVertexIdUnsafe(nt,auto_vertex_num++);
+
 	return nt;
 }
 inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
