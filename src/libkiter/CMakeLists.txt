@@ -31,7 +31,7 @@ FILE(GLOB_RECURSE models_h   models/*.h )
 FILE(GLOB_RECURSE printers_cpp printers/*.cpp)
 FILE(GLOB_RECURSE printers_h   printers/*.h )
 
-FILE(GLOB_RECURSE algorithms_cpp algorithms/*.cpp)
+FILE(GLOB_RECURSE algorithms_cpp algorithms/*.cpp algorithms/*/*.cpp)
 FILE(GLOB_RECURSE algorithms_h   algorithms/*.h )
 
 SET(commons_sources      ${commons_cpp}   ${commons_h})

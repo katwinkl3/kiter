@@ -89,12 +89,44 @@ void print_function    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC
     if (printSchedule) std::cout << print_schedule(eg,dataflow,kvector,res);
 
 }
+
+void algorithms::print_kperiodic_expansion_graph    (models::Dataflow* const  dataflow, parameters_list_t param_list) {
+
+    VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
+    bool print_dot = (param_list.find("DOT")!= param_list.end());
+    bool print_xml = (param_list.find("XML")!= param_list.end());
+    bool print_tikz = (param_list.find("TIKZ")!= param_list.end());
+
+    VERBOSE_INFO("Please note you can specify the values of K and DOT,XML, and TIKZ paramters.");
+    if ( not (print_dot || print_xml || print_tikz) )
+        VERBOSE_ERROR("You did not ask for any kind of output, please specify parameters DOT,XML, or TIKZ ");
+
+
+    // STEP 1 - generate 1-periodic schedule
+    std::map<Vertex,EXEC_COUNT> kvector;
+    {ForEachVertex(dataflow,v) {
+        kvector[v] = 1;
+        if (param_list.count(dataflow->getVertexName(v)) == 1) {
+            std::string str_value = param_list[dataflow->getVertexName(v)];
+            kvector[v] =  commons::fromString<EXEC_COUNT> ( str_value );
+        }
+    }}
+    std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
+
+    //STEP 1 - Generate Event Graph
+    models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
+
+    if (print_dot)      std::cout << eg->printDOT();
+    if (print_xml)      std::cout << eg->printXML();
+    if (print_tikz)      std::cout << eg->printTikz();
+
+}
+
 void algorithms::print_kperiodic_scheduling    (models::Dataflow* const  dataflow, parameters_list_t param_list) {
 
-
-    EXEC_COUNT iteration_count = 0;
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 
+    VERBOSE_INFO("Please note you can specify the values of K.");
     // STEP 1 - generate 1-periodic schedule
     std::map<Vertex,EXEC_COUNT> kvector;
     {ForEachVertex(dataflow,v) {
@@ -107,44 +139,6 @@ void algorithms::print_kperiodic_scheduling    (models::Dataflow* const  dataflo
     std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
     print_function    ( dataflow, kvector , result.first , true, true, true);
     VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
-
-    if (result.second.size() != 0) {
-
-
-        while (true) {
-            iteration_count++;
-            updateVectorWithLocalNi(dataflow,&kvector,&(result.second));
-            std::pair<TIME_UNIT, std::set<Edge> > resultprime = KSchedule(dataflow,&kvector);
-            print_function    ( dataflow, kvector , resultprime.first , true, true, true);
-            VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(resultprime.second)) <<  "");
-            if (sameset(dataflow,&(resultprime.second),&(result.second)))  {
-                VERBOSE_INFO("Critical circuit is the same");
-                result = resultprime;
-                break;
-            }
-            result = resultprime;
-            VERBOSE_INFO("Current K-periodic throughput (" << result.first <<  ") is not enough.");
-        }
-
-    } {
-        iteration_count++;
-    }
-
-    VERBOSE_INFO( "K-periodic schedule - iterations count is " << iteration_count);
-
-
-    EXEC_COUNT total_ni = 0;
-    EXEC_COUNT total_ki = 0;
-    {ForEachVertex(dataflow,t) {
-        total_ni += dataflow->getNi(t);
-        total_ki += kvector[t];
-    }}
-
-    VERBOSE_INFO("K-periodic schedule - total_ki=" << total_ki << " total_ni=" << total_ni );
-    TIME_UNIT res = result.first;
-    std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
-    std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
-
 
 }
 
@@ -794,6 +788,7 @@ void algorithms::compute_1Kperiodic_throughput            (models::Dataflow* con
 
     bool printRequired = (param_list.count("print") == 1);
 
+    VERBOSE_INFO("Please note you cna use the print parameter.");
 
     // STEP 0.2 - Assert SDF
     std::map<Vertex,EXEC_COUNT> kvector;
@@ -1192,6 +1187,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
     if (parameters.find("PRINT") != parameters.end() ) {
         verbose = true;
     }
+    VERBOSE_INFO("Please note you can use the PRINT parameter");
 
     EXEC_COUNT sumNi = 0;
     EXEC_COUNT sumKi = dataflow->getVerticesCount();

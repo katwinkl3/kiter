@@ -11,7 +11,8 @@
 namespace algorithms {
 
 std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> generateKperiodicSchedule    (models::Dataflow* const dataflow , bool verbose) ;
-    void print_kperiodic_scheduling    (models::Dataflow* const  dataflow, parameters_list_t);
+    void print_kperiodic_scheduling         (models::Dataflow* const  dataflow, parameters_list_t);
+    void print_kperiodic_expansion_graph    (models::Dataflow* const  dataflow, parameters_list_t);
   void generateKperiodicSelfloop(models::Dataflow * const dataflow , EXEC_COUNT ki, models::EventGraph* g  , Vertex t  );
 
   void generateKPeriodicConstraint(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues,  models::EventGraph* g, Edge c) ;

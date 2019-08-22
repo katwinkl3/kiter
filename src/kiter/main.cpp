@@ -22,6 +22,7 @@
 #include <algorithms/degroote.h>
 #include <algorithms/symbolicExecution.h>
 #include <algorithms/backpressure.h>
+#include <algorithms/mappings.h>
 
 struct algo_t {
 	std::string name;
@@ -40,7 +41,12 @@ inline double tock() {
 
 
 std::vector<algo_t> algorithmslist =               {
-
+		{ "randomMapping"           , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.",
+				algorithms::mapping::randomMapping} ,
+		{ "PrintKPeriodicExpansionGraph"           , "Print the Expansion graph for the throughput evaluation of CSDF by K-Periodic scheduling. You can specify values for K.",
+				algorithms::print_kperiodic_expansion_graph} ,
+		{ "PrintKPeriodicThroughput"           , "Throughput evaluation of CSDF by K-Periodic scheduling. You can specify values for K.",
+				algorithms::print_kperiodic_scheduling} ,
 		      { "1PeriodicThroughput"              , "Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.",
 			algorithms::compute_1Kperiodic_throughput} ,
 		      { "2PeriodicThroughput"              , "Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.",
@@ -53,8 +59,6 @@ std::vector<algo_t> algorithmslist =               {
 			algorithms::compute_NCleanPeriodic_throughput} ,
 		      { "KPeriodicThroughput"              , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method 2.",
 			algorithms::compute_Kperiodic_throughput} ,
-		      { "PrintKPeriodicThroughput"           , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method X with starting times.",
-			algorithms::print_kperiodic_scheduling} ,		      
 		      { "PrintInfos"                       , "Just print some graph informations.",
 			printers::printInfos},
 		      { "PrintGraph"                       , "Print DOT file",
@@ -65,8 +69,6 @@ std::vector<algo_t> algorithmslist =               {
 			algorithms::compute_deGrooteClean_throughput},
 		      { "SymbolicExecution"                       , "Execute task in ASAP fashion and print out the scheduling.",
 		    algorithms::symbolic_execution},
-		      { "Packet"                       , "Execute task in ASAP fashion and print out the scheduling.",
-		    algorithms::packet_list},
 		      { "SoftwareControlledNoC"                       , "Perform NoC scheduling after deciding task mapping and routing.",
 		    algorithms::software_noc},
 		      { "SymbolicExecutionWP"                       , "Execute task in ASAP fashion and print out the scheduling.",
@@ -118,7 +120,7 @@ int main (int argc, char **argv)
 
 	// ** default arguments
 	std::string filename = "";
-	std::vector<std::string> algos;
+	std::vector<std::pair<std::string,parameters_list_t>> algos;
 	parameters_list_t parameters;
 	commons::set_verbose_mode(commons::WARNING_LEVEL); // default verbose mode is ...
 
@@ -129,7 +131,8 @@ int main (int argc, char **argv)
     		filename = optarg;
     	}
     	if (c == 'a') {
-    		algos.push_back(optarg);
+    		algos.push_back(std::pair<std::string,parameters_list_t>(optarg,parameters));
+    		parameters.clear();
     	}
     	if (c == 'v') {
     		activate_verbose(optarg);
@@ -197,11 +200,12 @@ int main (int argc, char **argv)
     // Step 4 = Apply selected algorithm
     bool nothing = true;
     for ( std::vector<algo_t>::iterator lit = algorithmslist.begin() ; lit != algorithmslist.end() ; lit++ ) {
-        for ( std::vector<std::string>::iterator it = algos.begin() ; it != algos.end() ; it++ ) {
-            if (*it == lit->name) {
+        for ( std::vector<std::pair<std::string,parameters_list_t>>::iterator it = algos.begin() ; it != algos.end() ; it++ ) {
+            if ((*it).first == lit->name) {
                VERBOSE_INFO ("Run " << lit->name);
                tock();
-               lit->fun(csdf,parameters);
+               (*it).second.insert(parameters.begin(),parameters.end());
+               lit->fun(csdf,(*it).second);
                double duration = tock();
                VERBOSE_INFO (lit->name  << " duration=" << duration);
                nothing = false;

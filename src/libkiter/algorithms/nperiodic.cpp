@@ -269,6 +269,7 @@ void algorithms::KPeriodic_memory   (models::Dataflow* const  dataflow,  std::ma
 
     commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
 
+    VERBOSE_INFO("Please note you can specify the INTEGERSOLVING, ILPGENERATIONONLY parameters.");
     if (params.find("INTEGERSOLVING")!= params.end() ) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
 
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);

@@ -602,6 +602,7 @@ void algorithms::compute_periodic_fixed_memory   (models::Dataflow* const  dataf
 
 	commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
 
+    VERBOSE_INFO("Please note you can specify the INTEGERSOLVING parameters.");
 	if (params.find("INTEGERSOLVING")!= params.end() ) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
 
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);

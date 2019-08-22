@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf3 type="sdf" version="1.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="http://www.es.ele.tue.nl/sdf3/xsd/sdf3-sdf.xsd">
+<applicationGraph name='autogen'>
+    <sdf name='autogen' type='autogen'>
+        <actor name='t1' type='t1'>
+            <port type='in' name='ib31' rate='8'/>
+            <port type='out' name='ob12' rate='1'/>
+        </actor>
+        <actor name='t2' type='t2'>
+            <port type='in' name='ib12' rate='1'/>
+            <port type='out' name='ob23' rate='8'/>
+        </actor>
+	<actor name='t3' type='t3'>
+            <port type='in' name='ib23' rate='6'/>
+            <port type='out' name='ob31' rate='6'/>
+        </actor>
+        <channel name='b12' srcActor='t1' srcPort='ob12' dstActor='t2' dstPort='ib12' size='1' initialTokens='0'/>
+        <channel name='b23' srcActor='t2' srcPort='ob23' dstActor='t3' dstPort='ib23' size='1' initialTokens='0'/>
+        <channel name='b31' srcActor='t3' srcPort='ob31' dstActor='t1' dstPort='ib31' size='1' initialTokens='20'/>
+    </sdf>
+
+    <sdfProperties>
+        <actorProperties actor='t1'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='1'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='t2'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='1'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='t3'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='1'/>
+            </processor>
+        </actorProperties>
+    </sdfProperties>
+
+</applicationGraph>
+
+</sdf3>
