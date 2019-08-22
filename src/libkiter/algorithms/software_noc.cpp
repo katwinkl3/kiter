@@ -43,10 +43,15 @@ bool operator<(const node& a, const node& b) {
 		if(cyclen_per_vtxid[a.index][i] == cyclen_per_vtxid[b.index][i])
 			continue;
 		else
-			return cyclen_per_vtxid[a.index][i] > cyclen_per_vtxid[b.index][i];
+			return cyclen_per_vtxid[a.index][i] < cyclen_per_vtxid[b.index][i];
 	} 
 
-	return true;
+	if(alen == 0)
+		return true;
+	if(blen == 0)
+		return false;
+
+	return false;
 }
 
 
