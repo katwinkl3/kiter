@@ -6,7 +6,9 @@
  * */
 
 #include <models/Dataflow.h>
+#include <algorithms/transformations.h>
 #include <algorithms/schedulings.h>
+#include <algorithms/mappings.h>
 #include <commons/SDF3Wrapper.h>
 
 models::Dataflow * generateSample () {
@@ -104,8 +106,40 @@ int main (int argc, char ** argv)
 	std::cout << "Done" << std::endl;
 
 
+
+	algorithms::mapping::moduloMapping ( dataflow, {});
+
 	std::cout << "Done" << std::endl;
-	algorithms::scheduling::KPeriodic_scheduling_bufferless (dataflow, parameters);
+
+	 std::map<Vertex,EXEC_COUNT> kvector;
+		    {ForEachVertex(dataflow,v) {
+		        kvector[v] = 1;
+		        if (parameters.count(dataflow->getVertexName(v)) == 1) {
+		            std::string str_value = parameters[dataflow->getVertexName(v)];
+		            kvector[v] =  commons::fromString<EXEC_COUNT> ( str_value );
+		        }
+	}}
+
+		    std::vector<std::vector <Vertex> >  sequences;
+		   models::Dataflow* to = new models::Dataflow(*dataflow);
+		   std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEdges;
+
+		   std::vector<Edge> edges_list;
+			{ForEachEdge(to,e) {
+				edges_list.push_back(e);
+			}}
+
+			for(auto e: edges_list) {
+				auto seq = addPathNode(to, e, conflictEdges);
+				sequences.push_back(seq);
+			}
+
+
+			std::cout << "Done" << std::endl;
+
+			bufferless_scheduling (dataflow,  kvector, {});
+			std::cout << "Done" << std::endl;
+			bufferless_scheduling (to,  kvector, sequences);
 	std::cout << "Done" << std::endl;
 
 

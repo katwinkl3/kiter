@@ -10,16 +10,8 @@
 #include <algorithms/schedulings.h>
 #include <commons/glpsol.h>
 
-void algorithms::scheduling::KPeriodic_scheduling_bufferless (models::Dataflow* const  dataflow,  parameters_list_t   param_list) {
+void bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector, std::vector<std::vector <Vertex> > task_sequences) {
 
-	 std::map<Vertex,EXEC_COUNT> kvector;
-	    {ForEachVertex(dataflow,v) {
-	        kvector[v] = 1;
-	        if (param_list.count(dataflow->getVertexName(v)) == 1) {
-	            std::string str_value = param_list[dataflow->getVertexName(v)];
-	            kvector[v] =  commons::fromString<EXEC_COUNT> ( str_value );
-	        }
-	    }}
 
     commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
    // With gurobi might be needed, need to fix that.
@@ -49,6 +41,42 @@ void algorithms::scheduling::KPeriodic_scheduling_bufferless (models::Dataflow* 
             g.addColumn("s_" + commons::toString<EXEC_COUNT>(k) + "_" + name,commons::KIND_CONTINUE,commons::bound_s(commons::LOW_BOUND,0),0);
         }
     }}
+
+
+    for (std::vector<Vertex> sequence : task_sequences) {
+        VERBOSE_INFO("One sequence of " << sequence.size() << " task to force inline");
+        if (sequence.size() == 0) continue;
+        EXEC_COUNT force_k = kvector[sequence[0]];
+
+        std::vector<std::string> previous;
+        std::string name = dataflow->getVertexName(sequence[0]);
+
+        for(EXEC_COUNT k = 1; k <= kvector[sequence[0]] ; k++) {
+        	previous.push_back("s_" + commons::toString<EXEC_COUNT>(k) + "_" + name);
+        }
+
+        for (Vertex t : sequence) {
+        	VERBOSE_ASSERT(force_k == kvector[t], "Edges from the same sequence must have the same k values.");
+
+            for(EXEC_COUNT k = 1; k <= kvector[t] ; k++) {
+
+            	// ADD sequence between between current task k and previous task k.
+            	std::string previous_name = previous[k];
+            	std::string current_name = "s_" + commons::toString<EXEC_COUNT>(k) + "_" + dataflow->getVertexName(t);
+
+            	if (previous_name != current_name)  {
+            		// add constraint
+            		  g.addRow("sequence_" + previous_name + current_name,commons::bound_s(commons::FIX_BOUND, 1 ));
+            		  g.addCoef("sequence_" + previous_name + current_name , previous_name   , - 1     );
+            		  g.addCoef("sequence_" + previous_name + current_name , current_name    ,   1     );
+            	}
+
+            }
+
+        }
+
+
+    }
 
     auto OMEGA_COL = g.addColumn("OMEGA",commons::KIND_CONTINUE,commons::bound_s(commons::LOW_BOUND,0),1);
 
@@ -172,3 +200,20 @@ void algorithms::scheduling::KPeriodic_scheduling_bufferless (models::Dataflow* 
 
 
 }
+
+
+
+void algorithms::scheduling::KPeriodic_scheduling_bufferless (models::Dataflow* const  dataflow,  parameters_list_t   param_list) {
+
+	 std::map<Vertex,EXEC_COUNT> kvector;
+		    {ForEachVertex(dataflow,v) {
+		        kvector[v] = 1;
+		        if (param_list.count(dataflow->getVertexName(v)) == 1) {
+		            std::string str_value = param_list[dataflow->getVertexName(v)];
+		            kvector[v] =  commons::fromString<EXEC_COUNT> ( str_value );
+		        }
+	}}
+
+	bufferless_scheduling(dataflow,kvector, {});
+}
+

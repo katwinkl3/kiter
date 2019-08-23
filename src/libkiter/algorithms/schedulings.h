@@ -11,6 +11,7 @@
 #include <map>
 #include <models/Dataflow.h>
 
+void bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector, std::vector<std::vector <Vertex> > task_sequences);
 
 namespace algorithms {
 	namespace scheduling {

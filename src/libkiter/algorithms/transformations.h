@@ -11,7 +11,7 @@
 namespace models {
 	class Dataflow;
 }
-
+std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > & returnValue) ;
 namespace algorithms {
 	namespace transformation {
 		models::Dataflow* modelNoCMapping(models::Dataflow* const  dataflow) ;

@@ -22,7 +22,9 @@
 
 //remove the current edge between nodes
 //add intermediate nodes based on the path between them
-void addPathNode(models::Dataflow* d, Edge c, std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > & returnValue) {
+std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > & returnValue) {
+
+	std::vector<Vertex> new_vertices;
 	// We store infos about edge to be deleted
 	auto source_vtx = d->getEdgeSource(c);
 	auto target_vtx = d->getEdgeTarget(c);
@@ -38,7 +40,7 @@ void addPathNode(models::Dataflow* d, Edge c, std::map< unsigned int, std::vecto
 
 	bool flag = true;
 	if (source == target) //ignore this case
-		return;
+		return new_vertices;
 
 	// we delete the edge
 	d->removeEdge(c);
@@ -49,6 +51,7 @@ void addPathNode(models::Dataflow* d, Edge c, std::map< unsigned int, std::vecto
 		//std::cout << e << " --> " ;
 		// we create a new vertex "middle"
 		auto middle = d->addVertex();
+		new_vertices.push_back(middle);
 
 		std::stringstream ss;
 		ss << "mid-" << source << "," << target << "-" << e;
@@ -88,6 +91,9 @@ void addPathNode(models::Dataflow* d, Edge c, std::map< unsigned int, std::vecto
 	d->setEdgeOutPhases(e2,{outrate});
 	d->setEdgeInPhases(e2,{1});
 	d->setPreload(e2,0);  // preload is M0
+
+	return new_vertices;
+
 }
 
 
@@ -99,19 +105,8 @@ models::Dataflow* algorithms::transformation::modelNoCMapping(models::Dataflow* 
 	models::Dataflow* to = new models::Dataflow(*dataflow);
 	std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEdges;
 
-
-	//Original graph
-	std::string inputdot = printers::GenerateDOT (dataflow);
-	std::ofstream outfile;
-	outfile.open("input.dot");
-	outfile << inputdot;
-	outfile.close();
-
-	std::cerr << " ================ " <<  to->getName() <<  " ===================== EDGE CONTENT" << std::endl;
-	//Store the current edges list first
 	std::vector<Edge> edges_list;
 	{ForEachEdge(to,e) {
-		std::cerr << to->getVertexId(to->getEdgeSource(e)) << "->" << to->getVertexId(to->getEdgeTarget(e)) << ":name:" << to->getEdgeName(e) << "[" << to->getEdgeIn(e) << "]" << "[" << to->getEdgeOut(e) << "]" << to->getEdgeId(e) << std::endl;
 		edges_list.push_back(e);
 	}}
 
