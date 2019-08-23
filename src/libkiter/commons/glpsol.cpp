@@ -182,6 +182,11 @@ void GLPSol::generateGLPKProblem() {
 
 	VERBOSE_ILP("Solve LP with GLPK...");
 
+	VERBOSE_ILP("Row count: " << this->rowsMap.size());
+	VERBOSE_ILP("Col count: " << this->columnsMap.size());
+
+
+
 	/* set rows */
 	glp_add_rows(lp, (int) this->rowsMap.size());
 	//for (vector<row>::iterator it = rows.begin(); it != rows.end() ; it ++) {

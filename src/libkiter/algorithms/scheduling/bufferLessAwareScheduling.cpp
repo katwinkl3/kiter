@@ -19,7 +19,11 @@ void bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,E
 
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 
-
+    {ForEachVertex(dataflow,t) {
+        std::string name = dataflow->getVertexName(t);
+        VERBOSE_INFO(" - " << name << " k=" <<  kvector[t]);
+        VERBOSE_ASSERT(kvector[t], "periodicity vector must be positive non zero.");
+    }}
     VERBOSE_INFO("Getting period ...");
 
     // STEP 0 - CSDF Graph should be normalized
@@ -30,7 +34,7 @@ void bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,E
     //##################################################################
     // Linear program generation
     //##################################################################
-    const std::string problemName =  "KPeriodicSizing_" + dataflow->getName() + "_" + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "INT" : "");
+    const std::string problemName =  "BLKPeriodicSizing_" + dataflow->getName() + "_" + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "INT" : "");
     commons::GLPSol g = commons::GLPSol(problemName,commons::MIN_OBJ);
 
     // Starting times
@@ -61,16 +65,18 @@ void bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,E
             for(EXEC_COUNT k = 1; k <= kvector[t] ; k++) {
 
             	// ADD sequence between between current task k and previous task k.
-            	std::string previous_name = previous[k];
+            	std::string previous_name = previous[k-1];
             	std::string current_name = "s_" + commons::toString<EXEC_COUNT>(k) + "_" + dataflow->getVertexName(t);
 
             	if (previous_name != current_name)  {
             		// add constraint
-            		  g.addRow("sequence_" + previous_name + current_name,commons::bound_s(commons::FIX_BOUND, 1 ));
-            		  g.addCoef("sequence_" + previous_name + current_name , previous_name   , - 1     );
-            		  g.addCoef("sequence_" + previous_name + current_name , current_name    ,   1     );
+            		std::string row_name = "sequence_" + previous_name + "_to_" + current_name;
+            		g.addRow(row_name,commons::bound_s(commons::FIX_BOUND, 1 ));
+            		g.addCoef(row_name , previous_name   , - 1     );
+            		g.addCoef(row_name , current_name    ,   1     );
+                    VERBOSE_INFO("Add " << row_name);
             	}
-
+            	previous[k-1] = current_name;
             }
 
         }
@@ -125,11 +131,9 @@ void bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,E
                     TIME_UNIT coef =  ((((TIME_UNIT) alphamax) / ( (TIME_UNIT) Ni  * (TIME_UNIT) in_b )));
 
 
-                    					//	( (TIME_UNIT) kvector[source] / (TIME_UNIT) Ni  /  ((TIME_UNIT) in_b* (double) kvector[source]));
-                    //VERBOSE_DEBUG("LP : s_"  <<  commons::toString<EXEC_COUNT>(aj) <<  "_" <<  targetStr  << " - " << "s_"  <<  commons::toString<EXEC_COUNT>(ai) <<  "_" <<  sourceStr  << " >= " << ltai << " + " << (TIME_UNIT) alphamax << " * (" << mu_i << "/" << in_b <<  ")");
-                    //VERBOSE_DEBUG("     s_"  <<  commons::toString<EXEC_COUNT>(aj) <<  "_" <<  targetStr  << " - " << "s_"  <<  commons::toString<EXEC_COUNT>(ai) <<  "_" <<  sourceStr  << " >= " << coef);
 
                     int rowid = g.addRow(pred_row_name,commons::bound_s(commons::LOW_BOUND, (double) ltai ));
+                    VERBOSE_INFO("Add " << pred_row_name);
 
 
 
