@@ -253,11 +253,11 @@ public:
 	inline  Edge                    getFirstEdge        ()                      {return it2Edge(boost::edges(this->getG()).first);}
 	inline  Vertex					getEdgeSource		(const Edge c)			{return Vertex(boost::source(c.e, this->getG()));}
 	inline  Vertex					getEdgeTarget		(const Edge c)			{return Vertex(boost::target(c.e, this->getG()));}
-	inline  unsigned int 			getVerticesCount 	()						{return (int) boost::num_vertices(this->getG());}
-	inline  unsigned int 			getEdgesCount		()						{return (int) boost::num_edges(this->getG());}
-	inline  unsigned int			getVertexDegree		(const Vertex t)		{return (int) boost::degree(t.v,this->getG());}
-	inline  unsigned int			getVertexInDegree	(const Vertex t)		{return (int) boost::in_degree(t.v,this->getG());}
-	inline  unsigned int			getVertexOutDegree	(const Vertex t)		{return (int) boost::out_degree(t.v,this->getG());}
+	inline  unsigned int 			getVerticesCount 	()						{return (unsigned int) boost::num_vertices(this->getG());}
+	inline  unsigned int 			getEdgesCount		()						{return (unsigned int) boost::num_edges(this->getG());}
+	inline  unsigned int			getVertexDegree		(const Vertex t)		{return (unsigned int) boost::degree(t.v,this->getG());}
+	inline  unsigned int			getVertexInDegree	(const Vertex t)		{return (unsigned int) boost::in_degree(t.v,this->getG());}
+	inline  unsigned int			getVertexOutDegree	(const Vertex t)		{return (unsigned int) boost::out_degree(t.v,this->getG());}
 
 
 
@@ -266,7 +266,7 @@ protected:
 
 
 public :
-	Dataflow		(int nVertex = 0)		: readonly(false), normalizationisdone(false), repetitionvectorisdone(false),
+	Dataflow		(unsigned int nVertex = 0)		: readonly(false), normalizationisdone(false), repetitionvectorisdone(false),
 	g(nVertex), graph_name("noname"), graph_id(0) ,  auto_vertex_num (1) , auto_edge_num (1) ,
 	normalized_period(0), noc (4,4,1) {
 		VERBOSE_ASSERT(nVertex == 0,TXT_NO_IMPLEMENTATION);
@@ -422,8 +422,8 @@ public :
 
 
     inline void                 setZi (const Vertex t,
-                                       const EXEC_COUNT Zi)    {ASSERT_NOT_NORMALIZED(); boost::put(boost::vertex_Zi, this->getG(), t.v, Zi);}
-    inline EXEC_COUNT           getZi (const Vertex t )         {ASSERT_NORMALIZED(); return boost::get(get(boost::vertex_Zi, this->getG()), t.v);}
+                                       const TOKEN_UNIT Zi)    {ASSERT_NOT_NORMALIZED(); boost::put(boost::vertex_Zi, this->getG(), t.v, Zi);}
+  inline   TOKEN_UNIT          getZi (const Vertex t )         {ASSERT_NORMALIZED(); return (TOKEN_UNIT) boost::get(get(boost::vertex_Zi, this->getG()), t.v);}
 
     inline void                 setNi (const Vertex t,
                                        const EXEC_COUNT Ni)    {ASSERT_NOT_REPETITION_VECTOR(); boost::put(boost::vertex_Ni, this->getG(), t.v, Ni);}

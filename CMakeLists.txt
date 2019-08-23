@@ -98,9 +98,10 @@ SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O3 -std=c++11")
 # -O3 in normal mode
 SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -std=c++11") #-Ofast -fno-signed-zeros -mtune=native -fno-signaling-nans -fno-trapping-math -fno-math-errno
 
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 # BugFix fc10:boost
 SET(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS}       -Wno-deprecated -Wno-deprecated-declarations -Wno-unused-but-set-variable") 
-
+endif()
 # don't add profiling helper
 #SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DGLIBCXX_FORCE_NEW")
 
