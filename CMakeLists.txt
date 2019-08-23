@@ -124,4 +124,5 @@ SET(KITER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/libkiter)
 
 ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/src/libkiter build_results/libkiter_binary_dir)
 ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/src/kiter build_results/kiter_binary_dir)
+ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/src/tests build_results/tests_binary_dir)
 
