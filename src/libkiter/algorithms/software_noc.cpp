@@ -380,7 +380,7 @@ Vertex graphProcessing(models::Dataflow* to)
 
 
 //remove the current edge between nodes add intermediate nodes based on the path between them
-void taskAndNoCMapping(models::Dataflow* to, Vertex start)//, Edge c, NoC* noc,  std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > & returnValue)
+void taskAndNoCMapping(models::Dataflow* to, Vertex start, NoC* noc)//, Edge c, NoC* noc,  std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > & returnValue)
 {
 	int V = to->getVerticesCount();
 	std::priority_queue<node> pq;
@@ -623,7 +623,7 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
 	//stub start srjkvr
 	Vertex start = graphProcessing(grProc);
-	taskAndNoCMapping(grProc, start);
+	taskAndNoCMapping(grProc, start, noc);
 
 	exit(0);
 	//stub end srjkvr
