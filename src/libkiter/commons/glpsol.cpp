@@ -182,6 +182,11 @@ void GLPSol::generateGLPKProblem() {
 
 	VERBOSE_ILP("Solve LP with GLPK...");
 
+	VERBOSE_ILP("Row count: " << this->rowsMap.size());
+	VERBOSE_ILP("Col count: " << this->columnsMap.size());
+
+
+
 	/* set rows */
 	glp_add_rows(lp, (int) this->rowsMap.size());
 	//for (vector<row>::iterator it = rows.begin(); it != rows.end() ; it ++) {
@@ -200,13 +205,13 @@ void GLPSol::generateGLPKProblem() {
 		glp_set_obj_coef(lp, it->second.indice, it->second.coef);
 	}
 
-	unsigned int matrice_size = this->coefs_size ;
+	int matrice_size = this->coefs_size ;
 
 	int* ia = new int[matrice_size + 1] ;
 	int* ja = new int[matrice_size + 1] ;
 	double* ar = new double[matrice_size + 1] ;
 
-	unsigned int cur = 1;
+	int cur = 1;
 	for (std::map< int , std::map<  int , double >  >::iterator it = this->coefs.begin() ; it != this->coefs.end();it++) {
 		for (std::map< int , double >::iterator it2 = it->second.begin() ; it2 != it->second.end();it2++) {
 			ia[cur] = it->first;
@@ -216,7 +221,7 @@ void GLPSol::generateGLPKProblem() {
 		}
 	}
 
-	VERBOSE_ASSERT((cur-1) == matrice_size,TXT_NEVER_HAPPEND);
+	VERBOSE_ASSERT((cur-1) == (int) matrice_size,TXT_NEVER_HAPPEND);
 	glp_load_matrix(lp, matrice_size, ia, ja, ar);
 
 	delete[] ia;

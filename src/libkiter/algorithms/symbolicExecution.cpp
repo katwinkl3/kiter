@@ -48,6 +48,20 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 	VERBOSE_ASSERT(computeRepetitionVector(graph),"inconsistent graph");
 
 
+
+
+	// psize is the number of byte per packet to be send.
+	bool do_ack = 0;
+	if (param_list.count("ack") == 1) {
+		std::string str_value = param_list["ack"];
+		do_ack =  commons::fromString<EXEC_COUNT> ( str_value );
+
+	} else {
+		VERBOSE_WARNING("The 'ack' parameter has not been provided, packet has no acknowledgment.");
+	}
+	VERBOSE_INFO("acknowledgment = " << do_ack);
+
+
 	// psize is the number of byte per packet to be send.
 	EXEC_COUNT psize = 0;
 	if (param_list.count("psize") == 1) {
@@ -99,6 +113,7 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 
 
 	std::map < Edge , ARRAY_INDEX > packet_ids;
+	std::map < Vertex , ARRAY_INDEX > last_packet_sent;
 	ARRAY_INDEX packet_count = 0;
 
 
@@ -135,13 +150,24 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 						if (packet_ids.find(inE) != packet_ids.end()) deps.push_back(packet_ids[inE]);
 					}}
 
+
+					ARRAY_INDEX compute_pid  = packet_count++;
+					std::vector <ARRAY_INDEX> subdeps = deps ;
+					if (last_packet_sent.find(t) != last_packet_sent.end()) {
+						subdeps.push_back(last_packet_sent[t]);
+					}
+
+					print_packet_line ( graph->getVertexId(t),  graph->getVertexId(t),  graph->getVertexDuration(t),  compute_pid, subdeps ) ;
+
+					last_packet_sent[t] = compute_pid;
+
 					{ForOutputEdges(graph,t,outE)	{
 						buffer_content[graph->getEdgeId(outE)] += graph->getEdgeIn(outE);
 
 
 						ARRAY_INDEX src = graph->getVertexId(t) ;
 						ARRAY_INDEX dst = graph->getVertexId(graph->getEdgeTarget(outE));
-						TIME_UNIT duration = graph->getVertexDuration(t);
+
 
 
 						TOKEN_UNIT datatotransfert = graph->getEdgeIn(outE);
@@ -150,15 +176,19 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 						VERBOSE_DEBUG(" - Produce " << datatotransfert << " by packet of " << psize);
 
 
-						for (ARRAY_INDEX previous = 0 ; datatotransfert > 0 ; datatotransfert -= psize) {
+
+						ARRAY_INDEX previous = compute_pid;
+
+						while (datatotransfert) {
 							packet_ids[outE] = packet_count++;
 							ARRAY_INDEX pid = packet_ids[outE] ;
 							std::vector <ARRAY_INDEX> subdeps = deps ;
-							if (previous) subdeps.push_back(previous);
-							print_packet_line ( src,  dst,  duration,  pid, subdeps ) ;
-							duration = 0;
+							subdeps.push_back(previous);
+							print_packet_line ( src,  dst,  0,  pid, subdeps ) ;
 							previous = pid;
+							datatotransfert -= psize;
 						}
+						last_packet_sent[t] = previous;
 					}}
 
 				}

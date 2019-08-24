@@ -21,14 +21,6 @@ bool operator<(const boost::detail::edge_desc_impl<boost::bidirectional_tag, uns
 namespace commons {
 
 
-unsigned int getRandomSeed(void)
-{
-	static int i = -1;
-	if (i == -1) {
-		i = getenv("TOOLBOX_SEED") ? atoi(getenv("TOOLBOX_SEED")) : ((unsigned int)  time(NULL) * getpid());
-	}
-	return i;
-}
 const std::string getFilename(const std::string s) { return s.substr(s.find_last_of("/\\")+1);}
 
 TIME_UNIT roundIt(TIME_UNIT val,TIME_UNIT p) {
@@ -62,7 +54,7 @@ char * string2char(const std::string& str) {
 	strcpy(ret, str.c_str());
 	return ret;
 }
-std::string convBase(unsigned long v, long base)
+std::string convBase(unsigned long v, unsigned long base)
 	{
 		std::string digits = "0123456789abcdef";
 		std::string result;

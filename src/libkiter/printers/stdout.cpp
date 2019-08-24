@@ -8,6 +8,7 @@
 #include <models/Dataflow.h>
 #include <algorithms/repetition_vector.h>
 #include <printers/stdout.h>
+#include <commons/commons.h>
 
 std::string add_block ( std::string name , TIME_UNIT start, TIME_UNIT duration, double node_height,  double current_task_y_pos, double line_width =  0.1 , bool fill = false) {
 		std::ostringstream returnStream;
@@ -82,6 +83,93 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
   returnStream <<  "}" << std::endl;
 
   return returnStream.str();
+
+}
+
+void  printers::printGraphAsKiterScript (models::Dataflow* const  dataflow, parameters_list_t ) {
+
+
+	  std::ostringstream returnStream;
+
+
+	  returnStream << "// Auto-generate by Kiter for Kiter" << std::endl;
+	  returnStream << "// " << std::endl;
+
+	  returnStream << "std::cout << \"generate a dataflow graph...\" << std::endl;"  << std::endl;
+	  returnStream << "models::Dataflow* new_graph = new models::Dataflow();" << std::endl;
+	  returnStream << "" << std::endl;
+
+	  {ForEachVertex(dataflow,t) {
+		  EXEC_COUNT phase_count = dataflow->getPhasesQuantity(t);
+		  returnStream << "{" << std::endl;
+		  returnStream << "std::cout << \"generate a task ...\" << std::endl;"  << std::endl;
+		  returnStream << "auto new_vertex = new_graph->addVertex(" << dataflow->getVertexId(t) << ");" << std::endl;
+
+		  returnStream << " new_graph->setVertexName(new_vertex,\"" << dataflow->getVertexName(t) << "\");" << std::endl;
+		  returnStream << " new_graph->setPhasesQuantity(new_vertex," <<phase_count << ");" << std::endl;
+		  returnStream << " new_graph->setReentrancyFactor(new_vertex," << dataflow->getReentrancyFactor(t)<< "); " << std::endl;
+
+		  std::string duration_string = "";
+		  for (ARRAY_INDEX phase = 1 ; phase <= phase_count ; phase++) {
+			  if (phase > 1)  duration_string += ",";
+			  duration_string += commons::toString<TIME_UNIT>(dataflow->getVertexDuration(t,phase));
+		  }
+		  duration_string = "{" + duration_string + "}";
+
+		  returnStream << " new_graph->setVertexDuration(new_vertex," << duration_string << ");" << std::endl;
+
+		  returnStream << "}" << std::endl;
+
+	   }}
+
+
+
+	  {ForEachChannel(dataflow,c){
+
+	      Vertex in_vertex  = dataflow->getEdgeSource(c);
+	      Vertex out_vertex = dataflow->getEdgeTarget(c);
+
+	      ARRAY_INDEX in_vertex_id  = dataflow->getVertexId(in_vertex);
+	      ARRAY_INDEX out_vertex_id = dataflow->getVertexId(out_vertex);
+
+
+
+		  EXEC_COUNT in_phase_count = dataflow->getPhasesQuantity(in_vertex);
+		  EXEC_COUNT out_phase_count = dataflow->getPhasesQuantity(out_vertex);
+
+		  returnStream << "{" << std::endl;
+		  returnStream << "std::cout << \"generate a buffer ...\" << std::endl;"  << std::endl;
+
+	      returnStream << "auto new_edge = new_graph->addEdge(new_graph->getVertexById(" << in_vertex_id << "), new_graph->getVertexById(" << out_vertex_id << "));" << std::endl;
+
+
+	      std::string in_rates = "";
+	      for (ARRAY_INDEX phase = 1 ; phase <= in_phase_count ; phase++) {
+	      			  if (phase > 1)  in_rates += ",";
+	      			in_rates += commons::toString<TOKEN_UNIT>(dataflow->getEdgeInPhase(c,phase));
+	      }
+	      in_rates = "{" + in_rates + "}";
+
+
+
+	      std::string out_rates = "";
+	      for (ARRAY_INDEX phase = 1 ; phase <= out_phase_count ; phase++) {
+	      			  if (phase > 1)  out_rates += ",";
+	      			out_rates += commons::toString<TOKEN_UNIT>(dataflow->getEdgeOutPhase(c,phase));
+	      }
+	      out_rates = "{" + out_rates + "}";
+
+
+		  returnStream << " new_graph->setEdgeInPhases(new_edge," << in_rates << ");" << std::endl;
+		  returnStream << " new_graph->setEdgeOutPhases(new_edge," << out_rates << ");" << std::endl;
+		  returnStream << " new_graph->setPreload(new_edge," << dataflow->getPreload(c) << ");" << std::endl;
+		  returnStream << " new_graph->setEdgeName(new_edge,\"" << dataflow->getEdgeName(c) << "\");" << std::endl;
+
+		  returnStream << "}" << std::endl;
+
+	    }}
+	  returnStream << std::endl;
+	  std::cout << returnStream.str();
 
 }
 

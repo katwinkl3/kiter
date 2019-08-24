@@ -36,8 +36,12 @@
 
 #define __SHOW_LEVEL "[ "<< __RELEASE__ <<"  " << commons::getFilename(__FILE__) << ":" << __LINE__ << "]" << RESET_COLOR << " "
 
+#ifdef __RELEASE_MODE__
 #define EXIT_ON_FAILURE()  /*int* toto = NULL; *toto = 1;*/ exit(EXIT_FAILURE)
+#else
+#define EXIT_ON_FAILURE()  {int* toto = NULL; *toto = 1;} exit(EXIT_FAILURE)
 
+#endif
 #define VERBOSE_IS_DEBUG()   (commons::VERBOSE_MODE >= commons::DEBUG_LEVEL)
 #define VERBOSE_IS_INFO()    (commons::VERBOSE_MODE >= commons::INFO_LEVEL)
 #define VERBOSE_IS_ERROR()   (commons::VERBOSE_MODE >= commons::ERROR_LEVEL)
@@ -74,7 +78,11 @@
 #define VERBOSE_ASSERT_GreaterEqualThan(a,b) if (a < b)  {VERBOSE_ERROR("Assertion failed : " << #a << "(=" << a << ") >=" << #b << "(=" << b << ")"); ERROR();}
 
 
+#ifndef __RELEASE_MODE__
 #define VERBOSE_BAD_PROGRAMMING() {VERBOSE_ERROR("Internal Error"); VERBOSE_BACKTRACE(); std::cerr << std::flush; EXIT_ON_FAILURE();}
+#else
+#define VERBOSE_BAD_PROGRAMMING() {VERBOSE_ERROR("Internal Error"); VERBOSE_BACKTRACE(); std::cerr << std::flush; EXIT_ON_FAILURE();}
+#endif
 #define ERROR()             VERBOSE_BAD_PROGRAMMING();
 #define VERBOSE_FAILURE()   VERBOSE_BAD_PROGRAMMING();
 #define FAILED(MESSAGE)     {VERBOSE_ERROR(MESSAGE); std::cerr << std::flush; VERBOSE_BACKTRACE(); EXIT_ON_FAILURE();}

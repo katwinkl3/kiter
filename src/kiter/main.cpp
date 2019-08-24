@@ -23,6 +23,7 @@
 #include <algorithms/symbolicExecution.h>
 #include <algorithms/backpressure.h>
 #include <algorithms/mappings.h>
+#include <algorithms/schedulings.h>
 
 struct algo_t {
 	std::string name;
@@ -41,8 +42,13 @@ inline double tock() {
 
 
 std::vector<algo_t> algorithmslist =               {
+
+		{ "bufferless"           , "no effect",
+				algorithms::scheduling::KPeriodic_scheduling_bufferless} ,
 		{ "randomMapping"           , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.",
 				algorithms::mapping::randomMapping} ,
+				{ "PrintKiter"           , "Generate C++ code to internally generate the graph inside Kiter.",
+						printers::printGraphAsKiterScript} ,
 		{ "PrintKPeriodicExpansionGraph"           , "Print the Expansion graph for the throughput evaluation of CSDF by K-Periodic scheduling. You can specify values for K.",
 				algorithms::print_kperiodic_expansion_graph} ,
 		{ "PrintKPeriodicThroughput"           , "Throughput evaluation of CSDF by K-Periodic scheduling. You can specify values for K.",

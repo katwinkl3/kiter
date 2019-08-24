@@ -70,6 +70,7 @@ SET(CMAKE_CXX_FLAGS "")
 SET(CMAKE_CXX_FLAGS_DEBUG "")
 SET(CMAKE_CXX_FLAGS_RELEASE "")
 
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 
 # errors checking in all mode
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic-errors -ansi  -Wextra  -Werror   -Wunused  -Wno-error=unused-result")
@@ -91,22 +92,24 @@ SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-long-long")
 # not work in fc10
 #SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wlarger-than=1024   -Wsync-nand ")
 
-# -g in debug mode
-SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O3 -std=c++11")
-# -fno-inline  -fno-default-inline
-
-# -O3 in normal mode
-SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -std=c++11") #-Ofast -fno-signed-zeros -mtune=native -fno-signaling-nans -fno-trapping-math -fno-math-errno
-
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 # BugFix fc10:boost
 SET(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS}       -Wno-deprecated -Wno-deprecated-declarations -Wno-unused-but-set-variable") 
-
+endif()
 # don't add profiling helper
 #SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DGLIBCXX_FORCE_NEW")
 
 # DON'TTRAP OVERFLOW
 # SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ftrapv")
 
+endif()
+
+# -g in debug mode
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O3 -std=c++11")
+# -fno-inline  -fno-default-inline
+
+# -O3 in normal mode
+SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -std=c++11") #-Ofast -fno-signed-zeros -mtune=native -fno-signaling-nans -fno-trapping-math -fno-math-errno
 
 
 #
@@ -124,4 +127,5 @@ SET(KITER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/libkiter)
 
 ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/src/libkiter build_results/libkiter_binary_dir)
 ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/src/kiter build_results/kiter_binary_dir)
+ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/src/tests build_results/tests_binary_dir)
 
