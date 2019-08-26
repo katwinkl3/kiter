@@ -16,6 +16,7 @@ class NoCGraph
 	int V; // No. of vertices in graph 
 	std::list<int> *adj; // Pointer to an array containing adjacency lists 
 	std::map<int, std::vector< std::vector<int> > > paths;
+	std::map<int, int> linkUtil;
 	bool dumpPaths;
 	int MESH_SIZE;
 
@@ -29,11 +30,21 @@ class NoCGraph
 	NoCGraph()
 	{ this->V = 1; adj = new std::list<int>[V]; dumpPaths = false; MESH_SIZE = (V/2);} 
 
+	std::vector< std::vector<int> > getShortestPaths(int s, int d)
+	{
+		int index = getMapIndex(s, d);
+		return paths[index];
+	}
+
+	std::map<int, int> getLinkUtil() { return linkUtil; }
+	void clear() { linkUtil.clear(); }
 	void addEdge(int u, int v); 
 	void printAllPaths(int s, int d, int length);
+        void setLinkUtil(std::map<int, int> u) { linkUtil = u; }
 
 	void generateAllShortestPaths();
 	int getMapIndex(int x, int y) {return (x*V + y);}
+	void getMapIndexPair(int index, int* x, int* y) { (*y) = index%V; (*x) = index/V; }
 	int getPathLength(int src, int dst)
 	{
 		if(src == dst)

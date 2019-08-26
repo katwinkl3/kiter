@@ -19,6 +19,8 @@
 #include <cstdlib>
 #include <stack>
 #include <boost/math/common_factor.hpp>
+#include<bits/stdc++.h>
+
 // What is it for ? 
 // #include <bits/stdc++.h>
 #include <set>
@@ -32,6 +34,24 @@ std::vector< std::vector<unsigned int> > cyclen_per_vtxid;
 struct node{
    ARRAY_INDEX index;
 };
+
+route_t get_route_wrapper(models::Dataflow* to, Edge c, NoC* noc)
+{
+	// We store infos about edge to be deleted
+	auto source_vtx = to->getEdgeSource(c);
+	auto target_vtx = to->getEdgeTarget(c);
+
+	//Find the core index
+	auto source = to->getVertexId(source_vtx)-1; //minus 1 since the nodes start from 1 instead of zero
+	auto target = to->getVertexId(target_vtx)-1;
+
+	//Core mapping, modulo scheduling
+	source = source % noc->getMeshSize();
+	target = target % noc->getMeshSize();
+
+	return noc->get_route(source, target);
+}
+
 
 bool operator<(const node& a, const node& b) {
 
@@ -53,6 +73,21 @@ bool operator<(const node& a, const node& b) {
 		return false;
 
 	return false;
+}
+
+
+void generateEdgesMap(models::Dataflow* dataflow, std::map<int, Edge>& edge_list, NoC* noc)
+{
+	{ForEachEdge(dataflow,e) {
+		auto v1 = dataflow->getEdgeSource(e);
+		auto v2 = dataflow->getEdgeTarget(e);
+		
+		int v1_i = (int)dataflow->getVertexId(v1);
+		int v2_i = (int)dataflow->getVertexId(v2);
+
+		int index = noc->getMapIndex(v1_i, v2_i);
+		edge_list[index] = e;
+	}}
 }
 
 
@@ -321,28 +356,277 @@ void printSCCs(models::Dataflow* to, Vertex start)
 		std::vector<unsigned int> temp;
 		cyclen_per_vtxid.push_back(temp);
 
-		if(cycid_per_vtxid[i].size() > 0)
-			std::cout << "vtx=" << i << ":";
+		//if(cycid_per_vtxid[i].size() > 0)
+		//	std::cout << "vtx=" << i << ":";
 		for(auto it = cycid_per_vtxid[i].begin(); it != cycid_per_vtxid[i].end(); it++)
 		{
-			std::cout << cycles[*it].size() << " ";
+			//std::cout << cycles[*it].size() << " ";
 			cyclen_per_vtxid[i].push_back( (unsigned int)cycles[*it].size() );
 		}
 		if(cycid_per_vtxid[i].size() > 0)
 		{
-			std::cout << "\n";
+			//std::cout << "\n";
 			sort(cyclen_per_vtxid[i].begin(), cyclen_per_vtxid[i].end());
 		}
 	}
 }
 
 
-//Process the graph for DFS, etc. in this function
-Vertex graphProcessing(models::Dataflow* to)
+void setmap(std::vector<int> paths, std::map<int, int>& curr_util, NoC* noc)
 {
+	for(unsigned int p_j = 1; p_j < paths.size()-2; p_j++)
+	{
+		int mapindex = noc->getMapIndex(paths[p_j], paths[p_j+1]);
+		if(curr_util.find(mapindex) == curr_util.end())
+			curr_util[mapindex] = 0;	
+		curr_util[mapindex] += 1;
+	}
+}
+
+
+int findPaths(int src, NoC* noc, int core_considered, std::map<int, int>& curr_util, std::map<int, route_t>& store_path, int storepath_id)
+{
+	if(src != -1 && core_considered != -1)
+	{
+		int max_contention_l2 = INT_MAX;
+		int path_idx = -1;
+
+		std::vector< std::vector<int> > paths = noc->getShortestPaths(src, core_considered); //estimate the cost
+		//std::cout << "s=" << src << ",d=" << core_considered << ",#paths=" << paths.size() << "\n";
+		for(unsigned int p_i = 0; p_i < paths.size(); p_i++)
+		{
+			int cont_l2 = 1;
+			for(unsigned int p_j = 1; p_j < paths[p_i].size()-2; p_j++)
+			{
+				//std::cout << paths[p_i][p_j] << " ";
+				int mapindex = noc->getMapIndex(paths[p_i][p_j], paths[p_i][p_j+1]);
+				if(curr_util.find(mapindex) != curr_util.end())
+					cont_l2 = std::max(cont_l2, curr_util[mapindex]);
+			}
+			if(cont_l2 < max_contention_l2)
+			{
+				max_contention_l2 = cont_l2;
+				path_idx = p_i;
+			}
+			//std::cout << "\n";
+		}
+
+		//std::cout << "before path str, path_idx=" << path_idx << ",storepath_id=" << storepath_id << "\n";
+		route_t path_str;
+		for(unsigned int p_j = 1; p_j < paths[path_idx].size()-2; p_j++)
+			path_str.push_back(  (edge_id_t)noc->getMapIndex(paths[path_idx][p_j], paths[path_idx][p_j+1]) );
+		store_path[storepath_id] = path_str;
+
+		//std::cout << "before setmap\n";
+		setmap(paths[path_idx], curr_util, noc);
+		return max_contention_l2;
+	}
+	return 0;
+}
+
+
+void mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::Dataflow* d, std::vector<int>& avail_cores, std::map<int, route_t>& routes)
+{
+	const int start_core = 5;
+	auto index = d->getVertexId(vtx);
+
+	//std::cout << "start\n";
+
+	if((int)avail_cores.size() == noc->size())
+	{
+		core_mapping[index] = start_core;
+		std::remove(avail_cores.begin(), avail_cores.end(), start_core); 
+		std::cout << "mapping node " << index << " to core " << start_core << ",size=" << avail_cores.size() << "\n";
+		avail_cores.resize( avail_cores.size() - 1);
+		return;
+	}
+
+	int best_contention_l1 = INT_MAX;
+	std::map<int, route_t> best_store_path;
+	std::map<int, int> best_util;
+	int core_allocated = -1;
+
+	for (auto core_considered : avail_cores)
+	{
+		//std::cout << "considering core " << core_considered << "\n";
+		int cont_l1 = -1;
+		std::map<int, int> curr_util = noc->getLinkUtil();
+		std::map<int, route_t> store_path; //variable to store the route to be utilized by the (src,dest) core
+
+		{ForInputEdges(d, vtx, e){
+			//Find the core index
+			Vertex source_vtx = d->getEdgeSource(e);
+			auto source = d->getVertexId(source_vtx);
+			int src_core = core_mapping[source];
+			int storepath_id = noc->getMapIndex((int)source, (int)index);
+			cont_l1 = std::max( findPaths(src_core, noc, core_considered, curr_util, store_path, storepath_id), cont_l1 );
+			//std::cout << "cont_l1=" << cont_l1 << "\n";
+		}}
+		{ForOutputEdges(d, vtx, e){
+			Vertex target_vtx = d->getEdgeTarget(e);
+			auto target = d->getVertexId(target_vtx);
+			int tgt_core = core_mapping[target];
+			int storepath_id = noc->getMapIndex((int)index, (int)target);
+			cont_l1 = std::max( findPaths(core_considered, noc, tgt_core, curr_util, store_path, storepath_id), cont_l1 );
+			//std::cout << "2-cont_l1=" << cont_l1 << "\n";
+		}}
+
+		if(cont_l1 < best_contention_l1)
+		{
+			best_contention_l1 = cont_l1;
+			best_store_path = store_path;
+			core_allocated = core_considered;
+			best_util = curr_util;
+			//std::cout << "in here\n";
+		}
+	}
+
+	//std::cout << "after edges\n";
+
+	core_mapping[index] = core_allocated;
+	std::cout << "mapping node2 " << index << " to core " << core_allocated << ",cont=" << best_contention_l1 << "\n";
+	std::remove(avail_cores.begin(), avail_cores.end(), core_allocated);
+	avail_cores.resize(avail_cores.size()-1);
+	noc->setLinkUtil(best_util);
+
+	for(auto it: best_store_path)
+	{
+		if(routes.find(it.first) != routes.end())
+			std::cout << "already one route is stored fro this\n";
+		routes[it.first] = it.second;
+	}
+	//std::cout << "end\n";
+} 
+
+
+//remove the current edge between nodes add intermediate nodes based on the path between them
+void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex start, NoC* noc, std::map<int, route_t>& routes)
+{
+	int V = to->getVerticesCount();
+	std::priority_queue<node> pq;
+	std::vector<bool> visited(V+1, false);
+	std::vector<int> core_mapping(V+1, -1);
+
+	//list of cores that are available
+	std::vector<int> available_cores{5, 6, 10, 9, 8, 4, 0, 1, 2, 3, 7, 11, 15, 14, 13, 12};
+	//for(int i = 0; i < noc->size(); i++)
+	//	available_cores.push_back(i);
+	//end
+	noc->clear();
+
+	auto top = start;
+	ARRAY_INDEX endid = to->getVertexId(top);
+
+
+	node temp2;
+	temp2.index = endid;
+	visited[endid] = true;
+	pq.push(temp2);
+
+	while(!pq.empty())
+	{
+		top = to->getVertexById(pq.top().index);
+		pq.pop();
+		if(top != start)
+		{
+			//std::cout << "mapping " << to->getVertexId(top) << "\n";
+			mapping(top, core_mapping, noc, input, available_cores, routes);
+		}
+
+		{ForOutputEdges(to, top, e){
+			Vertex end = to->getEdgeTarget(e);
+			ARRAY_INDEX endid = to->getVertexId(end);
+
+			if(!visited[endid])
+			{
+				node temp;
+				temp.index = endid;
+				visited[endid] = true;
+				pq.push(temp);
+			}
+		}}
+	}
+}
+
+
+//remove the current edge between nodes
+//add intermediate nodes based on the path between them
+void addPathNode(models::Dataflow* d, Edge c, route_t list,  std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > & returnValue)
+{
+	// We store infos about edge to be deleted
+	auto source_vtx = d->getEdgeSource(c);
+	auto target_vtx = d->getEdgeTarget(c);
+
+	//Find the core index
+	auto source = d->getVertexId(source_vtx);
+	auto target = d->getVertexId(target_vtx);
+
+	//use the inrate and route of the edges ans use it when creating the edges
+	auto inrate = d->getEdgeIn(c);
+	auto outrate = d->getEdgeOut(c);
+	auto preload = d->getPreload(c);  // preload is M0
+
+	bool flag = true;
+	// we delete the edge
+	d->removeEdge(c);
+
+	std::cout << "flow:" << source << "->" << target << ":";
+	//for every link in the path, add a corresponding node
+	for (auto e : list) {
+		//std::cout << e << " --> " ;
+		// we create a new vertex "middle"
+		auto middle = d->addVertex();
+
+		std::stringstream ss;
+		ss << "mid-" << source << "," << target << "-" << e;
+
+		std::pair<Vertex, Vertex> pair_temp;
+		pair_temp.first = middle;
+		pair_temp.second = source_vtx;
+
+		returnValue[(unsigned int)e].push_back(pair_temp);
+		d->setVertexName(middle,ss.str());
+
+		d->setPhasesQuantity(middle,1); // number of state for the actor, only one in SDF
+		d->setVertexDuration(middle,{1}); // is specify for every state , only one for SDF.
+		d->setReentrancyFactor(middle,1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
+
+		// we create a new edge between source and middle,
+		auto e1 = d->addEdge(source_vtx, middle);
+
+		if(flag)
+		{
+			d->setEdgeInPhases(e1,{inrate});  // we specify the production rates for the buffer
+			flag = false;
+		}
+		else
+		{
+			d->setEdgeInPhases(e1,{1});
+		}
+
+		d->setEdgeOutPhases(e1,{1}); // and the consumption rate (as many rates as states for the associated task)
+		d->setPreload(e1,preload);  // preload is M0
+
+		source_vtx = middle;
+		std::cout << e << " ";
+	}
+	std::cout << "\n";
+	//find the final edge
+	auto e2 = d->addEdge(source_vtx, target_vtx);
+	d->setEdgeOutPhases(e2,{outrate});
+	d->setEdgeInPhases(e2,{1});
+	d->setPreload(e2,0);  // preload is M0
+}
+
+
+//Process the graph for DFS, etc. in this function
+void graphProcessing(models::Dataflow* dataflow, NoC* noc, std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > >& returnValue)
+{
+	models::Dataflow* to = new models::Dataflow(*dataflow);
 	bool myflag = false;
 	bool myflag2 = false;
 	Vertex top;
+	std::map<int, route_t> routes;
 
 	auto start = to->addVertex();
 	to->setVertexName(start, "start");
@@ -375,209 +659,13 @@ Vertex graphProcessing(models::Dataflow* to)
 	}
 
 	printSCCs(to, start);
-	return start;
-}
+	taskAndNoCMapping(dataflow, to, start, noc, routes);
 
+	std::map<int, Edge> edge_list;
+	generateEdgesMap(dataflow, edge_list, noc);
 
-
-//remove the current edge between nodes add intermediate nodes based on the path between them
-void taskAndNoCMapping(models::Dataflow* to, Vertex start, NoC* noc)//, Edge c, NoC* noc,  std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > & returnValue)
-{
-	int V = to->getVerticesCount();
-	std::priority_queue<node> pq;
-	std::vector<bool> visited(V+1, false);
-
-	auto top = start;
-	ARRAY_INDEX endid = to->getVertexId(top);
-	node temp2;
-	temp2.index = endid;
-	visited[endid] = true;
-	pq.push(temp2);
-	std::cout << "adding " << top << "\n";
-
-	while(!pq.empty())
-	{
-		top = to->getVertexById(pq.top().index);
-		pq.pop();
-
-		if(top != start)
-			std::cout << "mapping " << to->getVertexId(top) << "\n";
-		{ForOutputEdges(to, top, e){
-			Vertex end = to->getEdgeTarget(e);
-			ARRAY_INDEX endid = to->getVertexId(end);
-			if(!visited[endid])
-			{
-				node temp;
-				temp.index = endid;
-				visited[endid] = true;
-				pq.push(temp);
-			}
-		}}
-	}
-
-
-	/*
-	// We store infos about edge to be deleted
-	auto source_vtx = d->getEdgeSource(c);
-	auto target_vtx = d->getEdgeTarget(c);
-
-	//Find the core index
-	auto source = d->getVertexId(source_vtx)-1; //minus 1 since the nodes start from 1 instead of zero
-	auto target = d->getVertexId(target_vtx)-1;
-
-	//Core mapping, modulo scheduling
-	source = source % noc->getMeshSize();
-	target = target % noc->getMeshSize();
-
-	//use the inrate and route of the edges ans use it when creating the edges
-	auto inrate = d->getEdgeIn(c);
-	auto outrate = d->getEdgeOut(c);
-	auto preload = d->getPreload(c);  // preload is M0
-
-	bool flag = true;
-	if (source == target) //ignore this case
-		return;
-
-	// we delete the edge
-	d->removeEdge(c);
-
-	//for every link in the path, add a corresponding node
-	auto list = noc->get_route(source, target);
-	for (auto e : list) {
-		//std::cout << e << " --> " ;
-		// we create a new vertex "middle"
-		auto middle = d->addVertex();
-
-		std::stringstream ss;
-		ss << "mid-" << source << "," << target << "-" << e;
-
-		std::pair<Vertex, Vertex> pair_temp;
-		pair_temp.first = middle;
-		pair_temp.second = source_vtx;
-
-		returnValue[(unsigned int)e].push_back(pair_temp);
-		d->setVertexName(middle,ss.str());
-
-		d->setPhasesQuantity(middle,1); // number of state for the actor, only one in SDF
-		d->setVertexDuration(middle,{1}); // is specify for every state , only one for SDF.
-		d->setReentrancyFactor(middle,1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
-
-		// we create a new edge between source and middle,
-		auto e1 = d->addEdge(source_vtx, middle);
-
-		if(flag)
-		{
-			d->setEdgeInPhases(e1,{inrate});  // we specify the production rates for the buffer
-			flag = false;
-		}
-		else
-		{
-			d->setEdgeInPhases(e1,{1});
-		}
-
-		d->setEdgeOutPhases(e1,{1}); // and the consumption rate (as many rates as states for the associated task)
-		d->setPreload(e1,preload);  // preload is M0
-
-		source_vtx = middle;
-	}
-
-	//find the final edge
-	auto e2 = d->addEdge(source_vtx, target_vtx);
-	d->setEdgeOutPhases(e2,{outrate});
-	d->setEdgeInPhases(e2,{1});
-	d->setPreload(e2,0);  // preload is M0
-
-	*/
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//remove the current edge between nodes
-//add intermediate nodes based on the path between them
-void addPathNode(models::Dataflow* d, Edge c, NoC* noc,  std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > & returnValue)
-{
-	// We store infos about edge to be deleted
-	auto source_vtx = d->getEdgeSource(c);
-	auto target_vtx = d->getEdgeTarget(c);
-
-	//Find the core index
-	auto source = d->getVertexId(source_vtx)-1; //minus 1 since the nodes start from 1 instead of zero
-	auto target = d->getVertexId(target_vtx)-1;
-
-	//Core mapping, modulo scheduling
-	source = source % noc->getMeshSize();
-	target = target % noc->getMeshSize();
-
-	//use the inrate and route of the edges ans use it when creating the edges
-	auto inrate = d->getEdgeIn(c);
-	auto outrate = d->getEdgeOut(c);
-	auto preload = d->getPreload(c);  // preload is M0
-
-	bool flag = true;
-	if (source == target) //ignore this case
-		return;
-
-	// we delete the edge
-	d->removeEdge(c);
-
-	//for every link in the path, add a corresponding node
-	auto list = noc->get_route(source, target);
-	for (auto e : list) {
-		//std::cout << e << " --> " ;
-		// we create a new vertex "middle"
-		auto middle = d->addVertex();
-
-		std::stringstream ss;
-		ss << "mid-" << source << "," << target << "-" << e;
-
-		std::pair<Vertex, Vertex> pair_temp;
-		pair_temp.first = middle;
-		pair_temp.second = source_vtx;
-
-		returnValue[(unsigned int)e].push_back(pair_temp);
-		d->setVertexName(middle,ss.str());
-
-		d->setPhasesQuantity(middle,1); // number of state for the actor, only one in SDF
-		d->setVertexDuration(middle,{1}); // is specify for every state , only one for SDF.
-		d->setReentrancyFactor(middle,1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
-
-		// we create a new edge between source and middle,
-		auto e1 = d->addEdge(source_vtx, middle);
-
-		if(flag)
-		{
-			d->setEdgeInPhases(e1,{inrate});  // we specify the production rates for the buffer
-			flag = false;
-		}
-		else
-		{
-			d->setEdgeInPhases(e1,{1});
-		}
-
-		d->setEdgeOutPhases(e1,{1}); // and the consumption rate (as many rates as states for the associated task)
-		d->setPreload(e1,preload);  // preload is M0
-
-		source_vtx = middle;
-	}
-
-	//find the final edge
-	auto e2 = d->addEdge(source_vtx, target_vtx);
-	d->setEdgeOutPhases(e2,{outrate});
-	d->setEdgeInPhases(e2,{1});
-	d->setPreload(e2,0);  // preload is M0
+	for(auto it:routes)
+		addPathNode(dataflow, edge_list[it.first], it.second, returnValue);
 }
 
 
@@ -620,13 +708,10 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);
-	models::Dataflow* grProc = new models::Dataflow(*dataflow); //variable used for intermediate graph processing
 
 	//stub start srjkvr
-	Vertex start = graphProcessing(grProc);
-	taskAndNoCMapping(grProc, start, noc);
+	graphProcessing(to, noc, conflictEdges);
 
-	exit(0);
 	//stub end srjkvr
 
 	double xscale  = 1;
@@ -651,10 +736,14 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 		edges_list.push_back(e);
 	}}
 
+	/*
  	//add intermediate nodes
 	for(auto e: edges_list) {
-		addPathNode(to, e, noc,conflictEdges);
+		route_t list_par = get_route_wrapper(to, e, noc);
+		addPathNode(to, e, list_par, conflictEdges);
 	}
+	*/
+
 
 	std::string outputdot = printers::GenerateDOT (to);
 

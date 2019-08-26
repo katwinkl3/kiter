@@ -89,8 +89,7 @@ void NoCGraph::printAllPaths(int s, int d, int length)
 // visited[] keeps track of vertices in current path.
 // path[] stores actual vertices and path_index is current
 // index in path[]
-void NoCGraph::printAllPathsUtil(int u, int d, bool visited[],
-		int path[], int &path_index)
+void NoCGraph::printAllPathsUtil(int u, int d, bool visited[], int path[], int &path_index)
 {
 	// Mark the current node and store it in path[]
 	visited[u] = true;
