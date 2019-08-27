@@ -15,6 +15,7 @@ static inline const std::string OMEGA_COL_STR ()  {
 	return "OMEGA" ;
 }
 
+
 static inline const std::string START_COL_STR (const std::string name, const EXEC_COUNT a, const EXEC_COUNT k)  {
 	return "s_" + name + "_" + commons::toString<EXEC_COUNT>(a)+ "_" + commons::toString<EXEC_COUNT>(k) + "_" ;
 }
@@ -114,8 +115,6 @@ void bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,E
     // Reetrancy Constraints
     //******************************************************************
 
-    // Starting times
-    //******************************************************************
 
     {ForEachVertex(dataflow,t) {
         std::string name = dataflow->getVertexName(t);
@@ -172,7 +171,8 @@ void bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,E
 
 		const TOKEN_UNIT  mop      =  commons::floor(dataflow->getPreload(c),dataflow->getFineGCD(c));
 
-		const TOKEN_UNIT  gcdz      = boost::math::gcd((Zi),(Zj));
+		//const TOKEN_UNIT  gcdz      = boost::math::gcd((Zi),(Zj));
+        const TOKEN_UNIT  gcdk      = boost::math::gcd( kvector[source]  * (Zi), kvector[target] * (Zj));
 
 		TOKEN_UNIT wai    = 0;  /* wai data write at start ai  */
 		TOKEN_UNIT cwai   = 0;  /* cwai cumul data write at start ai   */
@@ -213,8 +213,8 @@ void bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,E
 
 				// *** Normal Buffer constraint computation
 				const TOKEN_UNIT  Ha        =   std::max((TOKEN_UNIT)0, wai - raj);
-				const TOKEN_UNIT  alphamin  =   commons::ceil(Ha + craj - cwai - mop,gcdz);
-				const TOKEN_UNIT  alphamax  =   commons::floor(  craj - cwaim1 - mop - 1 ,gcdz);
+				const TOKEN_UNIT  alphamin  =   commons::ceil(Ha + craj - cwai - mop,gcdk);
+				const TOKEN_UNIT  alphamax  =   commons::floor(  craj - cwaim1 - mop - 1 ,gcdk);
 
 
 				if (alphamin <= alphamax) { // check if contraint exist
@@ -272,7 +272,7 @@ void bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,E
     // GATHERING RESULTS
     //##################################################################
 
-    // BUFFER SIZES
+    // SCHEDULING RESULT
     //******************************************************************
     if (sol) {
 
@@ -390,6 +390,43 @@ void sdf_bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vert
 
 
 
+    // Reetrancy Constraints
+    //******************************************************************
+
+
+    {ForEachVertex(dataflow,t) {
+        std::string name = dataflow->getVertexName(t);
+        std::string last_col_name = "";
+
+		for(EXEC_COUNT k = 1; k <= kvector[t] ; k++) {
+				const TIME_UNIT       lt    = dataflow->getVertexDuration(t);
+				std::string new_col_name = "s_" + commons::toString<EXEC_COUNT>(k) + "_" + name;
+				std::string row_name = "Task_order_"  + name + "_" + new_col_name;
+				if (last_col_name != "") {
+					g.addRow(row_name,commons::bound_s(commons::LOW_BOUND, lt ));
+					g.addCoef(row_name , last_col_name   , - 1     );
+					g.addCoef(row_name , new_col_name    ,   1     );
+				}
+				last_col_name = new_col_name;
+		}
+
+	    // Last one for reetrancy
+
+		if (dataflow->getReentrancyFactor(t)) {
+			auto coef = (TIME_UNIT) (dataflow->getPhasesQuantity(t) * kvector[t]) / (  (TIME_UNIT) dataflow->getNi(t)  );
+			std::string last_row_name = "Task_reentracy_" + name;
+			g.addRow(last_row_name,commons::bound_s(commons::LOW_BOUND, dataflow->getVertexDuration(t,dataflow->getPhasesQuantity(t)) ));
+			std::string source_col =  "s_" + commons::toString<EXEC_COUNT>(kvector[t]) + "_" + name;
+			std::string target_col =  "s_" + commons::toString<EXEC_COUNT>(1) + "_" + name;
+			if (target_col != source_col) {
+				g.addCoef(last_row_name , source_col   , - 1     );
+				g.addCoef(last_row_name , target_col    ,   1    );
+			}
+			g.addCoef(last_row_name , OMEGA_COL_STR(), (double)  coef     );
+		}
+
+    }}
+
 
     // Constraints
     //******************************************************************
@@ -476,7 +513,7 @@ void sdf_bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vert
     // GATHERING RESULTS
     //##################################################################
 
-    // BUFFER SIZES
+    // SCHEDULING RESULT
     //******************************************************************
     if (sol) {
 
@@ -633,22 +670,62 @@ void algorithms::scheduling::KPeriodic_scheduling_bufferless (models::Dataflow* 
     		}
     	}
 
-
-    	std::cout << "sdf_bufferless_scheduling (to,  kvector, {});" << std::endl;
-    	sdf_bufferless_scheduling (to,  kvector, {});
-
-    	std::cout << "bufferless_scheduling (dataflow,  kvector, {});" << std::endl;
-    	bufferless_scheduling (to,  kvector, {});
-
     	std::cout << "bufferless_scheduling (dataflow,  kvector, delays);" << std::endl;
     	bufferless_scheduling (to,  kvector, delays);
 
-
-    	std::cout << "sdf_bufferless_scheduling (to,  kvector, sequences);" << std::endl;
-    	sdf_bufferless_scheduling (to,  kvector, sequences);
 
 
     	std::cout << "Done" << std::endl;
 
 }
+void algorithms::scheduling::SDF_KPeriodic_scheduling_bufferless (models::Dataflow* const  dataflow,  parameters_list_t   param_list) {
 
+	//algorithms::mapping::moduloMapping (dataflow,  param_list);
+    VERBOSE_INFO("Generate KVector");
+
+	std::map<Vertex,EXEC_COUNT> kvector;
+	{ForEachVertex(dataflow,v) {
+		kvector[v] = 1;
+		if (param_list.count(dataflow->getVertexName(v)) == 1) {
+			std::string str_value = param_list[dataflow->getVertexName(v)];
+			kvector[v] =  commons::fromString<EXEC_COUNT> ( str_value );
+		}
+	    VERBOSE_INFO("Task " << dataflow->getVertexName(v) << " - k="<< kvector[v] << " - mapping="<< dataflow->getMapping(v));
+
+	}}
+
+    VERBOSE_INFO("Generate New graph");
+
+    std::vector<std::vector<Vertex>>  sequences;
+    	std::vector<DelayConstraint>  delays;
+    	models::Dataflow* to = new models::Dataflow(*dataflow);
+    	std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEdges;
+
+    	std::vector<Edge> edges_list;
+    	{ForEachEdge(to,e) {
+    		edges_list.push_back(e);
+    	}}
+
+    	for(auto e: edges_list) {
+    		auto seq = addPathNode(to, e, conflictEdges);
+    		sequences.push_back(seq);
+    		for (Vertex v : seq) {
+    			kvector[v] = 1;
+    		}
+    		if (seq.size() >= 2) {
+    			DelayConstraint c;
+    			c.src = seq[0];
+    			c.dst = seq[seq.size() - 1];
+    			c.delay = seq.size() - 1;
+    		    delays.push_back(c);
+    		}
+    	}
+
+    	std::cout << "bufferless_scheduling (dataflow,  kvector, delays);" << std::endl;
+    	sdf_bufferless_scheduling (to,  kvector, sequences);
+
+
+
+    	std::cout << "Done" << std::endl;
+
+}
