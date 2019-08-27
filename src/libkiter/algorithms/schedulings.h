@@ -11,7 +11,16 @@
 #include <map>
 #include <models/Dataflow.h>
 
-void bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector, std::vector<std::vector <Vertex> > task_sequences);
+
+struct DelayConstraint {
+	Vertex src;
+	Vertex dst;
+	TIME_UNIT delay;
+};
+
+
+void sdf_bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector, std::vector<std::vector <Vertex> > task_sequences);
+void bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector, std::vector< DelayConstraint > task_sequences);
 
 namespace algorithms {
 	namespace scheduling {

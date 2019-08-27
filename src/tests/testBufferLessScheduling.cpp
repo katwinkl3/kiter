@@ -109,44 +109,9 @@ int main (int argc, char ** argv)
 
 	algorithms::mapping::moduloMapping ( dataflow, {});
 
-	std::cout << "Generate KVector" << std::endl;
 
-	std::map<Vertex,EXEC_COUNT> kvector;
-	{ForEachVertex(dataflow,v) {
-		kvector[v] = 1;
-		if (parameters.count(dataflow->getVertexName(v)) == 1) {
-			std::string str_value = parameters[dataflow->getVertexName(v)];
-			kvector[v] =  commons::fromString<EXEC_COUNT> ( str_value );
-		}
-	}}
+	algorithms::scheduling::KPeriodic_scheduling_bufferless (  dataflow,     parameters) ;
 
-
-	std::cout << "Generate New graph" << std::endl;
-
-	std::vector<std::vector <Vertex> >  sequences;
-	models::Dataflow* to = new models::Dataflow(*dataflow);
-	std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEdges;
-
-	std::vector<Edge> edges_list;
-	{ForEachEdge(to,e) {
-		edges_list.push_back(e);
-	}}
-
-	for(auto e: edges_list) {
-		auto seq = addPathNode(to, e, conflictEdges);
-		sequences.push_back(seq);
-		for (Vertex v : seq) {
-			kvector[v] = 1;
-		}
-	}
-
-
-	std::cout << "bufferless_scheduling (dataflow,  kvector, {});" << std::endl;
-	bufferless_scheduling (dataflow,  kvector, {});
-
-	std::cout << "bufferless_scheduling (to,  kvector, sequences);" << std::endl;
-	bufferless_scheduling (to,  kvector, sequences);
-	std::cout << "Done" << std::endl;
 
 
 

@@ -85,6 +85,7 @@
 #define TXT_ROW_ALREADY_EXISTS(n)    std::string((std::string) "Row \"" + (std::string)  n + (std::string)  "\" already exists")
 #define TXT_NOT_FOUND 			"Not found"
 #define TXT_COLUMN_NOT_FOUND(n) std::string((std::string) "Column \"" + (std::string)  n + (std::string)  "\" not found")
+#define TXT_ERROR_IN_LP_DEF "Error in the LP definition may happend for example if you have defined more than once the same col in a row."
 
 namespace commons {
 

@@ -221,7 +221,7 @@ void GLPSol::generateGLPKProblem() {
 		}
 	}
 
-	VERBOSE_ASSERT((cur-1) == (int) matrice_size,TXT_NEVER_HAPPEND);
+	VERBOSE_ASSERT((cur-1) == (int) matrice_size, TXT_ERROR_IN_LP_DEF);
 	glp_load_matrix(lp, matrice_size, ia, ja, ar);
 
 	delete[] ia;
