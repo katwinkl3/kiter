@@ -390,13 +390,13 @@ int findPaths(int src, NoC* noc, int core_considered, std::map<int, int>& curr_u
 		int path_idx = -1;
 
 		std::vector< std::vector<int> > paths = noc->getShortestPaths(src, core_considered); //estimate the cost
-		//std::cout << "s=" << src << ",d=" << core_considered << ",#paths=" << paths.size() << "\n";
+		std::cout << "s=" << src << ",d=" << core_considered << ",#paths=" << paths.size() << "\n";
 		for(unsigned int p_i = 0; p_i < paths.size(); p_i++)
 		{
-			int cont_l2 = 1;
+			int cont_l2 = 0;
 			for(unsigned int p_j = 1; p_j < paths[p_i].size()-2; p_j++)
 			{
-				//std::cout << paths[p_i][p_j] << " ";
+				std::cout << paths[p_i][p_j] << "->" << paths[p_i][p_j+1] << " ";
 				int mapindex = noc->getMapIndex(paths[p_i][p_j], paths[p_i][p_j+1]);
 				if(curr_util.find(mapindex) != curr_util.end())
 					cont_l2 = std::max(cont_l2, curr_util[mapindex]);
@@ -405,13 +405,14 @@ int findPaths(int src, NoC* noc, int core_considered, std::map<int, int>& curr_u
 			{
 				max_contention_l2 = cont_l2;
 				path_idx = p_i;
+				std::cout << "\nabove path is chosen";
 			}
-			//std::cout << "\n";
+			std::cout << "\n";
 		}
 
 		//std::cout << "before path str, path_idx=" << path_idx << ",storepath_id=" << storepath_id << "\n";
 		route_t path_str;
-		for(unsigned int p_j = 1; p_j < paths[path_idx].size()-2; p_j++)
+		for(unsigned int p_j = 0; p_j < paths[path_idx].size()-1; p_j++)
 			path_str.push_back(  (edge_id_t)noc->getMapIndex(paths[path_idx][p_j], paths[path_idx][p_j+1]) );
 		store_path[storepath_id] = path_str;
 
@@ -427,9 +428,6 @@ void mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::Dataf
 {
 	const int start_core = 5;
 	auto index = d->getVertexId(vtx);
-
-	//std::cout << "start\n";
-
 	if((int)avail_cores.size() == noc->size())
 	{
 		core_mapping[index] = start_core;
@@ -469,6 +467,7 @@ void mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::Dataf
 			//std::cout << "2-cont_l1=" << cont_l1 << "\n";
 		}}
 
+		std::cout << "trying core " << core_considered << ",cont=" << cont_l1 << "\n";
 		if(cont_l1 < best_contention_l1)
 		{
 			best_contention_l1 = cont_l1;
@@ -507,9 +506,6 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 
 	//list of cores that are available
 	std::vector<int> available_cores{5, 6, 10, 9, 8, 4, 0, 1, 2, 3, 7, 11, 15, 14, 13, 12};
-	//for(int i = 0; i < noc->size(); i++)
-	//	available_cores.push_back(i);
-	//end
 	noc->clear();
 
 	auto top = start;
@@ -544,12 +540,14 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 			}
 		}}
 	}
+	for(unsigned int ac_i = 0; ac_i < core_mapping.size()-1; ac_i++)
+		std::cout << "srjkvr-mapping " << ac_i << " to " << core_mapping[ac_i] << "\n";
 }
 
 
 //remove the current edge between nodes
 //add intermediate nodes based on the path between them
-void addPathNode(models::Dataflow* d, Edge c, route_t list,  std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > & returnValue)
+void addPathNode(models::Dataflow* d, Edge c, route_t list,  std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > & returnValue, NoC* noc)
 {
 	// We store infos about edge to be deleted
 	auto source_vtx = d->getEdgeSource(c);
@@ -606,7 +604,10 @@ void addPathNode(models::Dataflow* d, Edge c, route_t list,  std::map< unsigned 
 		d->setPreload(e1,preload);  // preload is M0
 
 		source_vtx = middle;
-		std::cout << e << " ";
+
+		int v1_i, v2_i;
+		noc->getMapIndexPair((int)e, &v1_i, &v2_i);
+		std::cout << "{" << v1_i << "," << v2_i << "}" << " ";
 	}
 	std::cout << "\n";
 	//find the final edge
@@ -663,7 +664,7 @@ void graphProcessing(models::Dataflow* dataflow, NoC* noc, std::map< unsigned in
 	generateEdgesMap(dataflow, edge_list, noc);
 
 	for(auto it:routes)
-		addPathNode(dataflow, edge_list[it.first], it.second, returnValue);
+		addPathNode(dataflow, edge_list[it.first], it.second, returnValue, noc);
 }
 
 
@@ -738,7 +739,7 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
  	//add intermediate nodes
 	for(auto e: edges_list) {
 		route_t list_par = get_route_wrapper(to, e, noc);
-		addPathNode(to, e, list_par, conflictEdges);
+		addPathNode(to, e, list_par, conflictEdges, noc);
 	}
 	*/
 
