@@ -171,7 +171,7 @@ void bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,E
 
 		const TOKEN_UNIT  mop      =  commons::floor(dataflow->getPreload(c),dataflow->getFineGCD(c));
 
-		//const TOKEN_UNIT  gcdz      = boost::math::gcd((Zi),(Zj));
+		// TODO : I am not sure about this part,
         const TOKEN_UNIT  gcdk      = boost::math::gcd( kvector[source]  * (Zi), kvector[target] * (Zj));
 
 		TOKEN_UNIT wai    = 0;  /* wai data write at start ai  */
@@ -656,10 +656,12 @@ void algorithms::scheduling::KPeriodic_scheduling_bufferless (models::Dataflow* 
     	}}
 
     	for(auto e: edges_list) {
+    		Vertex esrc = to->getEdgeSource(e);
+    		VERBOSE_INFO("replace edge " << e << "by a sequence with periodicity factor = " << kvector[esrc]);
     		auto seq = addPathNode(to, e, conflictEdges);
     		sequences.push_back(seq);
     		for (Vertex v : seq) {
-    			kvector[v] = 1;
+    			kvector[v] = kvector[esrc];
     		}
     		if (seq.size() >= 2) {
     			DelayConstraint c;
@@ -707,10 +709,13 @@ void algorithms::scheduling::SDF_KPeriodic_scheduling_bufferless (models::Datafl
     	}}
 
     	for(auto e: edges_list) {
+    		Vertex esrc = to->getEdgeSource(e);
+    	    VERBOSE_INFO("replace edge " << e << "by a sequence with periodicity factor = " << kvector[esrc]);
     		auto seq = addPathNode(to, e, conflictEdges);
     		sequences.push_back(seq);
+
     		for (Vertex v : seq) {
-    			kvector[v] = 1;
+    			kvector[v] = kvector[esrc];
     		}
     		if (seq.size() >= 2) {
     			DelayConstraint c;
