@@ -47,8 +47,10 @@ std::vector<algo_t> algorithmslist =               {
 				algorithms::scheduling::KPeriodic_scheduling_bufferless} ,
 		{ "randomMapping"           , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.",
 				algorithms::mapping::randomMapping} ,
-				{ "PrintKiter"           , "Generate C++ code to internally generate the graph inside Kiter.",
-						printers::printGraphAsKiterScript} ,
+		{ "moduloMapping"           , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.",
+				algorithms::mapping::moduloMapping} ,
+		{ "PrintKiter"           , "Generate C++ code to internally generate the graph inside Kiter.",
+				printers::printGraphAsKiterScript} ,
 		{ "PrintKPeriodicExpansionGraph"           , "Print the Expansion graph for the throughput evaluation of CSDF by K-Periodic scheduling. You can specify values for K.",
 				algorithms::print_kperiodic_expansion_graph} ,
 		{ "PrintKPeriodicThroughput"           , "Throughput evaluation of CSDF by K-Periodic scheduling. You can specify values for K.",
@@ -137,6 +139,7 @@ int main (int argc, char **argv)
     		filename = optarg;
     	}
     	if (c == 'a') {
+    		VERBOSE_INFO("Store algo " << optarg);
     		algos.push_back(std::pair<std::string,parameters_list_t>(optarg,parameters));
     		parameters.clear();
     	}
@@ -152,7 +155,7 @@ int main (int argc, char **argv)
         }
     }
 
-    VERBOSE_INFO("Parameter parsing is done.");
+    VERBOSE_INFO("Parameter parsing is done: " << algos.size() << " algo identified.");
 
     /*
      * Here, we gathered two important values :
@@ -205,8 +208,8 @@ int main (int argc, char **argv)
 
     // Step 4 = Apply selected algorithm
     bool nothing = true;
-    for ( std::vector<algo_t>::iterator lit = algorithmslist.begin() ; lit != algorithmslist.end() ; lit++ ) {
-        for ( std::vector<std::pair<std::string,parameters_list_t>>::iterator it = algos.begin() ; it != algos.end() ; it++ ) {
+    for ( std::vector<std::pair<std::string,parameters_list_t>>::iterator it = algos.begin() ; it != algos.end() ; it++ ) {
+    	for ( std::vector<algo_t>::iterator lit = algorithmslist.begin() ; lit != algorithmslist.end() ; lit++ ) {
             if ((*it).first == lit->name) {
                VERBOSE_INFO ("Run " << lit->name);
                tock();
