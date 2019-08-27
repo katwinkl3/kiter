@@ -13,11 +13,12 @@
 
 void algorithms::mapping::moduloMapping (models::Dataflow* const  dataflow, parameters_list_t params) {
 
+	VERBOSE_INFO("moduloMapping");
 	for (auto t : dataflow->vertices()) {
 		if (params.find(dataflow->getVertexName(t)) != params.end()) {
 			dataflow->setMapping(t, commons::fromString<node_id_t> (params[dataflow->getVertexName(t)]));
 		} else {
-			node_id_t modulo_id = dataflow->getVertexId(t) % dataflow->getNoC()->size();
+			node_id_t modulo_id = (dataflow->getVertexId(t) - 1) % dataflow->getNoC()->size();
 			dataflow->setMapping(t, modulo_id);
 		}
 	}

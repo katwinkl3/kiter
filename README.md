@@ -68,7 +68,11 @@ benchmark:
 benchmark_sized:
 Black-scholes.xml  Echo.xml  H264.xml  JPEG2000.xml  Pdectect.xml
 ```
+## How to run bufferless scheduling for a particular mapping
 
+```
+./debug/bin/kiter  -f ./sdf3mem/mp3decoder.xml  -a randomMapping  -a PrintInfos -a bufferless -v5
+```
 
 ## Known dependencies
 * Boost
