@@ -85,6 +85,7 @@ void generateEdgesMap(models::Dataflow* dataflow, std::map<int, Edge>& edge_list
 
 		int index = noc->getMapIndex(v1_i, v2_i);
 		edge_list[index] = e;
+		//std::cout << "link:" << v1_i << "->" << v2_i << "\n";
 	}}
 }
 
@@ -212,7 +213,7 @@ void my_dfs(models::Dataflow* adj, Vertex node, std::vector<bool> visited, Verte
 			{
 				cycles.push_back(temp);
 				cycleids.insert((unsigned int)cycles.size()-1);
-				//std::cout << "adding a cycle\n";
+				std::cout << "adding a cycle\n";
 			}
 		}
 		return;
@@ -523,7 +524,7 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 		pq.pop();
 		if(top != start)
 		{
-			//std::cout << "mapping " << to->getVertexId(top) << "\n";
+			std::cout << "mapping " << to->getVertexId(top) << "\n";
 			mapping(top, core_mapping, noc, input, available_cores, routes);
 		}
 
@@ -531,17 +532,33 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 			Vertex end = to->getEdgeTarget(e);
 			ARRAY_INDEX endid = to->getVertexId(end);
 
+			std::cout << "trying node " << endid << "\n";
 			if(!visited[endid])
 			{
-				node temp;
-				temp.index = endid;
-				visited[endid] = true;
-				pq.push(temp);
+				bool flag = true;
+				/*{ForInputEdges(to, end, e2){
+					Vertex e2end = to->getEdgeSource(e2);
+					ARRAY_INDEX e2endid = to->getVertexId(e2end);
+					if(!visited[e2endid])//if parent is not executed, cannot map this node
+						flag = false;
+				}}*/
+
+				if(flag)
+				{
+					std::cout << "adding " << endid << " to queue\n";
+					node temp;
+					temp.index = endid;
+					visited[endid] = true;
+					pq.push(temp);
+				}
 			}
 		}}
 	}
-	for(unsigned int ac_i = 0; ac_i < core_mapping.size()-1; ac_i++)
-		std::cout << "srjkvr-mapping " << ac_i << " to " << core_mapping[ac_i] << "\n";
+
+	std::cout << "srjkvr-mapping ";
+	for(unsigned int ac_i = 1; ac_i < core_mapping.size()-1; ac_i++)
+		std::cout << core_mapping[ac_i] << ",";
+	std::cout << "\n";
 }
 
 
@@ -619,6 +636,63 @@ void addPathNode(models::Dataflow* d, Edge c, route_t list,  std::map< unsigned 
 
 
 //Process the graph for DFS, etc. in this function
+void postProcessing(models::Dataflow* to, Vertex start, NoC* noc) 
+{
+	std::cout << "inside post Processing,cycles="<< cycles.size() << "\n";
+	std::map<int, Edge> edge_list;
+	generateEdgesMap(to, edge_list, noc);
+
+	for(unsigned int i = 0; i < cycles.size(); i++)
+	{
+		std::vector<unsigned int> temp = cycles[i];
+
+		std::cout << "cycle-" << i << ",len=" << temp.size();
+		for(unsigned int j = 0; j < temp.size()-1; j++)
+		{
+			auto e2 = temp[j];
+			auto e1 = temp[j+1];
+			int index = noc->getMapIndex(e1,e2);
+			int index2 = noc->getMapIndex(e2,e1); 
+
+			//remove edge e1->e2
+			if(edge_list.find(index) != edge_list.end())
+			{
+				std::cout << "removing the edge " << e1 << "->" << e2 << ",breaking\n";
+				to->removeEdge(edge_list[index]);
+				edge_list.erase(index);
+				break;
+			}
+			else if(edge_list.find(index2) != edge_list.end())
+			{
+				std::cout << "removing the edge " << e2 << "->" << e1 << ",breaking\n";
+				to->removeEdge(edge_list[index2]);
+				edge_list.erase(index2);
+				break;
+			}
+			else
+				std::cout << "cannot remove " << e1 << "->" << e2 << ",continuing\n";
+		}
+	}
+
+	{ForEachVertex(to,t) {
+		if(t == start)
+		{
+			continue;
+		}
+		if(to->getVertexInDegree(t) == 0)
+		{
+			to->addEdge(start, t);
+			std::cout << "adding new edge between start " << to->getVertexId(t) << "\n";
+		}
+		else
+		{
+			std::cout << "vertex " << to->getVertexId(t) << ",in_deg=" << to->getVertexInDegree(t) << "\n";
+		}
+	}}
+}
+
+
+//Process the graph for DFS, etc. in this function
 void graphProcessing(models::Dataflow* dataflow, NoC* noc, std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > >& returnValue)
 {
 	models::Dataflow* to = new models::Dataflow(*dataflow);
@@ -640,10 +714,11 @@ void graphProcessing(models::Dataflow* dataflow, NoC* noc, std::map< unsigned in
 		{
 			continue;
 		}
-		else if(to->getVertexInDegree(t) == 0)
+		if(dataflow->getVertexInDegree( dataflow->getVertexById(to->getVertexId(t)) ) == 0)
 		{
 			myflag = true;
 			to->addEdge(start, t);
+			std::cout << "adding new edge between start " << to->getVertexId(t) << "\n";
 		}
 	}}
 
@@ -658,6 +733,7 @@ void graphProcessing(models::Dataflow* dataflow, NoC* noc, std::map< unsigned in
 	}
 
 	printSCCs(to, start);
+	//postProcessing(to, start, noc);
 	taskAndNoCMapping(dataflow, to, start, noc, routes);
 
 	std::map<int, Edge> edge_list;
