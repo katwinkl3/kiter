@@ -74,6 +74,75 @@ bool operator<(const node& a, const node& b) {
 }
 
 
+void symbolic_execution(models::Dataflow* const  from)
+{
+	std::vector<ARRAY_INDEX> prog_order;
+
+	// Need RV.
+	VERBOSE_ASSERT(computeRepetitionVector(from),"inconsistent graph");
+	// Store task to execute by number of execution.
+	EXEC_COUNT total = 0 ;
+	std::vector < EXEC_COUNT >  remained_execution (from->getMaxVertexId());
+	{ForEachVertex(from,t) {
+		EXEC_COUNT Ni =  from->getNi(t) ;
+		remained_execution[from->getVertexId(t)] = Ni ;
+		total += Ni ;
+	}}
+
+	// Store buffer content.
+	std::vector < EXEC_COUNT >  buffer_content (from->getMaxEdgeId());
+	{ForEachChannel(from,c) {
+		buffer_content[from->getEdgeId(c)] = from->getPreload(c);
+	}}
+
+	// Loop over to execute everyone. Unoptimized, could be much faster if tasks were stacked, and sum of dependences stored.
+	// This does not model timings, useless for throughput
+	while (total > 0) {
+		{ForEachVertex(from,t) {
+			ARRAY_INDEX vId = from->getVertexId(t);
+			bool can_execute = false;
+			if ( remained_execution [vId] > 0) {
+				can_execute = true;
+				{ForInputEdges(from,t,inE)	{
+					TOKEN_UNIT inCount  = buffer_content[from->getEdgeId(inE)];
+					TOKEN_UNIT reqCount = from->getEdgeOut(inE);
+					if (!(inCount >= reqCount)) {
+						can_execute = false;
+						break;
+					}
+				}}
+
+				if (can_execute) {
+
+					if ( std::find (prog_order.begin(), prog_order.end(), vId) == prog_order.end())
+					{
+						prog_order.push_back(vId);
+						std::cout << "Execute " << vId << "\n";
+					}
+
+					remained_execution[from->getVertexId(t)] -= 1 ;
+					total -= 1;
+
+					{ForInputEdges(from,t,inE)	{
+						buffer_content[from->getEdgeId(inE)] -= from->getEdgeOut(inE);
+					}}
+					{ForOutputEdges(from,t,outE)	{
+						buffer_content[from->getEdgeId(outE)] += from->getEdgeIn(outE);
+					}}
+
+				}
+			}
+
+		}}
+	}
+
+	std::cout << "PROGRAMORDER=";
+	for(unsigned int i = 0; i < prog_order.size(); i++)
+		std::cout << prog_order[i] << " ";
+	std::cout << "\n";
+}
+
+
 void generateEdgesMap(models::Dataflow* dataflow, std::map<int, Edge>& edge_list, NoC* noc)
 {
 	{ForEachEdge(dataflow,e) {
@@ -438,7 +507,7 @@ void mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::Dataf
 		return;
 	}
 
-	int best_contention_l1 = INT_MAX;
+	float best_contention_l1 = -1;
 	std::map<int, route_t> best_store_path;
 	std::map<int, int> best_util;
 	int core_allocated = -1;
@@ -449,6 +518,8 @@ void mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::Dataf
 		int cont_l1 = -1;
 		std::map<int, int> curr_util = noc->getLinkUtil();
 		std::map<int, route_t> store_path; //variable to store the route to be utilized by the (src,dest) core
+		unsigned int counter = 0;
+		unsigned int pathlen = 0;
 
 		{ForInputEdges(d, vtx, e){
 			//Find the core index
@@ -456,7 +527,13 @@ void mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::Dataf
 			auto source = d->getVertexId(source_vtx);
 			int src_core = core_mapping[source];
 			int storepath_id = noc->getMapIndex((int)source, (int)index);
-			cont_l1 = std::max( findPaths(src_core, noc, core_considered, curr_util, store_path, storepath_id), cont_l1 );
+			auto temp_cont_l1 = findPaths(src_core, noc, core_considered, curr_util, store_path, storepath_id);
+			cont_l1 = std::max( temp_cont_l1, cont_l1 );
+			if(src_core != -1)
+			{
+				counter++;
+				pathlen += noc->getPathLength(src_core, core_considered);
+			}
 			//std::cout << "cont_l1=" << cont_l1 << "\n";
 		}}
 		{ForOutputEdges(d, vtx, e){
@@ -464,25 +541,30 @@ void mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::Dataf
 			auto target = d->getVertexId(target_vtx);
 			int tgt_core = core_mapping[target];
 			int storepath_id = noc->getMapIndex((int)index, (int)target);
-			cont_l1 = std::max( findPaths(core_considered, noc, tgt_core, curr_util, store_path, storepath_id), cont_l1 );
+			auto temp_cont_l1 = findPaths(core_considered, noc, tgt_core, curr_util, store_path, storepath_id);
+			cont_l1 = std::max( temp_cont_l1, cont_l1 );
+			if(tgt_core != -1)
+			{
+				counter++;
+				pathlen += noc->getPathLength(core_considered, tgt_core);
+			}
 			//std::cout << "2-cont_l1=" << cont_l1 << "\n";
 		}}
-
-		std::cout << "trying core " << core_considered << ",cont=" << cont_l1 << "\n";
-		if(cont_l1 < best_contention_l1)
+		float cost = (float)cont_l1;
+		if(counter > 0 )
+			cost += (float)pathlen/(float)counter;
+		if(best_contention_l1 == -1 || cost < best_contention_l1)
 		{
-			best_contention_l1 = cont_l1;
+			best_contention_l1 = cost;
 			best_store_path = store_path;
 			core_allocated = core_considered;
 			best_util = curr_util;
-			//std::cout << "in here\n";
 		}
+		std::cout << "trying core " << core_considered << ",cont=" << cont_l1 << ",lenfac=" << (float)pathlen/(float)counter << ",cost=" << cost << "\n";
 	}
-
 	//std::cout << "after edges\n";
-
 	core_mapping[index] = core_allocated;
-	std::cout << "mapping node2 " << index << " to core " << core_allocated << ",cont=" << best_contention_l1 << "\n";
+	std::cout << "mapping node " << index << " to core " << core_allocated << ",cont=" << best_contention_l1 << "\n";
 	std::remove(avail_cores.begin(), avail_cores.end(), core_allocated);
 	avail_cores.resize(avail_cores.size()-1);
 	noc->setLinkUtil(best_util);
@@ -493,7 +575,6 @@ void mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::Dataf
 			std::cout << "already one route is stored fro this\n";
 		routes[it.first] = it.second;
 	}
-	//std::cout << "end\n";
 } 
 
 
@@ -512,12 +593,11 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 	auto top = start;
 	ARRAY_INDEX endid = to->getVertexId(top);
 
-
 	node temp2;
 	temp2.index = endid;
 	visited[endid] = true;
 	pq.push(temp2);
-
+/*
 	while(!pq.empty())
 	{
 		top = to->getVertexById(pq.top().index);
@@ -536,12 +616,12 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 			if(!visited[endid])
 			{
 				bool flag = true;
-				/*{ForInputEdges(to, end, e2){
-					Vertex e2end = to->getEdgeSource(e2);
-					ARRAY_INDEX e2endid = to->getVertexId(e2end);
-					if(!visited[e2endid])//if parent is not executed, cannot map this node
-						flag = false;
-				}}*/
+				//{ForInputEdges(to, end, e2){
+				//	Vertex e2end = to->getEdgeSource(e2);
+				//	ARRAY_INDEX e2endid = to->getVertexId(e2end);
+				//	if(!visited[e2endid])//if parent is not executed, cannot map this node
+				//		flag = false;
+				//}}
 
 				if(flag)
 				{
@@ -553,6 +633,13 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 				}
 			}
 		}}
+	}
+*/
+
+	for(ARRAY_INDEX s = 1; s <= (ARRAY_INDEX)(V-1); s++)
+	{
+		auto top = to->getVertexById(s);
+		mapping(top, core_mapping, noc, input, available_cores, routes);
 	}
 
 	std::cout << "srjkvr-mapping ";
@@ -783,6 +870,8 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);
+	models::Dataflow* to2 = new models::Dataflow(*dataflow);
+	symbolic_execution(to2);
 
 	//stub start srjkvr
 	graphProcessing(to, noc, conflictEdges);
