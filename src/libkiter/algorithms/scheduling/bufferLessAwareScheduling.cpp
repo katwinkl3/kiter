@@ -612,7 +612,7 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, std::map< unsigned 
 		}
 
 		d->setEdgeOutPhases(e1,{1}); // and the consumption rate (as many rates as states for the associated task)
-		d->setPreload(e1,preload);  // preload is M0
+		d->setPreload(e1,0);  // preload is M0
 
 
 		source_vtx = middle;
@@ -622,7 +622,7 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, std::map< unsigned 
 	auto e2 = d->addEdge(source_vtx, target_vtx);
 	d->setEdgeOutPhases(e2,outrates);
 	d->setEdgeInPhases(e2,{1});
-	d->setPreload(e2,0);  // preload is M0
+	d->setPreload(e2,preload);  // preload is M0
 	return new_vertices;
 
 }
