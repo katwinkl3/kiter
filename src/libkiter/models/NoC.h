@@ -54,6 +54,7 @@ public :
 	void clear() { g->clear(); }
 	int getMapIndex(int x, int y) { return g->getMapIndex(x,y); }
 	void getMapIndexPair(int index, int* x, int* y) { return g->getMapIndexPair(index, x, y); }
+	int getPathLength(int src, int dst) { return g->getPathLength(src, dst); }
 	std::map<int, int> edgeIndexMap;
 
 	//the routers are from (0 to (NXN)-1)
