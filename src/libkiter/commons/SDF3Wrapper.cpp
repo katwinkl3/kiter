@@ -9,6 +9,8 @@
 
 #include <libxml2/libxml/tree.h>
 #include <libxml2/libxml/parser.h>
+#include <libxml/encoding.h>
+#include <libxml/xmlwriter.h>
 
 #include <commons/SDF3Wrapper.h>
 #include <commons/commons.h>
@@ -577,8 +579,32 @@ models::Dataflow*  readSDF3File         (const std::string f) {
 }
 
 
-std::string        writeSDF3File         (const models::Dataflow* )  {
-	return "";
+void writeSDF3File         (std::string        filename, const models::Dataflow* )  {
+
+	xmlTextWriterPtr writer;
+	writer = xmlNewTextWriterFilename(filename.c_str(), 0);
+	xmlTextWriterStartDocument(writer, NULL, "UTF-8", NULL);
+	xmlTextWriterSetIndent(writer,1); xmlTextWriterStartElement(writer, (const xmlChar*) "sdf3");
+
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"xmlns:xsi", (const xmlChar*)"http://www.w3.org/2001/XMLSchema-instance");
+	xmlTextWriterWriteAttribute (writer,(const xmlChar*)"version",(const xmlChar*)"1.0");
+	xmlTextWriterWriteAttribute (writer,(const xmlChar*)"type", (const xmlChar*)"sdf");
+	xmlTextWriterWriteAttribute (writer,(const xmlChar*)"xsi:noNamespaceSchemaLocation",(const xmlChar*) "http://www.es.ele.tue.nl/sdf3/xsd/sdf3-sdf.xsd");
+	{
+		xmlTextWriterSetIndent(writer,2); xmlTextWriterStartElement(writer,(const xmlChar*) "applicationGraph");
+		{
+			xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "csdf");
+			xmlTextWriterEndElement(writer);
+			xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "csdfProperties");
+			xmlTextWriterEndElement(writer);
+		}
+		xmlTextWriterEndElement(writer);
+	}
+	xmlTextWriterEndElement(writer);
+
+	xmlTextWriterEndDocument(writer);
+	xmlFreeTextWriter(writer);
+
 }
 
 

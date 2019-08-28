@@ -16,8 +16,8 @@ namespace models {
 
 namespace commons {
 
-models::Dataflow*  readSDF3File          (const std::string f) ;
-std::string        writeSDF3File         (const models::Dataflow* f) ;
+models::Dataflow*     readSDF3File          (const std::string f) ;
+void                  writeSDF3File         (const std::string f, const models::Dataflow* ) ;
 
 } // end of namespace commons
 
