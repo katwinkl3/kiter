@@ -26,7 +26,7 @@ static inline const std::string PRED_ROW_STR (const std::string buffername, cons
 }
 
 
-void algorithms::scheduling::bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector, std::vector< DelayConstraint > task_sequences) {
+scheduling_t algorithms::scheduling::bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector, std::vector< DelayConstraint > task_sequences) {
 
 
     commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
@@ -274,6 +274,8 @@ void algorithms::scheduling::bufferless_scheduling (models::Dataflow* const  dat
 
     // SCHEDULING RESULT
     //******************************************************************
+    scheduling_t res_schedule;
+
     if (sol) {
 
     	TIME_UNIT OMEGA = g.getValue("OMEGA");
@@ -282,6 +284,9 @@ void algorithms::scheduling::bufferless_scheduling (models::Dataflow* const  dat
 
         {ForEachVertex(dataflow,t) {
             std::string name = dataflow->getVertexName(t);
+
+    		res_schedule[t].first = OMEGA / (TIME_UNIT) ( (TIME_UNIT) dataflow->getNi(t) / (TIME_UNIT) kvector[t] );
+
     		for(EXEC_COUNT a = 1; a <= dataflow->getPhasesQuantity(t) ; a++) {
     			for(EXEC_COUNT k = 1; k <= kvector[t] ; k++) {
     				auto starting_time_col = START_COL_STR(name,a,k);
@@ -291,8 +296,11 @@ void algorithms::scheduling::bufferless_scheduling (models::Dataflow* const  dat
         	         	<< "  period=" <<  OMEGA / (TIME_UNIT) ( (TIME_UNIT) dataflow->getNi(t) / (TIME_UNIT) kvector[t] )
 						<< "  end_of_execution_of_last_instance_of_hyper_period=" <<
 						starting_time + dataflow->getVertexDuration(t) + (dataflow->getNi(t)-1)  * ((OMEGA / (TIME_UNIT) ( (TIME_UNIT) dataflow->getNi(t) / (TIME_UNIT) kvector[t] ))) << std::endl ;
+    				res_schedule[t].second.push_back(starting_time);
     			}
     		}
+
+
         }}
 
 
@@ -301,7 +309,7 @@ void algorithms::scheduling::bufferless_scheduling (models::Dataflow* const  dat
     }
 
     VERBOSE_INFO("Done");
-    return;
+    return res_schedule;
 
 
 }

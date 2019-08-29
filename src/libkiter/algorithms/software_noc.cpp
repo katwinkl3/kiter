@@ -1039,8 +1039,16 @@ void algorithms::softwarenoc_bufferless(models::Dataflow* const  dataflow, param
 	}
 
 	std::cout << "bufferless_scheduling (dataflow,  kvector, delays);" << std::endl;
-	algorithms::scheduling::bufferless_scheduling (to,  kvector, delays);
+	scheduling_t persched = algorithms::scheduling::bufferless_scheduling (to,  kvector, delays);
 	std::cout << "Done\n";
+	std::cerr << "Size = "<< persched.size() << std::endl;
+	unsigned long LCM;
+	TIME_UNIT HP;
+	findHP(to, persched, &HP, &LCM);
+	std::cout << "LCM=" << LCM << "\n";
+
+	checkForConflicts(conflictEdges, to, HP, persched);
+
 }
 
 
