@@ -26,7 +26,7 @@ static inline const std::string PRED_ROW_STR (const std::string buffername, cons
 }
 
 
-void bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector, std::vector< DelayConstraint > task_sequences) {
+void algorithms::scheduling::bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector, std::vector< DelayConstraint > task_sequences) {
 
 
     commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
@@ -624,8 +624,8 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, std::map< unsigned 
 	d->setEdgeInPhases(e2,{1});
 	d->setPreload(e2,preload);  // preload is M0
 	return new_vertices;
-
 }
+
 
 void algorithms::scheduling::KPeriodic_scheduling_bufferless (models::Dataflow* const  dataflow,  parameters_list_t   param_list) {
 
@@ -673,7 +673,7 @@ void algorithms::scheduling::KPeriodic_scheduling_bufferless (models::Dataflow* 
     	}
 
     	std::cout << "bufferless_scheduling (dataflow,  kvector, delays);" << std::endl;
-    	bufferless_scheduling (to,  kvector, delays);
+    	algorithms::scheduling::bufferless_scheduling (to,  kvector, delays);
 
 
 

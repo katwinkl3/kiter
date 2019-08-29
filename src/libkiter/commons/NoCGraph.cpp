@@ -55,8 +55,7 @@ void NoCGraph::generateAllShortestPaths()
 				// Call the recursive helper function to print all paths
 				printAllPathsUtil(s+MESH_SIZE, d+MESH_SIZE, visited, path, path_index);
 			}
-
-			std::cout << "s=" << s << ",d=" << d << ",len=" << const_length << ",paths=" << paths[myindex].size()  << "\n";
+			//std::cout << "s=" << s << ",d=" << d << ",len=" << const_length << ",paths=" << paths[myindex].size()  << "\n";
 		}
 	}
 	dumpPaths = false;
@@ -96,16 +95,9 @@ void NoCGraph::printAllPathsUtil(int u, int d, bool visited[], int path[], int &
 	path[path_index] = u;
 	path_index++;
 
-	// If current vertex is same as destination, then print
-	// current path[]
+	// If current vertex is same as destination, then print current path[]
 	if (u == d)
 	{
-		//std::cout << "calling " << d << "\n";
-		//std::cout << "Path_len=" << path_index << ":";
-		//for (int i = 0; i<path_index; i++)
-		//	std::cout << path[i] << " ";
-		//std::cout << std::endl;
-
 		if(dumpPaths && path[0] != d)
 		{
 			int myindex = getMapIndex(path[0]-MESH_SIZE, d-MESH_SIZE);
@@ -117,25 +109,20 @@ void NoCGraph::printAllPathsUtil(int u, int d, bool visited[], int path[], int &
 	}
 	else // If current vertex is not destination
 	{
-
 		if( (path_index-1) >= const_length)
 		{
-			//std::cout << "exiting " << u << "," << d << ",path_len=" << (path_index-1) << "\n";
 			visited[u] = false;
 			path_index--;
 			return;
 		}
-
 		// Recur for all the vertices adjacent to current vertex
 		std::list<int>::iterator i;
 		for (i = adj[u].begin(); i != adj[u].end(); ++i)
 			if (!visited[*i])
 			{
-				//std::cout << "calling " << *i << "," << d << ",path_len=" << path_index << "\n";
 				printAllPathsUtil(*i, d, visited, path, path_index);
 			}
 	}
-
 	// Remove current vertex from path[] and mark it as unvisited
 	path_index--;
 	visited[u] = false;

@@ -26,6 +26,8 @@ namespace algorithms {
 	namespace scheduling {
 		void KPeriodic_scheduling_bufferless (models::Dataflow* const  dataflow,   parameters_list_t   param_list);
 		void SDF_KPeriodic_scheduling_bufferless (models::Dataflow* const  dataflow,   parameters_list_t   param_list);
+		void KPeriodic_taskNoCbufferless(models::Dataflow*, parameters_list_t param_list);
+		void bufferless_scheduling(models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector, std::vector< DelayConstraint > task_sequences);
 	}
 }
 
