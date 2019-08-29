@@ -106,7 +106,9 @@ std::vector<algo_t> algorithmslist =               {
 			{ "PrintNKPeriodic"                   , "Print reduced XML version and DOT definition of the event graph produced by periodic method.",
 					algorithms::print_NKperiodic_eventgraph  },
 			{ "BackPressureSizing"              , "Buffer sizing method from Wiggers et al DAC 2007 paper.",
-					algorithms::compute_backpressure_memory_sizing}
+                                        algorithms::compute_backpressure_memory_sizing},
+                        { "KPeriodicThroughputwithDSE"              , "Combine buffer space exploration with throughput evaluation of CSDF by K-periodic scheduling method.",
+					algorithms::compute_Kperiodic_throughput_dse}
                   
 };
 

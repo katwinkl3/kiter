@@ -53,6 +53,7 @@ void                compute_Kperiodic_throughput              (models::Dataflow 
     void print_2periodic_eventgraph                                 (models::Dataflow* const  dataflow, parameters_list_t);
     void print_NKperiodic_eventgraph                                (models::Dataflow *  const , parameters_list_t);
     EXEC_COUNT test_Kperiodic_throughput    (models::Dataflow* const dataflow, parameters_list_t) ;
+    void compute_Kperiodic_throughput_dse (models::Dataflow* const  dataflow, parameters_list_t);
 }
 
 #endif /* KPERIODIC_H_ */
