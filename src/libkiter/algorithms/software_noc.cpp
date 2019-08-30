@@ -758,6 +758,18 @@ void addDependency(models::Dataflow* d, const Vertex vi, const Vertex vj, EXEC_C
 }
 
 
+void removeAllEdgesVertex(models::Dataflow* d, Vertex vtx)
+{
+	{ForInputEdges(d, vtx, E)	{
+		d->removeEdge(E);
+	}}
+	{ForOutputEdges(d, vtx, E)	{
+		d->removeEdge(E);
+	}}
+	d->removeVertex(vtx);
+}
+
+
 void resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 {
 	std::vector<Edge> srcedges, rtredges;
@@ -768,14 +780,12 @@ void resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 	// and router to next edge in the NoC
 	{ForOutputEdges(d,src,outE)	{
 		auto next_node = d->getEdgeTarget(outE);
-		if((int)d->getVertexId(next_node) > origV)
+		if((int)d->getVertexId(next_node) > origV && next_node!= src)
 		{
 			srcedges.push_back(outE);
 			{ForOutputEdges(d,next_node,inE)     {
-				if(d->getVertexId(next_node) != d->getVertexId( d->getEdgeTarget(inE) ))
-				{
+				if(next_node != d->getEdgeTarget(inE))
 					rtredges.push_back(inE);
-				}
 			}}
 		}
 	}}
@@ -811,18 +821,12 @@ void resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 					token_vec[j].push_back(0);
 			}
 		}
-		
 		flow += d->getEdgeIn( srcedges[i] );
-		preload += d->getPreload( srcedges[i] );
-	
+		preload += d->getPreload( srcedges[i] );	
 		std::cout << "states=" << flow << ",preload=" << preload << "\n";
 	}
-
-	for(int i = 0; i < (int)srcedges.size(); i++)
-		d->removeEdge(srcedges[i]); //remove edge between source vertex and router nodes
 	std::cout << "done with removing edges\n";
 	
-
 	//2B. Create the phase duration and token per phase for the new router node
 	std::vector<TOKEN_UNIT> srctoken(flow, 1);
 	std::vector<TIME_UNIT> phaseDurVec(flow, 1.0);
@@ -831,19 +835,17 @@ void resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 	auto middle = d->addVertex();
 	std::stringstream ss;
 	ss << src << "-R";
-	d->setVertexName(middle,ss.str());
-	d->setPhasesQuantity(middle,flow); // number of state for the actor, only one in SDF
-	d->setVertexDuration(middle,phaseDurVec); // is specify for every state , only one for SDF.
-	d->setReentrancyFactor(middle,1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
-
+	d->setVertexName(middle, ss.str());
+	d->setPhasesQuantity(middle, flow); // number of state for the actor, only one in SDF
+	d->setVertexDuration(middle, phaseDurVec); // is specify for every state , only one for SDF.
+	d->setReentrancyFactor(middle, 1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
 	std::cout << "Done cresting big router node\n";
 
 	//3B. Add edge between source vertex and big router node
 	auto srcEdge = d->addEdge(src, middle);
-	d->setPreload(srcEdge,preload);
-	//d->setEdgeOutPhases(srcEdge,srctoken);
-	d->setEdgeInPhases(srcEdge,srctoken);
-
+	d->setPreload(srcEdge, preload);
+	d->setEdgeInPhases(srcEdge, {flow});
+	d->setEdgeOutPhases(srcEdge, srctoken);
 	std::cout << "Done cresting big router edge\n";
 
 	//4. Setup the new edges. First remove the edge between router and the next NoC link
@@ -857,12 +859,11 @@ void resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 		auto loc_preload = d->getPreload(rtredges[i]);
 		auto new_edge = d->addEdge(middle, v2);
 
-		//d->setEdgeOutPhases(new_edge,token_vec[i]);
-		//d->setEdgeInPhases(new_edge,token_vec[i]);
-		d->setPreload(new_edge,loc_preload);  // preload is M0
+		removeAllEdgesVertex(d, v1);
 
-		d->removeEdge(rtredges[i]);
-		d->removeVertex(v1);
+		d->setEdgeInPhases(new_edge, token_vec[i]);
+		d->setEdgeOutPhases(new_edge, {1});
+		d->setPreload(new_edge,loc_preload);  // preload is M0
 	}
 	std::cout << "done with function\n";
 }
@@ -1007,8 +1008,8 @@ bool algorithms::isConflictPresent(LARGE_INT HP, TIME_UNIT si, LARGE_INT ni, TIM
 
 void algorithms::softwarenoc_bufferless(models::Dataflow* const  dataflow, parameters_list_t   param_list)
 {
-	unsigned long LCM;
-	TIME_UNIT HP;
+	//unsigned long LCM;
+	//TIME_UNIT HP;
 
 	conflictEtype conflictEdges; //stores details of flows that share noc edges
     	NoC *noc = new NoC(4, 4, 1); //Init NoC
@@ -1066,10 +1067,11 @@ void algorithms::softwarenoc_bufferless(models::Dataflow* const  dataflow, param
 		resolveSrcConflicts(to, src, origV);
 	}
 
-	scheduling_t persched =  algorithms::generateKperiodicSchedule   (to , false) ;
+	std::cout << "resolving conflicts done\n";
+	scheduling_t persched =  algorithms::generateKperiodicSchedule   (to , true) ;
 	//scheduling_t persched = algorithms::scheduling::bufferless_scheduling (to,  kvector, delays);
-	findHP(to, persched, &HP, &LCM);
-	checkForConflicts(conflictEdges, to, HP, persched);
+	//findHP(to, persched, &HP, &LCM);
+	//checkForConflicts(conflictEdges, to, HP, persched);
 }
 
 
