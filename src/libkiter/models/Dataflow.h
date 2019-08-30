@@ -492,7 +492,7 @@ public :
     	boost::put(boost::edge_total_output, this->getG(), c.e, total);
     	EXEC_COUNT q = this->getPhasesQuantity(this->getEdgeTarget(c));
     	VERBOSE_DEBUG(" - EdgeTarget is " << this->getVertexName(this->getEdgeTarget(c)) << " with " << q << " states");
-    	if (q > 0) {VERBOSE_ASSERT(q == l.size(),TXT_NEVER_HAPPEND);}
+    	if (q > 0) {VERBOSE_ASSERT(q == l.size(),"Error, the number of phase for the target task of edge " << c << " is " << q <<", but the number of value given is " << l.size());}
     	this->setPhasesQuantity(this->getEdgeTarget(c),l.size());
     }
 
@@ -512,9 +512,8 @@ public :
     	boost::put(boost::edge_total_input, this->getG(), c.e, total);
     	EXEC_COUNT q = this->getPhasesQuantity(this->getEdgeSource(c));
     	VERBOSE_DEBUG(" - EdgeSource is " << this->getVertexName(this->getEdgeSource(c)) << " with " << q << " states");
-    	if (q > 0) {
-    		VERBOSE_ASSERT(q == l.size(),TXT_NEVER_HAPPEND);
-    	}
+    	if (q > 0) {VERBOSE_ASSERT(q == l.size(),"Error, the number of phase for the source task of edge " << c << " is " << q <<", but the number of value given is " << l.size());}
+
     	this->setPhasesQuantity(this->getEdgeSource(c),l.size());
     }
 
