@@ -34,7 +34,6 @@ struct node{
 };
 
 typedef std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEtype;
-typedef std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>>  perschedType;
 
 route_t get_route_wrapper(models::Dataflow* to, Edge c, NoC* noc)
 {
@@ -705,21 +704,6 @@ std::map<int, route_t> graphProcessing(models::Dataflow* dataflow, NoC* noc, std
 }
 
 
-/*
-void genSrcRouterEdges(models::Dataflow* dataflow, std::map<int, route_t>& routes), std::vector<Edge>& srcEdge, std::vector<Edge>& rtrEdge, 
-{
-	std::map<int, std::vector<Edge> > srcEdge;
-	std::map<int, std::vector<Edge> > rtrEdge;
-
-	for(auto it:routes)
-	{
-		addPathNode(dataflow, edge_list[it.first], it.second, returnValue, noc);
-	}
-}
-*/
-
-
-
 void addIntermediateNodes(models::Dataflow* dataflow, NoC* noc, conflictEtype& returnValue, std::map<int, route_t>& routes)
 {
 	std::map<int, Edge> edge_list;
@@ -869,7 +853,7 @@ void resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 }
 
 
-void checkForConflicts(conflictEtype& conflictEdges, models::Dataflow* to, TIME_UNIT HP, perschedType& persched)
+void checkForConflicts(conflictEtype& conflictEdges, models::Dataflow* to, TIME_UNIT HP, scheduling_t& persched)
 {
 	int total_conflict = 0;
 	for (auto  key : conflictEdges) {
@@ -928,7 +912,7 @@ void checkForConflicts(conflictEtype& conflictEdges, models::Dataflow* to, TIME_
 }
 
 
-void findHP(models::Dataflow* to, perschedType& persched, TIME_UNIT* HP, unsigned long* LCM)
+void findHP(models::Dataflow* to, scheduling_t& persched, TIME_UNIT* HP, unsigned long* LCM)
 {
 	*HP = 0.0;
 	*LCM = 1;
@@ -978,7 +962,7 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 
-	perschedType persched =  algorithms::generateKperiodicSchedule   (to , false) ;
+	scheduling_t persched =  algorithms::generateKperiodicSchedule   (to , false) ;
 	findHP(to, persched, &HP, &LCM);
 	checkForConflicts(conflictEdges, to, HP, persched);
 }
