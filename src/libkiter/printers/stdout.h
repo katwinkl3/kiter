@@ -20,6 +20,7 @@ std::string PeriodicScheduling2DOT    (models::Dataflow* const  dataflow, std::m
 void printGraph         (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
 void printGraphAsKiterScript (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
 void printInfos         (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
+void printXML         (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
 }
 
 #endif /* STDOUT_H_ */

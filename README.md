@@ -48,6 +48,18 @@ KPeriodicThroughput duration=0.000546
 
 The throughput is computed using the same method as SDF3-ANALYSIS Version "27 September 2010".
 
+## Prepare SDF3 with Docker
+
+There is a dockerfile available in the repo so you can install SDF3 even if your system is not compatible:
+```
+docker build -f DockerFileSDF3 -t bbodin/sdf3 ./
+```
+
+This can then be used to run SDF3 easily :
+```
+docker run -v $(pwd)/tmp/sdf3:/sdf -t bbodin/sdf3 ./build/release/Linux/bin/sdf3analysis-sdf --graph /sdf/sdf3mem/fig8.xml   --algo  buffersize
+```
+
 
 ## Run the benchmark
 
@@ -68,7 +80,11 @@ benchmark:
 benchmark_sized:
 Black-scholes.xml  Echo.xml  H264.xml  JPEG2000.xml  Pdectect.xml
 ```
+## How to run bufferless scheduling for a particular mapping
 
+```
+./debug/bin/kiter  -f ./sdf3mem/mp3decoder.xml  -a randomMapping  -a PrintInfos -a bufferless -v5
+```
 
 ## Known dependencies
 * Boost

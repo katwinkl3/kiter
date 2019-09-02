@@ -45,15 +45,21 @@ std::vector<algo_t> algorithmslist =               {
 
 		{ "bufferless"           , "no effect",
 				algorithms::scheduling::KPeriodic_scheduling_bufferless} ,
+		{ "sdfbufferless"           , "no effect",
+				algorithms::scheduling::SDF_KPeriodic_scheduling_bufferless} ,
+		{ "PrintXML"                       , "Print XML file",
+				printers::printXML},
 		{ "randomMapping"           , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.",
 				algorithms::mapping::randomMapping} ,
-				{ "PrintKiter"           , "Generate C++ code to internally generate the graph inside Kiter.",
-						printers::printGraphAsKiterScript} ,
+		{ "moduloMapping"           , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.",
+				algorithms::mapping::moduloMapping} ,
+		{ "PrintKiter"           , "Generate C++ code to internally generate the graph inside Kiter.",
+				printers::printGraphAsKiterScript} ,
 		{ "PrintKPeriodicExpansionGraph"           , "Print the Expansion graph for the throughput evaluation of CSDF by K-Periodic scheduling. You can specify values for K.",
 				algorithms::print_kperiodic_expansion_graph} ,
 		{ "PrintKPeriodicThroughput"           , "Throughput evaluation of CSDF by K-Periodic scheduling. You can specify values for K.",
 				algorithms::print_kperiodic_scheduling} ,
-		      { "1PeriodicThroughput"              , "Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.",
+				{ "1PeriodicThroughput"              , "Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.",
 			algorithms::compute_1Kperiodic_throughput} ,
 		      { "2PeriodicThroughput"              , "Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.",
 			algorithms::compute_2Kperiodic_throughput} ,
@@ -77,6 +83,8 @@ std::vector<algo_t> algorithmslist =               {
 		    algorithms::symbolic_execution},
 		      { "SoftwareControlledNoC"                       , "Perform NoC scheduling after deciding task mapping and routing.",
 		    algorithms::software_noc},
+		      { "SoftwareControlledNoCBuufferless"                       , "Perform Bufferless NoC scheduling after deciding task mapping and routing.",
+		    algorithms::softwarenoc_bufferless},
 		      { "SymbolicExecutionWP"                       , "Execute task in ASAP fashion and print out the scheduling.",
 		    algorithms::symbolic_execution_with_packets},
 			{ "PeriodicSizing"                  , "Minimal Buffer size estimation by periodic scheduling method.",
@@ -139,6 +147,7 @@ int main (int argc, char **argv)
     		filename = optarg;
     	}
     	if (c == 'a') {
+    		VERBOSE_INFO("Store algo " << optarg);
     		algos.push_back(std::pair<std::string,parameters_list_t>(optarg,parameters));
     		parameters.clear();
     	}
@@ -154,7 +163,7 @@ int main (int argc, char **argv)
         }
     }
 
-    VERBOSE_INFO("Parameter parsing is done.");
+    VERBOSE_INFO("Parameter parsing is done: " << algos.size() << " algo identified.");
 
     /*
      * Here, we gathered two important values :
@@ -207,8 +216,8 @@ int main (int argc, char **argv)
 
     // Step 4 = Apply selected algorithm
     bool nothing = true;
-    for ( std::vector<algo_t>::iterator lit = algorithmslist.begin() ; lit != algorithmslist.end() ; lit++ ) {
-        for ( std::vector<std::pair<std::string,parameters_list_t>>::iterator it = algos.begin() ; it != algos.end() ; it++ ) {
+    for ( std::vector<std::pair<std::string,parameters_list_t>>::iterator it = algos.begin() ; it != algos.end() ; it++ ) {
+    	for ( std::vector<algo_t>::iterator lit = algorithmslist.begin() ; lit != algorithmslist.end() ; lit++ ) {
             if ((*it).first == lit->name) {
                VERBOSE_INFO ("Run " << lit->name);
                tock();

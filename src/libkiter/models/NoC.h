@@ -48,6 +48,14 @@ public :
 	}
 
 	void generateShortestPaths() { g->generateAllShortestPaths(); }
+	std::vector< std::vector<int> > getShortestPaths(int s, int d) { return g->getShortestPaths(s, d); }
+	std::map<int, int> getLinkUtil() { return g->getLinkUtil(); }
+	void setLinkUtil(std::map<int, int> u) { g->setLinkUtil(u); }
+	void clear() { g->clear(); }
+	int getMapIndex(int x, int y) { return g->getMapIndex(x,y); }
+	void getMapIndexPair(int index, int* x, int* y) { return g->getMapIndexPair(index, x, y); }
+	int getPathLength(int src, int dst) { return g->getPathLength(src, dst); }
+	std::map<int, int> edgeIndexMap;
 
 	//the routers are from (0 to (NXN)-1)
 	//while the cores are marked from (NXN) to 2*(NXN) - 1
@@ -174,7 +182,6 @@ public :
 
 		return res;
 	}
-
 
 };
 

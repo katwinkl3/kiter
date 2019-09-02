@@ -10,6 +10,7 @@
 
 void algorithms::mapping::randomMapping (models::Dataflow* const  dataflow, parameters_list_t params) {
 
+	VERBOSE_INFO("randomMapping");
 	for (auto t : dataflow->vertices()) {
 		if (params.find(dataflow->getVertexName(t)) != params.end()) {
 			dataflow->setMapping(t, commons::fromString<node_id_t> (params[dataflow->getVertexName(t)]));

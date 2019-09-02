@@ -22,23 +22,30 @@
 
 //remove the current edge between nodes
 //add intermediate nodes based on the path between them
-void addPathNode(models::Dataflow* d, Edge c, std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > & returnValue) {
+std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > & returnValue) {
+
+	VERBOSE_ASSERT(not d->is_read_only(), "The graph must be writable to use addPathNode.");
+
+	std::vector<Vertex> new_vertices;
 	// We store infos about edge to be deleted
 	auto source_vtx = d->getEdgeSource(c);
 	auto target_vtx = d->getEdgeTarget(c);
+
+	auto source_vtx_name = d->getVertexName(source_vtx);
+	auto target_vtx_name = d->getVertexName(target_vtx);
 
 	//Find the core index
 	auto source = d->getMapping(source_vtx);
 	auto target = d->getMapping(target_vtx);
 
 	//use the inrate and route of the edges ans use it when creating the edges
-	auto inrate = d->getEdgeIn(c);
-	auto outrate = d->getEdgeOut(c);
+	auto inrates = d->getEdgeInVector(c);
+	auto outrates = d->getEdgeOutVector(c);
 	auto preload = d->getPreload(c);  // preload is M0
 
 	bool flag = true;
 	if (source == target) //ignore this case
-		return;
+		return new_vertices;
 
 	// we delete the edge
 	d->removeEdge(c);
@@ -49,9 +56,10 @@ void addPathNode(models::Dataflow* d, Edge c, std::map< unsigned int, std::vecto
 		//std::cout << e << " --> " ;
 		// we create a new vertex "middle"
 		auto middle = d->addVertex();
+		new_vertices.push_back(middle);
 
 		std::stringstream ss;
-		ss << "mid-" << source << "," << target << "-" << e;
+		ss << "mid_" << source_vtx_name << "_" << target_vtx_name << "_" << e;
 
 		std::pair<Vertex, Vertex> pair_temp;
 		pair_temp.first = middle;
@@ -69,7 +77,7 @@ void addPathNode(models::Dataflow* d, Edge c, std::map< unsigned int, std::vecto
 
 		if(flag)
 		{
-			d->setEdgeInPhases(e1,{inrate});  // we specify the production rates for the buffer
+			d->setEdgeInPhases(e1,inrates);  // we specify the production rates for the buffer
 			flag = false;
 		}
 		else
@@ -80,14 +88,17 @@ void addPathNode(models::Dataflow* d, Edge c, std::map< unsigned int, std::vecto
 		d->setEdgeOutPhases(e1,{1}); // and the consumption rate (as many rates as states for the associated task)
 		d->setPreload(e1,preload);  // preload is M0
 
+
 		source_vtx = middle;
 	}
 
 	//find the final edge
 	auto e2 = d->addEdge(source_vtx, target_vtx);
-	d->setEdgeOutPhases(e2,{outrate});
+	d->setEdgeOutPhases(e2,outrates);
 	d->setEdgeInPhases(e2,{1});
 	d->setPreload(e2,0);  // preload is M0
+	return new_vertices;
+
 }
 
 
@@ -99,19 +110,8 @@ models::Dataflow* algorithms::transformation::modelNoCMapping(models::Dataflow* 
 	models::Dataflow* to = new models::Dataflow(*dataflow);
 	std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEdges;
 
-
-	//Original graph
-	std::string inputdot = printers::GenerateDOT (dataflow);
-	std::ofstream outfile;
-	outfile.open("input.dot");
-	outfile << inputdot;
-	outfile.close();
-
-	std::cerr << " ================ " <<  to->getName() <<  " ===================== EDGE CONTENT" << std::endl;
-	//Store the current edges list first
 	std::vector<Edge> edges_list;
 	{ForEachEdge(to,e) {
-		std::cerr << to->getVertexId(to->getEdgeSource(e)) << "->" << to->getVertexId(to->getEdgeTarget(e)) << ":name:" << to->getEdgeName(e) << "[" << to->getEdgeIn(e) << "]" << "[" << to->getEdgeOut(e) << "]" << to->getEdgeId(e) << std::endl;
 		edges_list.push_back(e);
 	}}
 

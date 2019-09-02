@@ -182,6 +182,11 @@ void GLPSol::generateGLPKProblem() {
 
 	VERBOSE_ILP("Solve LP with GLPK...");
 
+	VERBOSE_ILP("Row count: " << this->rowsMap.size());
+	VERBOSE_ILP("Col count: " << this->columnsMap.size());
+
+
+
 	/* set rows */
 	glp_add_rows(lp, (int) this->rowsMap.size());
 	//for (vector<row>::iterator it = rows.begin(); it != rows.end() ; it ++) {
@@ -216,7 +221,7 @@ void GLPSol::generateGLPKProblem() {
 		}
 	}
 
-	VERBOSE_ASSERT((cur-1) == (int) matrice_size,TXT_NEVER_HAPPEND);
+	VERBOSE_ASSERT((cur-1) == (int) matrice_size, TXT_ERROR_IN_LP_DEF);
 	glp_load_matrix(lp, matrice_size, ia, ja, ar);
 
 	delete[] ia;
