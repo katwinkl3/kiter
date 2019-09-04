@@ -47,6 +47,9 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 	// We need the repetition vector to proceed.
 	VERBOSE_ASSERT(computeRepetitionVector(graph),"inconsistent graph");
 
+	  {ForEachVertex(graph,t) {
+	  	  VERBOSE_ASSERT(graph->getPhasesQuantity(t) == 1, "Support only SDF");
+	  }}
 
 
 
@@ -157,7 +160,7 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 						subdeps.push_back(last_packet_sent[t]);
 					}
 
-					print_packet_line ( graph->getVertexId(t),  graph->getVertexId(t),  graph->getVertexDuration(t),  compute_pid, subdeps ) ;
+					print_packet_line ( graph->getVertexId(t),  graph->getVertexId(t),  graph->getVertexTotalDuration(t),  compute_pid, subdeps ) ;
 
 					last_packet_sent[t] = compute_pid;
 

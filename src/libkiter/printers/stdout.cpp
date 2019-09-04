@@ -41,7 +41,7 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
   	  VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
   	  auto Ni = dataflow->getNi(t);
   	  auto period = periodic_scheduling[t].first;
-  	  auto duration = dataflow->getVertexDuration(t);
+  	  auto duration = dataflow->getVertexTotalDuration(t);
   	  auto starts = periodic_scheduling[t].second;
 
         for (EXEC_COUNT iter = 0 ; iter < (Ni/starts.size()) ; iter++) {
@@ -57,7 +57,7 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
 	  VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
 	  auto Ni = dataflow->getNi(t);
 	  auto period = periodic_scheduling[t].first;
-	  auto duration = dataflow->getVertexDuration(t);
+	  auto duration = dataflow->getVertexTotalDuration(t);
 	  auto starts = periodic_scheduling[t].second;
 
 	  double current_task_y_pos = yscale * -20 * idx ;

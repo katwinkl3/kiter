@@ -18,7 +18,12 @@
 models::EventGraph*     algorithms::generate_LCG   		                  (models::Dataflow* const  dataflow) {
 
 	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-	VERBOSE_DEBUG_ASSERT(dataflow->is_normalized() == false,"looser");
+	VERBOSE_DEBUG_ASSERT(dataflow->is_normalized() == false,"Graph should not be normalized.");
+
+
+	  {ForEachVertex(dataflow,t) {
+	  	  VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
+	  }}
 
 	models::EventGraph * lcg = new models::EventGraph();
 

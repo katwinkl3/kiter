@@ -277,6 +277,10 @@ scheduling_t algorithms::scheduling::bufferless_scheduling (models::Dataflow* co
 void sdf_bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector, std::vector<std::vector <Vertex> > task_sequences) {
 
 
+	  {ForEachVertex(dataflow,t) {
+	  	  VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
+	  }}
+
     commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
    // With gurobi might be needed, need to fix that.
     //CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
