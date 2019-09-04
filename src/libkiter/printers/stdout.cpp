@@ -178,6 +178,8 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
 
   std::ostringstream returnStream;
   
+  VERBOSE_DEBUG("Start DOT generation");
+
   
   returnStream << "// Auto-generate by Kiter" << std::endl;
   returnStream << "//   use this dot file with circo for an optimal visu\n" << std::endl;

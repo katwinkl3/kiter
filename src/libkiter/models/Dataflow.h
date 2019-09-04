@@ -543,7 +543,10 @@ public :
           return NULL_EDGE; // not found
           }
 
-      inline  TIME_UNIT          getVertexDuration    (const Vertex t)    {return boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).at(0);}
+      inline  TIME_UNIT          getVertexDuration    (const Vertex t)    {
+    	  VERBOSE_ASSERT(boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).size() > 0, "I take too much coffee, and this task has no duration.");
+    	  return boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).at(0);
+      }
     inline  TIME_UNIT          getVertexDuration    (const Vertex t, EXEC_COUNT k)    {return boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).at(k-1);}
     inline  void                setVertexDuration (const Vertex t,
                                                    std::vector<TIME_UNIT> l)    {		ASSERT_WRITABLE();boost::put(boost::vertex_phaseduration, this->getG(), t.v, l);}

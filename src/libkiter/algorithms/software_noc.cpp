@@ -75,8 +75,7 @@ bool operator<(const node& a, const node& b) {
 }
 
 
-std::vector<ARRAY_INDEX> symbolic_execution(models::Dataflow* const  from)
-{
+std::vector<ARRAY_INDEX> symbolic_execution(models::Dataflow* const  from) {
 	std::vector<ARRAY_INDEX> prog_order;
 	// Need RV.
 	VERBOSE_ASSERT(computeRepetitionVector(from),"inconsistent graph");
@@ -137,6 +136,7 @@ std::vector<ARRAY_INDEX> symbolic_execution(models::Dataflow* const  from)
 	for(unsigned int i = 0; i < prog_order.size(); i++)
 		std::cout << prog_order[i] << " ";
 	std::cout << "\n";
+
 	return prog_order;
 }
 
@@ -811,6 +811,8 @@ void resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 	}
 	std::cout << "done with removing edges\n";
 	
+	VERBOSE_ASSERT(flow > 0, "This case is not supported: flow between task has to be strictly positive");
+
 	//2B. Create the phase duration and token per phase for the new router node
 	std::vector<TOKEN_UNIT> srctoken(flow, 1);
 	std::vector<TIME_UNIT> phaseDurVec(flow, 1.0);
@@ -1052,6 +1054,11 @@ void algorithms::softwarenoc_bufferless(models::Dataflow* const  dataflow, param
 	}
 
 	std::cout << "resolving conflicts done\n";
+
+	//Original graph
+	std::cout << printers::GenerateDOT (to) << std::endl;
+
+
 	scheduling_t persched =  algorithms::generateKperiodicSchedule   (to , true) ;
 	//scheduling_t persched = algorithms::scheduling::bufferless_scheduling (to,  kvector, delays);
 	//findHP(to, persched, &HP, &LCM);
