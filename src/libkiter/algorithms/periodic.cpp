@@ -437,7 +437,7 @@ void algorithms::compute_csdf_1periodic_memory   (models::Dataflow* const  dataf
 		const std::string  name   = dataflow->getVertexName(t);
 		const EXEC_COUNT max_k    = dataflow->getPhasesQuantity(t) ;
 		const TIME_UNIT  mu_i     = (TIME_UNIT)  (PERIOD * dataflow->getPhasesQuantity(t)) / (TIME_UNIT) (dataflow->getNi(t));
-		VERBOSE_DEBUG( "Mu_" << name << " = " << mu_i  << "   lti = " << dataflow->getVertexDuration(t) << "  Ni = " << dataflow->getNi(t) << "   Phi=" << dataflow->getPhasesQuantity(t));
+		VERBOSE_DEBUG( "Mu_" << name << " = " << mu_i  << "   lti = " << dataflow->getVertexPhaseDuration(t) << "  Ni = " << dataflow->getNi(t) << "   Phi=" << dataflow->getPhasesQuantity(t));
 		// constraintes k --> k + 1
 
 		for(EXEC_COUNT k = 1; k < max_k ; k++) {
