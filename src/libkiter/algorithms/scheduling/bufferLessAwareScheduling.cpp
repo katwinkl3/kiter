@@ -26,7 +26,7 @@ static inline const std::string PRED_ROW_STR (const std::string buffername, cons
 }
 
 
-scheduling_t algorithms::scheduling::bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector, std::vector< DelayConstraint > task_sequences) {
+scheduling_t algorithms::scheduling::bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector ) {
 
 
     commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
@@ -67,48 +67,6 @@ scheduling_t algorithms::scheduling::bufferless_scheduling (models::Dataflow* co
 			}
 		}
     }}
-
-
-    // Delay constraint between Vertices (typically used for bufferless communications)
-    //***************************************************************************************
-
-    for (DelayConstraint delay_constraint : task_sequences) {
-
-        VERBOSE_INFO("One delay constraint from " << delay_constraint.src << " to " << delay_constraint.dst << " of " << delay_constraint.delay);
-
-        VERBOSE_ASSERT(kvector[delay_constraint.src] == kvector[delay_constraint.dst],
-        		"This scheduling constraint does not work if the src and dst have different periodicity vector. (Could be fixed)" <<
-				" Source is '" << dataflow->getVertexName(delay_constraint.src) << "' (" <<  kvector[delay_constraint.src] << ")"  <<
-				" Target is '" << dataflow->getVertexName(delay_constraint.dst) << "' (" <<  kvector[delay_constraint.dst] << ")" );
-
-        VERBOSE_ASSERT(dataflow->getPhasesQuantity(delay_constraint.src) == dataflow->getPhasesQuantity(delay_constraint.dst),
-        		"This scheduling constraint does not work if the src (" << delay_constraint.src << ") and dst (" << delay_constraint.dst << ") have different phase.  (Could be fixed)" <<
-				" Source is '" << dataflow->getVertexName(delay_constraint.src) << "' (" <<  dataflow->getPhasesQuantity(delay_constraint.src)<< ")"  <<
-				" Target is '" << dataflow->getVertexName(delay_constraint.dst) << "' (" <<  dataflow->getPhasesQuantity(delay_constraint.dst)<< ")" );
-
-        EXEC_COUNT force_k = kvector[delay_constraint.src];
-        EXEC_COUNT force_a = dataflow->getPhasesQuantity(delay_constraint.src);
-
-    	// Add a delay constraint between each k execution of src and dst
-        for(EXEC_COUNT k = 1; k <= force_k ; k++) {
-    		for(EXEC_COUNT a = 1; a <= force_a ; a++) {
-
-        	std::string src_col_name = START_COL_STR(dataflow->getVertexName(delay_constraint.src),a,k);
-        	std::string dst_col_name = START_COL_STR(dataflow->getVertexName(delay_constraint.dst),a,k);
-
-        	VERBOSE_ASSERT(src_col_name != dst_col_name,
-        	        		"Unexpected issue here.");
-
-            		// add constraint
-        	std::string row_name = "delay_from_" + src_col_name + "__to__" + dst_col_name;
-
-        	g.addRow(row_name,commons::bound_s(commons::FIX_BOUND, delay_constraint.delay ));
-        	g.addCoef(row_name , src_col_name   , - 1     );
-        	g.addCoef(row_name , dst_col_name   ,   1     );
-        	VERBOSE_INFO("Add " << row_name);
-    		}
-        }
-    }
 
 
 
@@ -222,9 +180,10 @@ scheduling_t algorithms::scheduling::bufferless_scheduling (models::Dataflow* co
 
 					  TIME_UNIT coef =  ((TIME_UNIT) alphamax) / ( (TIME_UNIT) dataflow->getNi(source)  * (TIME_UNIT) Zi );
 
+					  commons::BoundType bound =(dataflow->getEdgeType(c) == EDGE_TYPE::BUFFERLESS_EDGE)  ?  commons::FIX_BOUND :  commons::LOW_BOUND;
 
 
-					  int rowid = g.addRow(pred_row_name,commons::bound_s(commons::LOW_BOUND, (double) ltai ));
+					  int rowid = g.addRow(pred_row_name,commons::bound_s(bound, (double) ltai ));
 					  VERBOSE_INFO("Add " << pred_row_name);
 
 
@@ -295,7 +254,7 @@ scheduling_t algorithms::scheduling::bufferless_scheduling (models::Dataflow* co
                 		<< "  NI=" <<  dataflow->getNi(t)
         	         	<< "  period=" <<  OMEGA / (TIME_UNIT) ( (TIME_UNIT) dataflow->getNi(t) / (TIME_UNIT) kvector[t] )
 						<< "  end_of_execution_of_last_instance_of_hyper_period=" <<
-						starting_time + dataflow->getVertexDuration(t) + (dataflow->getNi(t)-1)  * ((OMEGA / (TIME_UNIT) ( (TIME_UNIT) dataflow->getNi(t) / (TIME_UNIT) kvector[t] ))) << std::endl ;
+						starting_time + dataflow->getVertexDuration(t,a) + (dataflow->getNi(t)-1)  * ((OMEGA / (TIME_UNIT) ( (TIME_UNIT) dataflow->getNi(t) / (TIME_UNIT) kvector[t] ))) << std::endl ;
     				res_schedule[t].second.push_back(starting_time);
     			}
     		}
@@ -635,110 +594,3 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, std::map< unsigned 
 }
 
 
-void algorithms::scheduling::KPeriodic_scheduling_bufferless (models::Dataflow* const  dataflow,  parameters_list_t   param_list) {
-
-	//algorithms::mapping::moduloMapping (dataflow,  param_list);
-    VERBOSE_INFO("Generate KVector");
-
-	std::map<Vertex,EXEC_COUNT> kvector;
-	{ForEachVertex(dataflow,v) {
-		kvector[v] = 1;
-		if (param_list.count(dataflow->getVertexName(v)) == 1) {
-			std::string str_value = param_list[dataflow->getVertexName(v)];
-			kvector[v] =  commons::fromString<EXEC_COUNT> ( str_value );
-		}
-	    VERBOSE_INFO("Task " << dataflow->getVertexName(v) << " - k="<< kvector[v] << " - mapping="<< dataflow->getMapping(v));
-
-	}}
-
-    VERBOSE_INFO("Generate New graph");
-
-    std::vector<std::vector<Vertex>>  sequences;
-    	std::vector<DelayConstraint>  delays;
-    	models::Dataflow* to = new models::Dataflow(*dataflow);
-    	std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEdges;
-
-    	std::vector<Edge> edges_list;
-    	{ForEachEdge(to,e) {
-    		edges_list.push_back(e);
-    	}}
-
-    	for(auto e: edges_list) {
-    		Vertex esrc = to->getEdgeSource(e);
-    		VERBOSE_INFO("replace edge " << e << "by a sequence with periodicity factor = " << kvector[esrc]);
-    		auto seq = addPathNode(to, e, conflictEdges);
-    		sequences.push_back(seq);
-    		for (Vertex v : seq) {
-    			kvector[v] = kvector[esrc];
-    		}
-    		if (seq.size() >= 2) {
-    			DelayConstraint c;
-    			c.src = seq[0];
-    			c.dst = seq[seq.size() - 1];
-    			c.delay = seq.size() - 1;
-    		    delays.push_back(c);
-    		}
-    	}
-
-    	std::cout << "bufferless_scheduling (dataflow,  kvector, delays);" << std::endl;
-    	algorithms::scheduling::bufferless_scheduling (to,  kvector, delays);
-
-
-
-    	std::cout << "Done" << std::endl;
-
-}
-void algorithms::scheduling::SDF_KPeriodic_scheduling_bufferless (models::Dataflow* const  dataflow,  parameters_list_t   param_list) {
-
-	//algorithms::mapping::moduloMapping (dataflow,  param_list);
-    VERBOSE_INFO("Generate KVector");
-
-	std::map<Vertex,EXEC_COUNT> kvector;
-	{ForEachVertex(dataflow,v) {
-		kvector[v] = 1;
-		if (param_list.count(dataflow->getVertexName(v)) == 1) {
-			std::string str_value = param_list[dataflow->getVertexName(v)];
-			kvector[v] =  commons::fromString<EXEC_COUNT> ( str_value );
-		}
-	    VERBOSE_INFO("Task " << dataflow->getVertexName(v) << " - k="<< kvector[v] << " - mapping="<< dataflow->getMapping(v));
-
-	}}
-
-    VERBOSE_INFO("Generate New graph");
-
-    std::vector<std::vector<Vertex>>  sequences;
-    	std::vector<DelayConstraint>  delays;
-    	models::Dataflow* to = new models::Dataflow(*dataflow);
-    	std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEdges;
-
-    	std::vector<Edge> edges_list;
-    	{ForEachEdge(to,e) {
-    		edges_list.push_back(e);
-    	}}
-
-    	for(auto e: edges_list) {
-    		Vertex esrc = to->getEdgeSource(e);
-    	    VERBOSE_INFO("replace edge " << e << "by a sequence with periodicity factor = " << kvector[esrc]);
-    		auto seq = addPathNode(to, e, conflictEdges);
-    		sequences.push_back(seq);
-
-    		for (Vertex v : seq) {
-    			kvector[v] = kvector[esrc];
-    		}
-    		if (seq.size() >= 2) {
-    			DelayConstraint c;
-    			c.src = seq[0];
-    			c.dst = seq[seq.size() - 1];
-    			c.delay = seq.size() - 1;
-    		    delays.push_back(c);
-    		}
-    	}
-
-    	std::cout << "bufferless_scheduling (dataflow,  kvector, delays);" << std::endl;
-    	sdf_bufferless_scheduling (to,  kvector, sequences);
-
-
-
-    	std::cout << "Done" << std::endl;
-
-}

@@ -43,10 +43,7 @@ inline double tock() {
 
 std::vector<algo_t> algorithmslist =               {
 
-		{ "bufferless"           , "no effect",
-				algorithms::scheduling::KPeriodic_scheduling_bufferless} ,
-		{ "sdfbufferless"           , "no effect",
-				algorithms::scheduling::SDF_KPeriodic_scheduling_bufferless} ,
+
 		{ "PrintXML"                       , "Print XML file",
 				printers::printXML},
 		{ "randomMapping"           , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.",

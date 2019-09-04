@@ -31,9 +31,11 @@
 
 /* Dataflow defintion */
 
+enum EDGE_TYPE {NORMAL_EDGE, BUFFERLESS_EDGE};
 
 namespace boost
 {
+
 	enum vertex_phasecount_t { vertex_phasecount      };
 	enum vertex_phaseduration_t { vertex_phaseduration      };
 	enum vertex_Zi_t { vertex_Zi      };
@@ -49,6 +51,7 @@ namespace boost
 	enum edge_total_output_t       { edge_total_output            };
 	enum edge_preload_t       { edge_preload          };
 	enum edge_tokensize_t       { edge_tokensize      };
+	enum edge_type_t       { edge_type      };
 	enum graph_filename_t    { graph_filename         };
 
 	BOOST_INSTALL_PROPERTY(vertex,   phasecount  );
@@ -66,6 +69,7 @@ namespace boost
 	BOOST_INSTALL_PROPERTY(edge,   output_port_name );
 	BOOST_INSTALL_PROPERTY(edge,   preload );
 	BOOST_INSTALL_PROPERTY(edge,   tokensize );
+	BOOST_INSTALL_PROPERTY(edge,   type );
 	BOOST_INSTALL_PROPERTY(graph,filename );
 }
 
@@ -90,7 +94,8 @@ typedef boost::property < boost::edge_name_t, std::string,                      
 		boost::property < boost::edge_preload_t,TOKEN_UNIT   ,                                // initial marking
 		boost::property < boost::edge_alpha_t,TOKEN_FRACT   ,                                // NORMALIZATION : ALPHA
 		boost::property < boost::edge_tokensize_t,TOKEN_UNIT   ,                                // token size
-		boost::property < boost::edge_index_t, ARRAY_INDEX > > > > > > >  > > > >  edgeProperties;           // buffer id
+		boost::property < boost::edge_type_t,EDGE_TYPE   ,                                // token size
+		boost::property < boost::edge_index_t, ARRAY_INDEX > > > > > > > > > > > >  edgeProperties;           // buffer id
 
 
 typedef boost::property < boost::graph_name_t, std::string,                                   // Graph name
@@ -291,6 +296,7 @@ inline	 Edge addEdge(const Vertex from, const Vertex to)
 		 VERBOSE_ASSERT(res.second,TXT_NEW_EDGE_ERROR);
 		 Edge newChannel = Edge(res.first);
 		this->setEdgeId(newChannel,auto_edge_num++);
+	    this->setEdgeType(newChannel,EDGE_TYPE::NORMAL_EDGE);
 		return newChannel;
 	}
 inline	 Edge addEdge(const Vertex from, const Vertex to,const  ARRAY_INDEX id)
@@ -300,6 +306,7 @@ inline	 Edge addEdge(const Vertex from, const Vertex to,const  ARRAY_INDEX id)
 				 VERBOSE_ASSERT(res.second,TXT_NEW_EDGE_ERROR);
 				 Edge newChannel = Edge(res.first);
        this->setEdgeId(newChannel,id);
+       this->setEdgeType(newChannel,EDGE_TYPE::NORMAL_EDGE);
        return newChannel;
    }
 
@@ -320,8 +327,14 @@ inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
 
 
 
-	inline 	void 					removeVertex		(const Vertex t) 		{		ASSERT_WRITABLE(); boost::remove_vertex(t.v,this->getG());}
-	inline  void					removeEdge   		(const Edge c)			{		ASSERT_WRITABLE(); boost::remove_edge(c.e,this->getG());}
+	inline 	void 					removeVertex		(const Vertex t) 		{
+		ASSERT_WRITABLE();
+		boost::remove_vertex(t.v,this->getG());
+	}
+	inline  void					removeEdge   		(const Edge c)			{
+		ASSERT_WRITABLE();
+		boost::remove_edge(c.e,this->getG());
+	}
 
 public :
 	inline  boost::integer_range<VertexD>                 vertices()      			{ return this->getG().vertex_set() ;} // This function is added because it can be used with foreach.
@@ -433,6 +446,12 @@ public :
 
 
 public :
+
+    inline void                 setEdgeType (const Edge e,
+                                           const EDGE_TYPE t)    {boost::put(boost::edge_type, this->getG(), e.e, t);}
+        inline EDGE_TYPE           getEdgeType (const Edge e )         {return boost::get(get(boost::edge_type, this->getG()), e.e);}
+
+
     inline void                 setMapping (const Vertex t,
                                            const node_id_t core_id)    {boost::put(boost::vertex_mapping, this->getG(), t.v, core_id);}
         inline node_id_t           getMapping (const Vertex t )         {return boost::get(get(boost::vertex_mapping, this->getG()), t.v);}
@@ -542,14 +561,36 @@ public :
           }}
           return NULL_EDGE; // not found
           }
+      inline  std::vector<TIME_UNIT>&          getVertexPhaseDuration    (const Vertex t)    {
+    	  VERBOSE_ASSERT(boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).size() > 0, "I take too much coffee, and this task " << getVertexName(t) <<  " - " << getVertexId(t) <<  " has no duration.");
+
+    	  return boost::get(get(boost::vertex_phaseduration, this->getG()), t.v);
+      }
+
+      inline  TIME_UNIT          getVertexTotalDuration    (const Vertex t)    {
+    	  VERBOSE_ASSERT(boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).size() > 0, "I take too much coffee, and this task " << getVertexName(t) <<  " - " << getVertexId(t) <<  " has no duration.");
+    	  auto phasesDurations =  boost::get(get(boost::vertex_phaseduration, this->getG()), t.v);
+    	  return std::accumulate(phasesDurations.begin(), phasesDurations.end(), 0);
+      }
+
 
       inline  TIME_UNIT          getVertexDuration    (const Vertex t)    {
-    	  VERBOSE_ASSERT(boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).size() > 0, "I take too much coffee, and this task has no duration.");
+    	  VERBOSE_ASSERT(boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).size() > 0, "I take too much coffee, and this task " << getVertexName(t) <<  " - " << getVertexId(t) <<  " has no duration.");
+    	  VERBOSE_ASSERT(boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).size() == 1, "I take too much coffee, and this task " << getVertexName(t) <<  " - " << getVertexId(t) <<  " has more than one duration, you should use getVertexPhaseDuration.");
+
     	  return boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).at(0);
       }
-    inline  TIME_UNIT          getVertexDuration    (const Vertex t, EXEC_COUNT k)    {return boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).at(k-1);}
+
+    inline  TIME_UNIT          getVertexDuration    (const Vertex t, EXEC_COUNT k)    {
+    	return boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).at(k-1);
+    }
     inline  void                setVertexDuration (const Vertex t,
-                                                   std::vector<TIME_UNIT> l)    {		ASSERT_WRITABLE();boost::put(boost::vertex_phaseduration, this->getG(), t.v, l);}
+                                                   std::vector<TIME_UNIT> l)    {
+    	ASSERT_WRITABLE();
+    	VERBOSE_ASSERT(l.size() == getPhasesQuantity(t), "Task " << getVertexName(t) <<  " - " << getVertexId(t) <<  " duration vector does not match task phase count.")
+    	boost::put(boost::vertex_phaseduration, this->getG(), t.v, l);
+
+    }
 
 
 

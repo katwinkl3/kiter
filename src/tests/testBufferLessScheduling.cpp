@@ -110,9 +110,6 @@ int main (int argc, char ** argv)
 	algorithms::mapping::moduloMapping ( dataflow, {});
 
 
-	algorithms::scheduling::KPeriodic_scheduling_bufferless (  dataflow,     parameters) ;
-
-
 
 
 
