@@ -109,6 +109,12 @@ template<class T>
 
 
 template<>
+std::string toString< std::vector<TOKEN_UNIT> >(const std::vector<TOKEN_UNIT>& v);
+
+template<>
+std::string toString< std::vector<long double> >(const std::vector<long double>& v);
+
+template<>
 std::string toString< std::vector<unsigned int> >(const std::vector<unsigned int>& v);
 
 // from http://stackoverflow.com/questions/1430757/c-array-to-string
