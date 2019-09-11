@@ -211,6 +211,8 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
       ARRAY_INDEX edgeOut = dataflow->getVertexId(dataflow->getEdgeTarget(c));
       returnStream << "  t_" << edgeIn << " -> t_" << edgeOut << " [";
       returnStream << std::endl;
+      std::string bl = (dataflow->getEdgeType(c) == EDGE_TYPE::BUFFERLESS_EDGE)?"(B)":"";
+      returnStream << "    label=\"" << bl  << commons::toString(dataflow->getPreload(c)) << "\"," << std::endl;
       returnStream << "    headlabel=\"" <<  commons::toString(dataflow->getEdgeOutVector(c)) << "\"," << std::endl;
       returnStream << "    taillabel=\"" <<  commons::toString(dataflow->getEdgeInVector(c)) << "\"," << std::endl;
       returnStream << " ] ;" << std::endl;
