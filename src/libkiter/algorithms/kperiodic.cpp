@@ -15,6 +15,7 @@
 #include <algorithms/normalization.h>
 #include <algorithms/kperiodic.h>
 #include <algorithms/repetition_vector.h>
+#include <algorithms/buffer_sizing.h>
 
 
 bool sameset(models::Dataflow* const dataflow, std::set<Edge> *cc1 , std::set<Edge>* cc2) {
@@ -1468,8 +1469,8 @@ EXEC_COUNT algorithms::test_Kperiodic_throughput    (models::Dataflow* const dat
 void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataflow,
                                                    parameters_list_t  parameters) {
   models::Dataflow* dataflow_prime = new models::Dataflow(*dataflow);
-  int modelled_alpha_size = 6;
-  int modelled_beta_size = 6;
+  int modelled_alpha_size = 0;
+  int modelled_beta_size = 0;
   std::cout << "Number of Actors, Channels: " << dataflow_prime->getVerticesCount() << ", " << dataflow_prime->getEdgesCount() << std::endl;
   std::cout << "Actor names: ";
   {ForEachVertex(dataflow_prime, t) {
@@ -1491,7 +1492,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
       // dataflow_prime->setPreload(new_edge, buffersize - getPreload(c));
     }}
   std::cout << "\n";
-  
+
   {ForEachVertex(dataflow_prime, t) {
       std::cout << "Actor phase quantity: "; // phase quantity = state of process?
       std::cout << dataflow_prime->getPhasesQuantity(t) << std::endl;
@@ -1500,6 +1501,17 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
       for (EXEC_COUNT k = 1 ; k <= max_k ; k++) {
         std::cout << dataflow_prime->getVertexDuration(t, k) << " ";
       }
+      std::cout << "\n";
+    }}
+  {ForEachEdge(dataflow_prime, c) {
+      std::cout << dataflow_prime->getEdgeName(c) << " inputs: " << std::endl;
+      for (int i = 0; i < dataflow_prime->getEdgeInPhasesCount(c); i++)
+        std::cout << dataflow_prime->getEdgeInVector(c)[i] << " " << std::endl;
+      // EXEC_COUNT max_k = dataflow_prime->getPhasesQuantity(t);
+      // std::cout << "Vertex duration: "; // time units required for execution
+      // for (EXEC_COUNT k = 1 ; k <= max_k ; k++) {
+      //   std::cout << dataflow_prime->getVertexDuration(t, k) << " ";
+      // }
       std::cout << "\n";
     }}
   std::cout << "Actor names: ";
@@ -1520,16 +1532,15 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
                              modelled_alpha_size - dataflow_prime->getPreload(dataflow_prime->getEdgeByName("alpha")));
   dataflow_prime->setPreload(dataflow_prime->getEdgeByName("beta_prime"),
                              modelled_beta_size - dataflow_prime->getPreload(dataflow_prime->getEdgeByName("beta")));
-  // std::cout << "Actor Ni quantity: ";
-  // {ForEachVertex(dataflow_prime, t) {
-  //     std::cout << dataflow_prime->getNi(t) << " ";
-  //   }}
-  // std::cout << "\n";
+
+  findMinimumStepSz(dataflow_prime);
+  findMinimumChannelSz(dataflow_prime);
+  findMinimumDistributionSz(dataflow_prime);
+  
   std::cout << "\n";
   std::cout << "Throughput with unbounded buffers" << std::endl;
   compute_Kperiodic_throughput(dataflow, parameters);
   std::cout << "\n";
   std::cout << "Throughput with bounded buffers (" << modelled_alpha_size << ", " << modelled_beta_size << ")" << std::endl;
-  std::cout << "HELLO" << std::endl;
   compute_Kperiodic_throughput(dataflow_prime, parameters);
 }
