@@ -227,13 +227,13 @@ struct tie {
 #define NULL_VERTEX	 Vertex()
 #define NULL_EDGE	 Edge  ()
 
-#define ASSERT_WRITABLE() if (readonly) VERBOSE_FAILURE();
-#define ASSERT_NOT_NORMALIZED() if (normalizationisdone) VERBOSE_FAILURE();
-#define ASSERT_NOT_REPETITION_VECTOR() if (repetitionvectorisdone) VERBOSE_FAILURE();
+#define ASSERT_WRITABLE() if (readonly) FAILED("ASSERT_WRITABLE FAILED");
+#define ASSERT_NOT_NORMALIZED() if (normalizationisdone) FAILED("ASSERT_NOT_NORMALIZED FAILED");
+#define ASSERT_NOT_REPETITION_VECTOR() if (repetitionvectorisdone) FAILED("ASSERT_NOT_REPETITION_VECTOR FAILED");
 
-#define ASSERT_NOT_WRITABLE() if (!readonly) VERBOSE_FAILURE();
-#define ASSERT_NORMALIZED() if (!normalizationisdone) VERBOSE_FAILURE();
-#define ASSERT_REPETITION_VECTOR() if (!repetitionvectorisdone) VERBOSE_FAILURE();
+#define ASSERT_NOT_WRITABLE() if (!readonly) FAILED("ASSERT_NOT_WRITABLE FAILED");
+#define ASSERT_NORMALIZED() if (!normalizationisdone) FAILED("ASSERT_NORMALIZED FAILED");
+#define ASSERT_REPETITION_VECTOR() if (!repetitionvectorisdone) FAILED("ASSERT_REPETITION_VECTOR FAILED");
 
 namespace models {
 
