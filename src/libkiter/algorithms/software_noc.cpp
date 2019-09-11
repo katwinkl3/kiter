@@ -30,7 +30,7 @@ std::vector< std::set<unsigned int> > cycid_per_vtxid;
 std::vector< std::vector<unsigned int> > cyclen_per_vtxid;
 
 struct node{
-   ARRAY_INDEX index;
+	ARRAY_INDEX index;
 };
 
 typedef std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEtype;
@@ -146,7 +146,7 @@ void generateEdgesMap(models::Dataflow* dataflow, std::map<int, Edge>& edge_list
 	{ForEachEdge(dataflow,e) {
 		auto v1 = dataflow->getEdgeSource(e);
 		auto v2 = dataflow->getEdgeTarget(e);
-		
+
 		int v1_i = (int)dataflow->getVertexId(v1);
 		int v2_i = (int)dataflow->getVertexId(v2);
 
@@ -158,20 +158,20 @@ void generateEdgesMap(models::Dataflow* dataflow, std::map<int, Edge>& edge_list
 
 LARGE_INT gcdExtended(LARGE_INT x, LARGE_INT y, LARGE_INT *a, LARGE_INT *b)
 {
-    if (x == 0) //Base Case
-    {
-        *a = 0;
-        *b = 1;
-        return y;
-    }
+	if (x == 0) //Base Case
+	{
+		*a = 0;
+		*b = 1;
+		return y;
+	}
 
-    LARGE_INT a1, b1; // To store results of recursive call
-    LARGE_INT gcd = gcdExtended(y%x, x, &a1, &b1);
-    // Update x and y using results of recursive  call
-    *a = b1 - (y/x) * a1;
-    *b = a1;
+	LARGE_INT a1, b1; // To store results of recursive call
+	LARGE_INT gcd = gcdExtended(y%x, x, &a1, &b1);
+	// Update x and y using results of recursive  call
+	*a = b1 - (y/x) * a1;
+	*b = a1;
 
-    return gcd;
+	return gcd;
 }
 
 
@@ -287,7 +287,7 @@ void my_dfs(models::Dataflow* adj, Vertex node, std::vector<bool> visited, Verte
 
 
 std::set<unsigned int> my_dfs_wrapper(models::Dataflow* adj, Vertex start)
-{	
+		{
 	int V = adj->getVerticesCount();
 	std::vector<bool> visited(V+1, false);
 	std::vector<unsigned int> path;
@@ -297,7 +297,7 @@ std::set<unsigned int> my_dfs_wrapper(models::Dataflow* adj, Vertex start)
 	my_dfs(adj,start,visited, start, path, mycycleids);
 
 	return mycycleids;
-}
+		}
 
 
 models::Dataflow getTranspose(models::Dataflow* to) 
@@ -329,17 +329,17 @@ void fillOrder(Vertex vtx, std::vector<bool>& visited, std::stack<Vertex> &Stack
 	// Mark the current node as visited and print it 
 	visited[v] = true; 
 	// Recur for all the vertices adjacent to this vertex 
-        {ForOutputEdges(to,vtx,e){
-                auto end = to->getEdgeTarget(e);
-                auto endid = to->getVertexId(end);
-                if(!visited[endid])
+	{ForOutputEdges(to,vtx,e){
+		auto end = to->getEdgeTarget(e);
+		auto endid = to->getVertexId(end);
+		if(!visited[endid])
 			fillOrder(end, visited, Stack, to);
-        }}
+	}}
 	// All vertices reachable from v are processed by now, push v  
 	Stack.push(vtx); 
 } 
 
- 
+
 // The main function that finds and prints all strongly connected components 
 void printSCCs(models::Dataflow* to, Vertex start)
 {
@@ -348,15 +348,15 @@ void printSCCs(models::Dataflow* to, Vertex start)
 
 	// Mark all the vertices as not visited (For first DFS) 
 	std::vector<bool> visited(V+1, false); 
- 
+
 	//initiate with start node first
 	fillOrder(start, visited, Stack, to);
 	// Fill vertices in stack according to their finishing times 
-        {ForEachVertex(to,t) {
+	{ForEachVertex(to,t) {
 		auto v = to->getVertexId(t);
 		if(!visited[v])
 			fillOrder(t, visited, Stack, to);
-        }}
+	}}
 
 	// Create a reversed graph 
 	auto transp = getTranspose(to); 
@@ -582,7 +582,7 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 //remove the current edge between nodes
 //add intermediate nodes based on the path between them
 std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, conflictEtype& returnValue, NoC* noc)
-{
+		{
 	std::vector<Vertex> new_vertices;
 	// We store infos about edge to be deleted
 	auto source_vtx = d->getEdgeSource(c);
@@ -655,12 +655,12 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 	d->setEdgeInPhases(e2,{1});
 	d->setPreload(e2,preload);  // preload is M0
 	return new_vertices;
-}
+		}
 
 
 //Process the graph for DFS, etc. in this function
 std::map<int, route_t> graphProcessing(models::Dataflow* dataflow, NoC* noc, std::vector<ARRAY_INDEX>& prog_order)
-{
+		{
 	models::Dataflow* to = new models::Dataflow(*dataflow);
 	bool myflag = false;
 	bool myflag2 = false;
@@ -702,7 +702,7 @@ std::map<int, route_t> graphProcessing(models::Dataflow* dataflow, NoC* noc, std
 	taskAndNoCMapping(dataflow, to, start, noc, routes, prog_order);
 
 	return routes;
-}
+		}
 
 
 void addIntermediateNodes(models::Dataflow* dataflow, NoC* noc, conflictEtype& returnValue, std::map<int, route_t>& routes)
@@ -756,7 +756,7 @@ void removeAllEdgesVertex(models::Dataflow* d, Vertex vtx)
 }
 
 
-void resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
+bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 {
 	std::vector<Edge> srcedges, rtredges;
 	TOKEN_UNIT flow = 0;
@@ -785,7 +785,7 @@ void resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 	else if(srcedges.size() <= 1)
 	{
 		std::cout << "no resolveSrcConflicts for vertex " << d->getVertexId(src) << "\n";
-		return;
+		return false;
 	}
 
 	//1C. Initialize token vecot
@@ -812,7 +812,7 @@ void resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 		std::cout << "states=" << flow << ",preload=" << preload << "\n";
 	}
 	std::cout << "done with removing edges\n";
-	
+
 	VERBOSE_ASSERT(flow > 0, "This case is not supported: flow between task has to be strictly positive");
 
 	//2B. Create the phase duration and token per phase for the new router node
@@ -856,6 +856,7 @@ void resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 		d->setPreload(new_edge,loc_preload);  // preload is M0
 	}
 	std::cout << "done with function\n";
+	return true;
 }
 
 
@@ -905,7 +906,7 @@ void checkForConflicts(conflictEtype& conflictEdges, models::Dataflow* to, TIME_
 							{
 								std::cout << "conflict between " << to->getVertexName(taski) << " and " << to->getVertexName(taskj) << "\n";
 								total_conflict += 1;
-								addDependency(to, srci, srcj, src_ni, src_nj);
+								//addDependency(to, srci, srcj, src_ni, src_nj);
 								break;
 							}
 						}
@@ -947,7 +948,7 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 	conflictEtype conflictEdges; //stores details of flows that share noc edges
 
 	//Init NoC
-    	NoC *noc = new NoC(4, 4, 1);
+	NoC *noc = new NoC(4, 4, 1);
 	noc->generateShortestPaths();
 
 	// STEP 0.2 - Assert SDF
@@ -998,8 +999,11 @@ bool algorithms::isConflictPresent(LARGE_INT HP, TIME_UNIT si, LARGE_INT ni, TIM
 
 void algorithms::softwarenoc_bufferless(models::Dataflow* const  dataflow, parameters_list_t   param_list)
 {
+
+
 	{
 		models::Dataflow* to = new models::Dataflow(*dataflow);
+
 		VERBOSE_INFO("Generate KVector");
 		std::map<Vertex,EXEC_COUNT> kvector;
 		{ForEachVertex(to,v) {
@@ -1014,10 +1018,11 @@ void algorithms::softwarenoc_bufferless(models::Dataflow* const  dataflow, param
 
 		scheduling_t persched = algorithms::scheduling::bufferless_scheduling (to,  kvector);
 	}
+
+
 	conflictEtype conflictEdges; //stores details of flows that share noc edges
-    	NoC *noc = new NoC(4, 4, 1); //Init NoC
+	NoC *noc = new NoC(4, 4, 1); //Init NoC
 	noc->generateShortestPaths();
-	std::vector<std::vector<Vertex>> sequences;
 
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);
@@ -1037,19 +1042,16 @@ void algorithms::softwarenoc_bufferless(models::Dataflow* const  dataflow, param
 	std::map<int, route_t> routes = graphProcessing(to, noc, prog_order);
 	generateEdgesMap(to, edge_list, noc);
 
-	for(auto it:routes)
-	{
+	for(auto it:routes) {
 		Edge e = edge_list[it.first];
 		Vertex esrc = to->getEdgeSource(e);
 		VERBOSE_INFO("replace edge " << e << "by a sequence");
-		auto seq = addPathNode(to, e, it.second, conflictEdges, noc);
-		sequences.push_back(seq);
-
-
+		addPathNode(to, e, it.second, conflictEdges, noc);
 	}
 
 
 	int origV = (int)dataflow->getVerticesCount();
+
 	for(int i = 1; i <= origV; i++)
 	{
 		auto src = to->getVertexById(i);
@@ -1060,43 +1062,36 @@ void algorithms::softwarenoc_bufferless(models::Dataflow* const  dataflow, param
 
 	//Original graph
 
-	std::cout << printers::GenerateDOT(to);
 
 
 
 	// This remove the vertices disconnected
 	for (bool removeme = true; removeme; ) {
-	{ForEachVertex(to,v) {
+		{ForEachVertex(to,v) {
 
-		if (to->getVertexDegree(v) == 0) {
-			std::cout << " I remove one task (" << to->getVertexId(v) << ") lah!\n";
-			to->removeVertex(v);
-			removeme=true;
-			break;
-		}
-		removeme=false;
+			if (to->getVertexDegree(v) == 0) {
+				std::cout << " I remove one task (" << to->getVertexId(v) << ") lah!\n";
+				to->removeVertex(v);
+				removeme=true;
+				break;
+			}
+			removeme=false;
 
-	}}
+		}}
 	}
 
 	std::cout << printers::GenerateDOT(to);
 
+    // Given the graph "to" the perform the Kperiodic scheduling and get "persched" in return
+	scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to);
 
-	VERBOSE_INFO("Generate KVector");
-	std::map<Vertex,EXEC_COUNT> kvector;
+    // Given "persched", we print the scheduling result.
 	{ForEachVertex(to,v) {
-		kvector[v] = 1;
-		if (param_list.count(to->getVertexName(v)) == 1)
-		{
-			std::string str_value = param_list[to->getVertexName(v)];
-			kvector[v] =  commons::fromString<EXEC_COUNT> ( str_value );
-		}
+		std::cout << "Task " << to->getVertexName(v) << " Period=" << persched[v].first<< " Starts=" << commons::toString(persched[v].second) << std::endl;
 	}}
 
 
-	//scheduling_t persched =  algorithms::generateKperiodicSchedule   (to , true) ;
-	scheduling_t persched = algorithms::scheduling::bufferless_scheduling (to,  kvector);
-
+	VERBOSE_INFO("findHP");
 	unsigned long LCM;
 	TIME_UNIT HP;
 	findHP(to, persched, &HP, &LCM);
@@ -1107,12 +1102,12 @@ void algorithms::softwarenoc_bufferless(models::Dataflow* const  dataflow, param
 //Unused Function
 void showstack(std::stack<Vertex> s) 
 {
-    while (!s.empty()) 
-    { 
-        std::cout << '\t' << s.top(); 
-        s.pop(); 
-    } 
-    std::cout << '\n'; 
+	while (!s.empty())
+	{
+		std::cout << '\t' << s.top();
+		s.pop();
+	}
+	std::cout << '\n';
 }
 
 
@@ -1217,7 +1212,7 @@ void postProcessing(models::Dataflow* to, Vertex start, NoC* noc)
 	}}
 
 	std::cout <<  printers::PeriodicScheduling2DOT    (to, persched, false,  xscale , yscale);
-*/
+ */
 
 /*
 	while(!pq.empty())
@@ -1256,4 +1251,4 @@ void postProcessing(models::Dataflow* to, Vertex start, NoC* noc)
 			}
 		}}
 	}
-*/
+ */
