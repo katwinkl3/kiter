@@ -11,6 +11,10 @@
 #include <algorithms/mappings.h>
 #include <commons/glpsol.h>
 
+
+#include <algorithms/kperiodic.h>
+#include <models/EventGraph.h>
+
 static inline const std::string OMEGA_COL_STR ()  {
 	return "OMEGA" ;
 }
@@ -25,6 +29,79 @@ static inline const std::string PRED_ROW_STR (const std::string buffername, cons
 
 }
 
+
+
+
+scheduling_t algorithms::scheduling::bufferless_kperiodic_scheduling (models::Dataflow* const  dataflow) {
+
+    EXEC_COUNT iteration_count = 0;
+    VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
+
+    // STEP 1 - generate 1-periodic schedule
+    std::map<Vertex,EXEC_COUNT> kvector;
+    {ForEachVertex(dataflow,t) {
+        kvector[t] = 1;
+    }}
+    std::pair<TIME_UNIT, std::set<Edge> > result = algorithms::KScheduleBufferLess(dataflow,&kvector);
+
+    if (result.second.size() != 0) {
+
+        VERBOSE_INFO("1-periodic throughput (" << result.first <<  ") is not enough.");
+        VERBOSE_INFO("   Critical circuit is " << algorithms::cc2string(dataflow,&(result.second)) <<  "");
+
+        while (true) {
+            iteration_count++;
+            updateVectorWithLocalNi(dataflow,&kvector,&(result.second));
+            std::pair<TIME_UNIT, std::set<Edge> > resultprime = KScheduleBufferLess(dataflow,&kvector);
+            if (algorithms::sameset(dataflow,&(resultprime.second),&(result.second)))  {
+                VERBOSE_INFO("Critical circuit is the same");
+                result = resultprime;
+                break;
+            }
+            result = resultprime;
+            VERBOSE_INFO("Current K-periodic throughput (" << result.first <<  ") is not enough.");
+            VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+        }
+
+    } {
+        iteration_count++;
+    }
+
+    VERBOSE_INFO( "K-periodic schedule - iterations count is " << iteration_count);
+
+
+    EXEC_COUNT total_ni = 0;
+    EXEC_COUNT total_ki = 0;
+    {ForEachVertex(dataflow,t) {
+        total_ni += dataflow->getNi(t);
+        total_ki += kvector[t];
+    }}
+
+    VERBOSE_INFO("K-periodic schedule - total_ki=" << total_ki << " total_ni=" << total_ni );
+    TIME_UNIT res = result.first;
+    std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
+    std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
+
+    models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector,true);
+    eg->computeStartingTime (result.first);
+    TIME_UNIT omega = 1 / result.first ;
+    scheduling_t sheduling_result;
+
+    {ForEachEvent(eg,e) {
+        models::SchedulingEvent se = eg->getEvent(e);
+        EXEC_COUNT ti = se.getTaskId();
+        EXEC_COUNT tp = se.getTaskPhase();
+        TIME_UNIT start = eg->getStartingTime(e);
+        Vertex v = dataflow->getVertexById(ti);
+        TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
+        sheduling_result[v].first = period;
+        sheduling_result[v].second.push_back(start);
+    }}
+
+    return sheduling_result;
+
+
+}
 
 scheduling_t algorithms::scheduling::bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector ) {
 
