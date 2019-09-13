@@ -1466,11 +1466,185 @@ EXEC_COUNT algorithms::test_Kperiodic_throughput    (models::Dataflow* const dat
 
 }
 
+
+/*
+ * Compute and return period and causal dependency cycles of given dataflow graph
+ */
+std::pair<TIME_UNIT, std::set<Edge>> algorithms::compute_Kperiodic_throughput_and_cycles(models::Dataflow* const dataflow, parameters_list_t parameters) {
+  
+    VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+
+    bool verbose = false;
+    if (parameters.find("PRINT") != parameters.end() ) {
+        verbose = true;
+    }
+    VERBOSE_INFO("Please note you can use the PRINT parameter");
+
+    EXEC_COUNT sumNi = 0;
+    EXEC_COUNT sumKi = dataflow->getVerticesCount();
+
+    {ForEachTask(dataflow,t) {
+        sumNi += dataflow->getNi(t) ;
+    }}
+
+    // STEP 0.1 - PRE
+    VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
+    VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+    EXEC_COUNT iteration_count = 0;
+
+    // STEP 1 - generate initial vector
+    std::map<Vertex,EXEC_COUNT> kvector;
+    {ForEachVertex(dataflow,t) {
+        kvector[t] = 1;
+
+    }}
+
+
+    std::pair<TIME_UNIT, std::set<Edge> > result;
+
+
+
+    VERBOSE_INFO("KPeriodic EventGraph generation");
+
+    //STEP 1 - Generate Event Graph
+    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector);
+
+
+    VERBOSE_INFO("KPeriodic EventGraph generation Done");
+
+    //STEP 2 - resolve the MCRP on this Event Graph
+    std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
+
+    std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res.second);
+
+    //STEP 3 - convert CC(eg) => CC(graph)
+    VERBOSE_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
+    for (std::vector<models::EventGraphEdge>::iterator it = critical_circuit->begin() ; it != critical_circuit->end() ; it++ ) {
+        VERBOSE_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
+        ARRAY_INDEX channel_id = eg->getChannelId(*it);
+        try {
+            Edge        channel    = dataflow->getEdgeById(channel_id);
+            result.second.insert(channel);
+        } catch(...) {
+            VERBOSE_DEBUG("      is loopback");
+        }
+    }
+
+    TIME_UNIT frequency = howard_res.first;
+
+    VERBOSE_INFO("KSchedule function get " << frequency << " from MCRP." );
+    VERBOSE_INFO("  ->  then omega =  " <<  1 / frequency );
+
+    result.first = frequency;
+
+    ////////////// SCHEDULE CALL // END
+
+
+    if (verbose) {
+        std::cout << "Iteration "<< std::fixed << std::setw( 4 ) << iteration_count <<  "      period = "  << std::fixed << std::setw( 15 ) << std::setprecision( 2 ) << 1.0/result.first  <<  "      complexity = "  << std::setw( 4 )  << (sumKi * 100) / sumNi << std::endl ;
+    }
+
+    if (result.second.size() != 0) {
+
+
+        VERBOSE_INFO("1-periodic throughput (" << result.first <<  ") is not enough.");
+        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+
+        while (true) {
+
+
+
+            iteration_count++;
+            ////////////// SCHEDULE CALL // BEGIN : resultprime = KSchedule(dataflow,&kvector);
+
+            std::pair<TIME_UNIT, std::set<Edge> > resultprime;
+
+            //VERBOSE_ASSERT( algorithms::normalize(dataflow),"inconsistent graph");
+            VERBOSE_INFO("KPeriodic EventGraph generation");
+
+            //STEP 1 - Generate Event Graph and update vector
+            if (!updateEventGraph( dataflow ,  &kvector, &(result.second), eg, verbose)) break ;
+
+            VERBOSE_INFO("KPeriodic EventGraph generation Done");
+
+            //STEP 2 - resolve the MCRP on this Event Graph
+            std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res_bis = eg->MinCycleRatio();
+
+            std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res_bis.second);
+
+            //STEP 3 - convert CC(eg) => CC(graph)
+            VERBOSE_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
+            for (std::vector<models::EventGraphEdge>::iterator it = critical_circuit->begin() ; it != critical_circuit->end() ; it++ ) {
+                VERBOSE_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
+                ARRAY_INDEX channel_id = eg->getChannelId(*it);
+                try {
+                    Edge        channel    = dataflow->getEdgeById(channel_id);
+                    resultprime.second.insert(channel);
+                } catch(...) {
+                    VERBOSE_DEBUG("      is loopback");
+                }
+            }
+
+            TIME_UNIT frequency = howard_res_bis.first;
+
+            VERBOSE_INFO("KSchedule function get " << frequency << " from MCRP." );
+            VERBOSE_INFO("  ->  then omega =  " <<  1 / frequency );
+
+            resultprime.first = frequency;
+
+            ////////////// SCHEDULE CALL // END
+
+            if (sameset(dataflow,&(resultprime.second),&(result.second)))  {
+                VERBOSE_INFO("Critical circuit is the same");
+                result = resultprime;
+
+                break;
+            }
+            result = resultprime; // TODO Duplicate this function and return the last version of result. This result gives me the period and a list of the channels in the causal dependency cycle (storage dependencies)
+            VERBOSE_INFO("Current K-periodic throughput (" << result.first <<  ") is not enough.");
+            VERBOSE_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+
+
+            if (verbose) {
+                sumKi = 0;
+                {ForEachVertex(dataflow,t) {
+                    sumKi += kvector[t];
+                }}
+
+                std::cout << "Iteration "<< std::fixed << std::setw( 4 ) << iteration_count <<  "      period = "  << std::fixed << std::setw( 15 ) << std::setprecision( 2 ) << 1.0/result.first  <<  "      complexity = "  << std::setw( 4 )  << (sumKi * 100) / sumNi << std::endl ;
+            }
+
+        }
+
+    }
+
+
+    VERBOSE_INFO( "K-periodic schedule - iterations count is " << iteration_count << "  final size is " << eg->getEventCount() << " events and " << eg->getConstraintsCount() << " constraints.");
+    delete eg;
+
+    EXEC_COUNT total_ki = 0;
+    {ForEachVertex(dataflow,t) {
+        total_ki += kvector[t];
+    }}
+
+    VERBOSE_INFO("K-periodic schedule - total_ki=" << sumKi << " total_ni=" << sumNi );
+    
+    std::cout << "Current K-periodic throughput: " << result.first << std::endl;
+    // std::cout << "   Critical circuit is " << cc2string(dataflow,&(result.second)) << std::endl;
+    // TIME_UNIT res = result.first;
+    // std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
+    // std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
+
+    return result;
+}
+
+
 void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataflow,
                                                    parameters_list_t  parameters) {
   models::Dataflow* dataflow_prime = new models::Dataflow(*dataflow);
-  int modelled_alpha_size = 0;
-  int modelled_beta_size = 0;
+  int modelled_alpha_size = 6;
+  int modelled_beta_size = 8;
+  
   std::cout << "Number of Actors, Channels: " << dataflow_prime->getVerticesCount() << ", " << dataflow_prime->getEdgesCount() << std::endl;
   std::cout << "Actor names: ";
   {ForEachVertex(dataflow_prime, t) {
@@ -1478,6 +1652,8 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     }}
   std::cout << "\n";
   std::cout << "Edge names:\n";
+
+  // Create channels to model bounded channel sizes
   {ForEachEdge(dataflow, c) {
       std::cout << dataflow_prime->getEdgeName(c) << "\n";
       std::cout << "Adding new channel to model bounded buffers..." << std::endl;
@@ -1489,58 +1665,49 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
                                        dataflow_prime->getEdgeInVector(c));
       dataflow_prime->setEdgeName(new_edge,
                                   dataflow_prime->getEdgeName(c) + "_prime");
-      // dataflow_prime->setPreload(new_edge, buffersize - getPreload(c));
     }}
   std::cout << "\n";
 
-  {ForEachVertex(dataflow_prime, t) {
-      std::cout << "Actor phase quantity: "; // phase quantity = state of process?
-      std::cout << dataflow_prime->getPhasesQuantity(t) << std::endl;
-      EXEC_COUNT max_k = dataflow_prime->getPhasesQuantity(t);
-      std::cout << "Vertex duration: "; // time units required for execution
-      for (EXEC_COUNT k = 1 ; k <= max_k ; k++) {
-        std::cout << dataflow_prime->getVertexDuration(t, k) << " ";
-      }
-      std::cout << "\n";
-    }}
-  {ForEachEdge(dataflow_prime, c) {
-      std::cout << dataflow_prime->getEdgeName(c) << " inputs: " << std::endl;
-      for (int i = 0; i < dataflow_prime->getEdgeInPhasesCount(c); i++)
-        std::cout << dataflow_prime->getEdgeInVector(c)[i] << " " << std::endl;
-      // EXEC_COUNT max_k = dataflow_prime->getPhasesQuantity(t);
-      // std::cout << "Vertex duration: "; // time units required for execution
-      // for (EXEC_COUNT k = 1 ; k <= max_k ; k++) {
-      //   std::cout << dataflow_prime->getVertexDuration(t, k) << " ";
-      // }
-      std::cout << "\n";
-    }}
-  std::cout << "Actor names: ";
-  {ForEachVertex(dataflow_prime, t) {
-      std::cout << dataflow_prime->getVertexName(t) << " ";
-    }}
-  std::cout << "\n";
+  // initialise search parameters
+  EXEC_COUNT minStepSizes[dataflow_prime->getEdgesCount()]; // store min step and channel sizes
+  EXEC_COUNT minChannelSizes[dataflow_prime->getEdgesCount()];
+  int minDistributionSize;
+  std::map<ARRAY_INDEX, TOKEN_UNIT> channelDist;
 
-  std::cout << "New number of Actors, Channels: "
-            << dataflow_prime->getVerticesCount()
-            << ", " << dataflow_prime->getEdgesCount() << std::endl;
-  std::cout << "Edge names: ";
-  {ForEachEdge(dataflow_prime, c) {
-      std::cout << dataflow_prime->getEdgeName(c) << " ";
-    }}
-  std::cout << "\n";
-  dataflow_prime->setPreload(dataflow_prime->getEdgeByName("alpha_prime"),
-                             modelled_alpha_size - dataflow_prime->getPreload(dataflow_prime->getEdgeByName("alpha")));
-  dataflow_prime->setPreload(dataflow_prime->getEdgeByName("beta_prime"),
-                             modelled_beta_size - dataflow_prime->getPreload(dataflow_prime->getEdgeByName("beta")));
-
-  findMinimumStepSz(dataflow_prime);
-  findMinimumChannelSz(dataflow_prime);
-  findMinimumDistributionSz(dataflow_prime);
+  initSearchParameters(dataflow_prime,
+                       minStepSizes,
+                       minChannelSizes,
+                       minDistributionSize);
   
-  std::cout << "\n";
-  std::cout << "Throughput with unbounded buffers" << std::endl;
-  compute_Kperiodic_throughput(dataflow, parameters);
-  std::cout << "\n";
-  std::cout << "Throughput with bounded buffers (" << modelled_alpha_size << ", " << modelled_beta_size << ")" << std::endl;
-  compute_Kperiodic_throughput(dataflow_prime, parameters);
+  // initialise modelled graph with lower bound distribution
+  {ForEachEdge(dataflow_prime, c) {
+      if (dataflow_prime->getEdgeId(c) > dataflow->getEdgesCount()) { // initialise new channels with sizes
+        dataflow_prime->setPreload(c, minChannelSizes[(dataflow_prime->getEdgeId(c) - 1)]);
+        // store current channel quantity
+        channelDist[dataflow_prime->getEdgeId(c)] = minChannelSizes[(dataflow_prime->getEdgeId(c) - 1)];
+      }
+    }}
+  
+  std::pair<TIME_UNIT, std::set<Edge>> result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
+  std::pair<TIME_UNIT, std::set<Edge>> result_max = compute_Kperiodic_throughput_and_cycles(dataflow, parameters);
+  
+  TIME_UNIT currentThr = result.first;
+  while (currentThr < result_max.first) {
+    // increase channel quantities of channels with storage deps
+    for (std::set<Edge>::iterator it = (result.second).begin();
+         it != (result.second).end(); it++) {
+      if (dataflow_prime->getEdgeId(*it) > dataflow->getEdgesCount()) {
+        std::cout << "Found storage dependency in channel " << dataflow_prime->getEdgeName(*it) << std::endl;
+        channelDist[dataflow_prime->getEdgeId(*it)] += minStepSizes[(dataflow_prime->getEdgeId(*it) - 1)];
+        std::cout << "Increasing channel size of " << dataflow_prime->getEdgeName(*it) << " to " << channelDist[dataflow_prime->getEdgeId(*it)] << std::endl;
+        dataflow_prime->set_writable(); // make graph writeable again to alter channel size
+        dataflow_prime->setPreload(*it, channelDist[dataflow_prime->getEdgeId(*it)]);
+      }
+    }
+    result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
+    currentThr = result.first;
+  }
+  std::cout << "Done with search!" << std::endl;
+
 }
+

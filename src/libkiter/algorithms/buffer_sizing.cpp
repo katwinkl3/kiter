@@ -7,13 +7,9 @@
 #include <algorithms/buffer_sizing.h>
 #include <models/Dataflow.h>
 
-EXEC_COUNT *minStepSizes;
-EXEC_COUNT *minChannelSizes;
-int minDistributionSize;
-
-void findMinimumStepSz(models::Dataflow *dataflow) {
+void findMinimumStepSz(models::Dataflow *dataflow, EXEC_COUNT *minStepSizes) {
   std::cout << "Calculating minimal channel step sizes..." << std::endl;
-  minStepSizes = new int [dataflow->getEdgesCount()]; // need to calculate minimum step size per channel
+  // minStepSizes = new EXEC_COUNT [dataflow->getEdgesCount()]; // need to calculate minimum step size per channel
   int iter = 0;
   std::cout << "Number of channels: " << dataflow->getEdgesCount() << std::endl;
   {ForEachEdge(dataflow, c) { // get GCD of all possible combinations of rates of production and consumption in channel
@@ -28,26 +24,28 @@ void findMinimumStepSz(models::Dataflow *dataflow) {
                 << ": " << minStepSz << std::endl;
       iter++;
   }}
+  std::cout << "Minimum step sizes calculated!\n" << std::endl;
+  // return minStepSizes;
 }
 
-void findMinimumChannelSz(models::Dataflow *dataflow) {
+void findMinimumChannelSz(models::Dataflow *dataflow, EXEC_COUNT *minChannelSizes) {
   std::cout << "Calculating minimal channel sizes (for postive throughput)..."
             << std::endl;
-  minChannelSizes = new int [dataflow->getEdgesCount()];
+  // minChannelSizes = new EXEC_COUNT [dataflow->getEdgesCount()];
   
   {ForEachEdge(dataflow, c) {
       // initialise channel size to maximum int size (should use ULONG_MAX but it's a really large value)
       minChannelSizes[dataflow->getEdgeId(c) - 1] = INT_MAX; // use (EdgeID - 1) to for array index
       EXEC_COUNT ratePeriod = boost::math::gcd(dataflow->getEdgeInPhasesCount(c),
                                                dataflow->getEdgeOutPhasesCount(c));
-      std::cout << "Rate period for " << dataflow->getEdgeName(c) << ": "
-                << ratePeriod << std::endl;
-      for (int i = 0; i < ratePeriod; i++) {
+      // std::cout << "Rate period for " << dataflow->getEdgeName(c) << ": "
+      //           << ratePeriod << std::endl;
+      for (int i = 0; i < ratePeriod; i++) { // might be able to use ForEachPhase here
         // might want to change variables to p, c, and t for legibility
         EXEC_COUNT tokensProduced = dataflow->getEdgeInVector(c)[i % dataflow->getEdgeInPhasesCount(c)];
         EXEC_COUNT tokensConsumed = dataflow->getEdgeOutVector(c)[i % dataflow->getEdgeOutPhasesCount(c)];
         EXEC_COUNT tokensInitial = dataflow->getPreload(c);
-        std::cout << "p, c, t: " << tokensProduced << ", " << tokensConsumed << ", " << tokensInitial << std::endl;
+        // std::cout << "p, c, t: " << tokensProduced << ", " << tokensConsumed << ", " << tokensInitial << std::endl;
         EXEC_COUNT lowerBound;
 
         if (boost::math::gcd(tokensProduced, tokensConsumed)) {
@@ -69,23 +67,28 @@ void findMinimumChannelSz(models::Dataflow *dataflow) {
                 << ": " << minChannelSizes[dataflow->getEdgeId(c) - 1] << std::endl;
       
   }}
+  // return minChannelSizes;
 }
 
-void findMinimumDistributionSz(models::Dataflow *dataflow) {
-  minDistributionSize = 0;
-  // std::cout << dataflow->getEdgesCount() << std::endl;
+int findMinimumDistributionSz(models::Dataflow *dataflow,
+                              EXEC_COUNT *minChannelSizes) {
+  int minDistributionSize = 0;
   for (int i = 0; i < dataflow->getEdgesCount(); i++) {
-    std::cout << minChannelSizes[i] << std::endl;
     minDistributionSize += minChannelSizes[i];
   }
   std::cout << "Lower bound distribution size: " << minDistributionSize << std::endl;
+  return minDistributionSize;
 }
 
-// void findMaximumThroughput(models::Dataflow *dataflow) {
-//   // compute_Kperiodic_throughput(dataflow, parameters);
-//   // might have to find throughput outside of function
-// }
+void initSearchParameters(models::Dataflow *dataflow,
+                          EXEC_COUNT *minStepSizes,
+                          EXEC_COUNT *minChannelSizes,
+                          int &minDistributionSize) {
+  findMinimumStepSz(dataflow, minStepSizes);
+  findMinimumChannelSz(dataflow, minChannelSizes);
+  minDistributionSize = findMinimumDistributionSz(dataflow, minChannelSizes);
 
-// void initSearchParameters(models::Dataflow *dataflow) {
-//   // TODO: findMinStepSz (per channel), findMinChannelSz, findMinDistSz (sum of min channel sz), findMaxThr (compute kperiodic)
-// }
+  // Cleanup (TEMPORARY)
+  // delete [] minStepSizes;
+  // delete [] minChannelSizes;
+}
