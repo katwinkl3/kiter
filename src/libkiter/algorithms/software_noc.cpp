@@ -1144,7 +1144,7 @@ void algorithms::softwarenoc_bufferless(models::Dataflow* const  dataflow, param
 		addPathNode(to, e, it.second, conflictEdges, noc);
 	}
 
-/*
+
 	int origV = (int)dataflow->getVerticesCount();
 
 	for(int i = 1; i <= origV; i++)
@@ -1186,7 +1186,7 @@ void algorithms::softwarenoc_bufferless(models::Dataflow* const  dataflow, param
 
 		}}
 	}
-*/
+
 	//std::cout << printers::GenerateDOT(to);
 
     // Given the graph "to" the perform the Kperiodic scheduling and get "persched" in return
