@@ -583,7 +583,7 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 //remove the current edge between nodes
 //add intermediate nodes based on the path between them
 std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, conflictEtype& returnValue, NoC* noc)
-		{
+{
 	std::vector<Vertex> new_vertices;
 	// We store infos about edge to be deleted
 	auto source_vtx = d->getEdgeSource(c);
@@ -661,7 +661,7 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 
 //Process the graph for DFS, etc. in this function
 std::map<int, route_t> graphProcessing(models::Dataflow* dataflow, NoC* noc, std::vector<ARRAY_INDEX>& prog_order)
-		{
+{
 	models::Dataflow* to = new models::Dataflow(*dataflow);
 	bool myflag = false;
 	bool myflag2 = false;
@@ -703,7 +703,7 @@ std::map<int, route_t> graphProcessing(models::Dataflow* dataflow, NoC* noc, std
 	taskAndNoCMapping(dataflow, to, start, noc, routes, prog_order);
 
 	return routes;
-		}
+}
 
 
 void addIntermediateNodes(models::Dataflow* dataflow, NoC* noc, conflictEtype& returnValue, std::map<int, route_t>& routes)
@@ -757,11 +757,11 @@ void removeAllEdgesVertex(models::Dataflow* d, Vertex vtx)
 }
 
 
-void resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
+bool resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
 {
 	std::vector<Edge> srcedges, rtredges;
-	TOKEN_UNIT flow = 0;
-	TOKEN_UNIT preload = 0;
+	TOKEN_UNIT flow = 0, src_flow = 0;
+	TOKEN_UNIT preload = 0, src_preload = 0;
 
 	//1. Find all the edges from the vertex to router 
 	// and router to next edge in the NoC
@@ -786,7 +786,7 @@ void resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
 	else if(srcedges.size() <= 1)
 	{
 		//std::cout << "no resolveDestConflicts for vertex " << d->getVertexId(src) << "\n";
-		return;
+		return false;
 	}
 
 	//1C. Initialize token vecot
@@ -809,10 +809,25 @@ void resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
 			}
 		}
 		flow += d->getEdgeOut( rtredges[i] );
+
 		preload += d->getPreload( rtredges[i] );	
 		std::cout << "states=" << flow << ",preload=" << preload << "\n";
+		if(i > 0 && d->getEdgeIn(rtredges[i]) != d->getEdgeIn(rtredges[i-1]))
+		{
+			std::cout << "IAM ending in this situation SRJKVR\n";
+			//return false;
+		}
 	}
 	//std::cout << "done with removing edges\n";
+
+
+
+	for(int i = 0; i < (int)srcedges.size(); i++)
+	{
+		src_flow += d->getEdgeOut( srcedges[i] );
+		src_preload += d->getPreload( srcedges[i] );	
+	}
+
 	
 	VERBOSE_ASSERT(flow > 0, "This case is not supported: flow between task has to be strictly positive");
 
@@ -823,7 +838,7 @@ void resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
 	//3. Create the BIG router
 	auto middle = d->addVertex();
 	std::stringstream ss;
-	ss << src << "-D";
+	ss << d->getVertexId(src) << "-D";
 	d->setVertexName(middle, ss.str());
 	d->setPhasesQuantity(middle, flow); // number of state for the actor, only one in SDF
 	d->setVertexDuration(middle, phaseDurVec); // is specify for every state , only one for SDF.
@@ -832,8 +847,8 @@ void resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
 
 	//3B. Add edge between big router and source vertex
 	auto srcEdge = d->addEdge(middle,src);
-	d->setPreload(srcEdge, preload);
-	d->setEdgeOutPhases(srcEdge, {flow});
+	d->setPreload(srcEdge, src_preload);
+	d->setEdgeOutPhases(srcEdge, {src_flow});
 	d->setEdgeInPhases(srcEdge, srctoken);
 	//std::cout << "Done creating big router edge\n";
 
@@ -857,6 +872,7 @@ void resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
 		d->setPreload(new_edge,loc_preload);  // preload is M0
 	}
 	//std::cout << "done with function\n";
+	return true;
 }
 
 
@@ -926,7 +942,7 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 	//3. Create the BIG router
 	auto middle = d->addVertex();
 	std::stringstream ss;
-	ss << src << "-R";
+	ss << d->getVertexId(src) << "-S";
 	d->setVertexName(middle, ss.str());
 	d->setPhasesQuantity(middle, flow); // number of state for the actor, only one in SDF
 	d->setVertexDuration(middle, phaseDurVec); // is specify for every state , only one for SDF.
@@ -1147,12 +1163,38 @@ void algorithms::softwarenoc_bufferless(models::Dataflow* const  dataflow, param
 
 	int origV = (int)dataflow->getVerticesCount();
 
+/*
+std::cout << printers::GenerateDOT(to);
+
+
 	for(int i = 1; i <= origV; i++)
 	{
 		auto src = to->getVertexById(i);
 		resolveSrcConflicts(to, src, origV);
-		resolveDestConflicts(to, src, origV);
 	}
+*/
+
+	std::cout << printers::GenerateDOT(to);
+	int mycount = 0;
+	for(int i = 1; i <= origV; i++)
+	{
+		auto src = to->getVertexById(i);
+
+		if(i != 12)
+			continue;
+
+		if(resolveDestConflicts(to, src, origV))
+		{
+			std::cout << "deleting dest " << i << "\n";
+			std::cout << printers::GenerateDOT(to);
+			//mycount += 1;
+			//if(mycount == 2)
+			//	break;
+		}
+	}
+
+
+//std::cout << printers::GenerateDOT(to);
 
 	//Remove conflicts at source and destination router links as a big node has been created
 	for(auto it:routes)
