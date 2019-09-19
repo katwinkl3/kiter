@@ -656,7 +656,7 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 	d->setEdgeInPhases(e2,{1});
 	d->setPreload(e2,preload);  // preload is M0
 	return new_vertices;
-		}
+}
 
 
 //Process the graph for DFS, etc. in this function
@@ -759,9 +759,9 @@ void removeAllEdgesVertex(models::Dataflow* d, Vertex vtx)
 
 bool resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
 {
+	LARGE_INT mygcd = 0, a, b;
 	std::vector<Edge> srcedges, rtredges;
-	TOKEN_UNIT flow = 0, src_flow = 0;
-	TOKEN_UNIT preload = 0, src_preload = 0;
+	TOKEN_UNIT flow = 0, preload = 0;
 
 	//1. Find all the edges from the vertex to router 
 	// and router to next edge in the NoC
@@ -770,12 +770,20 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
 		if((int)d->getVertexId(prev_node) > origV && prev_node!= src)
 		{
 			srcedges.push_back(inE);
+			auto edgeout = d->getEdgeOut(inE);
+
+			if(mygcd == 0)
+				mygcd = edgeout;
+			else
+				mygcd = gcdExtended(edgeout, mygcd, &a, &b);
+
 			{ForInputEdges(d,prev_node,inE_p)     {
 				if(prev_node != d->getEdgeSource(inE_p))
 					rtredges.push_back(inE_p);
 			}}
 		}
 	}}
+
 
 	//1B. Do some sanity check here
 	if(srcedges.size() != rtredges.size())
@@ -796,11 +804,11 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
 	//2. calculate the preload and flow values of all outgoing edges from source vertices
 	//Remove the edges between source and router.
 	//Remove the router nodes
-	for(int i = 0; i < (int)rtredges.size(); i++)
+	for(int i = 0; i < (int)srcedges.size(); i++)
 	{
-		for(int j = 0; j < (int)rtredges.size(); j++)
+		for(int j = 0; j < (int)srcedges.size(); j++)
 		{
-			for(int vi = 0; vi < (int)d->getEdgeOut(rtredges[i]); vi++)
+			for(int vi = 0; vi < (int)d->getEdgeOut(srcedges[i])/mygcd; vi++)
 			{
 				if (i == j)
 					token_vec[j].push_back(1);
@@ -808,26 +816,12 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
 					token_vec[j].push_back(0);
 			}
 		}
-		flow += d->getEdgeOut( rtredges[i] );
-
-		preload += d->getPreload( rtredges[i] );	
+		flow += d->getEdgeOut( srcedges[i] );
+		preload += d->getPreload( srcedges[i] );	
 		std::cout << "states=" << flow << ",preload=" << preload << "\n";
-		if(i > 0 && d->getEdgeIn(rtredges[i]) != d->getEdgeIn(rtredges[i-1]))
-		{
-			std::cout << "IAM ending in this situation SRJKVR\n";
-			//return false;
-		}
 	}
 	//std::cout << "done with removing edges\n";
-
-
-
-	for(int i = 0; i < (int)srcedges.size(); i++)
-	{
-		src_flow += d->getEdgeOut( srcedges[i] );
-		src_preload += d->getPreload( srcedges[i] );	
-	}
-
+flow = flow/mygcd;
 	
 	VERBOSE_ASSERT(flow > 0, "This case is not supported: flow between task has to be strictly positive");
 
@@ -843,12 +837,12 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
 	d->setPhasesQuantity(middle, flow); // number of state for the actor, only one in SDF
 	d->setVertexDuration(middle, phaseDurVec); // is specify for every state , only one for SDF.
 	d->setReentrancyFactor(middle, 1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
-	std::cout << "DST_CONF(ID="<< d->getVertexId(src) << "):Done creating big router node  " << d->getVertexId(middle) << "\n";
+	std::cout << "DST_CONF(ID="<< d->getVertexId(src) << "):Done creating big router node  " << d->getVertexId(middle) << ",gcd=" << mygcd << "\n";
 
 	//3B. Add edge between big router and source vertex
 	auto srcEdge = d->addEdge(middle,src);
-	d->setPreload(srcEdge, src_preload);
-	d->setEdgeOutPhases(srcEdge, {src_flow});
+	d->setPreload(srcEdge, preload);
+	d->setEdgeOutPhases(srcEdge, {flow*mygcd});
 	d->setEdgeInPhases(srcEdge, srctoken);
 	//std::cout << "Done creating big router edge\n";
 
@@ -881,6 +875,8 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 	std::vector<Edge> srcedges, rtredges;
 	TOKEN_UNIT flow = 0;
 	TOKEN_UNIT preload = 0;
+	LARGE_INT mygcd = 0, a, b;
+
 
 	//1. Find all the edges from the vertex to router 
 	// and router to next edge in the NoC
@@ -889,6 +885,13 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 		if((int)d->getVertexId(next_node) > origV && next_node!= src)
 		{
 			srcedges.push_back(outE);
+
+                        auto edgeout = d->getEdgeOut(outE);
+                        if(mygcd == 0)
+                                mygcd = edgeout;
+                        else
+                                mygcd = gcdExtended(edgeout, mygcd, &a, &b);
+
 			{ForOutputEdges(d,next_node,inE)     {
 				if(next_node != d->getEdgeTarget(inE))
 					rtredges.push_back(inE);
@@ -931,6 +934,7 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 		preload += d->getPreload( srcedges[i] );	
 		std::cout << "states=" << flow << ",preload=" << preload << "\n";
 	}
+	flow /= mygcd;
 	std::cout << "done with removing edges\n";
 
 	VERBOSE_ASSERT(flow > 0, "This case is not supported: flow between task has to be strictly positive");
@@ -952,7 +956,7 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 	//3B. Add edge between source vertex and big router node
 	auto srcEdge = d->addEdge(src, middle);
 	d->setPreload(srcEdge, preload);
-	d->setEdgeInPhases(srcEdge, {flow});
+	d->setEdgeInPhases(srcEdge, {flow*mygcd});
 	d->setEdgeOutPhases(srcEdge, srctoken);
 	//std::cout << "Done creating big router edge\n";
 
@@ -980,7 +984,7 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 }
 
 
-void checkForConflicts(conflictEtype& conflictEdges, models::Dataflow* to, TIME_UNIT HP, scheduling_t& persched)
+void checkForConflicts(conflictEtype& conflictEdges, models::Dataflow* to, TIME_UNIT HP, scheduling_t& persched, models::Dataflow* original)
 {
 	int total_conflict = 0;
 	for (auto  key : conflictEdges) {
@@ -999,12 +1003,6 @@ void checkForConflicts(conflictEtype& conflictEdges, models::Dataflow* to, TIME_
 
 					auto ni = to->getNi(taski);
 					auto nj = to->getNi(taskj);
-
-					//auto srci = conflictEdges[edge_id][i].second;
-					//auto srcj = conflictEdges[edge_id][j].second;
-
-					//auto src_ni = to->getNi(srci);
-					//auto src_nj = to->getNi(srcj);
 
 					//check if any of the starting times match
 					std::vector<TIME_UNIT> si_vec, sj_vec;
@@ -1026,7 +1024,6 @@ void checkForConflicts(conflictEtype& conflictEdges, models::Dataflow* to, TIME_
 							{
 								std::cout << "conflict between " << to->getVertexName(taski) << " and " << to->getVertexName(taskj) << "\n";
 								total_conflict += 1;
-								//addDependency(to, srci, srcj, src_ni, src_nj); //NEED TO RESOLVE SOMEHOW
 								break;
 							}
 						}
@@ -1035,7 +1032,27 @@ void checkForConflicts(conflictEtype& conflictEdges, models::Dataflow* to, TIME_
 			}
 		}
 	}
+
+	models::Dataflow* temp = new models::Dataflow(*original);
+	VERBOSE_ASSERT(computeRepetitionVector(temp),"inconsistent graph");
+	EXEC_COUNT orig_ni = 0, mod_ni = 0;
+	{ForEachVertex(to,v) {
+		if(to->getVertexId(v) == 1)
+		{
+			mod_ni = to->getNi(v);
+			break;
+		}
+	}}
+	{ForEachVertex(temp,v) {
+		if(temp->getVertexId(v) == 1)
+		{
+			orig_ni = temp->getNi(v);
+			break;
+		}
+	}}
+
 	std::cout << "total_conflict=" << total_conflict << "\n";
+	std::cout << "NEW HP=" << HP*orig_ni/mod_ni << "\n";
 }
 
 
@@ -1091,7 +1108,7 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
 	scheduling_t persched =  algorithms::generateKperiodicSchedule   (to , false) ;
 	findHP(to, persched, &HP, &LCM);
-	checkForConflicts(conflictEdges, to, HP, persched);
+	checkForConflicts(conflictEdges, to, HP, persched, dataflow);
 }
 
 
@@ -1162,39 +1179,19 @@ void algorithms::softwarenoc_bufferless(models::Dataflow* const  dataflow, param
 
 
 	int origV = (int)dataflow->getVerticesCount();
-
-/*
-std::cout << printers::GenerateDOT(to);
-
-
+	//std::cout << printers::GenerateDOT(to);
 	for(int i = 1; i <= origV; i++)
 	{
 		auto src = to->getVertexById(i);
 		resolveSrcConflicts(to, src, origV);
 	}
-*/
-
-	std::cout << printers::GenerateDOT(to);
-	int mycount = 0;
+	//std::cout << printers::GenerateDOT(to);
 	for(int i = 1; i <= origV; i++)
 	{
 		auto src = to->getVertexById(i);
-
-		if(i != 12)
-			continue;
-
-		if(resolveDestConflicts(to, src, origV))
-		{
-			std::cout << "deleting dest " << i << "\n";
-			std::cout << printers::GenerateDOT(to);
-			//mycount += 1;
-			//if(mycount == 2)
-			//	break;
-		}
+		resolveDestConflicts(to, src, origV);
 	}
-
-
-//std::cout << printers::GenerateDOT(to);
+	//std::cout << printers::GenerateDOT(to);
 
 	//Remove conflicts at source and destination router links as a big node has been created
 	for(auto it:routes)
@@ -1230,21 +1227,19 @@ std::cout << printers::GenerateDOT(to);
 	}
 
 	//std::cout << printers::GenerateDOT(to);
-
-    // Given the graph "to" the perform the Kperiodic scheduling and get "persched" in return
+	//Given the graph "to" the perform the Kperiodic scheduling and get "persched" in return
 	scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to);
 
-    // Given "persched", we print the scheduling result.
-	{ForEachVertex(to,v) {
-		std::cout << "Task " << to->getVertexName(v) << " Period=" << persched[v].first<< " Starts=" << commons::toString(persched[v].second) << std::endl;
-	}}
-
+	//Given "persched", we print the scheduling result.
+	//{ForEachVertex(to,v) {
+	//	std::cout << "Task " << to->getVertexName(v) << " Period=" << persched[v].first<< " Starts=" << commons::toString(persched[v].second) << std::endl;
+	//}}
 
 	VERBOSE_INFO("findHP");
 	unsigned long LCM;
 	TIME_UNIT HP;
 	findHP(to, persched, &HP, &LCM);
-	checkForConflicts(conflictEdges, to, HP, persched);
+	checkForConflicts(conflictEdges, to, HP, persched, dataflow);
 }
 
 

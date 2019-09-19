@@ -90,7 +90,6 @@ scheduling_t algorithms::scheduling::bufferless_kperiodic_scheduling (models::Da
     {ForEachEvent(eg,e) {
         models::SchedulingEvent se = eg->getEvent(e);
         EXEC_COUNT ti = se.getTaskId();
-        EXEC_COUNT tp = se.getTaskPhase();
         TIME_UNIT start = eg->getStartingTime(e);
         Vertex v = dataflow->getVertexById(ti);
         TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
