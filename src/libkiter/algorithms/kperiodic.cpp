@@ -1053,9 +1053,12 @@ void algorithms::compute_KperiodicSlow_throughput    (models::Dataflow* const da
  *
  */
 
-std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> algorithms::generateKperiodicSchedule    (models::Dataflow* const dataflow , bool verbose) {
+//std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> 
 
-	std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> scheduling_result;
+scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const dataflow , bool verbose) {
+
+	//std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>>
+	scheduling_t scheduling_result;
 
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
@@ -1208,7 +1211,7 @@ std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> algorithms::generat
         EXEC_COUNT ti = se.getTaskId();
         Vertex v = dataflow->getVertexById(ti);
         TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
-        scheduling_result[v].first = period;
+        scheduling_result[dataflow->getVertexId(v)].first = period;
 
         VERBOSE_INFO("Task " << dataflow->getVertexName(v) << " " << period  );
 
@@ -1219,7 +1222,7 @@ std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> algorithms::generat
         EXEC_COUNT ti = se.getTaskId();
         TIME_UNIT start = eg->getStartingTime(e);
         Vertex v = dataflow->getVertexById(ti);
-        scheduling_result[v].second.push_back( start );
+        scheduling_result[dataflow->getVertexId(v)].second.push_back( start );
         VERBOSE_INFO("Task " << dataflow->getVertexName(v) << " " << start  );
 
 

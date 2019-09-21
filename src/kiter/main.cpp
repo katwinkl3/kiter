@@ -81,7 +81,7 @@ std::vector<algo_t> algorithmslist =               {
 		      { "SoftwareControlledNoC"                       , "Perform NoC scheduling after deciding task mapping and routing.",
 		    algorithms::software_noc},
 		      { "SoftwareControlledNoCBufferless"                       , "Perform Bufferless NoC scheduling after deciding task mapping and routing.",
-		    algorithms::softwarenoc_bufferless},
+		    algorithms::software_noc_bufferless},
 		      { "SymbolicExecutionWP"                       , "Execute task in ASAP fashion and print out the scheduling.",
 		    algorithms::symbolic_execution_with_packets},
 			{ "PeriodicSizing"                  , "Minimal Buffer size estimation by periodic scheduling method.",

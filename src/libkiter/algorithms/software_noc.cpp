@@ -33,7 +33,8 @@ struct node{
 	ARRAY_INDEX index;
 };
 
-typedef std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEtype;
+//typedef std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEtype;
+typedef std::map< unsigned int, std::vector< std::pair<ARRAY_INDEX, ARRAY_INDEX> > > conflictEtype;
 
 route_t get_route_wrapper(models::Dataflow* to, Edge c, NoC* noc)
 {
@@ -192,6 +193,24 @@ void DFSUtil(Vertex v, std::vector<bool>& visited, models::Dataflow* to, std::ve
 } 
 
 
+void DFSUtil_PgmOrder(Vertex v, std::vector<bool>& visited, models::Dataflow* to, std::vector<ARRAY_INDEX>& removeEdgeId)
+{ 
+	// Mark the current node as visited and print it
+	auto myid = to->getVertexId(v);
+	visited[myid] = true; 
+	// Recur for all the vertices adjacent to this vertex 
+	{ForOutputEdges(to,v,e){
+		Vertex end = to->getEdgeTarget(e);
+		ARRAY_INDEX endid = to->getVertexId(end);
+		if(!visited[endid])
+			DFSUtil_PgmOrder(end, visited, to, removeEdgeId);
+		else
+			removeEdgeId.push_back(to->getEdgeId(e));
+	}}
+} 
+
+
+
 void printVector(std::vector<Vertex>& traversal, models::Dataflow* to)
 {
 	for(unsigned int trav_i = 0; trav_i < traversal.size(); trav_i++)
@@ -287,17 +306,17 @@ void my_dfs(models::Dataflow* adj, Vertex node, std::vector<bool> visited, Verte
 
 
 std::set<unsigned int> my_dfs_wrapper(models::Dataflow* adj, Vertex start)
-		{
+{
 	int V = adj->getVerticesCount();
 	std::vector<bool> visited(V+1, false);
 	std::vector<unsigned int> path;
 
 	//Call the above function with the start node:
 	std::set<unsigned int> mycycleids;
-	my_dfs(adj,start,visited, start, path, mycycleids);
+	my_dfs(adj, start, visited, start, path, mycycleids);
 
 	return mycycleids;
-		}
+}
 
 
 models::Dataflow getTranspose(models::Dataflow* to) 
@@ -541,7 +560,7 @@ void mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::Dataf
 
 
 //remove the current edge between nodes add intermediate nodes based on the path between them
-void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex start, NoC* noc, std::map<int, route_t>& routes, std::vector<ARRAY_INDEX>& prog_order)
+void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex start, NoC* noc, std::map<int, route_t>& routes/*, std::vector<ARRAY_INDEX>& prog_order*/)
 {
 	int V = to->getVerticesCount();
 	std::priority_queue<node> pq;
@@ -560,19 +579,56 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 	visited[endid] = true;
 	pq.push(temp2);
 
+	while(!pq.empty())
+	{
+		top = to->getVertexById(pq.top().index);
+		pq.pop();
+		if(top != start)
+		{
+			std::cout << "mapping " << to->getVertexId(top) << "\n";
+			mapping(top, core_mapping, noc, input, available_cores, routes);
+		}
+		visited[to->getVertexId(top)] = true;
+
+		{ForOutputEdges(to, top, e){
+			Vertex end = to->getEdgeTarget(e);
+			ARRAY_INDEX endid = to->getVertexId(end);
+
+			//std::cout << "trying node " << endid << "\n";
+			if(!visited[endid])
+			{
+				bool flag = true;
+				{ForInputEdges(to, end, e2){
+					Vertex e2end = to->getEdgeSource(e2);
+					ARRAY_INDEX e2endid = to->getVertexId(e2end);
+					if(!visited[e2endid])//if parent is not executed, cannot map this node
+						flag = false;
+				}}
+				if(flag)
+				{
+					//std::cout << "adding " << endid << " to queue\n";
+					node temp;
+					temp.index = endid;
+					pq.push(temp);
+				}
+			}
+		}}
+	}
+
 	/*for(unsigned int s = 0; s < prog_order.size(); s++)
 	{
 		auto top = to->getVertexById(prog_order[s]);
 		mapping(top, core_mapping, noc, input, available_cores, routes);
 	}*/
 
+/*
 	for(ARRAY_INDEX s = 1; s <= (ARRAY_INDEX)(V-1); s++)
 	{
 		prog_order[s] = prog_order[s] + 1 - 1;
 		auto top = to->getVertexById(s);
 		mapping(top, core_mapping, noc, input, available_cores, routes);
 	}
-
+*/
 	std::cout << "srjkvr-mapping ";
 	for(unsigned int ac_i = 1; ac_i < core_mapping.size()-1; ac_i++)
 		std::cout << core_mapping[ac_i] << ",";
@@ -615,11 +671,15 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 		std::stringstream ss;
 		ss << "mid-" << source << "," << target << "-" << e;
 
-		std::pair<Vertex, Vertex> pair_temp;
-		pair_temp.first = middle;
-		pair_temp.second = source_vtx;
+		//std::pair<Vertex, Vertex> pair_temp;
+		std::pair<ARRAY_INDEX, ARRAY_INDEX> pair_temp;
+		pair_temp.first = d->getVertexId(middle);
+		pair_temp.second = d->getVertexId(source_vtx);
 
 		returnValue[(unsigned int)e].push_back(pair_temp);
+
+		std::cout << "MMM-" << e << "," << ss.str() << "\n";
+
 		d->setVertexName(middle,ss.str());
 
 		d->setPhasesQuantity(middle,1); // number of state for the actor, only one in SDF
@@ -656,6 +716,56 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 	d->setEdgeInPhases(e2,{1});
 	d->setPreload(e2,preload);  // preload is M0
 	return new_vertices;
+}
+
+
+//Remove the cyclic edges
+Vertex removeCycleEdges(models::Dataflow* to, std::vector<ARRAY_INDEX>& prog_order)
+{
+	int origV = to->getVerticesCount();
+	std::vector<bool> visited(origV, false);
+	std::vector<ARRAY_INDEX> removeEdgeId;
+	std::vector<ARRAY_INDEX> vertexId;
+
+
+	for(int i = 0; i < (int)prog_order.size(); i++)
+	{
+		auto vid = prog_order[i];
+		Vertex v = to->getVertexById(vid);
+		if(!visited[vid])
+			DFSUtil_PgmOrder(v, visited, to, removeEdgeId);
+	}
+	for(int i = 0; i < (int)removeEdgeId.size(); i++)
+	{
+		auto e = to->getEdgeById( removeEdgeId[i] );
+		auto src = to->getEdgeSource(e);
+		auto dst = to->getEdgeTarget(e);
+
+		std::cout << "Removing edge " << to->getVertexId(src) << "->" << to->getVertexId(dst) << "\n";
+		to->removeEdge(e);
+	}
+
+	//find isolated nodes
+	{ForEachVertex(to,t) {
+		if(to->getVertexInDegree(t) == 0)
+		{
+			vertexId.push_back( to->getVertexId(t) );
+			std::cout << "inside function::::: adding new edge between start " << to->getVertexId(t) << "\n";
+		}
+	}}
+
+
+	//Now create the start node
+	auto start = to->addVertex();
+	to->setVertexName(start, "start");
+
+	//add edges between start node and isolated edges
+	for(int i = 0; i < (int)vertexId.size(); i++)
+	{
+		auto t = to->getVertexById( vertexId[i]);
+		to->addEdge(start, t);
+	}
+	return start;
 }
 
 
@@ -700,7 +810,11 @@ std::map<int, route_t> graphProcessing(models::Dataflow* dataflow, NoC* noc, std
 	}
 
 	printSCCs(to, start);
-	taskAndNoCMapping(dataflow, to, start, noc, routes, prog_order);
+
+	models::Dataflow* to2 = new models::Dataflow(*dataflow);
+	start = removeCycleEdges(to2, prog_order);
+
+	taskAndNoCMapping(dataflow, to2, start, noc, routes/*, prog_order*/);
 
 	return routes;
 }
@@ -821,7 +935,7 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
 		std::cout << "states=" << flow << ",preload=" << preload << "\n";
 	}
 	//std::cout << "done with removing edges\n";
-flow = flow/mygcd;
+	flow = flow/mygcd;
 	
 	VERBOSE_ASSERT(flow > 0, "This case is not supported: flow between task has to be strictly positive");
 
@@ -990,42 +1104,46 @@ void checkForConflicts(conflictEtype& conflictEdges, models::Dataflow* to, TIME_
 	for (auto  key : conflictEdges) {
 		auto edge_id = key.first;
 		auto mysize = conflictEdges[edge_id].size();
-		if(mysize > 1)
+		if(mysize <= 1)
+			continue;
+		for(unsigned int i = 0; i < mysize; i++)
 		{
-			for(unsigned int i = 0; i < mysize; i++)
+			for(unsigned int j = 0; j < mysize; j++)
 			{
-				for(unsigned int j = 0; j < mysize; j++)
+				if (i <= j) //ignore the upper triangle
+					continue;
+				auto taski_vtx = to->getVertexById(conflictEdges[edge_id][i].first);
+				auto taskj_vtx = to->getVertexById(conflictEdges[edge_id][j].first);
+				auto taski = conflictEdges[edge_id][i].first;
+				auto taskj = conflictEdges[edge_id][j].first;
+
+
+				std::cout << "KKK-" << edge_id << "," << to->getVertexName(taski_vtx) << "," << to->getVertexName(taskj_vtx) << "\n";
+
+				auto ni = to->getNi(taski_vtx);
+				auto nj = to->getNi(taskj_vtx);
+
+				//check if any of the starting times match
+				std::vector<TIME_UNIT> si_vec, sj_vec;
+				for (auto  skey : persched[taski].second) {
+					si_vec.push_back(skey);
+				}
+				for (auto  skey : persched[taskj].second) {
+					sj_vec.push_back(skey);
+				}
+
+				for(unsigned int si_i = 0; si_i < si_vec.size(); si_i++)
 				{
-					if (i <= j) //ignore the upper triangle
-						continue;
-					auto taski = conflictEdges[edge_id][i].first;
-					auto taskj = conflictEdges[edge_id][j].first;
-
-					auto ni = to->getNi(taski);
-					auto nj = to->getNi(taskj);
-
-					//check if any of the starting times match
-					std::vector<TIME_UNIT> si_vec, sj_vec;
-					for (auto  skey : persched[taski].second) {
-						si_vec.push_back(skey);
-					}
-					for (auto  skey : persched[taskj].second) {
-						sj_vec.push_back(skey);
-					}
-
-					for(unsigned int si_i = 0; si_i < si_vec.size(); si_i++)
+					for(unsigned int sj_i = 0; sj_i < sj_vec.size(); sj_i++)
 					{
-						for(unsigned int sj_i = 0; sj_i < sj_vec.size(); sj_i++)
-						{
-							auto si =  persched[taski].second[si_i];
-							auto sj =  persched[taskj].second[sj_i];
+						auto si =  persched[taski].second[si_i];
+						auto sj =  persched[taskj].second[sj_i];
 
-							if( algorithms::isConflictPresent((LARGE_INT) HP, si, (LARGE_INT) ni, sj, (LARGE_INT) nj) )
-							{
-								std::cout << "conflict between " << to->getVertexName(taski) << " and " << to->getVertexName(taskj) << "\n";
-								total_conflict += 1;
-								break;
-							}
+						if( algorithms::isConflictPresent((LARGE_INT) HP, si, (LARGE_INT) ni, sj, (LARGE_INT) nj) )
+						{
+							std::cout << "conflict between " << to->getVertexName(taski_vtx) << " and " << to->getVertexName(taskj_vtx) << "\n";
+							total_conflict += 1;
+							break;
 						}
 					}
 				}
@@ -1062,10 +1180,11 @@ void findHP(models::Dataflow* to, scheduling_t& persched, TIME_UNIT* HP, unsigne
 	*LCM = 1;
 	for (auto  key : persched) {
 		auto task = key.first;
-		*HP =    ( persched[task].first * to->getNi(task) ) / (persched[task].second.size()) ;
-		std::cout << "Task " <<  to->getVertexName(task) <<  " : duration=" << to->getVertexTotalDuration(task) <<  " period=" <<  persched[task].first << " HP=" << *HP << " Ni=" << to->getNi(task)<< " starts=[ ";
+		auto task_vtx = to->getVertexById(key.first);
+		*HP =    ( persched[task].first * to->getNi(task_vtx) ) / (persched[task].second.size()) ;
+		std::cout << "Task " <<  to->getVertexName(task_vtx) <<  " : duration=" << to->getVertexTotalDuration(task_vtx) <<  " period=" <<  persched[task].first << " HP=" << *HP << " Ni=" << to->getNi(task_vtx)<< " starts=[ ";
 
-		*LCM = boost::math::lcm(*LCM, to->getNi(task));
+		*LCM = boost::math::lcm(*LCM, to->getNi(task_vtx));
 
 		for (auto  skey : persched[task].second) {
 
@@ -1134,7 +1253,7 @@ bool algorithms::isConflictPresent(LARGE_INT HP, TIME_UNIT si, LARGE_INT ni, TIM
 }
 
 
-void algorithms::softwarenoc_bufferless(models::Dataflow* const  dataflow, parameters_list_t   param_list)
+void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, parameters_list_t   param_list)
 {
 	{
 		models::Dataflow* to = new models::Dataflow(*dataflow);
@@ -1222,7 +1341,6 @@ void algorithms::softwarenoc_bufferless(models::Dataflow* const  dataflow, param
 				break;
 			}
 			removeme=false;
-
 		}}
 	}
 
@@ -1310,89 +1428,3 @@ void postProcessing(models::Dataflow* to, Vertex start, NoC* noc)
 		}
 	}}
 }
-
-
-
-/*
-	//Original graph
-	std::string inputdot = printers::GenerateDOT (dataflow);
-	std::ofstream outfile;
-	outfile.open("input.dot");
-	outfile << inputdot;
-	outfile.close();
-
-	std::cerr << " ================ " <<  to->getName() <<  " ===================== EDGE CONTENT" << std::endl;
-
-	// This is for modulo scheuling
-	//Store the current edges list first
-	//std::vector<Edge> edges_list;
-	//{ForEachEdge(to,e) {
-	//	edges_list.push_back(e);
-	//}}
-
- 	//add intermediate nodes
-	//for(auto e: edges_list) {
-	//	route_t list_par = get_route_wrapper(to, e, noc);
-	//	addPathNode(to, e, list_par, conflictEdges, noc);
-	//}
-
-	std::string outputdot = printers::GenerateDOT (to);
-
-	outfile.open("output.dot");
-	outfile << outputdot;
-	outfile.close();
-
-	std::cerr << " ================ " <<  to->getName() <<  " ===================== " << std::endl;
-
-	// Note: getEdgeOut and getEdgeIn are Output and input Rates of a buffer
-	{ForEachVertex(to,t) {
-		std::cerr << " vertex:" << to->getVertexName(t) << ":" << to->getVertexId(t) << std::endl;
-		{ForInputEdges(to,t,e){						    
-			std::cerr << " in:" << to->getEdgeName(e) << "[" << to->getEdgeOut(e) << "]"  << to->getEdgeId(e) << std::endl;
-		}}
-		{ForOutputEdges(to,t,e) {
-			std::cerr << " out:" << to->getEdgeName(e)  << "[" << to->getEdgeIn(e) << "]"  << to->getEdgeId(e) << std::endl;
-		}}
-	}}
-
-	std::cout <<  printers::PeriodicScheduling2DOT    (to, persched, false,  xscale , yscale);
- */
-
-/*
-	while(!pq.empty())
-	{
-		top = to->getVertexById(pq.top().index);
-		pq.pop();
-		if(top != start)
-		{
-			std::cout << "mapping " << to->getVertexId(top) << "\n";
-			mapping(top, core_mapping, noc, input, available_cores, routes);
-		}
-
-		{ForOutputEdges(to, top, e){
-			Vertex end = to->getEdgeTarget(e);
-			ARRAY_INDEX endid = to->getVertexId(end);
-
-			std::cout << "trying node " << endid << "\n";
-			if(!visited[endid])
-			{
-				bool flag = true;
-				//{ForInputEdges(to, end, e2){
-				//	Vertex e2end = to->getEdgeSource(e2);
-				//	ARRAY_INDEX e2endid = to->getVertexId(e2end);
-				//	if(!visited[e2endid])//if parent is not executed, cannot map this node
-				//		flag = false;
-				//}}
-
-				if(flag)
-				{
-					std::cout << "adding " << endid << " to queue\n";
-					node temp;
-					temp.index = endid;
-					visited[endid] = true;
-					pq.push(temp);
-				}
-			}
-		}}
-	}
- */
