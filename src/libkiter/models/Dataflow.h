@@ -31,7 +31,7 @@
 
 /* Dataflow defintion */
 
-enum EDGE_TYPE {NORMAL_EDGE, BUFFERLESS_EDGE};
+enum EDGE_TYPE {NORMAL_EDGE, BUFFERLESS_EDGE, CONFIG_EDGE};
 
 namespace boost
 {
