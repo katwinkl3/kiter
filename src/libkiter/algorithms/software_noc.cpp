@@ -208,8 +208,10 @@ void DFSUtil_PgmOrder(Vertex v, std::vector<bool>& visited, models::Dataflow* to
 		ARRAY_INDEX endid = to->getVertexId(end);
 		if(!visited[endid])
 			DFSUtil_PgmOrder(end, visited, to, removeEdgeId);
-		else
+		else if (cyclen_per_vtxid[endid].size() > 0)
 			removeEdgeId.push_back(to->getEdgeId(e));
+		//else
+		//	std::cout << "Error: wrong removal of edge " << myid << "->" << endid << "\n";
 	}}
 } 
 
@@ -400,7 +402,7 @@ void printSCCs(models::Dataflow* to, Vertex start)
 		{
 			std::vector<Vertex> traversal;
 			DFSUtil(vtx, visited, &transp, traversal);
-			printVector(traversal, to);
+			//printVector(traversal, to);
 
 			if(traversal.size() > 1)
 			{
@@ -481,7 +483,7 @@ int findPaths(int src, NoC* noc, int core_considered, std::map<int, int>& curr_u
 
 void mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::Dataflow* d, std::vector<int>& avail_cores, std::map<int, route_t>& routes)
 {
-	const int start_core = 5;
+	const int start_core = avail_cores[0];
 	auto index = d->getVertexId(vtx);
 	if((int)avail_cores.size() == noc->size())
 	{
@@ -601,7 +603,7 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 		pq.pop();
 		if(top != start)
 		{
-			std::cout << "mapping " << to->getVertexId(top) << "\n";
+			//std::cout << "mapping " << to->getVertexId(top) << "\n";
 			mapping(top, core_mapping, noc, input, available_cores, routes);
 		}
 		visited[to->getVertexId(top)] = true;
@@ -697,7 +699,7 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 
 		returnValue[(unsigned int)e].push_back(pair_temp);
 
-		std::cout << "MMM-" << e << "," << ss.str() << "\n";
+		//std::cout << "MMM-" << e << "," << ss.str() << "\n";
 
 		d->setVertexName(middle,ss.str());
 
@@ -806,7 +808,7 @@ Vertex removeCycleEdges(models::Dataflow* to, std::vector<ARRAY_INDEX>& prog_ord
 		if(to->getVertexInDegree(t) == 0)
 		{
 			vertexId.push_back( to->getVertexId(t) );
-			std::cout << "inside function::::: adding new edge between start " << to->getVertexId(t) << "\n";
+			//std::cout << "inside function::::: adding new edge between start " << to->getVertexId(t) << "\n";
 		}
 	}}
 
@@ -851,7 +853,7 @@ std::map<int, route_t> graphProcessing(models::Dataflow* dataflow, NoC* noc, std
 		{
 			myflag = true;
 			to->addEdge(start, t);
-			std::cout << "adding new edge between start " << to->getVertexId(t) << "\n";
+			//std::cout << "adding new edge between start " << to->getVertexId(t) << "\n";
 		}
 	}}
 
@@ -1075,6 +1077,9 @@ void mergeConfigNodes(models::Dataflow* d, conflictConfigs& configs)
 			Vertex v1 = d->getVertexById( get<1>(mergeNodes[i]) );
 			Vertex v2 = d->getVertexById( get<2>(mergeNodes[i]) );
 
+
+			std::cout << "cfgVtx=" << get<0>(mergeNodes[i]) << " v1=" << get<1>(mergeNodes[i]) << " v2=" << get<2>(mergeNodes[i]) << "\n";
+
 			removeAllEdgesVertex(d, cfgVtx);
 			auto new_edge = d->addEdge(v1, middle);
 			d->setEdgeType(new_edge,EDGE_TYPE::BUFFERLESS_EDGE);
@@ -1089,6 +1094,8 @@ void mergeConfigNodes(models::Dataflow* d, conflictConfigs& configs)
 			d->setEdgeInPhases(new_edge, token_vec[i]);
 			d->setEdgeOutPhases(new_edge, {1});
 		}
+		std::cout << "merging " << it->first << " done\n";
+		//return;
 	}
 }
 
@@ -1227,7 +1234,7 @@ void checkForConflicts(conflictEtype& conflictEdges, models::Dataflow* to, TIME_
 				auto taskj = conflictEdges[edge_id][j].first;
 
 
-				std::cout << "KKK-" << edge_id << "," << to->getVertexName(taski_vtx) << "," << to->getVertexName(taskj_vtx) << "\n";
+				//std::cout << "KKK-" << edge_id << "," << to->getVertexName(taski_vtx) << "," << to->getVertexName(taskj_vtx) << "\n";
 
 				auto ni = to->getNi(taski_vtx);
 				auto nj = to->getNi(taskj_vtx);
@@ -1417,6 +1424,10 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		resolveDestConflicts(to, src, origV);
 	}
 
+	//std::cout << printers::GenerateDOT(to);
+	mergeConfigNodes(to, configs);
+	//std::cout << printers::GenerateDOT(to);
+
 	//Remove conflicts at source and destination router links as a big node has been created
 	for(auto it:routes)
 	{
@@ -1432,7 +1443,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	 		conflictEdges.erase(cf_it2);
 	}
 
-	mergeConfigNodes(to, configs);
+
 	VERBOSE_INFO("resolving conflicts done");
 	//Original graph
 
@@ -1450,6 +1461,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 			removeme=false;
 		}}
 	}
+
 
 	//std::cout << printers::GenerateDOT(to);
 	//Given the graph "to" the perform the Kperiodic scheduling and get "persched" in return
