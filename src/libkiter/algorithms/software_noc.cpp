@@ -1453,7 +1453,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 	//std::cout << printers::GenerateDOT(to);
 	//Given the graph "to" the perform the Kperiodic scheduling and get "persched" in return
-	scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to);
+	scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, false, false);
 
 	VERBOSE_INFO("findHP");
 	unsigned long LCM;

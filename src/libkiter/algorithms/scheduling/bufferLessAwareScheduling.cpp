@@ -32,7 +32,7 @@ static inline const std::string PRED_ROW_STR (const std::string buffername, cons
 
 
 
-scheduling_t algorithms::scheduling::bufferless_kperiodic_scheduling (models::Dataflow* const  dataflow) {
+scheduling_t algorithms::scheduling::bufferless_kperiodic_scheduling (models::Dataflow* const  dataflow, bool stop_at_first, bool get_previous) {
 
     EXEC_COUNT iteration_count = 0;
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
@@ -42,28 +42,42 @@ scheduling_t algorithms::scheduling::bufferless_kperiodic_scheduling (models::Da
     {ForEachVertex(dataflow,t) {
         kvector[t] = 1;
     }}
+
+    VERBOSE_INFO("Start with a 1-periodic schedule");
     std::pair<TIME_UNIT, std::set<Edge> > result = algorithms::KScheduleBufferLess(dataflow,&kvector);
 
-    if (result.second.size() != 0) {
+    if ((result.second.size() != 0) and ((!stop_at_first) or (result.first > 0))) {
 
-        VERBOSE_INFO("1-periodic throughput (" << result.first <<  ") is not enough.");
+        VERBOSE_INFO("1-periodic throughput is not enough");
+        VERBOSE_INFO("   Th = " << result.first);
         VERBOSE_INFO("   Critical circuit is " << algorithms::cc2string(dataflow,&(result.second)) <<  "");
 
         while (true) {
             iteration_count++;
+            std::map<Vertex,EXEC_COUNT> previous_kvector = kvector;
             updateVectorWithLocalNi(dataflow,&kvector,&(result.second));
             std::pair<TIME_UNIT, std::set<Edge> > resultprime = KScheduleBufferLess(dataflow,&kvector);
-            if (algorithms::sameset(dataflow,&(resultprime.second),&(result.second)))  {
-                VERBOSE_INFO("Critical circuit is the same");
-                result = resultprime;
+            if (algorithms::sameset(dataflow,&(resultprime.second),&(result.second)) or (stop_at_first and result.first > 0))  {
+                VERBOSE_INFO("End criteria verified.");
+                if ((result.first < resultprime.first) and !get_previous) {
+                	result = resultprime;
+                } else if (get_previous) {
+                	kvector = previous_kvector;
+                }
                 break;
             }
             result = resultprime;
-            VERBOSE_INFO("Current K-periodic throughput (" << result.first <<  ") is not enough.");
+            VERBOSE_INFO("Current K-periodic throughput is not enough");
+            VERBOSE_INFO("   K  = " << commons::toString(kvector));
+            VERBOSE_INFO("   Th = " << result.first);
             VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
         }
 
-    } {
+    } else {
+        VERBOSE_INFO("End criteria verified.");
+        VERBOSE_INFO(" - Size of critical circuit was: " << result.second.size());
+        VERBOSE_INFO(" - Throughput was: " << result.first);
+        VERBOSE_INFO(" - stop_at_first: " << stop_at_first);
         iteration_count++;
     }
 

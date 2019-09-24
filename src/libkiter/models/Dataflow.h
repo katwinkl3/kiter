@@ -680,4 +680,8 @@ public :
 } // end of namespace models
 
 
+template<>
+std::string commons::toString<  std::map<Vertex,EXEC_COUNT>  >(const  std::map<Vertex,EXEC_COUNT> & v);
+
+
 #endif /* DATAFLOW_H_ */

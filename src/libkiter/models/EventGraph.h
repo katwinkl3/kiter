@@ -358,7 +358,7 @@ public :
     };
     bool  computeStartingTime (TIME_UNIT fr ) {
         TIME_UNIT omega = 1 / fr;
-        VERBOSE_INFO("minimalDistances (" << omega << ")");
+        VERBOSE_DEBUG("minimalDistances (" << omega << ")");
 
         const EXEC_COUNT nb_vertices = this->getEventCount();
 
@@ -427,12 +427,12 @@ public :
             this->setStartingTime(e , this->getStartingTime(e)  - min_time);
         }}
         {ForEachConstraint(this,c)   {
-            VERBOSE_INFO("distance(" << this->getConstraint(c).toString() << ") = " << this->getFlow(c));
+        	VERBOSE_DEBUG("distance(" << this->getConstraint(c).toString() << ") = " << this->getFlow(c));
 
         }}
-        VERBOSE_INFO("min_time = " << min_time);
+        VERBOSE_DEBUG("min_time = " << min_time);
         {ForEachEvent(this,e)   {
-            VERBOSE_INFO("distance(" << this->getEvent(e).toString() << ") = " <<  this->getStartingTime(e) - min_time);
+        	VERBOSE_DEBUG("distance(" << this->getEvent(e).toString() << ") = " <<  this->getStartingTime(e) - min_time);
         }}
         return true;
 
