@@ -656,7 +656,7 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 
 //remove the current edge between nodes
 //add intermediate nodes based on the path between them
-std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, conflictEtype& returnValue, /*NoC* noc,*/ conflictConfigs& configs)
+std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, conflictEtype& returnValue, conflictConfigs& configs)
 {
 	std::vector<Vertex> new_vertices;
 	// We store infos about edge to be deleted
@@ -698,8 +698,6 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 		pair_temp.second = d->getVertexId(source_vtx);
 
 		returnValue[(unsigned int)e].push_back(pair_temp);
-
-		//std::cout << "MMM-" << e << "," << ss.str() << "\n";
 
 		d->setVertexName(middle,ss.str());
 
@@ -748,7 +746,7 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 			configs[config_key.str()].push_back(tuple_temp);
 			key_str = config_key.str();
 
-			
+
 			d->setVertexName(vtx,config_name.str());
 			d->setPhasesQuantity(vtx,1); // number of state for the actor, only one in SDF
 			d->setVertexDuration(vtx,{0}); // is specify for every state , only one for SDF.
@@ -767,7 +765,6 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 		}
 		list_idx++;
 	}
-	//std::cout << "\n";
 	//find the final edge
 	auto e2 = d->addEdge(source_vtx, target_vtx);
 	d->setEdgeOutPhases(e2,{outrate});
@@ -878,13 +875,14 @@ std::map<int, route_t> graphProcessing(models::Dataflow* dataflow, NoC* noc, std
 }
 
 
+//This adds intermediate nodes by using fixed XY routing protocol
 void addIntermediateNodes(models::Dataflow* dataflow, NoC* noc, conflictEtype& returnValue, std::map<int, route_t>& routes, conflictConfigs& configs)
 {
 	std::map<int, Edge> edge_list;
 	generateEdgesMap(dataflow, edge_list, noc);
 
 	for(auto it:routes)
-		addPathNode(dataflow, edge_list[it.first], it.second, returnValue, /*noc,*/ configs);
+		addPathNode(dataflow, edge_list[it.first], it.second, returnValue, configs);
 }
 
 
@@ -916,6 +914,7 @@ void addDependency(models::Dataflow* d, const Vertex vi, const Vertex vj, EXEC_C
 }
 
 
+//Function to remove all the edges that connect a particular vertex
 void removeAllEdgesVertex(models::Dataflow* d, Vertex vtx)
 {
 	{ForInputEdges(d, vtx, E)	{
@@ -924,24 +923,23 @@ void removeAllEdgesVertex(models::Dataflow* d, Vertex vtx)
 	{ForOutputEdges(d, vtx, E)	{
 		d->removeEdge(E);
 	}}
-
 	// d->removeVertex(vtx);
 }
 
 
-bool resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
+bool resolveDestConflicts(models::Dataflow* d, Vertex dst, int origV)
 {
 	LARGE_INT mygcd = 0, a, b;
-	std::vector<Edge> srcedges, rtredges;
+	std::vector<Edge> dstedges, rtredges;
 	TOKEN_UNIT flow = 0, preload = 0;
 
-	//1. Find all the edges from the vertex to router 
-	// and router to next edge in the NoC
-	{ForInputEdges(d,src,inE)	{
+	//1. Find all the edges from the vertex to router (dstedges)
+	// and router to next edge in the NoC (rtredges)
+	{ForInputEdges(d,dst,inE)	{
 		auto prev_node = d->getEdgeSource(inE);
-		if((int)d->getVertexId(prev_node) > origV && prev_node!= src)
+		if((int)d->getVertexId(prev_node) > origV && prev_node!= dst)
 		{
-			srcedges.push_back(inE);
+			dstedges.push_back(inE);
 			auto edgeout = d->getEdgeOut(inE);
 
 			if(mygcd == 0)
@@ -958,29 +956,28 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
 
 
 	//1B. Do some sanity check here
-	if(srcedges.size() != rtredges.size())
+	if(dstedges.size() != rtredges.size())
 	{
 		std::cout << "BIG ERROR in resolveDestConflicts\n";
 		exit(0);
 	}
-	else if(srcedges.size() <= 1)
+	else if(dstedges.size() <= 1)
 	{
-		//std::cout << "no resolveDestConflicts for vertex " << d->getVertexId(src) << "\n";
+		//std::cout << "no resolveDestConflicts for vertex " << d->getVertexId(dst) << "\n";
 		return false;
 	}
 
-	//1C. Initialize token vecot
+	//1C. Initialize token vector
 	std::vector<TOKEN_UNIT> temp;
-	std::vector< std::vector<TOKEN_UNIT> > token_vec (srcedges.size(), temp);
+	std::vector< std::vector<TOKEN_UNIT> > token_vec (dstedges.size(), temp);
 
-	//2. calculate the preload and flow values of all outgoing edges from source vertices
-	//Remove the edges between source and router.
-	//Remove the router nodes
-	for(int i = 0; i < (int)srcedges.size(); i++)
+	//2. calculate the preload and flow values of all incoming edges from destination vertices
+	//Remove the edges between router and destionation. Remove the router nodes
+	for(int i = 0; i < (int)dstedges.size(); i++)
 	{
-		for(int j = 0; j < (int)srcedges.size(); j++)
+		for(int j = 0; j < (int)dstedges.size(); j++)
 		{
-			for(int vi = 0; vi < (int)d->getEdgeOut(srcedges[i])/mygcd; vi++)
+			for(int vi = 0; vi < (int)d->getEdgeOut(dstedges[i])/mygcd; vi++)
 			{
 				if (i == j)
 					token_vec[j].push_back(1);
@@ -988,39 +985,38 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
 					token_vec[j].push_back(0);
 			}
 		}
-		flow += d->getEdgeOut( srcedges[i] );
-		preload += d->getPreload( srcedges[i] );	
+		flow += d->getEdgeOut( dstedges[i] );
+		preload += d->getPreload( dstedges[i] );	
 		std::cout << "states=" << flow << ",preload=" << preload << "\n";
 	}
-	//std::cout << "done with removing edges\n";
+
+	//2B. Divide flow by gcd to reduce the states
 	flow = flow/mygcd;
 	
 	VERBOSE_ASSERT(flow > 0, "This case is not supported: flow between task has to be strictly positive");
 
-	//2B. Create the phase duration and token per phase for the new router node
-	std::vector<TOKEN_UNIT> srctoken(flow, 1);
+	//2C. Create the phase duration and token per phase for the new router node
+	std::vector<TOKEN_UNIT> dsttoken(flow, 1);
 	std::vector<TIME_UNIT> phaseDurVec(flow, 1.0);
 
-	//3. Create the BIG router
+	//3. Create the BIG router, by combining all the router nodes that were used to reach the destination
 	auto middle = d->addVertex();
 	std::stringstream ss;
-	ss << d->getVertexId(src) << "-D";
+	ss << d->getVertexId(dst) << "-D";
 	d->setVertexName(middle, ss.str());
 	d->setPhasesQuantity(middle, flow); // number of state for the actor, only one in SDF
 	d->setVertexDuration(middle, phaseDurVec); // is specify for every state , only one for SDF.
 	d->setReentrancyFactor(middle, 1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
-	std::cout << "DST_CONF(ID="<< d->getVertexId(src) << "):Done creating big router node  " << d->getVertexId(middle) << ",gcd=" << mygcd << "\n";
+	std::cout << "DST_CONF(ID="<< d->getVertexId(dst) << "):Done creating big router node  " << d->getVertexId(middle) << ",gcd=" << mygcd << "\n";
 
-	//3B. Add edge between big router and source vertex
-	auto srcEdge = d->addEdge(middle,src);
-	d->setPreload(srcEdge, preload);
-	d->setEdgeOutPhases(srcEdge, {flow*mygcd});
-	d->setEdgeInPhases(srcEdge, srctoken);
-	//std::cout << "Done creating big router edge\n";
+	//3B. Add edge between big router and destination vertex
+	auto dstEdge = d->addEdge(middle,dst);
+	d->setPreload(dstEdge, preload);
+	d->setEdgeOutPhases(dstEdge, {flow*mygcd});
+	d->setEdgeInPhases(dstEdge, dsttoken);
 
 
-	//4. Setup the new edges. First remove the edge between router and the next NoC link
-	//Setup the flow appropriately
+	//4. Setup the new edges. First remove the edge between router and the next NoC link. Setup the flow appropriately
 	//Remove the router vertex and the edge between routet to the next NoC link
 	for(int i = 0; i < (int)rtredges.size(); i++)
 	{
@@ -1037,7 +1033,6 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex src, int origV)
 		d->setEdgeInPhases(new_edge, {1});
 		d->setPreload(new_edge,loc_preload);  // preload is M0
 	}
-	//std::cout << "done with function\n";
 	return true;
 }
 
@@ -1141,7 +1136,7 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 		return false;
 	}
 
-	//1C. Initialize token vecot
+	//1C. Initialize token vector
 	std::vector<TOKEN_UNIT> temp;
 	std::vector< std::vector<TOKEN_UNIT> > token_vec (srcedges.size(), temp);
 
@@ -1188,7 +1183,6 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 	d->setPreload(srcEdge, preload);
 	d->setEdgeInPhases(srcEdge, {flow*mygcd});
 	d->setEdgeOutPhases(srcEdge, srctoken);
-	//std::cout << "Done creating big router edge\n";
 
 
 	//4. Setup the new edges. First remove the edge between router and the next NoC link
@@ -1209,7 +1203,6 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 		d->setEdgeOutPhases(new_edge, {1});
 		d->setPreload(new_edge,loc_preload);  // preload is M0
 	}
-	std::cout << "done with function\n";
 	return true;
 }
 
@@ -1405,13 +1398,18 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	std::map<int, route_t> routes = graphProcessing(to, noc, prog_order);
 	generateEdgesMap(to, edge_list, noc);
 
+
 	for(auto it:routes) {
 		Edge e = edge_list[it.first];
 		Vertex esrc = to->getEdgeSource(e);
 		VERBOSE_INFO("replace edge " << e << "by a sequence");
-		addPathNode(to, e, it.second, conflictEdges, /*noc,*/ configs);
+		addPathNode(to, e, it.second, conflictEdges, configs);
 	}
 
+	//resolve cnflicts for all the  (a) sources that sent data to multiple nodes. 
+	//				(b) destinations that receive data from multiple nodes.
+	//				(c) nodes that correspond to the same coniguration
+	//Use [1, origV] as it denotes the list of nodes in the original SDF
 	int origV = (int)dataflow->getVerticesCount();
 	for(int i = 1; i <= origV; i++)
 	{
@@ -1424,9 +1422,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		resolveDestConflicts(to, src, origV);
 	}
 
-	//std::cout << printers::GenerateDOT(to);
 	mergeConfigNodes(to, configs);
-	//std::cout << printers::GenerateDOT(to);
 
 	//Remove conflicts at source and destination router links as a big node has been created
 	for(auto it:routes)
@@ -1448,7 +1444,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	//Original graph
 
 
-	// This remove the vertices disconnected
+	// This removes the vertices disconnected
 	for (bool removeme = true; removeme; ) {
 		{ForEachVertex(to,v) {
 
