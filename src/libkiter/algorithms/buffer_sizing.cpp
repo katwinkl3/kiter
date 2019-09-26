@@ -97,7 +97,7 @@ void StorageDistribution::updateDistributionSize() {
 }
 
 // Prints member data of StorageDistribution for debugging
-void StorageDistribution::print_info() { // BUG: I once got an inconsistent result here (expected sd: 2 6 6 2, actual: 2 2 6 6). should probably take a look but not sure how to recreate --- seems to have gone away after commenting out copy constructor declaration?
+void StorageDistribution::print_info() { // BUG: I once got an inconsistent result here (expected sd: 2 6 6 2, actual: 2 2 6 6). should probably take a look but not sure how to recreate --- seems to have gone away after commenting out copy constructor declaration
   std::cout << "Current StorageDistribution info:" << std::endl;
   std::cout << "Number of edges: " << this->edge_count << std::endl;
   std::cout << "Channel quantities: " << std::endl;
@@ -150,7 +150,7 @@ StorageDistribution dist_to_rm) {
                                                                 this->set[dist_to_rm.getDistributionSize()].end(),
                                                                 dist_to_rm), this->set[dist_to_rm.getDistributionSize()].end());
   // remove distribution size from set if there aren't any storage distributions left
-  if (this->set[dist_to_rm.getDistributionSize()].size() == 0) {
+  if (this->set[dist_to_rm.getDistributionSize()].empty()) {
     std::cout << "No more storage dist of dist sz "
               << dist_to_rm.getDistributionSize()
               << ": removing key" << std::endl;
@@ -172,35 +172,26 @@ size_t StorageDistributionSet::getSize() const {
 }
 
 /* Removes the new storage distribution from the storage distribution set if:
-   - there exists a storage distribution with equal distribution size with >= throughput 
+   - there already is a storage distribution with equal distribution size with 
+   throughput >= to new storage distribution's throughput
    OR
    - the new storage distribution has throughput that is <= throughput of storage 
    distributions with a smaller distribution size
  */
 void StorageDistributionSet::minimizeStorageDistributions(StorageDistribution newDist) {
-  // compare to storage distributions with same distribution sizes
-  for (auto &it : this->set[newDist.getDistributionSize()]) {
-    if (newDist.getThroughput() < it.getThroughput()) {
-      std::cout << "Found storage distribution with < max thr of set: removing "
-                << newDist.getDistributionSize() << std::endl;
-      this->removeStorageDistribution(newDist);
-      return;
-    }
-  }
-  // compare to storage distributions with smaller distribution sizes
-  TOKEN_UNIT curr_dist_sz = newDist.getDistributionSize() - 1;
-  while (curr_dist_sz >= this->set.begin()->first) { // bound by smallest distribution size
-    for (auto &it : this->set[curr_dist_sz]) {
-      if (newDist.getThroughput() <= it.getThroughput()) {
-        std::cout << "Throughput of new storage distribution ("
-                  << newDist.getDistributionSize()
-                  << ") <= throughput of smaller storage distribution: removing"
-                  << std::endl;
+  // FIXME: get rid of nested for loop
+  // get distribution size and throughput early to avoid repeated function calls
+  TOKEN_UNIT newDistSz = newDist.getDistributionSize();
+  TIME_UNIT newThr = newDist.getThroughput();
+  for (auto &distribution_sz : this->set) {
+    for (auto &storage_dist : distribution_sz.second) {
+      if ((newDistSz > storage_dist.getDistributionSize() &&
+           newThr <= storage_dist.getThroughput()) ||
+          (newDistSz >= storage_dist.getDistributionSize() &&
+           newThr < storage_dist.getThroughput())) {
         this->removeStorageDistribution(newDist);
-        return;
       }
     }
-    curr_dist_sz--;
   }
 }
 
