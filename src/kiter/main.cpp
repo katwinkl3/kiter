@@ -46,10 +46,18 @@ std::vector<algo_t> algorithmslist =               {
 
 		{ "PrintXML"                       , "Print XML file",
 				printers::printXML},
+
+
+
 		{ "randomMapping"           , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.",
 				algorithms::mapping::randomMapping} ,
 		{ "moduloMapping"           , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.",
 				algorithms::mapping::moduloMapping} ,
+
+
+		{ "SDFKPeriodic"           , "Build an Exansion graph given a set of value K (1 by default), and compute its MCRP.",
+						algorithms::scheduling::SDFKPeriodicScheduling} ,
+
 		{ "PrintKiter"           , "Generate C++ code to internally generate the graph inside Kiter.",
 				printers::printGraphAsKiterScript} ,
 		{ "PrintKPeriodicExpansionGraph"           , "Print the Expansion graph for the throughput evaluation of CSDF by K-Periodic scheduling. You can specify values for K.",

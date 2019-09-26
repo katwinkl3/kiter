@@ -64,6 +64,7 @@ public :
     EXEC_COUNT  inline  getTaskPhase() const {return this->_p;};
     EXEC_COUNT  inline  getTaskOc() const {return this->_n;};
     SchedulingEvent(ARRAY_INDEX t,EXEC_COUNT p,EXEC_COUNT n) : _t(t) , _p(p) , _n(n) {}
+    SchedulingEvent(ARRAY_INDEX t,EXEC_COUNT n) : _t(t) , _p(1) , _n(n) {}
     std::string toString() const {return commons::toString<ARRAY_INDEX>(_t) + ',' + commons::toString<EXEC_COUNT>(_p) + ',' + commons::toString<EXEC_COUNT>(_n);}
     friend  bool operator==(const SchedulingEvent& lh, const SchedulingEvent& rh) ;
     friend  bool operator!=(const SchedulingEvent& lh, const SchedulingEvent& rh) ;
@@ -174,6 +175,9 @@ private :
 private :
     std::vector< std::vector <std::vector <EventGraphVertex> > > schedulingEvent2Vertex;
 public :
+    inline EventGraphVertex getEventGraphVertex(ARRAY_INDEX taskId, EXEC_COUNT execution) {
+    	return getEventGraphVertex(taskId, 1, execution) ;
+    }
     inline EventGraphVertex getEventGraphVertex(ARRAY_INDEX taskId, EXEC_COUNT phase, EXEC_COUNT execution) {
 
     	VERBOSE_ASSERT(schedulingEvent2Vertex.size() > taskId, "Task id " << taskId << " is not within the EventGraph");
