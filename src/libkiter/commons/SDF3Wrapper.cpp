@@ -7,10 +7,11 @@
  *
  */
 
-#include <libxml2/libxml/tree.h>
-#include <libxml2/libxml/parser.h>
-#include <libxml2/libxml/encoding.h>
-#include <libxml2/libxml/xmlwriter.h>
+#include <libxml/xmlversion.h>
+#include <libxml/xmlwriter.h>
+#include <libxml/tree.h>
+#include <libxml/parser.h>
+#include <libxml/encoding.h>
 
 #include <commons/SDF3Wrapper.h>
 #include <commons/commons.h>
@@ -578,6 +579,67 @@ models::Dataflow*  readSDF3File         (const std::string f) {
 	return wrappedDataflow;
 }
 
+void writeLoopbackChannel (xmlTextWriterPtr writer, const models::Dataflow* dataflow, const Vertex t) {
+
+	// TODO/URGENT : We do not check that there is no channel already with this name or port with these names.
+
+	const std::string edge_name = "R" + dataflow->getVertexName(t);
+	const std::string edge_srcActor = dataflow->getVertexName(t);
+	const std::string edge_srcPort = "in_R" + dataflow->getVertexName(t);
+	const std::string edge_dstActor =dataflow->getVertexName(t);
+	const std::string edge_dstPort = "out_R" + dataflow->getVertexName(t);
+	const DATA_UNIT edge_size = 1;
+	const TOKEN_UNIT edge_initialTokens = 1;
+
+	xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "channel");
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) edge_name.c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"srcActor", (const xmlChar*) edge_srcActor.c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"srcPort", (const xmlChar*) edge_srcPort.c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"dstActor", (const xmlChar*) edge_dstActor.c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"dstPort", (const xmlChar*) edge_dstPort.c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"size", (const xmlChar*) commons::toString(edge_size).c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"initialTokens", (const xmlChar*)  commons::toString(edge_initialTokens).c_str());
+
+	xmlTextWriterEndElement(writer);
+}
+
+
+void writeLoopbackPorts (xmlTextWriterPtr writer, const models::Dataflow* dataflow, const Vertex t) {
+	const std::string out_port = "out_R" + dataflow->getVertexName(t);
+	const std::string in_port = "in_R" + dataflow->getVertexName(t);
+	const TOKEN_UNIT rates        = 1 ;
+	xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) out_port.c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "in");
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) commons::toString(rates).c_str());
+	xmlTextWriterEndElement(writer);
+	xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) in_port.c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "out");
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) commons::toString(rates).c_str());
+	xmlTextWriterEndElement(writer);
+}
+
+void writeChannel (xmlTextWriterPtr writer, const models::Dataflow* dataflow, const Edge e) {
+
+	const std::string edge_name = dataflow->getEdgeName(e);
+	const std::string edge_srcActor = dataflow->getVertexName(dataflow->getEdgeSource(e));
+	const std::string edge_srcPort = dataflow->getEdgeInputPortName(e);
+	const std::string edge_dstActor =dataflow->getVertexName(dataflow->getEdgeTarget(e));
+	const std::string edge_dstPort = dataflow->getEdgeOutputPortName(e);
+	const DATA_UNIT edge_size = dataflow->getTokenSize(e);
+	const TOKEN_UNIT edge_initialTokens = dataflow->getPreload(e);
+	xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "channel");
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) edge_name.c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"srcActor", (const xmlChar*) edge_srcActor.c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"srcPort", (const xmlChar*) edge_srcPort.c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"dstActor", (const xmlChar*) edge_dstActor.c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"dstPort", (const xmlChar*) edge_dstPort.c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"size", (const xmlChar*) commons::toString(edge_size).c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"initialTokens", (const xmlChar*)  commons::toString(edge_initialTokens).c_str());
+
+	xmlTextWriterEndElement(writer);
+}
 
 void writeSDF3File         (std::string filename, const models::Dataflow* dataflow)  {
 
@@ -616,6 +678,7 @@ void writeSDF3File         (std::string filename, const models::Dataflow* datafl
 									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) commons::toString(in_rates).c_str());
 									xmlTextWriterEndElement(writer);
 					}
+
 					for (auto it : dataflow->out_edges(t)) {
 									Edge e = *it;
 									const std::string out_port =  dataflow->getEdgeInputPortName(e);
@@ -626,7 +689,9 @@ void writeSDF3File         (std::string filename, const models::Dataflow* datafl
 									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) commons::toString(out_rates).c_str());
 									xmlTextWriterEndElement(writer);
 					}
-
+					if (dataflow->getReentrancyFactor(t)) {
+						writeLoopbackPorts(writer,dataflow,t);
+					}
 
 					xmlTextWriterEndElement(writer);
 				}
@@ -634,23 +699,13 @@ void writeSDF3File         (std::string filename, const models::Dataflow* datafl
 
 				for (auto it : dataflow->edges()) {
 					Edge e = *it;
-					const std::string edge_name = dataflow->getEdgeName(e);
-					const std::string edge_srcActor = dataflow->getVertexName(dataflow->getEdgeSource(e));
-					const std::string edge_srcPort = dataflow->getEdgeInputPortName(e);
-					const std::string edge_dstActor =dataflow->getVertexName(dataflow->getEdgeTarget(e));
-					const std::string edge_dstPort = dataflow->getEdgeOutputPortName(e);
-					const DATA_UNIT edge_size = dataflow->getTokenSize(e);
-					const TOKEN_UNIT edge_initialTokens = dataflow->getPreload(e);
-					xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "channel");
-					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) edge_name.c_str());
-					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"srcActor", (const xmlChar*) edge_srcActor.c_str());
-					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"srcPort", (const xmlChar*) edge_srcPort.c_str());
-					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"dstActor", (const xmlChar*) edge_dstActor.c_str());
-					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"dstPort", (const xmlChar*) edge_dstPort.c_str());
-					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"size", (const xmlChar*) commons::toString(edge_size).c_str());
-					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"initialTokens", (const xmlChar*)  commons::toString(edge_initialTokens).c_str());
+					writeChannel(writer,dataflow,e);
+				}
 
-					xmlTextWriterEndElement(writer);
+				for (Vertex t : dataflow->vertices()) {
+					if (dataflow->getReentrancyFactor(t)) {
+						writeLoopbackChannel(writer,dataflow,t);
+					}
 				}
 			}
 			xmlTextWriterEndElement(writer);
