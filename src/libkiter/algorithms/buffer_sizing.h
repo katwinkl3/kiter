@@ -18,7 +18,7 @@ public:
   StorageDistribution();
   StorageDistribution(unsigned int edge_count,
                       TIME_UNIT thr,
-                      std::map<Edge, TOKEN_UNIT> input_quantities,
+                      std::map<Edge, TOKEN_UNIT> channel_quantities,
                       TOKEN_UNIT distribution_size);
   //  StorageDistribution(const StorageDistribution&)=default; // using default copy constructor for now
 
@@ -34,10 +34,10 @@ public:
   void updateDistributionSize();
   void print_info();
 private:
+  unsigned int edge_count;
+  TIME_UNIT thr; // throughput of given storage distribution
   TOKEN_UNIT distribution_size; // should be equal to sum of channel quantities
   std::map<Edge, TOKEN_UNIT> channel_quantities; // amount of space (in tokens per channel)
-  TIME_UNIT thr; // throughput of given storage distribution
-  unsigned int edge_count;
 };
 
 class StorageDistributionSet {
@@ -52,12 +52,17 @@ public:
   StorageDistribution getNextDistribution() const;
   size_t getSize() const;
   void minimizeStorageDistributions(StorageDistribution newDist);
+  bool hasDistribution(TOKEN_UNIT dist_sz);
+  bool isSearchComplete(StorageDistributionSet checklist, TIME_UNIT target_thr);
   void print_distributions(TOKEN_UNIT dist_sz); /* prints info of all storage distributions 
                                                    of given distribution size */
-  void print_distributions();
+  void print_distributions(); // prints info of all storage distributions in set
   
 private:
-  std::map<TOKEN_UNIT, std::vector<StorageDistribution>> set;
+  std::map<TOKEN_UNIT, std::vector<StorageDistribution>> set; /* store storage distributions 
+                                                                 by distribution size*/
+  std::pair<TOKEN_UNIT, TIME_UNIT> p_max; /* stores the current maximum throughput and corresponding
+                                             distribution size of set */
 };
 
 // to search parameters

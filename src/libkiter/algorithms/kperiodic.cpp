@@ -1600,7 +1600,7 @@ std::pair<TIME_UNIT, std::set<Edge>> algorithms::compute_Kperiodic_throughput_an
 
                 break;
             }
-            result = resultprime; // TODO Duplicate this function and return the last version of result. This result gives me the period and a list of the channels in the causal dependency cycle (storage dependencies)
+            result = resultprime;
             VERBOSE_INFO("Current K-periodic throughput (" << result.first <<  ") is not enough.");
             VERBOSE_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
 
@@ -1672,9 +1672,9 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   
   // initialise and store initial storage distribution state
   StorageDistribution initDist(dataflow_prime->getEdgesCount(),
-                                  0,
-                                  minChannelSizes,
-                                  minDistributionSize);
+                               0,
+                               minChannelSizes,
+                               minDistributionSize);
 
   // initialise modelled graph with lower bound distribution
   {ForEachEdge(dataflow_prime, c) {
@@ -1695,17 +1695,17 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     
   // Initialise set of minimal storage distributions (a set of pairs of throughput and storage distribution)
   StorageDistributionSet minStorageDist;
-  
-  while ((result.first < result_max.first) || (checklist.getSize() != 0)) {
+
+  while (!minStorageDist.isSearchComplete(checklist, result_max.first)) {
     // Remove first storage distribution in checklist
-    std::cout << "Checking next storage distribution; checklist size: "
-              << checklist.getSize() << ", max throughput: " << result.first
-              << std::endl;
+    // std::cout << "Checking next storage distribution; checklist size: "
+    //           << checklist.getSize() << ", max throughput: " << result.first
+    //           << std::endl;
     StorageDistribution checkDist(checklist.getNextDistribution()); // copy first distribution
     checklist.removeStorageDistribution(checklist.getNextDistribution());
-    std::cout << "\n";
-    std::cout << "Exploring graph: ";
-    checkDist.print_info();
+    // std::cout << "\n";
+    // std::cout << "Exploring graph: ";
+    // checkDist.print_info();
     
     // Update graph with storage distribution just removed from checklist
     {ForEachEdge(dataflow_prime, c) {
@@ -1723,17 +1723,17 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     // Compute throughput and storage deps
     result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
     checkDist.setThroughput(result.first);
-    std::cout << "New storage distribution throughput: "
-              << checkDist.getThroughput() << std::endl;
+    // std::cout << "New storage distribution throughput: "
+    //           << checkDist.getThroughput() << std::endl;
     
     // Add storage distribution and computed throughput to set of minimal storage distributions
-    std::cout << "Adding distribution to minimal set" << std::endl;
+    // std::cout << "Adding distribution to minimal set" << std::endl;
     minStorageDist.addStorageDistribution(checkDist);
-    std::cout << std::endl;
-    std::cout << "\t Minimum Storage Distributions (before) ("
-              << minStorageDist.getSize() << "): " << std::endl;
-    minStorageDist.print_distributions();
-    std::cout << std::endl;
+    // std::cout << std::endl;
+    // std::cout << "\t Minimum Storage Distributions (before) ("
+    //           << minStorageDist.getSize() << "): " << std::endl;
+    // minStorageDist.print_distributions();
+    // std::cout << std::endl;
 
     // Create new storage distributions for every storage dependency found; add new storage distributions to checklist
     for (std::set<Edge>::iterator it = (result.second).begin();
@@ -1741,27 +1741,25 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
       StorageDistribution newDist(checkDist);
       // only increase channel quantity on "modelled" channels
       if (dataflow_prime->getEdgeId(*it) > dataflow->getEdgesCount()) {
-        std::cout << "Found storage dependency in channel "
-                  << dataflow_prime->getEdgeName(*it) << std::endl;
+        // std::cout << "Found storage dependency in channel "
+        //           << dataflow_prime->getEdgeName(*it) << std::endl;
         // make new modelled storage distribution according to storage dependencies
         newDist.setChannelQuantity(*it, (newDist.getChannelQuantity(*it) +
                                          minStepSizes[*it]));
-        std::cout << "Increasing channel size of "
-                  << dataflow_prime->getEdgeName(*it) << " to "
-                  << newDist.getChannelQuantity(*it) << std::endl;
-        std::cout << "Update checklist" << std::endl;
+        // std::cout << "Increasing channel size of "
+        //           << dataflow_prime->getEdgeName(*it) << " to "
+        //           << newDist.getChannelQuantity(*it) << std::endl;
+        // std::cout << "Update checklist" << std::endl;
         checklist.addStorageDistribution(newDist);
       }
     }
 
-    // TODO: Remove non-minimal storage distributions from set of minimal storage distributions
-    minStorageDist.minimizeStorageDistributions(checkDist); /* BUG: For some reason empty keys in
-                                                               minStorageDist aren't being deleted */
-    std::cout << std::endl;
-    std::cout << "\t Minimum Storage Distributions (after) ("
-              << minStorageDist.getSize() << "): " << std::endl;
-    minStorageDist.print_distributions();
-    std::cout << std::endl;
+    minStorageDist.minimizeStorageDistributions(checkDist);
+    // std::cout << std::endl;
+    // std::cout << "\t Minimum Storage Distributions (after) ("
+    //           << minStorageDist.getSize() << "): " << std::endl;
+    // minStorageDist.print_distributions();
+    // std::cout << std::endl;
   }
 
   // The minimum storage distribution for a throughput of 0 is (0, 0,..., 0)
@@ -1773,9 +1771,9 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     minStorageDist.removeStorageDistribution(minStorageDist.getNextDistribution());
     minStorageDist.addStorageDistribution(zeroDist);
   }
-  std::cout << "Done with search!" << std::endl;
-  std::cout << "\n";
-  std::cout << "Number of pareto points: " << minStorageDist.getSize() << std::endl;
+  // std::cout << "Done with search!" << std::endl;
+  // std::cout << "\n";
+  // std::cout << "Number of pareto points: " << minStorageDist.getSize() << std::endl;
   minStorageDist.print_distributions();
 }
 

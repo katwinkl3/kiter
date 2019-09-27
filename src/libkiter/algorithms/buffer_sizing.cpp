@@ -7,53 +7,59 @@
 #include <algorithms/buffer_sizing.h>
 #include <models/Dataflow.h>
 
-StorageDistribution::StorageDistribution() {
-  this->edge_count = 0;
-  this->thr = 0;
-  this->distribution_size = 0;
+StorageDistribution::StorageDistribution()
+    :edge_count{0}, thr{0}, distribution_size{0} {
+      // TODO: initialise empty map?
 }
 
-StorageDistribution::StorageDistribution(unsigned int edge_count, // TODO: Refactor constructors to use ":" syntax
-                                         TIME_UNIT thr,
-                                         std::map<Edge, TOKEN_UNIT> input_quantities,
-                                         TOKEN_UNIT distribution_size) {
-  this->edge_count = edge_count;
-  this->thr = thr;
-  this->channel_quantities = input_quantities;
-  this->distribution_size = distribution_size; // TODO: check if can replace this with updateDistributionSize
+StorageDistribution::StorageDistribution(
+    unsigned int edge_count,
+    TIME_UNIT thr, std::map<Edge, TOKEN_UNIT> channel_quantities,
+    TOKEN_UNIT distribution_size)
+    :edge_count{edge_count}, thr{thr}, channel_quantities{channel_quantities},
+      distribution_size{distribution_size} {
+// TODO: could replace distribution_size declaration with updateDistributionSize()
 }
 
+// Set edge to given quantity
 void StorageDistribution::setChannelQuantity(Edge e,
                                              TOKEN_UNIT quantity) {
   this->channel_quantities[e] = quantity;
   this->updateDistributionSize();
 }
 
+// Set distribution size of storage distribution
 void StorageDistribution::setDistributionSize(TOKEN_UNIT sz) {
   this->distribution_size = sz;
 }
 
+// Set throughput of storage distribution
 void StorageDistribution::setThroughput(TIME_UNIT thr) {
   this->thr = thr;
 }
 
+// Return channel quantity of edge
 TOKEN_UNIT StorageDistribution::getChannelQuantity(Edge e) const {
   assert(channel_quantities.find(e) != channel_quantities.end()); // edge quantity not in map
   return this->channel_quantities.at(e);
 }
 
+// Return distribution size of storage distribution
 TOKEN_UNIT StorageDistribution::getDistributionSize() const {
   return this->distribution_size;
 }
 
+// Return throughput of storage distribution
 TIME_UNIT StorageDistribution::getThroughput() const {
   return this->thr;
 }
 
+// Return number of edges
 unsigned int StorageDistribution::getEdgeCount() const {
   return this->edge_count;
 }
 
+// Storage distributions are equal if every channel has the same quantity
 bool StorageDistribution::operator==(const StorageDistribution& distribution) const {
   assert(this->getEdgeCount() == distribution.getEdgeCount());
 
@@ -68,7 +74,7 @@ bool StorageDistribution::operator==(const StorageDistribution& distribution) co
 }
 
 bool StorageDistribution::operator!=(const StorageDistribution& distribution) const {
-  // can this overload be simplified to return !(this == distribution)?
+  // NOTE: could this overload be simplified to return !(this == distribution)?
   assert(this->getEdgeCount() == distribution.getEdgeCount());
 
   for (auto it = this->channel_quantities.begin();
@@ -83,7 +89,7 @@ bool StorageDistribution::operator!=(const StorageDistribution& distribution) co
 
 /* 
  * Checks if distribution size has changed and updates it accordingly
- * Called whenever channel quantity has been altered
+ * Called whenever channel quantity has been altered with setChannelQuantity
  */
 void StorageDistribution::updateDistributionSize() {
   TOKEN_UNIT new_dist_sz = 0;
@@ -97,7 +103,7 @@ void StorageDistribution::updateDistributionSize() {
 }
 
 // Prints member data of StorageDistribution for debugging
-void StorageDistribution::print_info() { // BUG: I once got an inconsistent result here (expected sd: 2 6 6 2, actual: 2 2 6 6). should probably take a look but not sure how to recreate --- seems to have gone away after commenting out copy constructor declaration
+void StorageDistribution::print_info() {
   std::cout << "Current StorageDistribution info:" << std::endl;
   std::cout << "Number of edges: " << this->edge_count << std::endl;
   std::cout << "Channel quantities: " << std::endl;
@@ -116,7 +122,10 @@ StorageDistributionSet::StorageDistributionSet() {
 
 StorageDistributionSet::StorageDistributionSet(TOKEN_UNIT dist_sz,
                                                StorageDistribution distribution) {
+  // FIXME: initialize map (using initializer_list?)// : set{{dist_sz, distribution}} {
   this->set[dist_sz].push_back(distribution);
+  // TODO: initialize p_max variable
+  this->p_max = std::make_pair(dist_sz, distribution.getThroughput());
 }
 
 /*
@@ -124,40 +133,49 @@ StorageDistributionSet::StorageDistributionSet(TOKEN_UNIT dist_sz,
  * Will not add storage distribution if an identical one already exists in the set
  */
 void StorageDistributionSet::addStorageDistribution(StorageDistribution new_distribution) {
-  std::cout << "Attempting to add storage distribution of dist sz: "
-            << new_distribution.getDistributionSize() << std::endl;
+  // std::cout << "Attempting to add storage distribution of dist sz: "
+  //           << new_distribution.getDistributionSize() << std::endl;
   if (this->set.find(new_distribution.getDistributionSize()) == this->set.end()) { // first storage distribution of this distribution size
-    std::cout << "First of this distribution size: adding new distribution" << std::endl;
+    // std::cout << "First of this distribution size: adding new distribution" << std::endl;
     this->set[new_distribution.getDistributionSize()].push_back(new_distribution);
   } else { // there's already a storage distribution with the same distribution size
     for (auto &distribution : this->set[new_distribution.getDistributionSize()]) {
       // don't add storage distributions that are already in checklist
       if (new_distribution == distribution) {
-        std::cout << "Found matching distribution: not adding new distribution" << std::endl;
+        // std::cout << "Found matching distribution: not adding new distribution" << std::endl;
         return;
       }
     }
-    // no matching storage distributions
-    std::cout << "Adding new distribution" << std::endl;
+    // no matching storage distributions of equal distribution size
+    // std::cout << "Adding new distribution" << std::endl;
     this->set[new_distribution.getDistributionSize()].push_back(new_distribution);
+  }
+
+  // update maximum throughput and corresponding distribution size in set
+  if (new_distribution.getThroughput() > this->p_max.second) {
+    this->p_max = std::make_pair(new_distribution.getDistributionSize(),
+                                 new_distribution.getThroughput());
   }
 }
 
+// Removes the given storage distribution from the storage distribution set
 void StorageDistributionSet::removeStorageDistribution( // TODO: check if erase-remove idiom is more efficient than manually checking
 StorageDistribution dist_to_rm) {
   // Use erase-remove idiom to remove matching storage distribution
   this->set[dist_to_rm.getDistributionSize()].erase(std::remove(this->set[dist_to_rm.getDistributionSize()].begin(),
                                                                 this->set[dist_to_rm.getDistributionSize()].end(),
                                                                 dist_to_rm), this->set[dist_to_rm.getDistributionSize()].end());
+  
   // remove distribution size from set if there aren't any storage distributions left
   if (this->set[dist_to_rm.getDistributionSize()].empty()) {
-    std::cout << "No more storage dist of dist sz "
-              << dist_to_rm.getDistributionSize()
-              << ": removing key" << std::endl;
+    // std::cout << "No more storage dist of dist sz "
+    //           << dist_to_rm.getDistributionSize()
+    //           << ": removing key" << std::endl;
     removeDistributionSize(dist_to_rm.getDistributionSize());
   }
 }
 
+// Removes all storage distributions of the given distribution size from set
 void StorageDistributionSet::removeDistributionSize(TOKEN_UNIT dist_sz) {
   this->set.erase(dist_sz);
 }
@@ -179,10 +197,18 @@ size_t StorageDistributionSet::getSize() const {
    distributions with a smaller distribution size
  */
 void StorageDistributionSet::minimizeStorageDistributions(StorageDistribution newDist) {
-  // FIXME: get rid of nested for loop
+  // FIXME: get rid of nested for-loop
   // get distribution size and throughput early to avoid repeated function calls
   TOKEN_UNIT newDistSz = newDist.getDistributionSize();
   TIME_UNIT newThr = newDist.getThroughput();
+
+  // remove non-minimal storage distributions
+  /* NOTE: we don't need to update the p_max values here as the conditions ensure
+     that we always store the max throughput with the minimum distribution size
+     i.e. the only way we would have a falsely high p_max is if we add a storage
+     distribution with an absurdly high distribution size and thus get max 
+     throughput --- that is, we will only need to consider updating p_max outside
+     of the addStorageDistribution function if we don't increment by minStepSizes */
   for (auto &distribution_sz : this->set) {
     for (auto &storage_dist : distribution_sz.second) {
       if ((newDistSz > storage_dist.getDistributionSize() &&
@@ -195,6 +221,24 @@ void StorageDistributionSet::minimizeStorageDistributions(StorageDistribution ne
   }
 }
 
+/* Check if storage distributions of a given distribution size exist in the 
+   storage distribution set 
+   Returns true if storage distribution of the given distribution size is found */
+bool StorageDistributionSet::hasDistribution(TOKEN_UNIT dist_sz) {
+  return (this->set.find(dist_sz) != this->set.end());
+}
+
+// Check if DSE completion conditions have been met
+bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
+                                              TIME_UNIT target_thr) {
+  /* search is complete when the max throughput has been found and there 
+     isn't any more storage distributions of the same distribution size
+     left to check */
+  return ((this->p_max.second == target_thr) &&
+          (!checklist.hasDistribution(this->p_max.first)));
+}
+
+// Print info of all storage distributions of a given distribution size in set
 void StorageDistributionSet::print_distributions(TOKEN_UNIT dist_sz) {
   assert(set.find(dist_sz) != set.end());
 
@@ -205,6 +249,7 @@ void StorageDistributionSet::print_distributions(TOKEN_UNIT dist_sz) {
   }
 }
 
+// Print info of all storage distributions in set
 void StorageDistributionSet::print_distributions() {
   for (auto &it : this->set) {
     print_distributions(it.first);
@@ -215,8 +260,7 @@ void StorageDistributionSet::print_distributions() {
 void findMinimumStepSz(models::Dataflow *dataflow,
                        std::map<Edge, TOKEN_UNIT> &minStepSizes) {
   std::cout << "Calculating minimal channel step sizes..." << std::endl;
-  // minStepSizes = new EXEC_COUNT [dataflow->getEdgesCount()]; // need to calculate minimum step size per channel
-  std::cout << "Number of channels: " << dataflow->getEdgesCount() << std::endl;
+  // std::cout << "Number of channels: " << dataflow->getEdgesCount() << std::endl;
   {ForEachEdge(dataflow, c) { // get GCD of all possible combinations of rates of production and consumption in channel
       TOKEN_UNIT minStepSz;
       minStepSz = dataflow->getEdgeInVector(c)[0]; // initialise with first value
@@ -228,10 +272,12 @@ void findMinimumStepSz(models::Dataflow *dataflow,
       std::cout << "Min. step size for channel " << dataflow->getEdgeName(c)
                 << ": " << minStepSz << std::endl;
   }}
-  std::cout << "Minimum step sizes calculated!\n" << std::endl;
+  // std::cout << "Minimum step sizes calculated!\n" << std::endl;
   // return minStepSizes;
 }
 
+/* Returns the minimum channel size for each channel for which we might have non-zero throughput
+   in the given dataflow graph */
 void findMinimumChannelSz(models::Dataflow *dataflow,
                           std::map<Edge, TOKEN_UNIT> &minChannelSizes) {
   std::cout << "Calculating minimal channel sizes (for postive throughput)..."
@@ -290,14 +336,11 @@ TOKEN_UNIT findMinimumDistributionSz(models::Dataflow *dataflow,
   return minDistributionSize;
 }
 
+// Calculates and writes necessary information for DSE algorithm to input arguments
 void initSearchParameters(models::Dataflow *dataflow,
                           std::map<Edge, TOKEN_UNIT> &minStepSizes,
                           std::map<Edge, TOKEN_UNIT> &minChannelSizes) {
   findMinimumStepSz(dataflow, minStepSizes);
   findMinimumChannelSz(dataflow, minChannelSizes);
-
-  // Cleanup (TEMPORARY)
-  // delete [] minStepSizes;
-  // delete [] minChannelSizes;
 }
 
