@@ -9,8 +9,8 @@
 
 #include <libxml2/libxml/tree.h>
 #include <libxml2/libxml/parser.h>
-#include <libxml/encoding.h>
-#include <libxml/xmlwriter.h>
+#include <libxml2/libxml/encoding.h>
+#include <libxml2/libxml/xmlwriter.h>
 
 #include <commons/SDF3Wrapper.h>
 #include <commons/commons.h>
@@ -579,10 +579,9 @@ models::Dataflow*  readSDF3File         (const std::string f) {
 }
 
 
-void writeSDF3File         (std::string        filename, const models::Dataflow* )  {
+void writeSDF3File         (std::string filename, const models::Dataflow* dataflow)  {
 
-	xmlTextWriterPtr writer;
-	writer = xmlNewTextWriterFilename(filename.c_str(), 0);
+	xmlTextWriterPtr writer = xmlNewTextWriterFilename(filename.c_str(), 0);
 	xmlTextWriterStartDocument(writer, NULL, "UTF-8", NULL);
 	xmlTextWriterSetIndent(writer,1); xmlTextWriterStartElement(writer, (const xmlChar*) "sdf3");
 
@@ -592,10 +591,92 @@ void writeSDF3File         (std::string        filename, const models::Dataflow*
 	xmlTextWriterWriteAttribute (writer,(const xmlChar*)"xsi:noNamespaceSchemaLocation",(const xmlChar*) "http://www.es.ele.tue.nl/sdf3/xsd/sdf3-sdf.xsd");
 	{
 		xmlTextWriterSetIndent(writer,2); xmlTextWriterStartElement(writer,(const xmlChar*) "applicationGraph");
+
+		const std::string graph_name = dataflow->getName();
+		xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) graph_name.c_str());
 		{
 			xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "csdf");
+			xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) graph_name.c_str());
+			xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) graph_name.c_str());
+			{
+				for (Vertex t : dataflow->vertices()) {
+					const std::string vertex_name = dataflow->getVertexName(t);
+					xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "actor");
+					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) vertex_name.c_str());
+					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "a");
+
+
+					for (auto it : dataflow->in_edges(t)) {
+									Edge e = *it;
+									const std::string in_port =  dataflow->getEdgeOutputPortName(e);
+									const auto in_rates = dataflow->getEdgeOutVector(e);
+									xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
+									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) in_port.c_str());
+									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "in");
+									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) commons::toString(in_rates).c_str());
+									xmlTextWriterEndElement(writer);
+					}
+					for (auto it : dataflow->out_edges(t)) {
+									Edge e = *it;
+									const std::string out_port =  dataflow->getEdgeInputPortName(e);
+									const auto out_rates = dataflow->getEdgeInVector(e);
+									xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
+									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) out_port.c_str());
+									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "out");
+									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) commons::toString(out_rates).c_str());
+									xmlTextWriterEndElement(writer);
+					}
+
+
+					xmlTextWriterEndElement(writer);
+				}
+
+
+				for (auto it : dataflow->edges()) {
+					Edge e = *it;
+					const std::string edge_name = dataflow->getEdgeName(e);
+					const std::string edge_srcActor = dataflow->getVertexName(dataflow->getEdgeSource(e));
+					const std::string edge_srcPort = dataflow->getEdgeInputPortName(e);
+					const std::string edge_dstActor =dataflow->getVertexName(dataflow->getEdgeTarget(e));
+					const std::string edge_dstPort = dataflow->getEdgeOutputPortName(e);
+					const DATA_UNIT edge_size = dataflow->getTokenSize(e);
+					const TOKEN_UNIT edge_initialTokens = dataflow->getPreload(e);
+					xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "channel");
+					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) edge_name.c_str());
+					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"srcActor", (const xmlChar*) edge_srcActor.c_str());
+					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"srcPort", (const xmlChar*) edge_srcPort.c_str());
+					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"dstActor", (const xmlChar*) edge_dstActor.c_str());
+					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"dstPort", (const xmlChar*) edge_dstPort.c_str());
+					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"size", (const xmlChar*) commons::toString(edge_size).c_str());
+					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"initialTokens", (const xmlChar*)  commons::toString(edge_initialTokens).c_str());
+
+					xmlTextWriterEndElement(writer);
+				}
+			}
 			xmlTextWriterEndElement(writer);
 			xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "csdfProperties");
+			{
+				for (Vertex t : dataflow->vertices()) {
+							const std::string vertex_name = dataflow->getVertexName(t);
+							xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "actorProperties");
+							xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"actor", (const xmlChar*) vertex_name.c_str());
+							{
+
+								xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "processor");
+								xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "cluster_0");
+								xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"default", (const xmlChar*) "true");
+								{
+
+									auto executionTime = dataflow->getVertexPhaseDuration(t);
+									xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "executionTime");
+									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"time", (const xmlChar*)  commons::toString(executionTime).c_str());
+									xmlTextWriterEndElement(writer);
+								}
+								xmlTextWriterEndElement(writer);
+							}
+							xmlTextWriterEndElement(writer);
+				}
+			}
 			xmlTextWriterEndElement(writer);
 		}
 		xmlTextWriterEndElement(writer);

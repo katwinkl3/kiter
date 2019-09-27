@@ -255,19 +255,20 @@ private :
 
 	/* all about getters */
 public:
-	inline  Edge                    getFirstEdge        ()                      {return it2Edge(boost::edges(this->getG()).first);}
-	inline  Vertex					getEdgeSource		(const Edge c)			{return Vertex(boost::source(c.e, this->getG()));}
-	inline  Vertex					getEdgeTarget		(const Edge c)			{return Vertex(boost::target(c.e, this->getG()));}
-	inline  unsigned int 			getVerticesCount 	()						{return (unsigned int) boost::num_vertices(this->getG());}
-	inline  unsigned int 			getEdgesCount		()						{return (unsigned int) boost::num_edges(this->getG());}
-	inline  unsigned int			getVertexDegree		(const Vertex t)		{return (unsigned int) boost::degree(t.v,this->getG());}
-	inline  unsigned int			getVertexInDegree	(const Vertex t)		{return (unsigned int) boost::in_degree(t.v,this->getG());}
-	inline  unsigned int			getVertexOutDegree	(const Vertex t)		{return (unsigned int) boost::out_degree(t.v,this->getG());}
+	inline  Edge                    getFirstEdge        ()                  const   {return it2Edge(boost::edges(this->getG()).first);}
+	inline  Vertex					getEdgeSource		(const Edge c)		const	{return Vertex(boost::source(c.e, this->getG()));}
+	inline  Vertex					getEdgeTarget		(const Edge c)		const	{return Vertex(boost::target(c.e, this->getG()));}
+	inline  unsigned int 			getVerticesCount 	()					const	{return (unsigned int) boost::num_vertices(this->getG());}
+	inline  unsigned int 			getEdgesCount		()					const	{return (unsigned int) boost::num_edges(this->getG());}
+	inline  unsigned int			getVertexDegree		(const Vertex t)	const	{return (unsigned int) boost::degree(t.v,this->getG());}
+	inline  unsigned int			getVertexInDegree	(const Vertex t)	const	{return (unsigned int) boost::in_degree(t.v,this->getG());}
+	inline  unsigned int			getVertexOutDegree	(const Vertex t)	const	{return (unsigned int) boost::out_degree(t.v,this->getG());}
 
 
 
 protected:
-	inline  BoostDataflow& 			getG				()						{return this->g;}
+	inline        BoostDataflow& 			getG				()						{return this->g;}
+	inline  const BoostDataflow& 			getG				()			const		{return this->g;}
 
 
 public :
@@ -337,24 +338,37 @@ inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
 	}
 
 public :
-	inline  boost::integer_range<VertexD>                 vertices()      			{ return this->getG().vertex_set() ;} // This function is added because it can be used with foreach.
-	inline  std::pair<edge_iterator,edge_iterator>   		getEdges() 				{ return boost::edges(this->getG());}
-	inline  std::pair<vertex_iterator,vertex_iterator>  	getVertices()    		{ return boost::vertices(this->getG());}
+	inline  const boost::integer_range<VertexD>             vertices()        const { return this->getG().vertex_set() ;} // This function is added because it can be used with foreach.
+	inline  const boost::integer_range<Edge::iterator>               edges()           const {
+		const std::pair<Edge::iterator,Edge::iterator> mypair = boost::edges(this->getG());
+		return boost::integer_range<Edge::iterator>(mypair.first, mypair.second);
+		//return this->getG().vertex_set() ;
+	} // This function is added because it can be used with foreach.
+	inline  std::pair<edge_iterator,edge_iterator>   		getEdges() 				const { return boost::edges(this->getG());}
+	inline  std::pair<vertex_iterator,vertex_iterator>  	getVertices()    		const { return boost::vertices(this->getG());}
 	inline  std::pair<in_edge_iterator,in_edge_iterator>  	getInputEdges(Vertex t) { return boost::in_edges (t.v,this->getG());}
 	inline  std::pair<out_edge_iterator,out_edge_iterator>	getOutputEdges(Vertex t){ return boost::out_edges(t.v,this->getG());}
+	inline  const boost::integer_range<in_edge_iterator>  	in_edges(Vertex t) const {
+		const std::pair<in_edge_iterator,in_edge_iterator> mypair = boost::in_edges(t.v,this->getG());
+		return boost::integer_range<in_edge_iterator>(mypair.first, mypair.second);
+	}
+	inline   const boost::integer_range<out_edge_iterator> 	out_edges(Vertex t)const {
+		const std::pair<out_edge_iterator,out_edge_iterator> mypair = boost::out_edges(t.v,this->getG());
+		return boost::integer_range<out_edge_iterator>(mypair.first, mypair.second);
+	}
 
 
 
 public :
-    inline  Vertex                  getFirstVertex      ()                      {return Vertex(1);}
-	inline 	ARRAY_INDEX 					getVertexId			(const Vertex t)		{return boost::get(get(boost::vertex_index2, this->getG()), t.v); }
-	inline 	ARRAY_INDEX 					getEdgeId			(const Edge c)			{return boost::get(get(boost::edge_index, this->getG()), c.e);}
+    inline  Vertex                  getFirstVertex      ()                   const    {return Vertex(1);}
+	inline 	ARRAY_INDEX 					getVertexId			(const Vertex t)	const	{return boost::get(get(boost::vertex_index2, this->getG()), t.v); }
+	inline 	ARRAY_INDEX 					getEdgeId			(const Edge c)		const	{return boost::get(get(boost::edge_index, this->getG()), c.e);}
 
 
-	inline	Vertex					getVertexById		(const ARRAY_INDEX id)
+	inline	Vertex					getVertexById		(const ARRAY_INDEX id) const
 												throw 	(std::out_of_range)		{ForEachVertex(this,pVertex){ if (this->getVertexId(pVertex) == id) return pVertex;};throw std::out_of_range(TXT_TASK_NOT_FOUND);}
 
-	inline	Edge					getEdgeById			(const ARRAY_INDEX id)
+	inline	Edge					getEdgeById			(const ARRAY_INDEX id) const
 												throw 	(std::out_of_range)		{ForEachEdge(this,pEdge) 	{ if (this->getEdgeId(pEdge) == id) return pEdge;};throw std::out_of_range(TXT_CHANNEL_NOT_FOUND);}
 
 
@@ -402,21 +416,21 @@ public :
     std::string getFilename () { return filename;}
 public:
     inline  void                setName    (const std::string name)    {		ASSERT_WRITABLE();this->graph_name = name;}
-    inline  const std::string   getName    ()                           {return this->graph_name;}
+    inline  const std::string   getName    ()                      const     {return this->graph_name;}
     inline  void                setPeriod    (TIME_UNIT p)    {this->normalized_period = p;}
-    inline  TIME_UNIT           getPeriod    ()                           {return this->normalized_period;}
+    inline  TIME_UNIT           getPeriod    ()         const                  {return this->normalized_period;}
     inline  void                setId      (ARRAY_INDEX id)           {		ASSERT_WRITABLE();this->graph_id = id;}
-    inline  ARRAY_INDEX         getId      ()                          {return this->graph_id;}
+    inline  ARRAY_INDEX         getId      ()             const             {return this->graph_id;}
 
 
 public :
-    inline  ARRAY_INDEX         getMaxEdgeId ()                       {return auto_edge_num; }
-    inline  ARRAY_INDEX         getMaxVertexId    ()                       {return auto_vertex_num; }
+    inline  ARRAY_INDEX         getMaxEdgeId ()                  const     {return auto_edge_num; }
+    inline  ARRAY_INDEX         getMaxVertexId    ()            const           {return auto_vertex_num; }
     inline  void                setVertexName   (const Vertex t,
                                                  const std::string name)    {		ASSERT_WRITABLE();boost::put(boost::vertex_name, this->getG(), t.v, name);}
-    inline  const std::string   getVertexName   (const Vertex t)            {return boost::get(get(boost::vertex_name, this->getG()), t.v);}
-    inline  Vertex              getVertexByName (const std::string s)
-                                                throw   (std::out_of_range) {ForEachVertex(this,pVertex) {if (this->getVertexName(pVertex) == s)return pVertex;};throw std::out_of_range(TXT_TASK_NOT_FOUND + s);}
+    inline  const std::string   getVertexName   (const Vertex t)      const {return boost::get(get(boost::vertex_name, this->getG()), t.v);}
+    inline  Vertex              getVertexByName (const std::string s) const
+                                                throw   (std::out_of_range)  {ForEachVertex(this,pVertex) {if (this->getVertexName(pVertex) == s)return pVertex;};throw std::out_of_range(TXT_TASK_NOT_FOUND + s);}
     inline 	const std::string 	getEdgeName	    (const Edge c)			{
     	try {
     		std::string s = boost::get(get(boost::edge_name, this->getG()), c.e);
@@ -426,6 +440,10 @@ public :
     		setEdgeName(c,"channel_" + commons::toString<ARRAY_INDEX>(this->getEdgeId(c)));
     	}
     	return getEdgeName(c);
+    }
+    inline 	const std::string 	getEdgeName	    (const Edge c)		const	{
+    		std::string s = boost::get(get(boost::edge_name, this->getG()), c.e);
+    		return s;
     }
   //inline  const std::string   getEdgeName     (const Edge c)              {return boost::get(get(boost::edge_name, this->getG()), c.e);}
     inline  Edge                getEdgeByName   (const std::string s)
@@ -449,21 +467,21 @@ public :
 
     inline void                 setEdgeType (const Edge e,
                                            const EDGE_TYPE t)    {boost::put(boost::edge_type, this->getG(), e.e, t);}
-        inline EDGE_TYPE           getEdgeType (const Edge e )         {return boost::get(get(boost::edge_type, this->getG()), e.e);}
+        inline EDGE_TYPE           getEdgeType (const Edge e )    const     {return boost::get(get(boost::edge_type, this->getG()), e.e);}
 
 
     inline void                 setMapping (const Vertex t,
                                            const node_id_t core_id)    {boost::put(boost::vertex_mapping, this->getG(), t.v, core_id);}
-        inline node_id_t           getMapping (const Vertex t )         {return boost::get(get(boost::vertex_mapping, this->getG()), t.v);}
+        inline node_id_t           getMapping (const Vertex t )   const      {return boost::get(get(boost::vertex_mapping, this->getG()), t.v);}
 
 
     inline void                 setZi (const Vertex t,
                                        const TOKEN_UNIT Zi)    {ASSERT_NOT_NORMALIZED(); boost::put(boost::vertex_Zi, this->getG(), t.v, Zi);}
-  inline   TOKEN_UNIT          getZi (const Vertex t )         {ASSERT_NORMALIZED(); return (TOKEN_UNIT) boost::get(get(boost::vertex_Zi, this->getG()), t.v);}
+  inline   TOKEN_UNIT          getZi (const Vertex t )    const     {ASSERT_NORMALIZED(); return (TOKEN_UNIT) boost::get(get(boost::vertex_Zi, this->getG()), t.v);}
 
     inline void                 setNi (const Vertex t,
                                        const EXEC_COUNT Ni)    {ASSERT_NOT_REPETITION_VECTOR(); boost::put(boost::vertex_Ni, this->getG(), t.v, Ni);}
-    inline EXEC_COUNT           getNi (const Vertex t )         {ASSERT_REPETITION_VECTOR(); return boost::get(get(boost::vertex_Ni, this->getG()), t.v);}
+    inline EXEC_COUNT           getNi (const Vertex t )    const     {ASSERT_REPETITION_VECTOR(); return boost::get(get(boost::vertex_Ni, this->getG()), t.v);}
 
 
     inline void                 setPhasesQuantity (const Vertex t,
@@ -471,32 +489,32 @@ public :
     inline EXEC_COUNT           getPhasesQuantity (const Vertex t )         {return boost::get(get(boost::vertex_phasecount, this->getG()), t.v);}
     inline void                 setReentrancyFactor (const Vertex t,
                                                    const EXEC_COUNT r)    {		ASSERT_WRITABLE();boost::put(boost::vertex_reentrancy, this->getG(), t.v, r);}
-    inline EXEC_COUNT           getReentrancyFactor (const Vertex t )         {return boost::get(get(boost::vertex_reentrancy, this->getG()), t.v);}
+    inline EXEC_COUNT           getReentrancyFactor (const Vertex t )    const     {return boost::get(get(boost::vertex_reentrancy, this->getG()), t.v);}
 
 
     inline  TOKEN_FRACT          getAlpha          (const Edge c)            {ASSERT_NORMALIZED(); return boost::get(get(boost::edge_alpha, this->getG()), c.e);}
     inline  void                setAlpha          (const Edge c,
                                                    const TOKEN_FRACT a)   {ASSERT_NOT_NORMALIZED(); boost::put(boost::edge_alpha, this->getG(), c.e, a);}
-    inline  TOKEN_UNIT          getPreload        (const Edge c)            {return boost::get(get(boost::edge_preload, this->getG()), c.e);}
+    inline  TOKEN_UNIT          getPreload        (const Edge c)        const    {return boost::get(get(boost::edge_preload, this->getG()), c.e);}
     inline  void                setPreload        (const Edge c,
                                                    const TOKEN_UNIT p)   {		ASSERT_WRITABLE();boost::put(boost::edge_preload, this->getG(), c.e, p);}
-    inline  DATA_UNIT           getTokenSize      (const Edge c)            {return boost::get(get(boost::edge_tokensize, this->getG()), c.e);}
+    inline  DATA_UNIT           getTokenSize      (const Edge c)       const     {return boost::get(get(boost::edge_tokensize, this->getG()), c.e);}
     inline  void                setTokenSize      (const Edge c,
                                                    const DATA_UNIT ts)    {		ASSERT_WRITABLE();boost::put(boost::edge_tokensize, this->getG(), c.e, ts);}
-    inline  EXEC_COUNT          getEdgeOutPhasesCount   (const Edge c)    {return boost::get(get(boost::edge_outputs, this->getG()), c.e).size();}
-    inline  EXEC_COUNT          getEdgeInPhasesCount   (const Edge c)    {return boost::get(get(boost::edge_inputs, this->getG()), c.e).size();}
+    inline  EXEC_COUNT          getEdgeOutPhasesCount   (const Edge c) const   {return boost::get(get(boost::edge_outputs, this->getG()), c.e).size();}
+    inline  EXEC_COUNT          getEdgeInPhasesCount   (const Edge c) const   {return boost::get(get(boost::edge_inputs, this->getG()), c.e).size();}
 
     inline  TOKEN_UNIT          getEdgeOut    (const Edge c)  		          {return boost::get(get(boost::edge_total_output, this->getG()), c.e);}
-    inline  std::vector<TOKEN_UNIT> &         getEdgeOutVector   (const Edge c)    {
+    inline const std::vector<TOKEN_UNIT> &         getEdgeOutVector   (const Edge c) const   {
         return boost::get(get(boost::edge_outputs, this->getG()), c.e);
     }
 
-    inline  std::vector<TOKEN_UNIT> &          getEdgeInVector   (const Edge c)    {
+    inline const std::vector<TOKEN_UNIT> &          getEdgeInVector   (const Edge c)  const  {
         return boost::get(get(boost::edge_inputs, this->getG()), c.e);
     }
 
 
-    inline  TOKEN_UNIT          getEdgeOutPhase   (const Edge c, EXEC_COUNT k)    {
+    inline  TOKEN_UNIT          getEdgeOutPhase   (const Edge c, EXEC_COUNT k)  const  {
         if (boost::get(get(boost::edge_outputs, this->getG()), c.e).size() < k) {
             VERBOSE_ERROR("k value ("<< k << ") is too high (output list is about "<< boost::get(get(boost::edge_outputs, this->getG()), c.e).size() <<" values ).");
             VERBOSE_FAILURE();
@@ -536,12 +554,12 @@ public :
     	this->setPhasesQuantity(this->getEdgeSource(c),l.size());
     }
 
-    inline  const std::string   getEdgeInputPortName     (const Edge c)              {return boost::get(get(boost::edge_input_port_name, this->getG()), c.e);}
+    inline  const std::string   getEdgeInputPortName     (const Edge c)       const       {return boost::get(get(boost::edge_input_port_name, this->getG()), c.e);}
     inline  void                setEdgeInputPortName     (const Edge c,
                                                  const std::string name)    {		ASSERT_WRITABLE();boost::put(boost::edge_input_port_name, this->getG(), c.e, name);}
 
 
-    inline  const std::string   getEdgeOutputPortName     (const Edge c)              {return boost::get(get(boost::edge_output_port_name, this->getG()), c.e);}
+    inline  const std::string   getEdgeOutputPortName     (const Edge c)       const       {return boost::get(get(boost::edge_output_port_name, this->getG()), c.e);}
     inline  void                setEdgeOutputPortName     (const Edge c,
                                                  const std::string name)    {		ASSERT_WRITABLE();boost::put(boost::edge_output_port_name, this->getG(), c.e, name);}
 
@@ -561,7 +579,7 @@ public :
           }}
           return NULL_EDGE; // not found
           }
-      inline  std::vector<TIME_UNIT>&          getVertexPhaseDuration    (const Vertex t)    {
+      inline  const std::vector<TIME_UNIT>&          getVertexPhaseDuration    (const Vertex t)  const  {
     	  VERBOSE_ASSERT(boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).size() > 0, "I take too much coffee, and this task " << getVertexName(t) <<  " - " << getVertexId(t) <<  " has no duration.");
 
     	  return boost::get(get(boost::vertex_phaseduration, this->getG()), t.v);
@@ -574,7 +592,7 @@ public :
       }
 
 
-      inline  TIME_UNIT          getVertexDuration    (const Vertex t)    {
+      inline  TIME_UNIT          getVertexDuration    (const Vertex t) const   {
     	  VERBOSE_ASSERT(boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).size() > 0, "I take too much coffee, and this task " << getVertexName(t) <<  " - " << getVertexId(t) <<  " has no duration.");
     	  VERBOSE_ASSERT(boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).size() == 1, "I take too much coffee, and this task " << getVertexName(t) <<  " - " << getVertexId(t) <<  " has more than one duration, you should use getVertexPhaseDuration.");
 

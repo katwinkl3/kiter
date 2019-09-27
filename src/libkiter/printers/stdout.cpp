@@ -232,7 +232,10 @@ void printers::printGraph    (models::Dataflow* const  dataflow, parameters_list
 
 }
 void printers::printXML    (models::Dataflow* const  dataflow, parameters_list_t params ) {
-	std::string filename = params["filename"];
+
+	static const std::string filename_argument = "filename";
+	VERBOSE_ASSERT (params.find(filename_argument) != params.end() , "Please provide a filename using -pfilename=X.");
+	std::string filename = params[filename_argument];
 	commons::writeSDF3File(filename, dataflow );
 }
 
