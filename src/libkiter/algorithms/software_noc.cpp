@@ -51,11 +51,10 @@ void print_graph (models::Dataflow * to) {
 	myfile2.open ("software_noc_" + commons::toString(counter) + ".dot");
 	myfile2 << printers::GenerateDOT(to);
 	myfile2.close();
-	std::string cmd = "dot software_noc_" + commons::toString(counter) + ".dot -T svg -o software_noc_" + commons::toString(counter) + ".svg";
+	std::string cmd = "dot software_noc_" + commons::toString(counter) + ".dot -T pdf -o software_noc_" + commons::toString(counter) + ".pdf";
 	system(cmd.c_str());
 	commons::writeSDF3File("software_noc_" + commons::toString(counter) + ".xml", to);
-
-
+	VERBOSE_INFO ("=========== Write file " << counter);
 }
 
 route_t get_route_wrapper(models::Dataflow* to, Edge c, NoC* noc)
@@ -155,10 +154,7 @@ std::vector<ARRAY_INDEX> symbolic_execution(models::Dataflow* const  from) {
 		}}
 	}
 
-	std::cout << "PROGRAMORDER=";
-	for(unsigned int i = 0; i < prog_order.size(); i++)
-		std::cout << prog_order[i] << " ";
-	std::cout << "\n";
+	VERBOSE_INFO ("PROGRAMORDER=" << commons::toString(prog_order ) );
 
 	return prog_order;
 }
@@ -235,11 +231,12 @@ void DFSUtil_PgmOrder(Vertex v, std::vector<bool>& visited, models::Dataflow* to
 
 
 
-void printVector(std::vector<Vertex>& traversal, models::Dataflow* to)
+std::string vertexVector2str(std::vector<Vertex>& traversal, models::Dataflow* to)
 {
+	 std::stringstream s;
 	for(unsigned int trav_i = 0; trav_i < traversal.size(); trav_i++)
-		std::cout << to->getVertexId(traversal[trav_i]) << " ";
-	std::cout << std::endl;
+		s << to->getVertexId(traversal[trav_i]) << " ";
+	return s.str();
 }
 
 
@@ -274,13 +271,13 @@ void DFS(models::Dataflow* to, Vertex v)
 	int V = to->getVerticesCount(); 
 	// Mark all the vertices as not visited 
 	std::vector<bool> visited(V+1, false); 
-	std::cout << "DFS Order: ";
 
 	// Call the recursive helper function to print DFS traversal 
 	std::vector<Vertex> traversal;
 	DFSUtil(v, visited, to, traversal);
 
-	printVector(traversal, to);
+	std::string traverseStr = vertexVector2str(traversal, to);
+	VERBOSE_INFO ( "DFS Order: "  << traverseStr) ;
 }
 
 
@@ -576,8 +573,9 @@ void mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::Dataf
 
 	for(auto it: best_store_path)
 	{
-		if(routes.find(it.first) != routes.end())
-			std::cout << "already one route is stored fro this\n";
+		if(routes.find(it.first) != routes.end()) {
+			VERBOSE_INFO ( "already one route is stored fro this");
+		}
 		routes[it.first] = it.second;
 	}
 } 
@@ -665,10 +663,8 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 		mapping(top, core_mapping, noc, input, available_cores, routes);
 	}
 */
-	std::cout << "srjkvr-mapping ";
-	for(unsigned int ac_i = 1; ac_i < core_mapping.size()-1; ac_i++)
-		std::cout << core_mapping[ac_i] << ",";
-	std::cout << "\n";
+	VERBOSE_INFO ( "srjkvr-mapping " << commons::toString(core_mapping) ) ;
+
 }
 
 
@@ -814,7 +810,7 @@ Vertex removeCycleEdges(models::Dataflow* to, std::vector<ARRAY_INDEX>& prog_ord
 		auto src = to->getEdgeSource(e);
 		auto dst = to->getEdgeTarget(e);
 
-		std::cout << "Removing edge " << to->getVertexId(src) << "->" << to->getVertexId(dst) << "\n";
+		VERBOSE_INFO ( "Removing edge " << to->getVertexId(src) << "->" << to->getVertexId(dst) );
 		to->removeEdge(e);
 	}
 
@@ -912,7 +908,7 @@ void addDependency(models::Dataflow* d, const Vertex vi, const Vertex vj, EXEC_C
 	ni /= gcd_value;
 	nj /= gcd_value;
 	if (d->is_read_only()) {
-		d->set_writable();
+		d->reset_computation();
 	}
 	auto e1 = d->addEdge(vi, vj);
 	auto e2 = d->addEdge(vj, vi);
@@ -927,7 +923,7 @@ void addDependency(models::Dataflow* d, const Vertex vi, const Vertex vj, EXEC_C
 	d->setEdgeInPhases(e2,{(TOKEN_UNIT)ni});
 	d->setPreload(e2,0);  // preload is M0
 
-	std::cout << "Win=" << ni << " Wout=" << nj << " Mo=" << gcd_value << std::endl;
+	VERBOSE_INFO ( "Win=" << ni << " Wout=" << nj << " Mo=" << gcd_value);
 
 }
 
@@ -974,13 +970,9 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex dst, int origV)
 
 
 	//1B. Do some sanity check here
-	if(dstedges.size() != rtredges.size())
-	{
-		std::cout << "BIG ERROR in resolveDestConflicts\n";
-		exit(0);
-	}
-	else if(dstedges.size() <= 1)
-	{
+	VERBOSE_ASSERT (dstedges.size() == rtredges.size() ,  "BIG ERROR in resolveDestConflicts" );
+
+	if(dstedges.size() <= 1) {
 		//std::cout << "no resolveDestConflicts for vertex " << d->getVertexId(dst) << "\n";
 		return false;
 	}
@@ -1005,7 +997,7 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex dst, int origV)
 		}
 		flow += d->getEdgeOut( dstedges[i] );
 		preload += d->getPreload( dstedges[i] );	
-		std::cout << "states=" << flow << ",preload=" << preload << "\n";
+		VERBOSE_INFO ( "states=" << flow << ",preload=" << preload );
 	}
 
 	//2B. Divide flow by gcd to reduce the states
@@ -1025,7 +1017,7 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex dst, int origV)
 	d->setPhasesQuantity(middle, flow); // number of state for the actor, only one in SDF
 	d->setVertexDuration(middle, phaseDurVec); // is specify for every state , only one for SDF.
 	d->setReentrancyFactor(middle, 1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
-	std::cout << "DST_CONF(ID="<< d->getVertexId(dst) << "):Done creating big router node  " << d->getVertexId(middle) << ",gcd=" << mygcd << "\n";
+	VERBOSE_INFO ( "DST_CONF(ID="<< d->getVertexId(dst) << "):Done creating big router node  " << d->getVertexId(middle) << ",gcd=" << mygcd );
 
 	//3B. Add edge between big router and destination vertex
 	auto dstEdge = d->addEdge(middle,dst);
@@ -1055,15 +1047,15 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex dst, int origV)
 }
 
 
-void mergeConfigNodes(models::Dataflow* d, conflictConfigs& configs)
+void mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytuple > mergeNodes)
 {
-	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++)
-	{
-		std::vector< mytuple > mergeNodes = it->second;
+
+	VERBOSE_INFO ("mergeConfigNodes for " << name << " and " << commons::toString(mergeNodes));
+
 		TOKEN_UNIT flow = mergeNodes.size(), preload = 0;
 
 		if (flow <= 1)
-			continue;
+			return;
 
 		//1. Initialize token vecot
 		std::vector<TOKEN_UNIT> temp(flow, 0);
@@ -1076,11 +1068,11 @@ void mergeConfigNodes(models::Dataflow* d, conflictConfigs& configs)
 
 		//3. Create the BIG router
 		auto middle = d->addVertex();
-		d->setVertexName(middle, it->first);
+		d->setVertexName(middle, name);
 		d->setPhasesQuantity(middle, flow); // number of state for the actor, only one in SDF
 		d->setVertexDuration(middle, phaseDurVec); // is specify for every state , only one for SDF.
 		d->setReentrancyFactor(middle, 1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
-		std::cout << "Done creating config router node  " << d->getVertexId(middle) << "\n";
+		VERBOSE_INFO ( "Done creating config router node  " << d->getVertexId(middle) );
 
 		//4. Remove the edges before/after the config node and multiple config nodes
 		//Setup the flow appropriately. Remove the router nodes
@@ -1091,7 +1083,7 @@ void mergeConfigNodes(models::Dataflow* d, conflictConfigs& configs)
 			Vertex v2 = d->getVertexById( get<2>(mergeNodes[i]) );
 
 
-			std::cout << "cfgVtx=" << get<0>(mergeNodes[i]) << " v1=" << get<1>(mergeNodes[i]) << " v2=" << get<2>(mergeNodes[i]) << "\n";
+			VERBOSE_INFO ( "cfgVtx=" << get<0>(mergeNodes[i]) << " v1=" << get<1>(mergeNodes[i]) << " v2=" << get<2>(mergeNodes[i]) );
 
 			removeAllEdgesVertex(d, cfgVtx);
 			auto new_edge = d->addEdge(v1, middle);
@@ -1107,9 +1099,9 @@ void mergeConfigNodes(models::Dataflow* d, conflictConfigs& configs)
 			d->setEdgeInPhases(new_edge, token_vec[i]);
 			d->setEdgeOutPhases(new_edge, {1});
 		}
-		std::cout << "merging " << it->first << " done\n";
+		VERBOSE_INFO ( "merging " << name << " done");
 		//return;
-	}
+
 }
 
 
@@ -1143,13 +1135,9 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 	}}
 
 	//1B. Do some sanity check here
-	if(srcedges.size() != rtredges.size())
-	{
-		std::cout << "BIG ERROR in resolveSrcConflicts\n";
-		exit(0);
-	}
-	else if(srcedges.size() <= 1)
-	{
+	VERBOSE_ASSERT(srcedges.size() == rtredges.size(),  "BIG ERROR in resolveSrcConflicts\n");
+
+	if(srcedges.size() <= 1) {
 		//std::cout << "no resolveSrcConflicts for vertex " << d->getVertexId(src) << "\n";
 		return false;
 	}
@@ -1175,10 +1163,10 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 		}
 		flow += d->getEdgeIn( srcedges[i] );
 		preload += d->getPreload( srcedges[i] );	
-		std::cout << "states=" << flow << ",preload=" << preload << "\n";
+		VERBOSE_INFO ( "states=" << flow << ",preload=" << preload );
 	}
 	flow /= mygcd;
-	std::cout << "done with removing edges\n";
+	VERBOSE_INFO ( "done with removing edges");
 
 	VERBOSE_ASSERT(flow > 0, "This case is not supported: flow between task has to be strictly positive");
 
@@ -1194,7 +1182,7 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 	d->setPhasesQuantity(middle, flow); // number of state for the actor, only one in SDF
 	d->setVertexDuration(middle, phaseDurVec); // is specify for every state , only one for SDF.
 	d->setReentrancyFactor(middle, 1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
-	std::cout << "SRC_CONF(ID="<< d->getVertexId(src) << "):Done creating big router node  " << d->getVertexId(middle) << "\n";
+	VERBOSE_INFO ( "SRC_CONF(ID="<< d->getVertexId(src) << "):Done creating big router node  " << d->getVertexId(middle) );
 
 	//3B. Add edge between source vertex and big router node
 	auto srcEdge = d->addEdge(src, middle);
@@ -1268,7 +1256,7 @@ void checkForConflicts(conflictEtype& conflictEdges, models::Dataflow* to, TIME_
 
 						if( algorithms::isConflictPresent((LARGE_INT) HP, si, (LARGE_INT) ni, sj, (LARGE_INT) nj) )
 						{
-							std::cout << "conflict between " << to->getVertexName(taski_vtx) << " and " << to->getVertexName(taskj_vtx) << "\n";
+							VERBOSE_INFO ( "conflict between " << to->getVertexName(taski_vtx) << " and " << to->getVertexName(taskj_vtx) );
 							total_conflict += 1;
 							break;
 						}
@@ -1296,8 +1284,8 @@ void checkForConflicts(conflictEtype& conflictEdges, models::Dataflow* to, TIME_
 		}
 	}}
 
-	std::cout << "total_conflict=" << total_conflict << "\n";
-	std::cout << "NEW HP=" << HP*orig_ni/mod_ni << "\n";
+	VERBOSE_INFO ( "total_conflict=" << total_conflict );
+	VERBOSE_INFO ( "NEW HP=" << HP*orig_ni/mod_ni );
 }
 
 
@@ -1309,15 +1297,10 @@ void findHP(models::Dataflow* to, scheduling_t& persched, TIME_UNIT* HP, unsigne
 		auto task = key.first;
 		auto task_vtx = to->getVertexById(key.first);
 		*HP =    ( persched[task].first * to->getNi(task_vtx) ) / (persched[task].second.size()) ;
-		std::cout << "Task " <<  to->getVertexName(task_vtx) <<  " : duration=" << to->getVertexTotalDuration(task_vtx) <<  " period=" <<  persched[task].first << " HP=" << *HP << " Ni=" << to->getNi(task_vtx)<< " starts=[ ";
+		VERBOSE_INFO ( "Task " <<  to->getVertexName(task_vtx) <<  " : duration=" << to->getVertexTotalDuration(task_vtx) <<  " period=" <<  persched[task].first << " HP=" << *HP << " Ni=" << to->getNi(task_vtx)
+				<< " starts=[ " << commons::toString(persched[task].second) << "]");
 
 		*LCM = boost::math::lcm(*LCM, to->getNi(task_vtx));
-
-		for (auto  skey : persched[task].second) {
-
-			std::cout << skey << " " ;
-		}
-		std::cout << "]" << std::endl;
 
 	}
 	*LCM = boost::math::lcm(*LCM, (unsigned long)*HP);
@@ -1475,7 +1458,13 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		print_graph(to);
 	}
 
-	mergeConfigNodes(to, configs);
+	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++)
+	{
+		VERBOSE_INFO ("Call mergeConfigNodes");
+		mergeConfigNodes(to, it->first, it->second);
+		print_graph(to);
+
+	}
 	print_graph(to);
 
 	//Remove conflicts at source and destination router links as a big node has been created
@@ -1503,7 +1492,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		{ForEachVertex(to,v) {
 
 			if (to->getVertexDegree(v) == 0) {
-				std::cout << " I remove one task (" << to->getVertexId(v) << ") lah!\n";
+				VERBOSE_INFO ( " I remove one task (" << to->getVertexId(v) << ") lah!");
 				to->removeVertex(v);
 				print_graph(to);
 				removeme=true;
@@ -1527,7 +1516,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	findHP(to, persched, &HP, &LCM);
 	checkForConflicts(conflictEdges, to, HP, persched, dataflow);
 
-	std::cout << "LCM=" << LCM << "\n";
+	VERBOSE_INFO ( "LCM=" << LCM );
 }
 
 

@@ -8,12 +8,13 @@
 #ifndef KPERIODIC_H_
 #define KPERIODIC_H_
 
+#include <algorithms/schedulings.h>
+
 namespace models {
 	class Dataflow;
 	class EventGraph;
 }
 
-typedef std::map<ARRAY_INDEX,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> scheduling_t;
 namespace algorithms {
 
 bool sameset(models::Dataflow* const dataflow, std::set<Edge> *cc1 , std::set<Edge>* cc2) ;

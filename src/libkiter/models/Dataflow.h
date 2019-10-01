@@ -279,15 +279,16 @@ public :
 	}
 
 	const NoC* getNoC() { return &this->noc;};
+
 	void set_read_only() {readonly = true;}
 	void set_normalize() {normalizationisdone = true;}
 	void set_repetition_vector() {repetitionvectorisdone = true;}
-	void set_writable() {readonly = false;}
-	void reset_repetition_vector() {repetitionvectorisdone = false;}
 
-	bool is_read_only() {return readonly;}
-	bool is_normalized() {return normalizationisdone ;}
-	bool is_repetition_vector() {return repetitionvectorisdone ;}
+	void reset_computation() {repetitionvectorisdone = false; normalizationisdone = false; readonly = false;}
+
+	bool is_read_only() const {return readonly;}
+	bool is_normalized() const {return normalizationisdone ;}
+	bool is_repetition_vector() const {return repetitionvectorisdone ;}
 
 public :
 
@@ -297,6 +298,7 @@ inline	 Edge addEdge(const Vertex from, const Vertex to) {
 
 inline	 Edge addEdge(const Vertex from, const Vertex to,const  ARRAY_INDEX id) {
 	ASSERT_WRITABLE();
+	reset_computation();
 	std::pair<EdgeD,bool> res = boost::add_edge( from.v, to.v,this->getG());
 	VERBOSE_ASSERT(res.second,TXT_NEW_EDGE_ERROR);
 	Edge newChannel = Edge(res.first);
@@ -311,6 +313,7 @@ inline	 Edge addEdge(const Vertex from, const Vertex to,const  ARRAY_INDEX id) {
 
 inline 	Vertex 				addVertex			() 							{
 	ASSERT_WRITABLE();
+	reset_computation();
 	Vertex nt = Vertex(boost::add_vertex(this->getG()));
 	//std::cout << "orig:" << nt << ",vtx_id:" << auto_vertex_num << "\n";
 	this->setVertexIdUnsafe(nt,auto_vertex_num++);
@@ -319,6 +322,7 @@ inline 	Vertex 				addVertex			() 							{
 }
 inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
 	ASSERT_WRITABLE();
+	reset_computation();
 	Vertex nt = Vertex(boost::add_vertex(this->getG()));
 	this->setVertexId(nt,id);
 	return nt;}
@@ -327,10 +331,12 @@ inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
 
 	inline 	void 					removeVertex		(const Vertex t) 		{
 		ASSERT_WRITABLE();
+		reset_computation();
 		boost::remove_vertex(t.v,this->getG());
 	}
 	inline  void					removeEdge   		(const Edge c)			{
 		ASSERT_WRITABLE();
+		reset_computation();
 		boost::remove_edge(c.e,this->getG());
 	}
 
@@ -473,7 +479,9 @@ public :
 
 
     inline void                 setPhasesQuantity (const Vertex t,
-                                                   const EXEC_COUNT phi)    {		ASSERT_WRITABLE();boost::put(boost::vertex_phasecount, this->getG(), t.v, phi);}
+                                                   const EXEC_COUNT phi)    {		ASSERT_WRITABLE();
+                                               	reset_computation();
+                                               	boost::put(boost::vertex_phasecount, this->getG(), t.v, phi);}
     inline EXEC_COUNT           getPhasesQuantity (const Vertex t )         {return boost::get(get(boost::vertex_phasecount, this->getG()), t.v);}
     inline void                 setReentrancyFactor (const Vertex t,
                                                    const EXEC_COUNT r)    {		ASSERT_WRITABLE();boost::put(boost::vertex_reentrancy, this->getG(), t.v, r);}
@@ -485,7 +493,9 @@ public :
                                                    const TOKEN_FRACT a)   {ASSERT_NOT_NORMALIZED(); boost::put(boost::edge_alpha, this->getG(), c.e, a);}
     inline  TOKEN_UNIT          getPreload        (const Edge c)        const    {return boost::get(get(boost::edge_preload, this->getG()), c.e);}
     inline  void                setPreload        (const Edge c,
-                                                   const TOKEN_UNIT p)   {		ASSERT_WRITABLE();boost::put(boost::edge_preload, this->getG(), c.e, p);}
+                                                   const TOKEN_UNIT p)   {		ASSERT_WRITABLE();
+                                               	reset_computation();
+                                               	boost::put(boost::edge_preload, this->getG(), c.e, p);}
     inline  DATA_UNIT           getTokenSize      (const Edge c)       const     {return boost::get(get(boost::edge_tokensize, this->getG()), c.e);}
     inline  void                setTokenSize      (const Edge c,
                                                    const DATA_UNIT ts)    {		ASSERT_WRITABLE();boost::put(boost::edge_tokensize, this->getG(), c.e, ts);}
@@ -511,6 +521,7 @@ public :
     }
     inline  void                setEdgeOutPhases  (const Edge c,
                                                    std::vector<TOKEN_UNIT> l)    {		ASSERT_WRITABLE();
+                                               	reset_computation();
         VERBOSE_DEBUG(" - Add outputs for " << c << " = " << l.size() << " states = " <<  commons::join(l.begin(),l.end(),std::string(",")));
     	boost::put(boost::edge_outputs, this->getG(), c.e, l);
     	TOKEN_UNIT total =std::accumulate(l.begin(),l.end(),0);
@@ -531,6 +542,7 @@ public :
     }
     inline  void                setEdgeInPhases   (const Edge c,
                                                    std::vector<TOKEN_UNIT> l)    {		ASSERT_WRITABLE();
+                                               	reset_computation();
         VERBOSE_DEBUG(" - Add inputs for " << c << " = " << l.size() << " states = " <<  commons::join(l.begin(),l.end(),std::string(",")));
     	boost::put(boost::edge_inputs, this->getG(), c.e, l);
     	TOKEN_UNIT total =std::accumulate(l.begin(),l.end(),0);
