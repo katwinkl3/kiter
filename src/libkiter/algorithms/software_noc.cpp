@@ -1308,14 +1308,24 @@ void findHP(models::Dataflow* to, scheduling_t& persched, TIME_UNIT* HP, unsigne
 
 void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list_t param_list)
 {
-	unsigned long LCM;
-	TIME_UNIT HP;
-	conflictEtype conflictEdges; //stores details of flows that share noc edges
-	conflictConfigs configs;
+
+	// Write the input as a dot file
+	  std::ofstream myfile;
+	  myfile.open ("software_noc_1.dot");
+	  myfile << printers::GenerateDOT(dataflow);
+	  myfile.close();
+		system("dot software_noc_1.dot -T svg -o software_noc_1.svg");
 
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);
+
+	for (Vertex t : to->vertices()) {
+		VERBOSE_INFO( "Task " << to->getVertexName(t) << " Reetrancy = " << to->getReentrancyFactor(t) );
+	}
+
 	models::Dataflow* to2 = new models::Dataflow(*dataflow);
+	//symbolic execution to find program execution order
+	std::vector<ARRAY_INDEX> prog_order = symbolic_execution(to2);
 
 	//Init NoC
 	int mesh_row = (int)ceil(sqrt(dataflow->getVerticesCount()));
@@ -1326,11 +1336,24 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 	NoC *noc = new NoC(mesh_row, mesh_row, 1);
 	noc->generateShortestPaths();
 
-	//symbolic execution to find program execution order
-	std::vector<ARRAY_INDEX> prog_order = symbolic_execution(to2);
 	//do some processing to perfrom task mapping, NoC route determination and add intermediate nodes
 	std::map<int, route_t> routes = graphProcessing(to, noc, prog_order);
-	addIntermediateNodes(to, noc, conflictEdges, routes, configs);
+
+	conflictEtype conflictEdges; //stores details of flows that share noc edges
+	conflictConfigs configs;
+	if (param_list.find("skipIN") == param_list.end())
+	{
+		addIntermediateNodes(to, noc, conflictEdges, routes, configs);
+	}
+
+	// Write the input as a dot file
+	std::ofstream myfile2;
+	myfile2.open ("software_noc_2.dot");
+	myfile2 << printers::GenerateDOT(to);
+	myfile2.close();
+	system("dot software_noc_2.dot -T svg -o software_noc_2.svg");
+
+
 
 	double xscale  = 1;
 	double yscale = 1;
@@ -1340,7 +1363,19 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 
-	scheduling_t persched =  algorithms::generateKperiodicSchedule   (to , false) ;
+	//scheduling_t persched =  algorithms::generateKperiodicSchedule   (to , false) ;
+
+	//std::cout << printers::GenerateDOT(to);
+
+	for (Vertex t : to->vertices()) {
+		VERBOSE_INFO( "Task " << to->getVertexName(t) << " Reetrancy = " << to->getReentrancyFactor(t) );
+	}
+
+	scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, false, false);
+	//scheduling_t persched =  algorithms::generateKperiodicSchedule   (to , false) ;
+
+	unsigned long LCM;
+	TIME_UNIT HP;
 	findHP(to, persched, &HP, &LCM);
 	checkForConflicts(conflictEdges, to, HP, persched, dataflow);
 }
@@ -1370,6 +1405,9 @@ bool algorithms::isConflictPresent(LARGE_INT HP, TIME_UNIT si, LARGE_INT ni, TIM
 
 void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, parameters_list_t   param_list)
 {
+
+
+
 	double yscale = 1;
 	if (param_list.count("yscale") == 1) yscale = std::stod(param_list["yscale"]);
 
