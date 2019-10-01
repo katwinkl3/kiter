@@ -13,12 +13,17 @@
 
 
 typedef std::map<ARRAY_INDEX,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> scheduling_t;
-//typedef std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> scheduling_t;
 
 void sdf_bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector, std::vector<std::vector <Vertex> > task_sequences);
 void bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector);
 
+
+
+scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) ;
+
 namespace algorithms {
+
+
 	namespace scheduling {
 		void KPeriodic_taskNoCbufferless(models::Dataflow*, parameters_list_t param_list);
 		scheduling_t bufferless_scheduling(models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector);

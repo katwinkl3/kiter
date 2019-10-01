@@ -290,26 +290,23 @@ public :
 	bool is_repetition_vector() {return repetitionvectorisdone ;}
 
 public :
-inline	 Edge addEdge(const Vertex from, const Vertex to)
-	{
-		ASSERT_WRITABLE();
-		 std::pair<EdgeD,bool> res = boost::add_edge( from.v, to.v,this->getG());
-		 VERBOSE_ASSERT(res.second,TXT_NEW_EDGE_ERROR);
-		 Edge newChannel = Edge(res.first);
-		this->setEdgeId(newChannel,auto_edge_num++);
-	    this->setEdgeType(newChannel,EDGE_TYPE::NORMAL_EDGE);
-		return newChannel;
-	}
-inline	 Edge addEdge(const Vertex from, const Vertex to,const  ARRAY_INDEX id)
-   {
-		ASSERT_WRITABLE();
-		 std::pair<EdgeD,bool> res = boost::add_edge( from.v, to.v,this->getG());
-				 VERBOSE_ASSERT(res.second,TXT_NEW_EDGE_ERROR);
-				 Edge newChannel = Edge(res.first);
-       this->setEdgeId(newChannel,id);
-       this->setEdgeType(newChannel,EDGE_TYPE::NORMAL_EDGE);
-       return newChannel;
-   }
+
+inline	 Edge addEdge(const Vertex from, const Vertex to) {
+	return addEdge(from , to , auto_edge_num++);;
+}
+
+inline	 Edge addEdge(const Vertex from, const Vertex to,const  ARRAY_INDEX id) {
+	ASSERT_WRITABLE();
+	std::pair<EdgeD,bool> res = boost::add_edge( from.v, to.v,this->getG());
+	VERBOSE_ASSERT(res.second,TXT_NEW_EDGE_ERROR);
+	Edge newChannel = Edge(res.first);
+	this->setEdgeId(newChannel,id);
+	this->setEdgeType(newChannel,EDGE_TYPE::NORMAL_EDGE);
+	this->setEdgeName(newChannel,"channel_" + commons::toString<ARRAY_INDEX>(this->getEdgeId(newChannel)));
+	this->setEdgeOutputPortName(newChannel,"out_" + this->getEdgeName(newChannel));
+	this->setEdgeInputPortName(newChannel,"in_" + this->getEdgeName(newChannel));
+	return newChannel;
+}
 
 
 inline 	Vertex 				addVertex			() 							{
@@ -431,23 +428,14 @@ public :
     inline  const std::string   getVertexName   (const Vertex t)      const {return boost::get(get(boost::vertex_name, this->getG()), t.v);}
     inline  Vertex              getVertexByName (const std::string s) const
                                                 throw   (std::out_of_range)  {ForEachVertex(this,pVertex) {if (this->getVertexName(pVertex) == s)return pVertex;};throw std::out_of_range(TXT_TASK_NOT_FOUND + s);}
-    inline 	const std::string 	getEdgeName	    (const Edge c)			{
-    	try {
-    		std::string s = boost::get(get(boost::edge_name, this->getG()), c.e);
-    		if (s != "") return s;
-    		setEdgeName(c,"channel_" + commons::toString<ARRAY_INDEX>(this->getEdgeId(c)));
-    	} catch(...) {
-    		setEdgeName(c,"channel_" + commons::toString<ARRAY_INDEX>(this->getEdgeId(c)));
-    	}
-    	return getEdgeName(c);
-    }
+
     inline 	const std::string 	getEdgeName	    (const Edge c)		const	{
     		std::string s = boost::get(get(boost::edge_name, this->getG()), c.e);
     		return s;
     }
-  //inline  const std::string   getEdgeName     (const Edge c)              {return boost::get(get(boost::edge_name, this->getG()), c.e);}
-    inline  Edge                getEdgeByName   (const std::string s)
-                                                throw   (std::out_of_range) {
+
+    inline  Edge                getEdgeByName   (const std::string s) const
+    throw   (std::out_of_range) {
     	{ForEachEdge(this,pEdge)     {
     		if (this->getEdgeName(pEdge) == s) return pEdge;
     	}};

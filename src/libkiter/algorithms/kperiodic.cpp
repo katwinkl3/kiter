@@ -122,6 +122,44 @@ void algorithms::print_kperiodic_expansion_graph    (models::Dataflow* const  da
 
 }
 
+scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) {
+
+
+	scheduling_t scheduling_result;
+
+    models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
+    eg->computeStartingTime (throughput);
+    TIME_UNIT omega = 1 / throughput ;
+
+
+    {ForEachEvent(eg,e) {
+        models::SchedulingEvent se = eg->getEvent(e);
+        EXEC_COUNT ti = se.getTaskId();
+        Vertex v = dataflow->getVertexById(ti);
+        TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
+        scheduling_result[dataflow->getVertexId(v)].first = period;
+
+        VERBOSE_INFO("Task " << dataflow->getVertexName(v) << " " << period  );
+
+    }}
+
+    {ForEachEvent(eg,e) {
+        models::SchedulingEvent se = eg->getEvent(e);
+        EXEC_COUNT ti = se.getTaskId();
+        TIME_UNIT start = eg->getStartingTime(e);
+        Vertex v = dataflow->getVertexById(ti);
+        scheduling_result[dataflow->getVertexId(v)].second.push_back( start );
+        VERBOSE_INFO("Task " << dataflow->getVertexName(v) << " " << start  );
+
+
+    }}
+
+
+
+    return scheduling_result ;
+
+}
+
 void algorithms::print_kperiodic_scheduling    (models::Dataflow* const  dataflow, parameters_list_t param_list) {
 
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
@@ -670,9 +708,11 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
                         VERBOSE_DEBUG("   w = (" << alphamax << " * " << dataflow->getPhasesQuantity(source) * maxki << ") / (" << Wc << " * " << dataflow->getNi(source) / maxki << ")");
                         VERBOSE_DEBUG("   d = (" << d << ")");
 
-                        g->addEventConstraint(source_event ,target_event,-w,d,id);
                         if (doBufferLessEdges) {
-                            g->addEventConstraint(target_event ,source_event,w,-d,id);
+                            g->addEventConstraint(target_event ,source_event,0,-d,id);
+                            g->addEventConstraint(source_event ,target_event,0,d,id);
+                        } else {
+                            g->addEventConstraint(source_event ,target_event,-w,d,id);
                         }
                     }
                 }

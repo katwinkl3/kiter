@@ -24,6 +24,7 @@
 #include <set>
 #include <queue>
 #include <tuple>
+#include <commons/SDF3Wrapper.h>
 
 //vector stores the cycle length in each of the vertices
 std::vector< std::vector<unsigned int> > cycles;
@@ -39,6 +40,23 @@ struct node{
 //typedef std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEtype;
 typedef std::map< unsigned int, std::vector< mypair > > conflictEtype;
 typedef std::map< std::string, std::vector< mytuple > > conflictConfigs;
+
+
+
+void print_graph (models::Dataflow * to) {
+	static int counter = 0;
+	counter ++ ;
+	// Write the input as a dot file
+	std::ofstream myfile2;
+	myfile2.open ("software_noc_" + commons::toString(counter) + ".dot");
+	myfile2 << printers::GenerateDOT(to);
+	myfile2.close();
+	std::string cmd = "dot software_noc_" + commons::toString(counter) + ".dot -T svg -o software_noc_" + commons::toString(counter) + ".svg";
+	system(cmd.c_str());
+	commons::writeSDF3File("software_noc_" + commons::toString(counter) + ".xml", to);
+
+
+}
 
 route_t get_route_wrapper(models::Dataflow* to, Edge c, NoC* noc)
 {
@@ -1309,13 +1327,7 @@ void findHP(models::Dataflow* to, scheduling_t& persched, TIME_UNIT* HP, unsigne
 void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list_t param_list)
 {
 
-	// Write the input as a dot file
-	  std::ofstream myfile;
-	  myfile.open ("software_noc_1.dot");
-	  myfile << printers::GenerateDOT(dataflow);
-	  myfile.close();
-		system("dot software_noc_1.dot -T svg -o software_noc_1.svg");
-
+	print_graph(dataflow);
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);
 
@@ -1346,14 +1358,7 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 		addIntermediateNodes(to, noc, conflictEdges, routes, configs);
 	}
 
-	// Write the input as a dot file
-	std::ofstream myfile2;
-	myfile2.open ("software_noc_2.dot");
-	myfile2 << printers::GenerateDOT(to);
-	myfile2.close();
-	system("dot software_noc_2.dot -T svg -o software_noc_2.svg");
-
-
+	print_graph(to);
 
 	double xscale  = 1;
 	double yscale = 1;
@@ -1371,8 +1376,14 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 		VERBOSE_INFO( "Task " << to->getVertexName(t) << " Reetrancy = " << to->getReentrancyFactor(t) );
 	}
 
-	scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, false, false);
-	//scheduling_t persched =  algorithms::generateKperiodicSchedule   (to , false) ;
+	if (false) {scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, false, false);}
+	if (false) {scheduling_t persched =  algorithms::generateKperiodicSchedule   (to , false) ;}
+	std::map<Vertex,EXEC_COUNT> kvector;
+			{ForEachVertex(to,v) {
+				kvector[v] = 1;
+			}}
+    std::pair<TIME_UNIT, std::set<Edge> > result = algorithms::KScheduleBufferLess(to,&kvector);
+    scheduling_t persched = period2scheduling(to,kvector,result.first);
 
 	unsigned long LCM;
 	TIME_UNIT HP;
@@ -1425,6 +1436,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	models::Dataflow* to = new models::Dataflow(*dataflow);
 	models::Dataflow* to2 = new models::Dataflow(*dataflow);
 
+	print_graph(to);
 	std::map<int, Edge> edge_list;
 	{ForEachVertex(dataflow,v) {
 		VERBOSE_INFO("Task " << dataflow->getVertexName(v) << " - mapping="<< dataflow->getMapping(v));
@@ -1442,6 +1454,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		Vertex esrc = to->getEdgeSource(e);
 		VERBOSE_INFO("replace edge " << e << "by a sequence");
 		addPathNode(to, e, it.second, conflictEdges, configs);
+		print_graph(to);
 	}
 
 	//resolve cnflicts for all the  (a) sources that sent data to multiple nodes. 
@@ -1453,14 +1466,17 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	{
 		auto src = to->getVertexById(i);
 		resolveSrcConflicts(to, src, origV);
+		print_graph(to);
 	}
 	for(int i = 1; i <= origV; i++)
 	{
 		auto src = to->getVertexById(i);
 		resolveDestConflicts(to, src, origV);
+		print_graph(to);
 	}
 
 	mergeConfigNodes(to, configs);
+	print_graph(to);
 
 	//Remove conflicts at source and destination router links as a big node has been created
 	for(auto it:routes)
@@ -1489,6 +1505,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 			if (to->getVertexDegree(v) == 0) {
 				std::cout << " I remove one task (" << to->getVertexId(v) << ") lah!\n";
 				to->removeVertex(v);
+				print_graph(to);
 				removeme=true;
 				break;
 			}
@@ -1497,6 +1514,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	}
 
 
+	print_graph(to);
 	//std::cout << printers::GenerateDOT(to);
 	//Given the graph "to" the perform the Kperiodic scheduling and get "persched" in return
 	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, false, false);
@@ -1524,82 +1542,3 @@ void showstack(std::stack<Vertex> s)
 	std::cout << '\n';
 }
 
-
-/*
-//Process the graph for DFS, etc. in this function
-void postProcessing(models::Dataflow* to, Vertex start, NoC* noc) 
-{
-	std::cout << "inside post Processing,cycles="<< cycles.size() << "\n";
-	std::map<int, Edge> edge_list;
-	generateEdgesMap(to, edge_list, noc);
-
-	for(unsigned int i = 0; i < cycles.size(); i++)
-	{
-		std::vector<unsigned int> temp = cycles[i];
-
-		std::cout << "cycle-" << i << ",len=" << temp.size();
-		for(unsigned int j = 0; j < temp.size()-1; j++)
-		{
-			auto e2 = temp[j];
-			auto e1 = temp[j+1];
-			int index = noc->getMapIndex(e1,e2);
-			int index2 = noc->getMapIndex(e2,e1); 
-
-			//remove edge e1->e2
-			if(edge_list.find(index) != edge_list.end())
-			{
-				std::cout << "removing the edge " << e1 << "->" << e2 << ",breaking\n";
-				to->removeEdge(edge_list[index]);
-				edge_list.erase(index);
-				break;
-			}
-			else if(edge_list.find(index2) != edge_list.end())
-			{
-				std::cout << "removing the edge " << e2 << "->" << e1 << ",breaking\n";
-				to->removeEdge(edge_list[index2]);
-				edge_list.erase(index2);
-				break;
-			}
-			else
-				std::cout << "cannot remove " << e1 << "->" << e2 << ",continuing\n";
-		}
-	}
-
-	{ForEachVertex(to,t) {
-		if(t == start)
-		{
-			continue;
-		}
-		if(to->getVertexInDegree(t) == 0)
-		{
-			to->addEdge(start, t);
-			std::cout << "adding new edge between start " << to->getVertexId(t) << "\n";
-		}
-		else
-		{
-			std::cout << "vertex " << to->getVertexId(t) << ",in_deg=" << to->getVertexInDegree(t) << "\n";
-		}
-	}}
-}
-
-	{
-		models::Dataflow* to = new models::Dataflow(*dataflow);
-		VERBOSE_INFO("Generate KVector");
-		std::map<Vertex,EXEC_COUNT> kvector;
-		{ForEachVertex(to,v) {
-			kvector[v] = 1;
-			if (param_list.count(to->getVertexName(v)) == 1)
-			{
-				std::string str_value = param_list[to->getVertexName(v)];
-				kvector[v] =  commons::fromString<EXEC_COUNT> ( str_value );
-			}
-		}}
-
-		scheduling_t persched = algorithms::scheduling::bufferless_scheduling (to,  kvector);
-	}
-
-	//Given "persched", we print the scheduling result.
-	//{ForEachVertex(to,v) {
-	//	std::cout << "Task " << to->getVertexName(v) << " Period=" << persched[v].first<< " Starts=" << commons::toString(persched[v].second) << std::endl;
-	//}}
-*/
