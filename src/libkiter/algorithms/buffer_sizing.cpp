@@ -9,7 +9,7 @@
 
 StorageDistribution::StorageDistribution()
     :edge_count{0}, thr{0}, distribution_size{0} {
-      // TODO: initialise empty map?
+      // TODO: initialise empty map
 }
 
 StorageDistribution::StorageDistribution(
@@ -135,7 +135,7 @@ StorageDistributionSet::StorageDistributionSet(TOKEN_UNIT dist_sz,
 void StorageDistributionSet::addStorageDistribution(StorageDistribution new_distribution) {
   // std::cout << "Attempting to add storage distribution of dist sz: "
   //           << new_distribution.getDistributionSize() << std::endl;
-  if (this->set.find(new_distribution.getDistributionSize()) == this->set.end()) { // first storage distribution of this distribution size
+  if (!hasDistribution(new_distribution.getDistributionSize())) { // first storage distribution of this distribution size
     // std::cout << "First of this distribution size: adding new distribution" << std::endl;
     this->set[new_distribution.getDistributionSize()].push_back(new_distribution);
   } else { // there's already a storage distribution with the same distribution size
@@ -159,8 +159,7 @@ void StorageDistributionSet::addStorageDistribution(StorageDistribution new_dist
 }
 
 // Removes the given storage distribution from the storage distribution set
-void StorageDistributionSet::removeStorageDistribution( // TODO: check if erase-remove idiom is more efficient than manually checking
-StorageDistribution dist_to_rm) {
+void StorageDistributionSet::removeStorageDistribution(StorageDistribution dist_to_rm) {
   // Use erase-remove idiom to remove matching storage distribution
   this->set[dist_to_rm.getDistributionSize()].erase(std::remove(this->set[dist_to_rm.getDistributionSize()].begin(),
                                                                 this->set[dist_to_rm.getDistributionSize()].end(),
