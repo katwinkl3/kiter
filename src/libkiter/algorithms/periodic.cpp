@@ -265,6 +265,10 @@ void algorithms::compute_csdf_1periodic_memory   (models::Dataflow* const  dataf
 	// STEP 1 - Compute normalized period
 	TIME_UNIT PERIOD = dataflow->getPeriod()  ;
 
+	VERBOSE_ASSERT (PERIOD > 0, "The period must be defined");
+	VERBOSE_ASSERT (PERIOD != std::numeric_limits<TIME_UNIT>::infinity(), "The period must be defined");
+
+
 	//##################################################################
 	// Linear program generation
 	//##################################################################
