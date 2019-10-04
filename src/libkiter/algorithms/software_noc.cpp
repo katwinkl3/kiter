@@ -1447,7 +1447,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		Edge e = edge_list[it.first];
 		Vertex esrc = to->getEdgeSource(e);
 		VERBOSE_INFO("replace edge " << e << "by a sequence");
-		addPathNode(to, e, it.second, conflictEdges, configs, false);
+		addPathNode(to, e, it.second, conflictEdges, configs, true);
 		print_graph(to);
 	}
 
@@ -1470,7 +1470,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		resolveDestConflicts(to, dest, origV);
 		print_graph(to);
 	}
-/*
+
 	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++)
 	{
 		VERBOSE_INFO ("Call mergeConfigNodes");
@@ -1479,7 +1479,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 	}
 	print_graph(to);
-*/
+
 	//Remove conflicts at source and destination router links as a big node has been created
 	for(auto it:routes)
 	{
