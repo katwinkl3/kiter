@@ -55,6 +55,8 @@ std::vector<algo_t> algorithmslist =               {
 				algorithms::mapping::moduloMapping} ,
 
 
+				{ "BufferlessKPeriodicScheduling"           , "Run Bufferless Kperiodic",
+								algorithms::scheduling::bufferlessKPeriodicScheduling} ,
 		{ "SDFKPeriodic"           , "Build an Exansion graph given a set of value K (1 by default), and compute its MCRP.",
 						algorithms::scheduling::SDFKPeriodicScheduling} ,
 

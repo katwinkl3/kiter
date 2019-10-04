@@ -26,6 +26,10 @@
 #include <tuple>
 #include <commons/SDF3Wrapper.h>
 
+static bool DO_BUFFERLESS = false;
+static bool STOP_AT_FIRST = false;
+static bool GET_PREVIOUS = false;
+
 //vector stores the cycle length in each of the vertices
 std::vector< std::vector<unsigned int> > cycles;
 std::vector< std::set<unsigned int> > cycid_per_vtxid;
@@ -44,6 +48,7 @@ typedef std::map< std::string, std::vector< mytuple > > conflictConfigs;
 
 
 void print_graph (models::Dataflow * to) {
+
 	static int counter = 0;
 	counter ++ ;
 	// Write the input as a dot file
@@ -54,7 +59,11 @@ void print_graph (models::Dataflow * to) {
 	std::string cmd = "dot software_noc_" + commons::toString(counter) + ".dot -T pdf -o software_noc_" + commons::toString(counter) + ".pdf";
 	system(cmd.c_str());
 	commons::writeSDF3File("software_noc_" + commons::toString(counter) + ".xml", to);
+	to->reset_computation();
+	scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling    (to , DO_BUFFERLESS) ;
+	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, DO_BUFFERLESS , STOP_AT_FIRST, GET_PREVIOUS);
 	VERBOSE_INFO ("=========== Write file " << counter);
+	to->reset_computation();
 }
 
 route_t get_route_wrapper(models::Dataflow* to, Edge c, NoC* noc)
@@ -1107,6 +1116,9 @@ void mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytup
 
 bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 {
+
+	VERBOSE_INFO ( "resolveSrcConflicts for "  << d->getVertexName(src) << " with original number of vertices " << origV);
+
 	std::vector<Edge> srcedges, rtredges;
 	TOKEN_UNIT flow = 0;
 	TOKEN_UNIT preload = 0;
@@ -1370,8 +1382,7 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 		VERBOSE_INFO( "Task " << to->getVertexName(t) << " Reetrancy = " << to->getReentrancyFactor(t) );
 	}
 
-	if (false) {scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, false, false);}
-	if (false) {scheduling_t persched =  algorithms::generateKperiodicSchedule   (to , false) ;}
+
 	std::map<Vertex,EXEC_COUNT> kvector;
 			{ForEachVertex(to,v) {
 				kvector[v] = 1;
@@ -1426,18 +1437,23 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	NoC *noc = new NoC(mesh_row, mesh_row, 1); //Init NoC
 	noc->generateShortestPaths();
 
+	int origV = (int)dataflow->getVerticesCount();
+
+
+
+
+
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);
-	models::Dataflow* to2 = new models::Dataflow(*dataflow);
 
 	print_graph(to);
 	std::map<int, Edge> edge_list;
-	{ForEachVertex(dataflow,v) {
-		VERBOSE_INFO("Task " << dataflow->getVertexName(v) << " - mapping="<< dataflow->getMapping(v));
-	}}
+
 
 	//symbolic execution to find program execution order
+	models::Dataflow* to2 = new models::Dataflow(*dataflow);
 	std::vector<ARRAY_INDEX> prog_order = symbolic_execution(to2);
+	delete to2;
 	//do some processing to perfrom task mapping, NoC route determination and add intermediate nodes
 	std::map<int, route_t> routes = graphProcessing(to, noc, prog_order);
 	generateEdgesMap(to, edge_list, noc);
@@ -1456,7 +1472,6 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	//				(b) destinations that receive data from multiple nodes.
 	//				(c) nodes that correspond to the same coniguration
 	//Use [1, origV] as it denotes the list of nodes in the original SDF
-	int origV = (int)dataflow->getVerticesCount();
 	for(int i = 1; i <= origV; i++)
 	{
 		auto src = to->getVertexById(i);
@@ -1471,6 +1486,8 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		print_graph(to);
 	}
 
+	//if (param_list.count("skip_merge") != 1)
+	if (false)
 	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++)
 	{
 		VERBOSE_INFO ("Call mergeConfigNodes");
@@ -1520,7 +1537,9 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	//std::cout << printers::GenerateDOT(to);
 	//Given the graph "to" the perform the Kperiodic scheduling and get "persched" in return
 	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, false, false);
-	scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, true, true);
+
+	scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling    (to , DO_BUFFERLESS) ;
+	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, DO_BUFFERLESS, STOP_AT_FIRST, GET_PREVIOUS);
 
 
 	VERBOSE_INFO("findHP");

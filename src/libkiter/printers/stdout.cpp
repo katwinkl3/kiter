@@ -198,7 +198,10 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
       
       returnStream << "  t_" << tid << " [" << std::endl;
       returnStream << "    shape=circle," << std::endl;
-      returnStream << "    label = \" " << dataflow->getVertexName(t) << "(id:" << tid << " duration:" << commons::toString(dataflow->getVertexPhaseDuration(t)) <<  ")" << "\"" << std::endl; // TODO print duration
+      returnStream << "    label = \" " << dataflow->getVertexName(t)
+    		  << "(id:" << tid
+    		  << " duration:" << commons::toString(dataflow->getVertexPhaseDuration(t))
+              << " reentrancy:" << commons::toString(dataflow->getReentrancyFactor(t)) <<  ")" << "\"" << std::endl; // TODO print duration
       
       returnStream  << "  ];" << std::endl;
       returnStream << std::endl;
@@ -211,7 +214,7 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
       ARRAY_INDEX edgeOut = dataflow->getVertexId(dataflow->getEdgeTarget(c));
       returnStream << "  t_" << edgeIn << " -> t_" << edgeOut << " [";
       returnStream << std::endl;
-      std::string bl = (dataflow->getEdgeType(c) == EDGE_TYPE::BUFFERLESS_EDGE)?"(B)":"";
+      std::string bl = dataflow->getEdgeTypeStr(c) ;
       returnStream << "    label=\"" << bl  << commons::toString(dataflow->getPreload(c)) << "\"," << std::endl;
       returnStream << "    headlabel=\"" <<  commons::toString(dataflow->getEdgeOutVector(c)) << "\"," << std::endl;
       returnStream << "    taillabel=\"" <<  commons::toString(dataflow->getEdgeInVector(c)) << "\"," << std::endl;

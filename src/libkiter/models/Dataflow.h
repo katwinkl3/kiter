@@ -461,7 +461,16 @@ public :
 
     inline void                 setEdgeType (const Edge e,
                                            const EDGE_TYPE t)    {boost::put(boost::edge_type, this->getG(), e.e, t);}
-        inline EDGE_TYPE           getEdgeType (const Edge e )    const     {return boost::get(get(boost::edge_type, this->getG()), e.e);}
+    inline EDGE_TYPE           getEdgeType (const Edge e )    const     {return boost::get(get(boost::edge_type, this->getG()), e.e);}
+    inline std::string           getEdgeTypeStr (const Edge e )    const     {
+    	EDGE_TYPE et = this->getEdgeType(e);
+    	switch (et) {
+    		case NORMAL_EDGE : return "NORMAL_EDGE";
+    		case  BUFFERLESS_EDGE : return "BUFFERLESS_EDGE";
+    		case CONFIG_EDGE : return "CONFIG_EDGE";
+    		default : return "UNKNOWN";
+    	}
+    }
 
 
     inline void                 setMapping (const Vertex t,

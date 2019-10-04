@@ -292,7 +292,6 @@ models::EventGraph* algorithms::generateKPeriodicEventGraph(models::Dataflow * c
 
     models::EventGraph * g = new models::EventGraph();
 
-    VERBOSE_DEBUG_ASSERT(dataflow->is_normalized() == false,"looser");
 
     /* generate nodes */
     {ForEachVertex(dataflow,t) {
@@ -1279,6 +1278,8 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
 void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const dataflow, parameters_list_t  parameters  ) {
 
 
+	  bool do_buffer_less =    (parameters.find("do_buffer_less") != parameters.end() ) ;
+
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
     bool verbose = false;
@@ -1314,7 +1315,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
     VERBOSE_INFO("KPeriodic EventGraph generation");
 
     //STEP 1 - Generate Event Graph
-    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector);
+    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector,do_buffer_less);
 
 
     VERBOSE_INFO("KPeriodic EventGraph generation Done");
