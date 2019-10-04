@@ -670,7 +670,7 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 
 //remove the current edge between nodes
 //add intermediate nodes based on the path between them
-std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, conflictEtype& returnValue, conflictConfigs& configs)
+std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, conflictEtype& returnValue, conflictConfigs& configs, bool addConfigNode)
 {
 	std::vector<Vertex> new_vertices;
 	// We store infos about edge to be deleted
@@ -721,7 +721,7 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 
 
 		//keep track of the 
-		if(key_str != "")
+		if(addConfigNode && key_str != "")
 		{
 			get<2>(configs[key_str][configs[key_str].size()-1]) = d->getVertexId(middle);
 			key_str = "";
@@ -746,7 +746,7 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 
 		source_vtx = middle;
 
-		if(list_idx <= (int)list.size() - 2)
+		if(addConfigNode && list_idx <= (int)list.size() - 2)
 		{
 			std::stringstream config_key, config_name;
 			config_key << list[list_idx] << "_" << list[list_idx+1];
@@ -896,7 +896,7 @@ void addIntermediateNodes(models::Dataflow* dataflow, NoC* noc, conflictEtype& r
 	generateEdgesMap(dataflow, edge_list, noc);
 
 	for(auto it:routes)
-		addPathNode(dataflow, edge_list[it.first], it.second, returnValue, configs);
+		addPathNode(dataflow, edge_list[it.first], it.second, returnValue, configs, false);
 }
 
 
@@ -1289,8 +1289,20 @@ void checkForConflicts(conflictEtype& conflictEdges, models::Dataflow* to, TIME_
 }
 
 
-void findHP(models::Dataflow* to, scheduling_t& persched, TIME_UNIT* HP, unsigned long* LCM)
+void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched, TIME_UNIT* HP, unsigned long* LCM)
 {
+	//fins ratio between orig and new graph for the nodes
+	float ratio = -1;
+	VERBOSE_ASSERT(computeRepetitionVector(orig),"inconsistent graph");
+	{ForEachVertex(orig,orig_v) {
+		auto orig_vid = orig->getVertexId(orig_v);
+                auto to_v = to->getVertexById(orig_vid);
+                float new_ratio = (float) to->getNi(to_v) / orig->getNi(orig_v);
+		if(ratio != -1 && ratio != new_ratio)
+			std::cout << "NODE " << to->getVertexName(to_v) << ",ni=" <<  to->getNi(to_v) << " failed\n";
+		ratio = new_ratio;
+	}}
+
 	*HP = 0.0;
 	*LCM = 1;
 	for (auto  key : persched) {
@@ -1299,7 +1311,6 @@ void findHP(models::Dataflow* to, scheduling_t& persched, TIME_UNIT* HP, unsigne
 		*HP =    ( persched[task].first * to->getNi(task_vtx) ) / (persched[task].second.size()) ;
 		VERBOSE_INFO ( "Task " <<  to->getVertexName(task_vtx) <<  " : duration=" << to->getVertexTotalDuration(task_vtx) <<  " period=" <<  persched[task].first << " HP=" << *HP << " Ni=" << to->getNi(task_vtx)
 				<< " starts=[ " << commons::toString(persched[task].second) << "]");
-
 		*LCM = boost::math::lcm(*LCM, to->getNi(task_vtx));
 
 	}
@@ -1370,7 +1381,7 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 
 	unsigned long LCM;
 	TIME_UNIT HP;
-	findHP(to, persched, &HP, &LCM);
+	findHP(dataflow, to, persched, &HP, &LCM);
 	checkForConflicts(conflictEdges, to, HP, persched, dataflow);
 }
 
@@ -1436,9 +1447,10 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		Edge e = edge_list[it.first];
 		Vertex esrc = to->getEdgeSource(e);
 		VERBOSE_INFO("replace edge " << e << "by a sequence");
-		addPathNode(to, e, it.second, conflictEdges, configs);
+		addPathNode(to, e, it.second, conflictEdges, configs, false);
 		print_graph(to);
 	}
+
 
 	//resolve cnflicts for all the  (a) sources that sent data to multiple nodes. 
 	//				(b) destinations that receive data from multiple nodes.
@@ -1451,13 +1463,14 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		resolveSrcConflicts(to, src, origV);
 		print_graph(to);
 	}
+
 	for(int i = 1; i <= origV; i++)
 	{
-		auto src = to->getVertexById(i);
-		resolveDestConflicts(to, src, origV);
+		auto dest = to->getVertexById(i);
+		resolveDestConflicts(to, dest, origV);
 		print_graph(to);
 	}
-
+/*
 	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++)
 	{
 		VERBOSE_INFO ("Call mergeConfigNodes");
@@ -1466,7 +1479,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 	}
 	print_graph(to);
-
+*/
 	//Remove conflicts at source and destination router links as a big node has been created
 	for(auto it:routes)
 	{
@@ -1513,7 +1526,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	VERBOSE_INFO("findHP");
 	unsigned long LCM;
 	TIME_UNIT HP;
-	findHP(to, persched, &HP, &LCM);
+	findHP(dataflow, to, persched, &HP, &LCM);
 	checkForConflicts(conflictEdges, to, HP, persched, dataflow);
 
 	VERBOSE_INFO ( "LCM=" << LCM );
