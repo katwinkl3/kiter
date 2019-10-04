@@ -27,8 +27,8 @@
 #include <commons/SDF3Wrapper.h>
 
 static bool DO_BUFFERLESS = false;
-static bool STOP_AT_FIRST = false;
-static bool GET_PREVIOUS = false;
+//static bool STOP_AT_FIRST = false;
+//static bool GET_PREVIOUS = false;
 
 //vector stores the cycle length in each of the vertices
 std::vector< std::vector<unsigned int> > cycles;
@@ -57,7 +57,10 @@ void print_graph (models::Dataflow * to) {
 	myfile2 << printers::GenerateDOT(to);
 	myfile2.close();
 	std::string cmd = "dot software_noc_" + commons::toString(counter) + ".dot -T pdf -o software_noc_" + commons::toString(counter) + ".pdf";
-	system(cmd.c_str());
+	auto out_err = system(cmd.c_str());
+	if(out_err)
+		VERBOSE_INFO ("System call returns error\n");
+
 	commons::writeSDF3File("software_noc_" + commons::toString(counter) + ".xml", to);
 	to->reset_computation();
 	scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling    (to , DO_BUFFERLESS) ;
@@ -1309,7 +1312,7 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 	{ForEachVertex(orig,orig_v) {
 		auto orig_vid = orig->getVertexId(orig_v);
                 auto to_v = to->getVertexById(orig_vid);
-                float new_ratio = (float) to->getNi(to_v) / orig->getNi(orig_v);
+                float new_ratio = (float) to->getNi(to_v) / (float)orig->getNi(orig_v);
 		if(ratio != -1 && ratio != new_ratio)
 			std::cout << "NODE " << to->getVertexName(to_v) << ",ni=" <<  to->getNi(to_v) << " failed\n";
 		ratio = new_ratio;
@@ -1418,12 +1421,77 @@ bool algorithms::isConflictPresent(LARGE_INT HP, TIME_UNIT si, LARGE_INT ni, TIM
 	}
 }
 
+struct phase_info_struct
+{
+	int thds;
+	TIME_UNIT exec_time;
+	int send_pkts;
+	std::string name;
+};
+typedef struct phase_info_struct phase_info;
+phase_info getPhaseStruct(int t, TIME_UNIT e, int p, std::string n)
+{
+	phase_info ret{t, e, p, n};
+	return ret;
+}
+
+void algorithms::generate_lte_sdf(models::Dataflow* const dataflow, parameters_list_t   param_list)
+{
+	double yscale = 1;
+	if (param_list.count("yscale") == 1) yscale = std::stod(param_list["yscale"]);
+	models::Dataflow to;
+
+	std::vector<phase_info> phases;
+	phases.push_back( getPhaseStruct(64, 392504, 16, "miwf"));
+	phases.push_back( getPhaseStruct(75, 230635, 32, "cwac"));
+	phases.push_back( getPhaseStruct(24, 353448, 32, "ifft"));
+	phases.push_back( getPhaseStruct(75, 267559, 32, "dd"));
+
+	std::vector< std::vector<ARRAY_INDEX> > vertex_info;
+	for(unsigned int i = 0; i < phases.size(); i++)
+	{
+		auto ph_time = phases[i].exec_time;
+		int ph_thds = phases[i].thds;
+		std::string ph_name = phases[i].name;
+		std::vector<ARRAY_INDEX> temp_vertex_list;
+
+		for(int j = 0; j < ph_thds; j++)
+		{
+			auto new_vtx = to.addVertex();
+			temp_vertex_list.push_back( to.getVertexId(new_vtx) );
+			std::stringstream ss;
+			ss << ph_name << "_" << j;
+
+			to.setVertexName(new_vtx,ss.str());
+			to.setPhasesQuantity(new_vtx,1); // number of state for the actor, only one in SDF
+			to.setVertexDuration(new_vtx,{ ph_time }); // is specify for every state , only one for SDF.
+			to.setReentrancyFactor(new_vtx,1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
+		}
+		vertex_info.push_back(temp_vertex_list);
+	}
+
+	for(unsigned int i = 0; i < phases.size() - 1; i++)
+	{
+		auto pkts = phases[i].send_pkts;
+		for(unsigned int j = 0; j < vertex_info[i].size(); j++)
+		{
+			for (unsigned int k = 0; k < vertex_info[i+1].size(); k++)
+			{
+				auto src = to.getVertexById( vertex_info[i][j] );
+				auto dst = to.getVertexById( vertex_info[i+1][k] );
+				auto e1 = to.addEdge(src, dst);
+				to.setEdgeInPhases(e1,{pkts});
+				to.setEdgeOutPhases(e1,{pkts}); // and the consumption rate (as many rates as states for the associated task)
+				to.setPreload(e1,0);  // preload is M0
+			}
+		}
+	}
+
+	commons::writeSDF3File("lte_sdf.xml", &to);
+}
 
 void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, parameters_list_t   param_list)
 {
-
-
-
 	double yscale = 1;
 	if (param_list.count("yscale") == 1) yscale = std::stod(param_list["yscale"]);
 
@@ -1438,10 +1506,6 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	noc->generateShortestPaths();
 
 	int origV = (int)dataflow->getVerticesCount();
-
-
-
-
 
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);

@@ -90,6 +90,8 @@ std::vector<algo_t> algorithmslist =               {
 		    algorithms::symbolic_execution},
 		      { "SoftwareControlledNoC"                       , "Perform NoC scheduling after deciding task mapping and routing.",
 		    algorithms::software_noc},
+			{ "genLTESDF" , "generate LTE SDF.",
+			algorithms::generate_lte_sdf},
 		      { "SoftwareControlledNoCBufferless"                       , "Perform Bufferless NoC scheduling after deciding task mapping and routing.",
 		    algorithms::software_noc_bufferless},
 		      { "SymbolicExecutionWP"                       , "Execute task in ASAP fashion and print out the scheduling.",
