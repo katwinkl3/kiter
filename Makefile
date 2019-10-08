@@ -33,7 +33,7 @@ all : build
 build: release_build debug_build
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 clean:
-	rm -Rf release debug
+	rm -Rf release debug *.lp *.mps 
 
 benchmark :  sdf.log  csdf.log csdf_sized.log
 
@@ -120,6 +120,16 @@ debug/Makefile: CMakeLists.txt
 	@mkdir -p debug
 	@pushd debug && cmake -D CMAKE_BUILD_TYPE=Debug .. && popd
 
-
+test:
+	./release/bin/kiter -f ./benchmark/21.xml -a KPeriodicThroughput -v 5
+	./release/bin/kiter -f ./benchmark/BlackScholes.xml -a KPeriodicThroughput -v 5
+	./release/bin/kiter -f ./benchmark/Echo.xml -a KPeriodicThroughput -v 5
+	./release/bin/kiter -f ./benchmark/expansion_paper_norm_sdf.xml -a KPeriodicThroughput -v 5
+	./release/bin/kiter -f ./benchmark/expansion_paper_sdf.xml -a KPeriodicThroughput -v 5
+	./release/bin/kiter -f ./benchmark/H264.xml -a KPeriodicThroughput -v 5
+	./release/bin/kiter -f ./benchmark/JPEG2000.xml -a KPeriodicThroughput -v 5
+	./release/bin/kiter -f ./benchmark/new_benchmark.xml -a KPeriodicThroughput -v 5
+	./release/bin/kiter -f ./benchmark/Pdectect.xml -a KPeriodicThroughput -v 5
+	./release/bin/kiter -f ./benchmark/sample.xml -a KPeriodicThroughput -v 5
 
 .PHONY : release_build debug_build all clean tests test benchmark

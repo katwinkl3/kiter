@@ -684,6 +684,7 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 //add intermediate nodes based on the path between them
 std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, conflictEtype& returnValue, conflictConfigs& configs, bool addConfigNode)
 {
+	d->reset_computation();
 	std::vector<Vertex> new_vertices;
 	// We store infos about edge to be deleted
 	auto source_vtx = d->getEdgeSource(c);
@@ -854,6 +855,7 @@ Vertex removeCycleEdges(models::Dataflow* to, std::vector<ARRAY_INDEX>& prog_ord
 std::map<int, route_t> graphProcessing(models::Dataflow* dataflow, NoC* noc, std::vector<ARRAY_INDEX>& prog_order)
 {
 	models::Dataflow* to = new models::Dataflow(*dataflow);
+	to->reset_computation();
 	bool myflag = false;
 	bool myflag2 = false;
 	Vertex top;
@@ -893,6 +895,7 @@ std::map<int, route_t> graphProcessing(models::Dataflow* dataflow, NoC* noc, std
 	printSCCs(to, start);
 
 	models::Dataflow* to2 = new models::Dataflow(*dataflow);
+	to2->reset_computation();
 	start = removeCycleEdges(to2, prog_order);
 
 	taskAndNoCMapping(dataflow, to2, start, noc, routes/*, prog_order*/);
@@ -1230,6 +1233,8 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 
 void checkForConflicts(conflictEtype& conflictEdges, models::Dataflow* to, TIME_UNIT HP, scheduling_t& persched, models::Dataflow* original)
 {
+	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
+	VERBOSE_ASSERT(computeRepetitionVector(original),"inconsistent graph");
 	int total_conflict = 0;
 	for (auto  key : conflictEdges) {
 		auto edge_id = key.first;
@@ -1309,6 +1314,7 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 	//fins ratio between orig and new graph for the nodes
 	float ratio = -1;
 	VERBOSE_ASSERT(computeRepetitionVector(orig),"inconsistent graph");
+	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 	{ForEachVertex(orig,orig_v) {
 		auto orig_vid = orig->getVertexId(orig_v);
                 auto to_v = to->getVertexById(orig_vid);
@@ -1335,8 +1341,6 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 
 void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list_t param_list)
 {
-
-	print_graph(dataflow);
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);
 
@@ -1367,7 +1371,6 @@ void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list
 		addIntermediateNodes(to, noc, conflictEdges, routes, configs);
 	}
 
-	print_graph(to);
 
 	double xscale  = 1;
 	double yscale = 1;
@@ -1435,7 +1438,7 @@ phase_info getPhaseStruct(int t, TIME_UNIT e, int p, std::string n)
 	return ret;
 }
 
-void algorithms::generate_lte_sdf(models::Dataflow* const dataflow, parameters_list_t   param_list)
+void algorithms::generate_lte_sdf(models::Dataflow* const , parameters_list_t   param_list)
 {
 	double yscale = 1;
 	if (param_list.count("yscale") == 1) yscale = std::stod(param_list["yscale"]);

@@ -139,7 +139,7 @@ scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<
         TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
         scheduling_result[dataflow->getVertexId(v)].first = period;
 
-        VERBOSE_INFO("Task " << dataflow->getVertexName(v) << " " << period  );
+        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " " << period  );
 
     }}
 
@@ -149,7 +149,7 @@ scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<
         TIME_UNIT start = eg->getStartingTime(e);
         Vertex v = dataflow->getVertexById(ti);
         scheduling_result[dataflow->getVertexId(v)].second.push_back( start );
-        VERBOSE_INFO("Task " << dataflow->getVertexName(v) << " " << start  );
+        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " " << start  );
 
 
     }}

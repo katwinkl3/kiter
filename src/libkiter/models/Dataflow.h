@@ -284,7 +284,7 @@ public :
 	void set_normalize() {normalizationisdone = true;}
 	void set_repetition_vector() {repetitionvectorisdone = true;}
 
-	void reset_computation() {repetitionvectorisdone = false; normalizationisdone = false; readonly = false;}
+	void reset_computation() {repetitionvectorisdone = false; normalizationisdone = false; readonly = false; }
 
 	bool is_read_only() const {return readonly;}
 	bool is_normalized() const {return normalizationisdone ;}
@@ -628,7 +628,7 @@ public :
     inline TOKEN_UNIT computeFineGCD(Edge c)  {
 
     // compute Channel GCD (multiple commun à toutes les valeurs wa1 wa2 .. va1 va2...)
-    TOKEN_UNIT channelGCD = getEdgeIn(c);
+    TOKEN_UNIT channelGCD = getEdgeInPhase(c,1);
 
 
     for (EXEC_COUNT k = 1 ; k <= this->getEdgeInPhasesCount(c) ; k++) {

@@ -176,6 +176,8 @@ void  printers::printGraphAsKiterScript (models::Dataflow* const  dataflow, para
 
 std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
 
+    VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+
   std::ostringstream returnStream;
   
   VERBOSE_DEBUG("Start DOT generation");
@@ -200,8 +202,10 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
       returnStream << "    shape=circle," << std::endl;
       returnStream << "    label = \" " << dataflow->getVertexName(t)
     		  << "(id:" << tid
+    		  << " Phases:" << commons::toString(dataflow->getPhasesQuantity(t))
+    		  << " Ni:" << commons::toString(dataflow->getNi(t))
     		  << " duration:" << commons::toString(dataflow->getVertexPhaseDuration(t))
-              << " reentrancy:" << commons::toString(dataflow->getReentrancyFactor(t)) <<  ")" << "\"" << std::endl; // TODO print duration
+              << " reentrancy:" << commons::toString(dataflow->getReentrancyFactor(t)) <<  ")" << "\"" << std::endl;
       
       returnStream  << "  ];" << std::endl;
       returnStream << std::endl;
@@ -215,7 +219,8 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
       returnStream << "  t_" << edgeIn << " -> t_" << edgeOut << " [";
       returnStream << std::endl;
       std::string bl = dataflow->getEdgeTypeStr(c) ;
-      returnStream << "    label=\"" << bl  << commons::toString(dataflow->getPreload(c)) << "\"," << std::endl;
+      ARRAY_INDEX eid = dataflow->getEdgeId(c) ;
+      returnStream << "    label=\"" << bl << " id:" << eid << " preload:"  << commons::toString(dataflow->getPreload(c)) << "\"," << std::endl;
       returnStream << "    headlabel=\"" <<  commons::toString(dataflow->getEdgeOutVector(c)) << "\"," << std::endl;
       returnStream << "    taillabel=\"" <<  commons::toString(dataflow->getEdgeInVector(c)) << "\"," << std::endl;
       returnStream << " ] ;" << std::endl;
