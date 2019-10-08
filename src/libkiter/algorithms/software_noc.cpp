@@ -1,5 +1,5 @@
 /*
- * kperiodic.cpp
+ * software_noc.cpp
  *
  *  Created on: 9 mai 2013
  *      Author: toky
@@ -1513,6 +1513,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);
 
+	algorithms::scheduling::CSDF_KPeriodicScheduling    (to , DO_BUFFERLESS) ;
 	print_graph(to);
 	std::map<int, Edge> edge_list;
 

@@ -400,26 +400,7 @@ public :
             }}
 
 
-        //// call to the algorithm
-        //bool rr = bellman_ford_shortest_paths(this->getG(),
-        //        nb_vertices,
-        //        weight_pmap,
-        //        boost::dummy_property_map(),
-        //        distance_pmap,
-        //        boost::closed_plus<TIME_UNIT>(),
-        //        std::less<TIME_UNIT>(),
-        //        boost::bellman_visitor<>());
-        //
-        //
-        //bool r = bellman_ford_shortest_paths(
-        //        this->getG(),
-        //        nb_vertices,
-        //        weight_map(weight_pmap).
-        //        distance_map(distance_pmap).
-        //        predecessor_map(&parent[0])
-        //);
 
-        //if ( rr !=r ) exit(0);
 
         TIME_UNIT min_time = (std::numeric_limits<TIME_UNIT>::max)();
 

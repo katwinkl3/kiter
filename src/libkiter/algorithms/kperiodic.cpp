@@ -691,18 +691,19 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
                     const TOKEN_UNIT alphamax =   (rpimax >= 0) ? ( lpimax - rpimax ) : ( lpimax - rpimax - gcdz );
                     const TOKEN_UNIT lpimin =    (std::max((TOKEN_UNIT)0, wak - vakp) - mop - normdapk + normdamkp) ;
 
-                    if (lpimin > alphamax ) continue; // ca ne fera qu'empirer
+                    //if (lpimin > alphamax ) continue; // ca ne fera qu'empirer
 
                     const TOKEN_UNIT rpimin =     lpimin % gcdz;
                     const TOKEN_UNIT alphamin =   (rpimin <= 0) ? ( lpimin - rpimin ) : ( lpimin - rpimin + gcdz );
 #endif
 
-
+                    models::EventGraphVertex target_event = g->getEventGraphVertex(target_id,pj,kj);
+                    VERBOSE_DEBUG("  stepa=" << stepa);
+                    VERBOSE_DEBUG("  ki=" << ki<<" kj=" << kj << " (" <<  source_event  << "," << target_event  << ")");
+                    VERBOSE_DEBUG("  alphamin=" << alphamin <<"   alphamax=" << alphamax );
                     if (alphamin <= alphamax) {
 
-                        models::EventGraphVertex target_event = g->getEventGraphVertex(target_id,pj,kj);
-                        VERBOSE_DEBUG("  ki=" << ki<<" kj=" << kj << " (" <<  source_event  << "," << target_event  << ")");
-                        VERBOSE_DEBUG("  alphamin=" << alphamin <<"   alphamax=" << alphamax );
+
                         TIME_UNIT w = ((TIME_UNIT) alphamax * source_phase_count * maxki ) / ( (TIME_UNIT) Wc  * (TIME_UNIT) dataflow->getNi(source) );
                         VERBOSE_DEBUG("   w = (" << alphamax << " * " << dataflow->getPhasesQuantity(source) * maxki << ") / (" << Wc << " * " << dataflow->getNi(source) / maxki << ")");
                         VERBOSE_DEBUG("   d = (" << d << ")");
