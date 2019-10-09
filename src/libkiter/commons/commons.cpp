@@ -7,6 +7,7 @@
 
 #include <commons/commons.h>
 #include <commons/verbose.h>
+#include <tuple>
 
 
 
@@ -29,9 +30,47 @@ TIME_UNIT roundIt(TIME_UNIT val,TIME_UNIT p) {
    s>>val;
    return val;
 }
+template<>
+std::string toString< std::vector<TOKEN_UNIT> >(const std::vector<TOKEN_UNIT>& v)
+{
+        return commons::join(v.begin(),v.end(),std::string(","));
+}
 
 template<>
+std::string toString< std::vector < std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> > >(const std::vector < std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> >& v)
+{
+	 std::stringstream s;
+	for (auto myt : v) {
+		s << commons::toString(myt) + " ";
+	}
+	return s.str();
+}
+
+
+
+template<>
+std::string toString< std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> >(const std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX>& v)
+{
+        return "<" + commons::toString(std::get<0>(v)) +  "," +  commons::toString(std::get<1>(v)) +  "," +  commons::toString(std::get<2>(v)) +  "," + ">";
+}
+
+template<>
+std::string toString< std::vector<ARRAY_INDEX> >(const std::vector<ARRAY_INDEX>& v)
+{
+        return commons::join(v.begin(),v.end(),std::string(","));
+}
+template<>
+std::string toString< std::vector<long double> >(const std::vector<long double>& v)
+{
+        return commons::join(v.begin(),v.end(),std::string(","));
+}
+template<>
 std::string toString< std::vector<unsigned int> >(const std::vector<unsigned int>& v)
+{
+        return commons::join(v.begin(),v.end(),std::string(","));
+}
+template<>
+std::string toString< std::vector<int> >(const std::vector<int>& v)
 {
         return commons::join(v.begin(),v.end(),std::string(","));
 }

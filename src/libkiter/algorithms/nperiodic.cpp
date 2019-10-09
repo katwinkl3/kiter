@@ -37,7 +37,13 @@ void algorithms::print_Nperiodic_eventgraph    (models::Dataflow* const  dataflo
 models::EventGraph* algorithms::generateNPeriodicEventGraph               (models::Dataflow *  const dataflow) {
 
 	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-	VERBOSE_DEBUG_ASSERT(dataflow->is_normalized() == false,"looser");
+	VERBOSE_DEBUG_ASSERT(dataflow->is_normalized() == false,"Graph should not be normalized.");
+
+
+	  {ForEachVertex(dataflow,t) {
+	  	  VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
+	  }}
+
 
 	models::EventGraph * eg = new models::EventGraph();
 
@@ -434,7 +440,7 @@ void algorithms::KPeriodic_memory   (models::Dataflow* const  dataflow,  std::ma
         const std::string  name   = dataflow->getVertexName(t);
         const EXEC_COUNT max_k    = kvector[t] ;
         const TIME_UNIT  mu_i     = ((TIME_UNIT) max_k * (TIME_UNIT) (PERIOD)) / (TIME_UNIT) dataflow->getNi(t);
-        VERBOSE_DEBUG( "Mu_" << name << " = " << mu_i  << " lti = " << dataflow->getVertexDuration(t) << "Ni = " << dataflow->getNi(t) << "Phi=" << dataflow->getPhasesQuantity(t));
+        VERBOSE_DEBUG( "Mu_" << name << " = " << mu_i  << " lti = " << commons::toString( dataflow->getVertexPhaseDuration(t)) << "Ni = " << dataflow->getNi(t) << "Phi=" << dataflow->getPhasesQuantity(t));
 
         // constraintes k --> k + 1
 

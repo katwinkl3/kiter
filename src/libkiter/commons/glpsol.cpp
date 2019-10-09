@@ -423,13 +423,18 @@ bool            GLPSol::solveWith      () {
 }
 bool            GLPSol::solveWithGurobi      () {
 #ifdef __GUROBILIB__
+
+	VERBOSE_ILP("Gurobi: Preprocess");
 	generateGLPKProblem();
+
 
 	// Ecriture du probleme
 	if (VERBOSE_IS_ILP())   writeProblem();
 	const std::string mpsname = commons::toString<const char*>(glp_get_prob_name(lp)) + ".mps";
 
 	glp_write_mps (lp,GLP_MPS_DECK,0,mpsname.c_str());
+
+	VERBOSE_ILP("Gurobi: Read");
 
 	static GRBEnv *env = new GRBEnv();
 	GRBVar *vars = 0;
@@ -442,6 +447,8 @@ bool            GLPSol::solveWithGurobi      () {
 	}
 
 	model.set(GRB_IntParam_Presolve, 1);
+	VERBOSE_ILP("Gurobi: Optimize");
+
 	model.optimize();
 
 	int optimstatus = model.get(GRB_IntAttr_Status);
@@ -469,13 +476,14 @@ bool            GLPSol::solveWithGurobi      () {
 	vars = model.getVars();
 
 
-	      for (int iColumn=0;iColumn<numvars;iColumn++) {
+	VERBOSE_ILP("Gurobi: feed columns");
+	for (int iColumn=0;iColumn<numvars;iColumn++) {
 	    	  GRBVar v = vars[iColumn];
-	      		const char * colname =  glp_get_col_name(lp,iColumn + 1);
-	      		columnsMap[colname].found  = v.get(GRB_DoubleAttr_Xn);
-	      		columnsMap[colname].Ifound = v.get(GRB_DoubleAttr_Xn);
+	      	  const char * colname =  glp_get_col_name(lp,iColumn + 1);
+	      	  columnsMap[colname].found  = v.get(GRB_DoubleAttr_X);
+	      	  columnsMap[colname].Ifound = v.get(GRB_DoubleAttr_X);
 
-	      	}
+	}
 
 	delete[] vars;
 	return true;

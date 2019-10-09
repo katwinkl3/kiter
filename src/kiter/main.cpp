@@ -43,16 +43,23 @@ inline double tock() {
 
 std::vector<algo_t> algorithmslist =               {
 
-		{ "bufferless"           , "no effect",
-				algorithms::scheduling::KPeriodic_scheduling_bufferless} ,
-		{ "sdfbufferless"           , "no effect",
-				algorithms::scheduling::SDF_KPeriodic_scheduling_bufferless} ,
+
 		{ "PrintXML"                       , "Print XML file",
 				printers::printXML},
+
+
+
 		{ "randomMapping"           , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.",
 				algorithms::mapping::randomMapping} ,
 		{ "moduloMapping"           , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.",
 				algorithms::mapping::moduloMapping} ,
+
+
+				{ "BufferlessKPeriodicScheduling"           , "Run Bufferless Kperiodic",
+								algorithms::scheduling::bufferlessKPeriodicScheduling} ,
+		{ "SDFKPeriodic"           , "Build an Exansion graph given a set of value K (1 by default), and compute its MCRP.",
+						algorithms::scheduling::SDFKPeriodicScheduling} ,
+
 		{ "PrintKiter"           , "Generate C++ code to internally generate the graph inside Kiter.",
 				printers::printGraphAsKiterScript} ,
 		{ "PrintKPeriodicExpansionGraph"           , "Print the Expansion graph for the throughput evaluation of CSDF by K-Periodic scheduling. You can specify values for K.",
@@ -83,8 +90,10 @@ std::vector<algo_t> algorithmslist =               {
 		    algorithms::symbolic_execution},
 		      { "SoftwareControlledNoC"                       , "Perform NoC scheduling after deciding task mapping and routing.",
 		    algorithms::software_noc},
-		      { "SoftwareControlledNoCBuufferless"                       , "Perform Bufferless NoC scheduling after deciding task mapping and routing.",
-		    algorithms::softwarenoc_bufferless},
+			{ "genLTESDF" , "generate LTE SDF.",
+			algorithms::generate_lte_sdf},
+		      { "SoftwareControlledNoCBufferless"                       , "Perform Bufferless NoC scheduling after deciding task mapping and routing.",
+		    algorithms::software_noc_bufferless},
 		      { "SymbolicExecutionWP"                       , "Execute task in ASAP fashion and print out the scheduling.",
 		    algorithms::symbolic_execution_with_packets},
 			{ "PeriodicSizing"                  , "Minimal Buffer size estimation by periodic scheduling method.",

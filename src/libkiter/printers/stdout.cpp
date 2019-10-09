@@ -41,7 +41,7 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
   	  VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
   	  auto Ni = dataflow->getNi(t);
   	  auto period = periodic_scheduling[t].first;
-  	  auto duration = dataflow->getVertexDuration(t);
+  	  auto duration = dataflow->getVertexTotalDuration(t);
   	  auto starts = periodic_scheduling[t].second;
 
         for (EXEC_COUNT iter = 0 ; iter < (Ni/starts.size()) ; iter++) {
@@ -57,7 +57,7 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
 	  VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
 	  auto Ni = dataflow->getNi(t);
 	  auto period = periodic_scheduling[t].first;
-	  auto duration = dataflow->getVertexDuration(t);
+	  auto duration = dataflow->getVertexTotalDuration(t);
 	  auto starts = periodic_scheduling[t].second;
 
 	  double current_task_y_pos = yscale * -20 * idx ;
@@ -176,8 +176,12 @@ void  printers::printGraphAsKiterScript (models::Dataflow* const  dataflow, para
 
 std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
 
+    VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+
   std::ostringstream returnStream;
   
+  VERBOSE_DEBUG("Start DOT generation");
+
   
   returnStream << "// Auto-generate by Kiter" << std::endl;
   returnStream << "//   use this dot file with circo for an optimal visu\n" << std::endl;
@@ -196,7 +200,12 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
       
       returnStream << "  t_" << tid << " [" << std::endl;
       returnStream << "    shape=circle," << std::endl;
-      returnStream << "    label = \" " << dataflow->getVertexName(t) << "(id:" << tid << " duration:" << dataflow->getVertexDuration(t) << ")" << "\"" << std::endl;
+      returnStream << "    label = \" " << dataflow->getVertexName(t)
+    		  << "(id:" << tid
+    		  << " Phases:" << commons::toString(dataflow->getPhasesQuantity(t))
+    		  << " Ni:" << commons::toString(dataflow->getNi(t))
+    		  << " duration:" << commons::toString(dataflow->getVertexPhaseDuration(t))
+              << " reentrancy:" << commons::toString(dataflow->getReentrancyFactor(t)) <<  ")" << "\"" << std::endl;
       
       returnStream  << "  ];" << std::endl;
       returnStream << std::endl;
@@ -209,8 +218,11 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
       ARRAY_INDEX edgeOut = dataflow->getVertexId(dataflow->getEdgeTarget(c));
       returnStream << "  t_" << edgeIn << " -> t_" << edgeOut << " [";
       returnStream << std::endl;
-      returnStream << "    headlabel=\"" << dataflow->getEdgeOut(c) << "\"," << std::endl;
-      returnStream << "    taillabel=\"" << dataflow->getEdgeIn(c) << "\"," << std::endl;
+      std::string bl = dataflow->getEdgeTypeStr(c) ;
+      ARRAY_INDEX eid = dataflow->getEdgeId(c) ;
+      returnStream << "    label=\"" << bl << " id:" << eid << " preload:"  << commons::toString(dataflow->getPreload(c)) << "\"," << std::endl;
+      returnStream << "    headlabel=\"" <<  commons::toString(dataflow->getEdgeOutVector(c)) << "\"," << std::endl;
+      returnStream << "    taillabel=\"" <<  commons::toString(dataflow->getEdgeInVector(c)) << "\"," << std::endl;
       returnStream << " ] ;" << std::endl;
     }}
   returnStream << std::endl;
@@ -228,7 +240,10 @@ void printers::printGraph    (models::Dataflow* const  dataflow, parameters_list
 
 }
 void printers::printXML    (models::Dataflow* const  dataflow, parameters_list_t params ) {
-	std::string filename = params["filename"];
+
+	static const std::string filename_argument = "filename";
+	VERBOSE_ASSERT (params.find(filename_argument) != params.end() , "Please provide a filename using -pfilename=X.");
+	std::string filename = params[filename_argument];
 	commons::writeSDF3File(filename, dataflow );
 }
 

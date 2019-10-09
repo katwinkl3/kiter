@@ -64,6 +64,7 @@ public :
     EXEC_COUNT  inline  getTaskPhase() const {return this->_p;};
     EXEC_COUNT  inline  getTaskOc() const {return this->_n;};
     SchedulingEvent(ARRAY_INDEX t,EXEC_COUNT p,EXEC_COUNT n) : _t(t) , _p(p) , _n(n) {}
+    SchedulingEvent(ARRAY_INDEX t,EXEC_COUNT n) : _t(t) , _p(1) , _n(n) {}
     std::string toString() const {return commons::toString<ARRAY_INDEX>(_t) + ',' + commons::toString<EXEC_COUNT>(_p) + ',' + commons::toString<EXEC_COUNT>(_n);}
     friend  bool operator==(const SchedulingEvent& lh, const SchedulingEvent& rh) ;
     friend  bool operator!=(const SchedulingEvent& lh, const SchedulingEvent& rh) ;
@@ -174,7 +175,15 @@ private :
 private :
     std::vector< std::vector <std::vector <EventGraphVertex> > > schedulingEvent2Vertex;
 public :
+    inline EventGraphVertex getEventGraphVertex(ARRAY_INDEX taskId, EXEC_COUNT execution) {
+    	return getEventGraphVertex(taskId, 1, execution) ;
+    }
     inline EventGraphVertex getEventGraphVertex(ARRAY_INDEX taskId, EXEC_COUNT phase, EXEC_COUNT execution) {
+
+    	VERBOSE_ASSERT(schedulingEvent2Vertex.size() > taskId, "Task id " << taskId << " is not within the EventGraph");
+    	VERBOSE_ASSERT(schedulingEvent2Vertex[taskId].size() > phase, "Task phase " << phase << " is not within the EventGraph for task " << taskId);
+    	VERBOSE_ASSERT(schedulingEvent2Vertex[taskId][(unsigned int) phase].size() > execution, "Task execution " << execution << " is not within the EventGraph for task " << taskId << " with phase " << phase);
+
         EventGraphVertex res= schedulingEvent2Vertex[taskId][(unsigned int) phase][(unsigned int) execution];
         VERBOSE_DEBUG_ASSERT(getTaskId(res),   taskId);
         VERBOSE_DEBUG_ASSERT(getPhase(res),phase);
@@ -353,7 +362,7 @@ public :
     };
     bool  computeStartingTime (TIME_UNIT fr ) {
         TIME_UNIT omega = 1 / fr;
-        VERBOSE_INFO("minimalDistances (" << omega << ")");
+        VERBOSE_DEBUG("minimalDistances (" << omega << ")");
 
         const EXEC_COUNT nb_vertices = this->getEventCount();
 
@@ -391,26 +400,7 @@ public :
             }}
 
 
-        //// call to the algorithm
-        //bool rr = bellman_ford_shortest_paths(this->getG(),
-        //        nb_vertices,
-        //        weight_pmap,
-        //        boost::dummy_property_map(),
-        //        distance_pmap,
-        //        boost::closed_plus<TIME_UNIT>(),
-        //        std::less<TIME_UNIT>(),
-        //        boost::bellman_visitor<>());
-        //
-        //
-        //bool r = bellman_ford_shortest_paths(
-        //        this->getG(),
-        //        nb_vertices,
-        //        weight_map(weight_pmap).
-        //        distance_map(distance_pmap).
-        //        predecessor_map(&parent[0])
-        //);
 
-        //if ( rr !=r ) exit(0);
 
         TIME_UNIT min_time = (std::numeric_limits<TIME_UNIT>::max)();
 
@@ -422,12 +412,12 @@ public :
             this->setStartingTime(e , this->getStartingTime(e)  - min_time);
         }}
         {ForEachConstraint(this,c)   {
-            VERBOSE_INFO("distance(" << this->getConstraint(c).toString() << ") = " << this->getFlow(c));
+        	VERBOSE_DEBUG("distance(" << this->getConstraint(c).toString() << ") = " << this->getFlow(c));
 
         }}
-        VERBOSE_INFO("min_time = " << min_time);
+        VERBOSE_DEBUG("min_time = " << min_time);
         {ForEachEvent(this,e)   {
-            VERBOSE_INFO("distance(" << this->getEvent(e).toString() << ") = " <<  this->getStartingTime(e) - min_time);
+        	VERBOSE_DEBUG("distance(" << this->getEvent(e).toString() << ") = " <<  this->getStartingTime(e) - min_time);
         }}
         return true;
 

@@ -107,6 +107,32 @@ template<class T>
      return stream.str();
 }
 
+template<class T>
+    std::string toString(const std::vector<T>& t)
+{
+	 std::stringstream s;
+		for (auto myt : t) {
+			s << commons::toString(myt) + " ";
+		}
+		return s.str();
+}
+
+template<>
+std::string toString< std::vector < std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> > >(const std::vector < std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> >& v);
+
+template<>
+std::string toString< std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> >(const std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX>& v);
+
+template<>
+std::string toString< std::vector<int> >(const std::vector<int>& v);
+template<>
+std::string toString< std::vector<ARRAY_INDEX> >(const std::vector<ARRAY_INDEX>& v);
+
+template<>
+std::string toString< std::vector<TOKEN_UNIT> >(const std::vector<TOKEN_UNIT>& v);
+
+template<>
+std::string toString< std::vector<long double> >(const std::vector<long double>& v);
 
 template<>
 std::string toString< std::vector<unsigned int> >(const std::vector<unsigned int>& v);
