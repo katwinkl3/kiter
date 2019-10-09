@@ -27,6 +27,20 @@ using std::vector;
 
 // TODO add timing reader for SDF3
 
+template<typename T>
+std::string vectorAsStr(const std::vector<T>& t)
+{
+	 std::stringstream s;
+		for (int idx = 0 ; idx < t.size() ; idx++) {
+			if (idx > 0) {
+				 s << ",";
+			}
+			s << commons::toString(t[idx]);
+		}
+		return s.str();
+}
+
+
 namespace commons {
 
 
@@ -607,16 +621,16 @@ void writeLoopbackChannel (xmlTextWriterPtr writer, const models::Dataflow* data
 void writeLoopbackPorts (xmlTextWriterPtr writer, const models::Dataflow* dataflow, const Vertex t) {
 	const std::string out_port = "out_R" + dataflow->getVertexName(t);
 	const std::string in_port = "in_R" + dataflow->getVertexName(t);
-	const TOKEN_UNIT rates        = 1 ;
+	const std::vector<TOKEN_UNIT> rates        = std::vector<TOKEN_UNIT> (dataflow->getPhasesQuantity(t),1) ;
 	xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) out_port.c_str());
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "in");
-	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) commons::toString(rates).c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) vectorAsStr(rates).c_str());
 	xmlTextWriterEndElement(writer);
 	xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) in_port.c_str());
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "out");
-	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) commons::toString(rates).c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) vectorAsStr(rates).c_str());
 	xmlTextWriterEndElement(writer);
 }
 
@@ -639,19 +653,6 @@ void writeChannel (xmlTextWriterPtr writer, const models::Dataflow* dataflow, co
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"initialTokens", (const xmlChar*)  commons::toString(edge_initialTokens).c_str());
 
 	xmlTextWriterEndElement(writer);
-}
-
-template<typename T>
-std::string vectorAsStr(const std::vector<T>& t)
-{
-	 std::stringstream s;
-		for (int idx = 0 ; idx < t.size() ; idx++) {
-			if (idx > 0) {
-				 s << ",";
-			}
-			s << commons::toString(t[idx]);
-		}
-		return s.str();
 }
 
 

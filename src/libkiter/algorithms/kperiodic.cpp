@@ -1443,6 +1443,20 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
     std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
     std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 
+    if (verbose) {
+    	scheduling_t persched = period2scheduling    (dataflow,  kvector , res);
+    	for (auto  key : persched) {
+    			auto task = key.first;
+    			auto task_vtx = dataflow->getVertexById(key.first);
+    			std::cout <<  "Task " <<  dataflow->getVertexName(task_vtx)
+    					<<  " : duration=" << dataflow->getVertexTotalDuration(task_vtx)
+						<<  " period=" <<  persched[task].first
+						<<  " Ni=" << dataflow->getNi(task_vtx)
+    					<<  " starts=[ " << commons::toString(persched[task].second) << "]" << std::endl;
+
+    		}
+
+    }
 
 
 }
