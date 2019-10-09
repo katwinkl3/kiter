@@ -8,18 +8,18 @@
 #include <models/Dataflow.h>
 
 StorageDistribution::StorageDistribution()
-    :edge_count{0}, thr{0}, distribution_size{0} {
-      // TODO: initialise empty map
-}
+  :edge_count{0}, thr{0}, distribution_size{0} {
+    // TODO: initialise empty map
+                          }
 
 StorageDistribution::StorageDistribution(
-    unsigned int edge_count,
-    TIME_UNIT thr, std::map<Edge, TOKEN_UNIT> channel_quantities,
-    TOKEN_UNIT distribution_size)
-    :edge_count{edge_count}, thr{thr}, channel_quantities{channel_quantities},
-      distribution_size{distribution_size} {
-// TODO: could replace distribution_size declaration with updateDistributionSize()
-}
+                                         unsigned int edge_count,
+                                         TIME_UNIT thr, std::map<Edge, TOKEN_UNIT> channel_quantities,
+                                         TOKEN_UNIT distribution_size)
+  :edge_count{edge_count}, thr{thr}, channel_quantities{channel_quantities},
+   distribution_size{distribution_size} {
+     // TODO: could replace distribution_size declaration with updateDistributionSize()
+   }
 
 // Set edge to given quantity
 void StorageDistribution::setChannelQuantity(Edge e,
@@ -194,7 +194,7 @@ size_t StorageDistributionSet::getSize() const {
    OR
    - the new storage distribution has throughput that is <= throughput of storage 
    distributions with a smaller distribution size
- */
+*/
 void StorageDistributionSet::minimizeStorageDistributions(StorageDistribution newDist) {
   // FIXME: get rid of nested for-loop
   // get distribution size and throughput early to avoid repeated function calls
@@ -270,7 +270,7 @@ void findMinimumStepSz(models::Dataflow *dataflow,
       minStepSizes[c] = minStepSz;
       std::cout << "Min. step size for channel " << dataflow->getEdgeName(c)
                 << ": " << minStepSz << std::endl;
-  }}
+    }}
   // std::cout << "Minimum step sizes calculated!\n" << std::endl;
   // return minStepSizes;
 }
@@ -287,7 +287,7 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
       // initialise channel size to maximum int size (should use ULONG_MAX but it's a really large value)
       minChannelSizes[c] = INT_MAX; // use (EdgeID - 1) to for array index
       TOKEN_UNIT ratePeriod = (TOKEN_UNIT) boost::math::gcd(dataflow->getEdgeInPhasesCount(c),
-                                               dataflow->getEdgeOutPhasesCount(c));
+                                                            dataflow->getEdgeOutPhasesCount(c));
       // std::cout << "Rate period for " << dataflow->getEdgeName(c) << ": "
       //           << ratePeriod << std::endl;
       for (int i = 0; i < ratePeriod; i++) { // might be able to use ForEachPhase here
@@ -315,7 +315,7 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
       }
       std::cout << "Minimum channel size for " << dataflow->getEdgeName(c)
                 << ": " << minChannelSizes[c] << std::endl;      
-  }}
+    }}
 }
 
 /*

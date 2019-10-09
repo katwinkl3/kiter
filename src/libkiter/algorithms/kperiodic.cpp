@@ -1643,6 +1643,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
                                                    parameters_list_t  parameters) {
   // graph to model bounded channel quantities
   models::Dataflow* dataflow_prime = new models::Dataflow(*dataflow);
+  long int counter = 0;
   
   // Create channels in new graph to model bounded channel quantities
   {ForEachEdge(dataflow, c) {
@@ -1663,7 +1664,6 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   std::map<Edge, TOKEN_UNIT> minStepSizes;
   std::map<Edge, TOKEN_UNIT> minChannelSizes;
   TOKEN_UNIT minDistributionSize;
-  TOKEN_UNIT modelledDistr[dataflow_prime->getEdgesCount()]; // store the modelled distribution
 
   initSearchParameters(dataflow_prime,
                        minStepSizes,
@@ -1675,6 +1675,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
                                0,
                                minChannelSizes,
                                minDistributionSize);
+  initDist.print_info();
 
   // initialise modelled graph with lower bound distribution
   {ForEachEdge(dataflow_prime, c) {
@@ -1686,6 +1687,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   
   // calculate max throughput and current throughput with lower bound distribution
   std::pair<TIME_UNIT, std::set<Edge>> result_max = compute_Kperiodic_throughput_and_cycles(dataflow, parameters); // calculate max throughput of graph
+  std::cout << "Max throughput: " << result_max.first << std::endl;
   std::pair<TIME_UNIT, std::set<Edge>> result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
   initDist.setThroughput(result.first);
   
@@ -1697,6 +1699,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   StorageDistributionSet minStorageDist;
 
   while (!minStorageDist.isSearchComplete(checklist, result_max.first)) {
+  // while (!minStorageDist.isSearchComplete(checklist, 2.37793e-08)) {
     // Remove first storage distribution in checklist
     // std::cout << "Checking next storage distribution; checklist size: "
     //           << checklist.getSize() << ", max throughput: " << result.first
@@ -1722,6 +1725,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
 
     // Compute throughput and storage deps
     result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
+    counter++;
     checkDist.setThroughput(result.first);
     // std::cout << "New storage distribution throughput: "
     //           << checkDist.getThroughput() << std::endl;
@@ -1763,7 +1767,11 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   }
 
   // The minimum storage distribution for a throughput of 0 is (0, 0,..., 0)
-  if (minStorageDist.getNextDistribution().getThroughput() == 0) {
+  if (minStorageDist.getNextDistribution().getThroughput() == 0) { /* FIXME: doesn't account for negative throughputs 
+                                                                    results in a bug if any storage distribution other
+                                                                    than the first element has a throughput of 0 as it
+                                                                    doesn't check for anything beyond the first throughput 
+                                                                    How do you even end up with negative throughput though? */
     StorageDistribution zeroDist(minStorageDist.getNextDistribution());
     {ForEachEdge(dataflow_prime, c) {
         zeroDist.setChannelQuantity(c, 0);
@@ -1771,7 +1779,8 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     minStorageDist.removeStorageDistribution(minStorageDist.getNextDistribution());
     minStorageDist.addStorageDistribution(zeroDist);
   }
-  // std::cout << "Done with search!" << std::endl;
+  std::cout << "Done with search!" << std::endl;
+  std::cout << "Number of computations: " << counter << std::endl;
   // std::cout << "\n";
   // std::cout << "Number of pareto points: " << minStorageDist.getSize() << std::endl;
   minStorageDist.print_distributions();
