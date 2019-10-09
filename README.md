@@ -4,7 +4,6 @@ Kiter is an iterative algorithm based on K-periodic scheduling to compute the th
 
 Build status: [![Build Status](https://travis-ci.org/bbodin/kiter.svg?branch=master)](https://travis-ci.org/bbodin/kiter)
 
-
 ## Compile it.
 
 Just ```make``` should do the job.
@@ -110,3 +109,36 @@ Black-scholes.xml  Echo.xml  H264.xml  JPEG2000.xml  Pdectect.xml
   bibsource = {dblp computer science bibliography, http://dblp.org}
 }
 ```
+
+
+## Current xperiments - Notes
+
+
+I am running the mapping using : 
+```
+make clean && make all -j8 && ./release/bin/kiter -f ~/Dropbox/.../one_modem.xml  -a SoftwareControlledNoCBufferless  -v 5  2>&1 
+```
+
+Then we can check the throughput with kiter:
+
+```
+./release/bin/kiter -f software_noc_5.xml -a KPeriodicThroughput
+Maximum throughput is 6.250000000e-02
+Maximum period     is   16.000000
+./release/bin/kiter -f software_noc_6.xml -a KPeriodicThroughput
+Maximum throughput is 5.882352941e-02
+Maximum period     is   17.000000
+```
+
+Or with SDF3:
+
+```
+./sdf3/sdf3/build/release/Linux/bin/sdf3analysis-csdf --graph software_noc_5.xml  --algo throughput
+thr(noname) = 0.0625
+analysis time: 1.568ms
+./sdf3/sdf3/build/release/Linux/bin/sdf3analysis-csdf --graph software_noc_6.xml  --algo throughput
+thr(noname) = 0.0588235
+analysis time: 1.608ms
+ ```
+
+

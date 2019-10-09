@@ -641,6 +641,20 @@ void writeChannel (xmlTextWriterPtr writer, const models::Dataflow* dataflow, co
 	xmlTextWriterEndElement(writer);
 }
 
+template<typename T>
+std::string vectorAsStr(const std::vector<T>& t)
+{
+	 std::stringstream s;
+		for (int idx = 0 ; idx < t.size() ; idx++) {
+			if (idx > 0) {
+				 s << ",";
+			}
+			s << commons::toString(t[idx]);
+		}
+		return s.str();
+}
+
+
 void writeSDF3File         (std::string filename, const models::Dataflow* dataflow)  {
 
 	xmlTextWriterPtr writer = xmlNewTextWriterFilename(filename.c_str(), 0);
@@ -649,8 +663,8 @@ void writeSDF3File         (std::string filename, const models::Dataflow* datafl
 
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"xmlns:xsi", (const xmlChar*)"http://www.w3.org/2001/XMLSchema-instance");
 	xmlTextWriterWriteAttribute (writer,(const xmlChar*)"version",(const xmlChar*)"1.0");
-	xmlTextWriterWriteAttribute (writer,(const xmlChar*)"type", (const xmlChar*)"sdf");
-	xmlTextWriterWriteAttribute (writer,(const xmlChar*)"xsi:noNamespaceSchemaLocation",(const xmlChar*) "http://www.es.ele.tue.nl/sdf3/xsd/sdf3-sdf.xsd");
+	xmlTextWriterWriteAttribute (writer,(const xmlChar*)"type", (const xmlChar*)"csdf");
+	xmlTextWriterWriteAttribute (writer,(const xmlChar*)"xsi:noNamespaceSchemaLocation",(const xmlChar*) "http://www.es.ele.tue.nl/sdf3/xsd/sdf3-csdf.xsd");
 	{
 		xmlTextWriterSetIndent(writer,2); xmlTextWriterStartElement(writer,(const xmlChar*) "applicationGraph");
 
@@ -675,7 +689,7 @@ void writeSDF3File         (std::string filename, const models::Dataflow* datafl
 									xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
 									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) in_port.c_str());
 									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "in");
-									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) commons::toString(in_rates).c_str());
+									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) vectorAsStr(in_rates).c_str());
 									xmlTextWriterEndElement(writer);
 					}
 
@@ -686,7 +700,7 @@ void writeSDF3File         (std::string filename, const models::Dataflow* datafl
 									xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
 									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) out_port.c_str());
 									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "out");
-									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) commons::toString(out_rates).c_str());
+									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) vectorAsStr(out_rates).c_str());
 									xmlTextWriterEndElement(writer);
 					}
 					if (dataflow->getReentrancyFactor(t)) {
@@ -724,7 +738,7 @@ void writeSDF3File         (std::string filename, const models::Dataflow* datafl
 
 									auto executionTime = dataflow->getVertexPhaseDuration(t);
 									xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "executionTime");
-									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"time", (const xmlChar*)  commons::toString(executionTime).c_str());
+									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"time", (const xmlChar*)  vectorAsStr(executionTime).c_str());
 									xmlTextWriterEndElement(writer);
 								}
 								xmlTextWriterEndElement(writer);
