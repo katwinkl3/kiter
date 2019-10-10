@@ -233,8 +233,9 @@ bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
   /* search is complete when the max throughput has been found and there 
      isn't any more storage distributions of the same distribution size
      left to check */
-  return ((this->p_max.second == target_thr) &&
-          (!checklist.hasDistribution(this->p_max.first)));
+  return (((this->p_max.second == target_thr) &&
+          (!checklist.hasDistribution(this->p_max.first))) ||
+          (checklist.getSize() <= 0)); // also end when we're out of distributions to check
 }
 
 // Print info of all storage distributions of a given distribution size in set
@@ -263,9 +264,9 @@ void findMinimumStepSz(models::Dataflow *dataflow,
   {ForEachEdge(dataflow, c) { // get GCD of all possible combinations of rates of production and consumption in channel
       TOKEN_UNIT minStepSz;
       minStepSz = dataflow->getEdgeInVector(c)[0]; // initialise with first value
-      for (int i = 0; i < dataflow->getEdgeInPhasesCount(c); i++)
+      for (EXEC_COUNT i = 0; i < dataflow->getEdgeInPhasesCount(c); i++)
         minStepSz = boost::math::gcd(minStepSz, dataflow->getEdgeInVector(c)[i]);
-      for (int i = 0; i < dataflow->getEdgeOutPhasesCount(c); i++)
+      for (EXEC_COUNT i = 0; i < dataflow->getEdgeOutPhasesCount(c); i++)
         minStepSz = boost::math::gcd(minStepSz, dataflow->getEdgeOutVector(c)[i]);
       minStepSizes[c] = minStepSz;
       std::cout << "Min. step size for channel " << dataflow->getEdgeName(c)
@@ -290,7 +291,7 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
                                                             dataflow->getEdgeOutPhasesCount(c));
       // std::cout << "Rate period for " << dataflow->getEdgeName(c) << ": "
       //           << ratePeriod << std::endl;
-      for (int i = 0; i < ratePeriod; i++) {
+      for (EXEC_COUNT i = 0; i < ratePeriod; i++) {
         // might want to change variables to p, c, and t for legibility
         TOKEN_UNIT tokensProduced = dataflow->getEdgeInVector(c)[i % dataflow->getEdgeInPhasesCount(c)];
         TOKEN_UNIT tokensConsumed = dataflow->getEdgeOutVector(c)[i % dataflow->getEdgeOutPhasesCount(c)];
