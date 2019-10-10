@@ -10,6 +10,7 @@
 #include <vector>
 #include <printers/stdout.h>
 #include <commons/verbose.h>
+#include <commons/SDF3Wrapper.h> // to write XML files
 #include <models/Dataflow.h>
 #include <models/EventGraph.h>
 #include <algorithms/normalization.h>
@@ -1823,6 +1824,8 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
         //      }
     }
   }
+  commons::writeSDF3File("dse_min_distribution_" + dataflow_prime->getName() +
+                         ".xml", dataflow_prime);
   // std::cout << "Modelled graph:" << std::endl;
   // {ForEachEdge(dataflow_prime, c)
   //     {
