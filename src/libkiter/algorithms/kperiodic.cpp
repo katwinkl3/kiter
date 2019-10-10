@@ -1757,8 +1757,9 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
                                                    parameters_list_t  parameters) {
   // graph to model bounded channel quantities
   models::Dataflow* dataflow_prime = new models::Dataflow(*dataflow);
+  std::map<Edge, TOKEN_UNIT> initialTokens;
   long int counter = 0;
-  
+
   // Create channels in new graph to model bounded channel quantities
   {ForEachEdge(dataflow, c) {
       // std::cout << dataflow_prime->getEdgeName(c) << "\n";
@@ -1771,6 +1772,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
                                        dataflow_prime->getEdgeInVector(c));
       dataflow_prime->setEdgeName(new_edge,
                                   dataflow_prime->getEdgeName(c) + "_prime");
+      initialTokens[new_edge] = dataflow->getPreload(c); // store initial token count of edge
     }}
   // std::cout << "\n";
 
@@ -1782,6 +1784,18 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   initSearchParameters(dataflow_prime,
                        minStepSizes,
                        minChannelSizes);
+
+  // NOTE workaround for setting original (non-modelled) edges to 0
+  {
+    ForEachEdge(dataflow_prime, c) {
+      if (dataflow_prime->getEdgeId(c) <= dataflow->getEdgesCount()) {
+        minChannelSizes.at(c) = 0;
+      }
+    }
+  }
+  // std::cout << "\t" << dataflow->getEdgeId(dataflow->getEdgeByName("channel_69")) << std::endl;
+  // std::cout << "\t edge ID: " << dataflow->getEdgesCount() << std::endl;
+
   minDistributionSize = findMinimumDistributionSz(dataflow_prime, minChannelSizes);
   
   // initialise and store initial storage distribution state
@@ -1789,40 +1803,61 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
                                0,
                                minChannelSizes,
                                minDistributionSize);
-  initDist.print_info();
+  // std::cout << "initDist info:" << std::endl;
+  // initDist.print_info();
 
-  // initialise modelled graph with lower bound distribution
-  {ForEachEdge(dataflow_prime, c) {
-      if (dataflow_prime->getEdgeId(c) > dataflow->getEdgesCount()) {
-        // initialise channels with minimum channel quantities
-        dataflow_prime->setPreload(c, initDist.getChannelQuantity(c));
-      }
-    }}
+  // std::cout << "Original graph:" << std::endl;
+  // {ForEachEdge(dataflow_prime, c)
+  //     {
+  //       std::cout << "Channel " << dataflow_prime->getEdgeName(c) << ": "
+  //                 << dataflow_prime->getPreload(c) << std::endl;
+  //     }}
   
+  // initialise modelled graph with lower bound distribution
+  {
+    ForEachEdge(dataflow_prime, c) {
+      //      if (dataflow_prime->getEdgeId(c) > dataflow->getEdgesCount()) {
+        // initialise channels with minimum channel quantities
+        std::cout << "Setting preload of channel " << dataflow_prime->getEdgeName(c) << " to "
+                  << initDist.getChannelQuantity(c) << std::endl;
+        // subtract initial tokens from buffer size to model any initial tokens in buffer
+        dataflow_prime->setPreload(c, (initDist.getChannelQuantity(c) - initialTokens[c]));
+        //      }
+    }
+  }
+  std::cout << "Modelled graph:" << std::endl;
+  {ForEachEdge(dataflow_prime, c)
+      {
+        std::cout << "Channel " << dataflow_prime->getEdgeName(c) << ": "
+                  << dataflow_prime->getPreload(c) << std::endl;
+      }}
+
   // calculate max throughput and current throughput with lower bound distribution
   std::pair<TIME_UNIT, std::set<Edge>> result_max = compute_Kperiodic_throughput_and_cycles(dataflow, parameters); // calculate max throughput of graph
   std::cout << "Max throughput: " << result_max.first << std::endl;
   std::pair<TIME_UNIT, std::set<Edge>> result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
-  initDist.setThroughput(result.first);
-  
+  std::cout << "Initial throughput: " << result.first << std::endl;
+  initDist.setThroughput(result.first); // set throughput given initial distribution
+  std::cout << "Initial throughput set" << std::endl;
   // add initial distribution to list of storage distributions
   StorageDistributionSet checklist(initDist.getDistributionSize(),
                                    initDist);
+  std::cout << "Checklist initialised" << std::endl;
     
   // Initialise set of minimal storage distributions (a set of pairs of throughput and storage distribution)
   StorageDistributionSet minStorageDist;
-
+  std::cout << "Beginning DSE..." << std::endl;
   while (!minStorageDist.isSearchComplete(checklist, result_max.first)) {
   // while (!minStorageDist.isSearchComplete(checklist, 2.37793e-08)) {
     // Remove first storage distribution in checklist
-    // std::cout << "Checking next storage distribution; checklist size: "
-    //           << checklist.getSize() << ", max throughput: " << result.first
-    //           << std::endl;
+    std::cout << "Checking next storage distribution; checklist size: "
+              << checklist.getSize() << ", max throughput: " << result.first
+              << std::endl;
     StorageDistribution checkDist(checklist.getNextDistribution()); // copy first distribution
     checklist.removeStorageDistribution(checklist.getNextDistribution());
-    // std::cout << "\n";
-    // std::cout << "Exploring graph: ";
-    // checkDist.print_info();
+    std::cout << "\n";
+    std::cout << "Exploring graph: ";
+    checkDist.print_info();
     
     // Update graph with storage distribution just removed from checklist
     {ForEachEdge(dataflow_prime, c) {
@@ -1832,7 +1867,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
                                                                          * efficiency by saving us time rewriting the 
                                                                          * entire graph every time?
                                                                          */
-          dataflow_prime->set_writable(); // make graph writeable to alter channel size
+          dataflow_prime->reset_computation(); // make graph writeable to alter channel size
           dataflow_prime->setPreload(c, checkDist.getChannelQuantity(c));
         }
       }}
@@ -1841,17 +1876,17 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
     counter++;
     checkDist.setThroughput(result.first);
-    // std::cout << "New storage distribution throughput: "
-    //           << checkDist.getThroughput() << std::endl;
+    std::cout << "New storage distribution throughput: "
+              << checkDist.getThroughput() << std::endl;
     
     // Add storage distribution and computed throughput to set of minimal storage distributions
-    // std::cout << "Adding distribution to minimal set" << std::endl;
+    std::cout << "Adding distribution to minimal set" << std::endl;
     minStorageDist.addStorageDistribution(checkDist);
-    // std::cout << std::endl;
-    // std::cout << "\t Minimum Storage Distributions (before) ("
-    //           << minStorageDist.getSize() << "): " << std::endl;
-    // minStorageDist.print_distributions();
-    // std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << "\t Minimum Storage Distributions (before) ("
+              << minStorageDist.getSize() << "): " << std::endl;
+    minStorageDist.print_distributions();
+    std::cout << std::endl;
 
     // Create new storage distributions for every storage dependency found; add new storage distributions to checklist
     for (std::set<Edge>::iterator it = (result.second).begin();
@@ -1859,25 +1894,25 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
       StorageDistribution newDist(checkDist);
       // only increase channel quantity on "modelled" channels
       if (dataflow_prime->getEdgeId(*it) > dataflow->getEdgesCount()) {
-        // std::cout << "Found storage dependency in channel "
-        //           << dataflow_prime->getEdgeName(*it) << std::endl;
+        std::cout << "Found storage dependency in channel "
+                  << dataflow_prime->getEdgeName(*it) << std::endl;
         // make new modelled storage distribution according to storage dependencies
         newDist.setChannelQuantity(*it, (newDist.getChannelQuantity(*it) +
                                          minStepSizes[*it]));
-        // std::cout << "Increasing channel size of "
-        //           << dataflow_prime->getEdgeName(*it) << " to "
-        //           << newDist.getChannelQuantity(*it) << std::endl;
-        // std::cout << "Update checklist" << std::endl;
+        std::cout << "Increasing channel size of "
+                  << dataflow_prime->getEdgeName(*it) << " to "
+                  << newDist.getChannelQuantity(*it) << std::endl;
+        std::cout << "Update checklist" << std::endl;
         checklist.addStorageDistribution(newDist);
       }
     }
 
     minStorageDist.minimizeStorageDistributions(checkDist);
-    // std::cout << std::endl;
-    // std::cout << "\t Minimum Storage Distributions (after) ("
-    //           << minStorageDist.getSize() << "): " << std::endl;
-    // minStorageDist.print_distributions();
-    // std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << "\t Minimum Storage Distributions (after) ("
+              << minStorageDist.getSize() << "): " << std::endl;
+    minStorageDist.print_distributions();
+    std::cout << std::endl;
   }
 
   // The minimum storage distribution for a throughput of 0 is (0, 0,..., 0)
@@ -1895,8 +1930,8 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   }
   std::cout << "Done with search!" << std::endl;
   std::cout << "Number of computations: " << counter << std::endl;
-  // std::cout << "\n";
-  // std::cout << "Number of pareto points: " << minStorageDist.getSize() << std::endl;
+  std::cout << "\n";
+  std::cout << "Number of pareto points: " << minStorageDist.getSize() << std::endl;
   minStorageDist.print_distributions();
 }
 

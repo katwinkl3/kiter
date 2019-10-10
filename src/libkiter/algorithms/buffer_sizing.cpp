@@ -285,12 +285,12 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
   
   {ForEachEdge(dataflow, c) {
       // initialise channel size to maximum int size (should use ULONG_MAX but it's a really large value)
-      minChannelSizes[c] = INT_MAX; // use (EdgeID - 1) to for array index
+      minChannelSizes[c] = INT_MAX;
       TOKEN_UNIT ratePeriod = (TOKEN_UNIT) boost::math::gcd(dataflow->getEdgeInPhasesCount(c),
                                                             dataflow->getEdgeOutPhasesCount(c));
       // std::cout << "Rate period for " << dataflow->getEdgeName(c) << ": "
       //           << ratePeriod << std::endl;
-      for (int i = 0; i < ratePeriod; i++) { // might be able to use ForEachPhase here
+      for (int i = 0; i < ratePeriod; i++) {
         // might want to change variables to p, c, and t for legibility
         TOKEN_UNIT tokensProduced = dataflow->getEdgeInVector(c)[i % dataflow->getEdgeInPhasesCount(c)];
         TOKEN_UNIT tokensConsumed = dataflow->getEdgeOutVector(c)[i % dataflow->getEdgeOutPhasesCount(c)];
