@@ -16,7 +16,8 @@ class NoCGraph
 	int V; // No. of vertices in graph 
 	std::list<int> *adj; // Pointer to an array containing adjacency lists 
 	std::map<int, std::vector< std::vector<int> > > paths;
-	std::map<int, int> linkUtil;
+	//std::map<int, int> linkUtil;
+	std::vector<int> linkUtil;
 	bool dumpPaths;
 	int MESH_SIZE;
 
@@ -28,7 +29,7 @@ class NoCGraph
 	NoCGraph(int V); // Constructor 
 
 	NoCGraph()
-	{ this->V = 1; adj = new std::list<int>[V]; dumpPaths = false; MESH_SIZE = (V/2);} 
+	{ this->V = 1; adj = new std::list<int>[V]; dumpPaths = false; MESH_SIZE = (V/2); linkUtil.resize(V*V, 0);} 
 
 	std::vector< std::vector<int> > getShortestPaths(int s, int d)
 	{
@@ -36,11 +37,14 @@ class NoCGraph
 		return paths[index];
 	}
 
-	std::map<int, int> getLinkUtil() { return linkUtil; }
-	void clear() { linkUtil.clear(); }
+	//std::map<int, int> getLinkUtil() { return linkUtil; }
+	std::vector<int> getLinkUtil() { return linkUtil; }
+
+	void clear() { linkUtil.resize(V*V, 0); }//linkUtil.clear(); }
 	void addEdge(int u, int v); 
 	void printAllPaths(int s, int d, int length);
-        void setLinkUtil(std::map<int, int> u) { linkUtil = u; }
+        //void setLinkUtil(std::map<int, int> u) { linkUtil = u; }
+        void setLinkUtil(std::vector<int> u) { linkUtil = u; }
 
 	void generateAllShortestPaths();
 	int getMapIndex(int x, int y) {return (x*V + y);}

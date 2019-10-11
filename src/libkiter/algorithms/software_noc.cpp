@@ -476,19 +476,21 @@ void printSCCs(models::Dataflow* to, Vertex start)
 }
 
 
-void setmap(std::vector<int> paths, std::map<int, int>& curr_util, NoC* noc)
+//void setmap(std::vector<int> paths, std::map<int, int>& curr_util, NoC* noc)
+void setmap(std::vector<int> paths, std::vector<int>& curr_util, NoC* noc)
 {
 	for(unsigned int p_j = 1; p_j < paths.size()-2; p_j++)
 	{
 		int mapindex = noc->getMapIndex(paths[p_j], paths[p_j+1]);
-		if(curr_util.find(mapindex) == curr_util.end())
-			curr_util[mapindex] = 0;	
+		//if(curr_util.find(mapindex) == curr_util.end())
+		//	curr_util[mapindex] = 0;
 		curr_util[mapindex] += 1;
 	}
 }
 
 
-int findPaths(int src, NoC* noc, int core_considered, std::map<int, int>& curr_util, std::map<int, route_t>& store_path, int storepath_id)
+//int findPaths(int src, NoC* noc, int core_considered, std::map<int, int>& curr_util, std::map<int, route_t>& store_path, int storepath_id)
+int findPaths(int src, NoC* noc, int core_considered, std::vector<int>& curr_util, std::map<int, route_t>& store_path, int storepath_id)
 {
 	if(src != -1 && core_considered != -1)
 	{
@@ -504,8 +506,8 @@ int findPaths(int src, NoC* noc, int core_considered, std::map<int, int>& curr_u
 			{
 				//std::cout << paths[p_i][p_j] << "->" << paths[p_i][p_j+1] << " ";
 				int mapindex = noc->getMapIndex(paths[p_i][p_j], paths[p_i][p_j+1]);
-				if(curr_util.find(mapindex) != curr_util.end())
-					cont_l2 = std::max(cont_l2, curr_util[mapindex]);
+				//if(curr_util.find(mapindex) != curr_util.end())
+				cont_l2 = std::max(cont_l2, curr_util[mapindex]);
 			}
 			if(cont_l2 < max_contention_l2)
 			{
@@ -542,14 +544,18 @@ void mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::Dataf
 
 	float best_contention_l1 = -1;
 	std::map<int, route_t> best_store_path;
-	std::map<int, int> best_util;
+	//std::map<int, int> best_util;
+	std::vector<int> best_util;
+
 	int core_allocated = -1;
 
 	for (auto core_considered : avail_cores)
 	{
 		//std::cout << "considering core " << core_considered << "\n";
 		int cont_l1 = -1;
-		std::map<int, int> curr_util = noc->getLinkUtil();
+		//std::map<int, int> curr_util = noc->getLinkUtil();
+		std::vector<int> curr_util = noc->getLinkUtil();
+
 		std::map<int, route_t> store_path; //variable to store the route to be utilized by the (src,dest) core
 		unsigned int counter = 0;
 		unsigned int pathlen = 0;

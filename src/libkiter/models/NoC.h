@@ -49,8 +49,11 @@ public :
 
 	void generateShortestPaths() { g->generateAllShortestPaths(); }
 	std::vector< std::vector<int> > getShortestPaths(int s, int d) { return g->getShortestPaths(s, d); }
-	std::map<int, int> getLinkUtil() { return g->getLinkUtil(); }
-	void setLinkUtil(std::map<int, int> u) { g->setLinkUtil(u); }
+	//std::map<int, int> getLinkUtil() { return g->getLinkUtil(); }
+	std::vector<int> getLinkUtil() { return g->getLinkUtil(); }
+	//void setLinkUtil(std::map<int, int> u) { g->setLinkUtil(u); }
+	void setLinkUtil(std::vector<int> u) { g->setLinkUtil(u); }
+
 	void clear() { g->clear(); }
 	int getMapIndex(int x, int y) { return g->getMapIndex(x,y); }
 	void getMapIndexPair(int index, int* x, int* y) { return g->getMapIndexPair(index, x, y); }
