@@ -13,7 +13,7 @@
 #include <models/EventGraph.h>
 
 
-scheduling_t algorithms::scheduling::CSDF_KPeriodicScheduling    (models::Dataflow* const dataflow , bool do_buffer_less) {
+scheduling_t algorithms::scheduling::CSDF_KPeriodicScheduling    (models::Dataflow* const dataflow , bool do_buffer_less, TIME_UNIT& throughput) {
 
 
     VERBOSE_ASSERT(do_buffer_less == false,"not implemented");
@@ -172,6 +172,8 @@ scheduling_t algorithms::scheduling::CSDF_KPeriodicScheduling    (models::Datafl
     TIME_UNIT res = result.first;
     VERBOSE_INFO( "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res );
     VERBOSE_INFO( "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   );
+
+    throughput = res;
 
     scheduling_t persched = period2scheduling(dataflow,kvector,result.first);
     return persched;

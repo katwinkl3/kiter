@@ -31,7 +31,7 @@ namespace algorithms {
 		void SDFKPeriodicScheduling (models::Dataflow* const  dataflow, parameters_list_t params) ;
 		void bufferlessKPeriodicScheduling (models::Dataflow* const  dataflow, parameters_list_t params) ;
 
-		scheduling_t CSDF_KPeriodicScheduling    (models::Dataflow* const dataflow, bool do_buffer_less) ;
+		scheduling_t CSDF_KPeriodicScheduling    (models::Dataflow* const dataflow, bool do_buffer_less, TIME_UNIT& throughput) ;
 	}
 }
 
