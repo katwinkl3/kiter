@@ -26,6 +26,7 @@
 #include <tuple>
 #include <commons/SDF3Wrapper.h>
 
+static TIME_UNIT NULL_DURATION = 0;
 static bool DO_BUFFERLESS = false;
 //static bool STOP_AT_FIRST = false;
 //static bool GET_PREVIOUS = false;
@@ -795,14 +796,14 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 
 			d->setVertexName(vtx,config_name.str());
 			d->setPhasesQuantity(vtx,1); // number of state for the actor, only one in SDF
-			d->setVertexDuration(vtx,{0}); // is specify for every state , only one for SDF.
+			d->setVertexDuration(vtx,{NULL_DURATION}); // is specify for every state , only one for SDF.
 			d->setReentrancyFactor(vtx,1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
 
 			// we create a new edge between source and middle,
 			auto e1 = d->addEdge(middle, vtx);
 
 			d->setEdgeInPhases(e1,{1});
-			d->setEdgeType(e1,EDGE_TYPE::CONFIG_EDGE);
+			d->setEdgeType(e1,EDGE_TYPE::BUFFERLESS_EDGE);
 			d->setEdgeOutPhases(e1,{1}); // and the consumption rate (as many rates as states for the associated task)
 			d->setPreload(e1,0);  // preload is M0
 
@@ -1117,7 +1118,7 @@ bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytup
 	//1. Initialize token vecot
 	std::vector<TOKEN_UNIT> temp(flow, 0);
 	std::vector< std::vector<TOKEN_UNIT> > token_vec (mn_size, temp);
-	std::vector<TIME_UNIT> phaseDurVec(flow, 0); //Create the phase duration
+	std::vector<TIME_UNIT> phaseDurVec(flow, NULL_DURATION); //Create the phase duration
 	int start = 0, end;
 	for(int i = 0; i < mn_size; i++)
 	{
@@ -1167,7 +1168,7 @@ bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytup
 		d->setEdgeOutPhases(new_edge, token_vec[i]);
 
 		new_edge = d->addEdge(middle, v2);
-		d->setEdgeType(new_edge,EDGE_TYPE::CONFIG_EDGE);
+		d->setEdgeType(new_edge,EDGE_TYPE::BUFFERLESS_EDGE);
 		d->setPreload(new_edge, preload);
 		d->setEdgeInPhases(new_edge, token_vec[i]);
 		d->setEdgeOutPhases(new_edge, {1});
@@ -1447,7 +1448,7 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 		auto task = key.first;
 		auto task_vtx = to->getVertexById(key.first);
 		*HP =    ( persched[task].first * to->getNi(task_vtx) ) / (persched[task].second.size()) ;
-		VERBOSE_INFO ( "Task " <<  to->getVertexName(task_vtx) <<  " : duration=" << to->getVertexTotalDuration(task_vtx) <<  " period=" <<  persched[task].first << " HP=" << *HP << " Ni=" << to->getNi(task_vtx)
+		VERBOSE_INFO ( "Task " <<  to->getVertexName(task_vtx) <<  " : duration=[ " << commons::toString(to->getVertexPhaseDuration(task_vtx)) <<  "] period=" <<  persched[task].first << " HP=" << *HP << " Ni=" << to->getNi(task_vtx)
 				<< " starts=[ " << commons::toString(persched[task].second) << "]");
 		*LCM = boost::math::lcm(*LCM, to->getNi(task_vtx));
 
