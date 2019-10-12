@@ -5,6 +5,9 @@
 
 SHELL = /bin/bash
 
+## BUILDS = release_build debug_build
+BUILDS = debug_build
+
 CPU_COUNT := $(shell cat /proc/cpuinfo |grep processor |wc -l)
 SDF3_BENCHMARK := ./sdf3bench/
 SDF3_MEM_BENCHMARK := ./sdf3mem/
@@ -30,7 +33,7 @@ info :
 all : build
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 
-build: release_build debug_build
+build: ${BUILDS}
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 clean:
 	rm -Rf release debug *.lp *.mps 

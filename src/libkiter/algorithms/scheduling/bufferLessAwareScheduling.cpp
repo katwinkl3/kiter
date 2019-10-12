@@ -146,8 +146,6 @@ scheduling_t algorithms::scheduling::bufferless_scheduling (models::Dataflow* co
 
 
     commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
-   // With gurobi might be needed, need to fix that.
-    //CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
 
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 

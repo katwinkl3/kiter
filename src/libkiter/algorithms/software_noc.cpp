@@ -49,7 +49,7 @@ typedef std::map< std::string, std::vector< mytuple > > conflictConfigs;
 
 
 void print_graph (models::Dataflow * to, models::Dataflow* original) {
-
+	return;
 	static int counter = 0;
 	counter ++ ;
 	// Write the input as a dot file
@@ -77,8 +77,11 @@ void print_graph (models::Dataflow * to, models::Dataflow* original) {
 		ratio = new_ratio;
 	}}
 
-	TIME_UNIT throughput;
-	scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to , DO_BUFFERLESS, throughput) ;
+	scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to) ;
+
+	TIME_UNIT throughput = 0;
+	VERBOSE_ASSERT(throughput > 0, "fix me: period is P_i * N_I");
+
 	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, DO_BUFFERLESS , STOP_AT_FIRST, GET_PREVIOUS);
 	VERBOSE_INFO ("=========== Write file " << counter);
 	to->reset_computation();
@@ -1637,8 +1640,9 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	models::Dataflow* to = new models::Dataflow(*dataflow);
 	models::Dataflow* original_df = new models::Dataflow(*dataflow);
 
-	TIME_UNIT throughput;
-	algorithms::scheduling::CSDF_KPeriodicScheduling    (to , DO_BUFFERLESS, throughput) ;
+	algorithms::scheduling::CSDF_KPeriodicScheduling    (to ) ;
+	TIME_UNIT throughput = 0;
+	VERBOSE_ASSERT(throughput > 0, "fixme");
 	print_graph(to, original_df);
 	std::map<int, Edge> edge_list;
 
@@ -1681,17 +1685,18 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		print_graph(to, original_df);
 	}
 */
-	print_graph(to, original_df);
+	//print_graph(to, original_df);
 
 	//if (param_list.count("skip_merge") != 1)
 	//if (false)
 	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++)
 	{
 		VERBOSE_INFO ("Call mergeConfigNodes");
-		if( mergeConfigNodes(to, it->first, it->second))
-			print_graph(to, original_df);
+		//if( mergeConfigNodes(to, it->first, it->second))
+		//	print_graph(to, original_df);
 	}
-	print_graph(to, original_df);
+	/*
+	 * 	print_graph(to, original_df);
 
 	//Remove conflicts at source and destination router links as a big node has been created
 	for(auto it:routes)
@@ -1702,15 +1707,15 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		if(cf_it != conflictEdges.end())
 	 		conflictEdges.erase(cf_it);
 
-/*
+
 		auto mysize = routes[it.first].size() - 1;
 		auto end_id = routes[it.first][mysize];
 		auto cf_it2 = conflictEdges.find((unsigned int)end_id);
 		if(cf_it2 != conflictEdges.end())
 	 		conflictEdges.erase(cf_it2);
-*/
-	}
 
+	}
+*/
 	VERBOSE_INFO("resolving conflicts done");
 	//Original graph
 
@@ -1722,7 +1727,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 			if (to->getVertexDegree(v) == 0) {
 				VERBOSE_INFO ( " I remove one task (" << to->getVertexId(v) << ") lah!");
 				to->removeVertex(v);
-				print_graph(to, original_df);
+				//print_graph(to, original_df);
 				removeme=true;
 				break;
 			}
@@ -1734,8 +1739,9 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	//std::cout << printers::GenerateDOT(to);
 	//Given the graph "to" the perform the Kperiodic scheduling and get "persched" in return
 	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, false, false);
-
-	scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling    (to , DO_BUFFERLESS, throughput) ;
+	scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling    (to) ;
+	 throughput  =  0 /*compute with start and period not like you did please ! */;
+	VERBOSE_ASSERT(throughput > 0, "Fix me");
 	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, DO_BUFFERLESS, STOP_AT_FIRST, GET_PREVIOUS);
 
 
@@ -1745,20 +1751,10 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	findHP(dataflow, to, persched, &HP, &LCM);
 
 
-	while(true)
-	{
+
 		std::string name;
 		std::vector< mytuple > mergeNodes;
 		mergeNodes = checkForConflicts(conflictEdges, to, HP, persched, dataflow, name);
-		if(mergeNodes.size() == 0)
-			break;
-		std::cout << "size=" << mergeNodes.size() << "\n";
-		mergeConfigNodes(to, name, mergeNodes);
-		to->reset_computation();
-		persched = algorithms::scheduling::CSDF_KPeriodicScheduling    (to , DO_BUFFERLESS, throughput) ;
-		to->reset_computation();
-		std::cout << "one merge\n";
-	}
 
 	VERBOSE_INFO ( "LCM=" << LCM );
 }

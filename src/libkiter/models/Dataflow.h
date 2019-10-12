@@ -649,7 +649,7 @@ public :
 	 * GCDA work
 	 */
     std::map<ARRAY_INDEX, TOKEN_UNIT >              channelGCDA;          //!< dams precompute dam
-    inline TOKEN_UNIT computeFineGCD(Edge c)  {
+    inline TOKEN_UNIT computeFineGCD(Edge c) const  {
 
     // compute Channel GCD (multiple commun à toutes les valeurs wa1 wa2 .. va1 va2...)
     TOKEN_UNIT channelGCD = getEdgeInPhase(c,1);
@@ -666,6 +666,12 @@ public :
     return channelGCD;
 
     }
+    inline   TOKEN_UNIT getFineGCD(Edge c) const {
+    	 std::map<ARRAY_INDEX,TOKEN_UNIT >::const_iterator res = channelGCDA.find(this->getEdgeId(c));
+    	 if (res != channelGCDA.end()) return res->second;
+    	 return computeFineGCD(c);
+    }
+
     inline   TOKEN_UNIT getFineGCD(Edge c)  {
 
     	//return computeFineGCD(c);

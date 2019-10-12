@@ -13,10 +13,8 @@
 #include <models/EventGraph.h>
 
 
-scheduling_t algorithms::scheduling::CSDF_KPeriodicScheduling    (models::Dataflow* const dataflow , bool do_buffer_less, TIME_UNIT& throughput) {
+scheduling_t algorithms::scheduling::CSDF_KPeriodicScheduling    (models::Dataflow* const dataflow) {
 
-
-    VERBOSE_ASSERT(do_buffer_less == false,"not implemented");
 
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
@@ -42,14 +40,14 @@ scheduling_t algorithms::scheduling::CSDF_KPeriodicScheduling    (models::Datafl
     }}
 
 
-    std::pair<TIME_UNIT, std::set<Edge> > result;
+    kperiodic_result_t result;
 
 
 
     VERBOSE_INFO("KPeriodic EventGraph generation");
 
     //STEP 1 - Generate Event Graph
-    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector,do_buffer_less);
+    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector,false);
 
 
     VERBOSE_INFO("KPeriodic EventGraph generation Done");
@@ -97,7 +95,7 @@ scheduling_t algorithms::scheduling::CSDF_KPeriodicScheduling    (models::Datafl
             iteration_count++;
             ////////////// SCHEDULE CALL // BEGIN : resultprime = KSchedule(dataflow,&kvector);
 
-            std::pair<TIME_UNIT, std::set<Edge> > resultprime;
+            kperiodic_result_t resultprime;
 
             //VERBOSE_ASSERT( algorithms::normalize(dataflow),"inconsistent graph");
             VERBOSE_INFO("KPeriodic EventGraph generation");
@@ -173,7 +171,6 @@ scheduling_t algorithms::scheduling::CSDF_KPeriodicScheduling    (models::Datafl
     VERBOSE_INFO( "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res );
     VERBOSE_INFO( "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   );
 
-    throughput = res;
 
     scheduling_t persched = period2scheduling(dataflow,kvector,result.first);
     return persched;

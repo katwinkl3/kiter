@@ -250,22 +250,33 @@ void printers::printXML    (models::Dataflow* const  dataflow, parameters_list_t
 
 void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list_t ) {
 
-                VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-		EXEC_COUNT total = 0;
+	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 		std::cout << "Graph name             = " <<  dataflow->getName() << std::endl;
 		std::cout << "Task count             = " <<  dataflow->getVerticesCount() << std::endl;
 		std::cout << "Channels total         = " <<  dataflow->getEdgesCount() << std::endl;
 
+
+		EXEC_COUNT total = 0;
+		{ForEachTask(dataflow,t) {
+			total += dataflow->getNi(t) ;
+		}}
+        std::cout << "Complexity         = " <<  total << std::endl;
+
+
+		std::cout << "== Tasks ==" << std::endl;
+
               {ForEachTask(dataflow,t) {
-		  total += dataflow->getNi(t) ;
-                  std::cout << " - " <<  dataflow->getVertexName(t)
-                		  << " N=" << dataflow->getNi(t)
-						  << " Mapping=" << dataflow->getMapping(t)
+
+                  std::cout << "  - "
+                		  << std::setw(20) << dataflow->getVertexName(t)
+                          << " T= " << std::fixed << std::setw(20) << dataflow->getVertexTotalDuration(t)
+                		  << " N=" << std::setw(5)<< dataflow->getNi(t)
+                		  << " P=" << std::setw(5)<< dataflow->getPhasesQuantity(t)
+						  << " Mapping=" << std::setw(5)<< dataflow->getMapping(t)
                 		  << std::endl;
 
               }}
 
-              std::cout << "Complexity         = " <<  total << std::endl;
 }
 
 
