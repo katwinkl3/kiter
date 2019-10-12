@@ -64,12 +64,6 @@ std::vector<algo_t> algorithmslist = {
 		{ "deGrooteThroughput" , "Throughput analysis from deGroote2012 paper except event graph reduction.", algorithms::compute_deGroote_throughput},
 		{ "deGrooteCleanThroughput" , "Throughput analysis from deGroote2012 paper.", algorithms::compute_deGrooteClean_throughput},
 
-		// Various
-		{ "SymbolicExecution" , "Execute task in ASAP fashion and print out the scheduling.", algorithms::symbolic_execution},
-		{ "SoftwareControlledNoC" , "Perform NoC scheduling after deciding task mapping and routing.", algorithms::software_noc},
-		{ "genLTESDF" , "generate LTE SDF.", algorithms::generate_lte_sdf},
-		{ "SoftwareControlledNoCBufferless" , "Perform Bufferless NoC scheduling after deciding task mapping and routing.", algorithms::software_noc_bufferless},
-		{ "SymbolicExecutionWP" , "Execute task in ASAP fashion and print out the scheduling.", algorithms::symbolic_execution_with_packets},
 
 
 		//Buffer sizing techniques
@@ -82,6 +76,12 @@ std::vector<algo_t> algorithmslist = {
 		{ "NPeriodicSizing" , "Optimal Sizing evaluation of SDF by using N-Periodic method.", algorithms::compute_NPeriodic_memory} ,
 		{ "KPeriodicSizing" , "Optimal Sizing evaluation of SDF by using K-Periodic method.", algorithms::compute_KPeriodic_memory} ,
 		{ "BackPressureSizing" , "Buffer sizing method from Wiggers et al DAC 2007 paper.", algorithms::compute_backpressure_memory_sizing},
+
+		// Various
+		{ "SymbolicExecution" , "Execute task in ASAP fashion and print out the scheduling.", algorithms::symbolic_execution},
+		{ "genLTESDF" , "generate LTE SDF.", algorithms::generate_lte_sdf},
+		{ "SoftwareControlledNoCBufferless" , "Perform Bufferless NoC scheduling after deciding task mapping and routing.", algorithms::software_noc_bufferless},
+		{ "SymbolicExecutionWP" , "Execute task in ASAP fashion and print out the scheduling.", algorithms::symbolic_execution_with_packets},
 
 
 		// Recent stuff

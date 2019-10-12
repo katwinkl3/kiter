@@ -24,9 +24,11 @@ static inline const std::string START_COL_STR (const std::string name, const EXE
 
 static inline const std::string PRED_ROW_STR (const std::string buffername, const EXEC_COUNT ai, const EXEC_COUNT ki, const EXEC_COUNT aj, const EXEC_COUNT kj)  {
 	return "precedence_" + buffername + "___" + commons::toString<EXEC_COUNT>(ai) + "_" + commons::toString<EXEC_COUNT>(ki)+ "___" + commons::toString<EXEC_COUNT>(aj) + "_" + commons::toString<EXEC_COUNT>(kj);
-
 }
 
+static inline const std::string BL_PRED_ROW_STR (const std::string buffername, const EXEC_COUNT ai, const EXEC_COUNT ki, const EXEC_COUNT aj, const EXEC_COUNT kj)  {
+	return "bufferless_precedence_" + buffername + "___" + commons::toString<EXEC_COUNT>(ai) + "_" + commons::toString<EXEC_COUNT>(ki)+ "___" + commons::toString<EXEC_COUNT>(aj) + "_" + commons::toString<EXEC_COUNT>(kj);
+}
 
 bool add_precedences_constraints (commons::GLPSol &g, commons::idx_t OMEGA_COL, const models::Dataflow* const dataflow, const periodicity_vector_t& kvector, const Edge c) {
 
@@ -161,6 +163,15 @@ bool add_precedences_constraints (commons::GLPSol &g, commons::idx_t OMEGA_COL, 
 				if ( sajcolid != saicolid) {
 					  g.fastAddCoef(rowid ,sajcolid    ,  1        );
 					  g.fastAddCoef(rowid ,saicolid    , -1        );
+				}
+
+				if (dataflow->getEdgeType(c) == EDGE_TYPE::BUFFERLESS_EDGE) {
+					const std::string pred_row_name = BL_PRED_ROW_STR(buffername,phase_i,period_i,phase_j,period_j);
+					int rowid = g.addRow(pred_row_name,commons::bound_s(commons::FIX_BOUND, (double) ltai ));
+					if ( sajcolid != saicolid) {
+						g.fastAddCoef(rowid ,sajcolid    ,  1        );
+						g.fastAddCoef(rowid ,saicolid    , -1        );
+					}
 				}
 			}
 

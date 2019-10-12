@@ -34,6 +34,9 @@ public :
 	TIME_UNIT getGraphPeriod () {
 		return this->_period;
 	}
+	scheduling_t& getTaskSchedule () {
+		return this->_tasks_schedule;
+	}
 
 	void verbose_print ();
 
