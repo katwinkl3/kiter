@@ -164,7 +164,7 @@ bool add_precedences_constraints (commons::GLPSol &g, commons::idx_t OMEGA_COL, 
 					  g.fastAddCoef(rowid ,sajcolid    ,  1        );
 					  g.fastAddCoef(rowid ,saicolid    , -1        );
 				}
-
+				if (false)
 				if (dataflow->getEdgeType(c) == EDGE_TYPE::BUFFERLESS_EDGE) {
 					const std::string pred_row_name = BL_PRED_ROW_STR(buffername,phase_i,period_i,phase_j,period_j);
 					int rowid = g.addRow(pred_row_name,commons::bound_s(commons::FIX_BOUND, (double) ltai ));
