@@ -146,8 +146,11 @@ enum BacktrackTechnique {
         bound_s(BoundType bt,type_coef i, type_coef j) : type(bt), up((double)i), down((double)j) {VERBOSE_DEBUG_ASSERT(bt == DOUBLE_BOUND,TXT_INVALID_GLPK_USAGE)}
 
 	};
+
+	typedef int idx_t;
+
 	struct column {
-		int			indice;
+		idx_t		indice;
 		std::string name;
 		ValueKind   kind;
 		bound_s		bound;
@@ -159,7 +162,7 @@ enum BacktrackTechnique {
 	};
 
 	struct row {
-		int			indice;
+		idx_t			indice;
 		std::string name;
 		bound_s		bound;
 		bool		critical;
@@ -252,27 +255,27 @@ public :
   public:
     							GLPSol				(const string s,const Objectif obj);
      							~GLPSol				();
-     			inline int addRow  (const string s,const bound_s b) {
+     			inline idx_t addRow  (const string s,const bound_s b) {
      								if(rowsMap.find(s) != rowsMap.end()) {
      									VERBOSE_ERROR(TXT_ROW_ALREADY_EXISTS(s));
      									throw std::logic_error(TXT_ROW_ALREADY_EXISTS(s));
      								};
      						        row nRow (s,b);
-     						        nRow.indice = (int) this->rowsMap.size() + 1;
+     						        nRow.indice = (idx_t) this->rowsMap.size() + 1;
      						        this->rowsMap.insert(std::pair<std::string,row>(s,nRow));
      						        return nRow.indice;
      	         }
 
 
 
-                inline int addColumn (const string s,const ValueKind k,const bound_s b,const double coef) {
+                inline idx_t addColumn (const string s,const ValueKind k,const bound_s b,const double coef) {
                     column c(s,k,b,coef);
-                    c.indice = (int) this->columnsMap.size() + 1;
+                    c.indice = (idx_t) this->columnsMap.size() + 1;
                     this->columnsMap.insert(std::pair<std::string,column>(s,c));
                     return c.indice;
 
                 }
-    		    inline void fastAddCoef (const int r,const int c,const double v) {
+    		    inline void fastAddCoef (const idx_t r,const idx_t c,const double v) {
     		        if (!commons::AreSame<double>(v , 0.0)) {
     		            this->coefs[r][c] = v;
     		            this->coefs_size++;
@@ -283,11 +286,11 @@ public :
     		        fastAddCoef(getRow(r),getColumn(c), v);
     		    }
 
-    			bool            haveValue           (const string c);
-                double          getValue            (const string c);
-                double          getRoundedValue            (const string c);
-                bool            isInteger           ();
-    			double			getIntegerValue		(const string c);
+    			bool            haveValue            (const string c) const ;
+                double          getValue             (const string c) const ;
+                double          getRoundedValue      (const string c) const ;
+                bool            isInteger            () const;
+    			double			getIntegerValue		 (const string c) const;
                 bool            solve               (GLPParameters& params = default_glpsol_parameters);
                 bool            solveWithCoin       ();
                 bool            solveWithCplex      ();
@@ -295,23 +298,23 @@ public :
                 bool            solveWith           ();
                 void            generateGLPKProblem ();
     			bool			rowIsReach			(const string n);
-                int             getRowCount         ();
-                int             getColumnCount      ();
+                idx_t             getRowCount          () const;
+                idx_t             getColumnCount       () const;
                 void            warm_up             ();
-                bool            isRowExists         (const string n);
-                bool            isColumnExists      (const string n);
+                bool            isRowExists          (const string n)const ;
+                bool            isColumnExists       (const string n)const ;
                 void            writeMPSProblem     ();
-                int getRow (const string n) {
-                	std::map<std::string,row>::iterator res = rowsMap.find(n);
+                idx_t getRow (const string n) const {
+                	std::map<std::string,row>::const_iterator res = rowsMap.find(n);
                 	if (res != rowsMap.end()) return res->second.indice;
 
                     VERBOSE_ERROR(TXT_ROW_NOT_FOUND(n));
                     throw std::out_of_range(TXT_ROW_NOT_FOUND(n));
                     return -1;
                 }
-                int getColumn(const string n)   {
+                idx_t getColumn(const string n)  const   {
 
-                	std::map<std::string,column>::iterator res = columnsMap.find(n);
+                	std::map<std::string,column>::const_iterator res = columnsMap.find(n);
                 	if (res != columnsMap.end()) return res->second.indice;
 
                     VERBOSE_ERROR(TXT_COLUMN_NOT_FOUND(n));
@@ -329,12 +332,12 @@ public :
                 void            printBound          ();
                 void            printValues         ();
     			void			checkBound			();
-    			std::string     getColumnName       (const int indice);
+    			std::string     getColumnName       (const idx_t indice) const;
 
 
 
   private :
-    			double 									getValue			(const int c);
+    			double 									getValue			(const idx_t c) const;
     			std::pair<double,std::string> 			compute_row(row c);
 
 

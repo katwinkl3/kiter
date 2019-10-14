@@ -123,15 +123,15 @@ void GLPSol::writeSolution() {
 
 
 
-bool GLPSol::isRowExists (const string n) {
+bool GLPSol::isRowExists (const string n) const {
 	return rowsMap.find(n) != rowsMap.end();
 }
-bool GLPSol::isColumnExists (const string n) {
+bool GLPSol::isColumnExists (const string n) const {
 	return columnsMap.find(n) != columnsMap.end();
 }
 
-int             GLPSol::getRowCount         () {return (int) this->rowsMap.size();}
-int             GLPSol::getColumnCount      () {return (int) this->columnsMap.size();}
+idx_t             GLPSol::getRowCount         () const {return (idx_t) this->rowsMap.size();}
+idx_t             GLPSol::getColumnCount      () const {return (idx_t) this->columnsMap.size();}
 
 
 bool GLPSol::rowIsReach (const string n) {
@@ -142,37 +142,37 @@ bool GLPSol::rowIsReach (const string n) {
 }
 
 
-std::string GLPSol::getColumnName(const int indice)   {
-	for(std::map<std::string,column>::iterator it = columnsMap.begin(); it != columnsMap.end() ; it++ )
+std::string GLPSol::getColumnName(const idx_t indice)  const {
+	for(std::map<std::string,column>::const_iterator it = columnsMap.begin(); it != columnsMap.end() ; it++ )
 		if (it->second.indice == indice) return it->second.name;
 	throw new std::out_of_range(TXT_NOT_FOUND);
 }
 
-bool GLPSol::isInteger() {
+bool GLPSol::isInteger() const {
 	return this->integer;
 }
 
-double 	GLPSol::getValue(const int c) {
-	for(std::map<std::string,column>::iterator it = columnsMap.begin(); it != columnsMap.end() ; it++ )
+double 	GLPSol::getValue(const idx_t c) const {
+	for(std::map<std::string,column>::const_iterator it = columnsMap.begin(); it != columnsMap.end() ; it++ )
 		if (it->second.indice == c) return this->integer?it->second.Ifound:it->second.found;
 
 	throw new std::out_of_range(TXT_NOT_FOUND);
 }
 
-bool GLPSol::haveValue (const string c) {
+bool GLPSol::haveValue (const string c) const {
 	return columnsMap.find(c) != columnsMap.end();
 }
 
-double GLPSol::getValue	(const string c)  {
-	if (haveValue(c)) return columnsMap[c].found;
+double GLPSol::getValue	(const string c) const {
+	if (haveValue(c)) return columnsMap.at(c).found;
 	throw std::out_of_range(TXT_NOT_FOUND);
 }
-double GLPSol::getRoundedValue (const string c) {
+double GLPSol::getRoundedValue (const string c) const {
 	return  std::round(getValue(c));
 	throw std::out_of_range(TXT_NOT_FOUND);
 }
-double GLPSol::getIntegerValue	(const string c) {
-	if (haveValue(c)) return columnsMap[c].Ifound;
+double GLPSol::getIntegerValue	(const string c) const {
+	if (haveValue(c)) return columnsMap.at(c).Ifound;
 	throw std::out_of_range(TXT_NOT_FOUND);
 }
 
@@ -211,9 +211,9 @@ void GLPSol::generateGLPKProblem() {
 	int* ja = new int[matrice_size + 1] ;
 	double* ar = new double[matrice_size + 1] ;
 
-	int cur = 1;
-	for (std::map< int , std::map<  int , double >  >::iterator it = this->coefs.begin() ; it != this->coefs.end();it++) {
-		for (std::map< int , double >::iterator it2 = it->second.begin() ; it2 != it->second.end();it2++) {
+	idx_t cur = 1;
+	for (std::map< idx_t , std::map<  idx_t , double >  >::iterator it = this->coefs.begin() ; it != this->coefs.end();it++) {
+		for (std::map< idx_t , double >::iterator it2 = it->second.begin() ; it2 != it->second.end();it2++) {
 			ia[cur] = it->first;
 			ja[cur] = it2->first;
 			ar[cur] = it2->second;
@@ -221,7 +221,7 @@ void GLPSol::generateGLPKProblem() {
 		}
 	}
 
-	VERBOSE_ASSERT((cur-1) == (int) matrice_size, TXT_ERROR_IN_LP_DEF);
+	VERBOSE_ASSERT((cur-1) == (idx_t) matrice_size, TXT_ERROR_IN_LP_DEF);
 	glp_load_matrix(lp, matrice_size, ia, ja, ar);
 
 	delete[] ia;
@@ -584,8 +584,8 @@ std::pair<double,std::string> GLPSol::compute_row(row c) {
 	std::string valueStr = "";
 	double value = 0;
 	if (this->coefs.find(c.indice) != this->coefs.end()) {
-		std::map<   int , double >& ref2map = this->coefs[c.indice];
-		for (std::map<  int , double >::iterator it = ref2map.begin() ; it != ref2map.end();it++) {
+		std::map<   idx_t , double >& ref2map = this->coefs[c.indice];
+		for (std::map<  idx_t , double >::iterator it = ref2map.begin() ; it != ref2map.end();it++) {
 			value += this->getValue(it->first) * it->second;
 			valueStr += " + " + commons::toString<double>(this->getValue(it->first)) + " * " +  commons::toString<double>(it->second);
 		}
@@ -616,7 +616,7 @@ void GLPSol::checkBound() {
 void GLPSol::printValues() {
 	VERBOSE_DEBUG(" VALUES ");
 	for(std::map<std::string,column>::iterator it = columnsMap.begin(); it != columnsMap.end() ; it++ ) {
-		VERBOSE_DEBUG(" - " << (it->first) <<  " = " << it->second.found << " : " << it->second.Ifound);
+		VERBOSE_DEBUG(" - " << (it->first) <<  " = " << std::fixed <<  it->second.found << " : " << std::fixed <<  it->second.Ifound);
 	}
 }
 void GLPSol::printBound() {

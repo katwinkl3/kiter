@@ -15,6 +15,8 @@ namespace models {
 	class EventGraph;
 }
 
+typedef  std::pair<TIME_UNIT, std::set<Edge> > kperiodic_result_t ;
+
 namespace algorithms {
 
 bool sameset(models::Dataflow* const dataflow, std::set<Edge> *cc1 , std::set<Edge>* cc2) ;
@@ -22,7 +24,7 @@ std::string cc2string  (models::Dataflow* const dataflow,std::set<Edge>* cc) ;
 models::EventGraph* generateKPeriodicEventGraph(models::Dataflow * const dataflow, std::map<Vertex,EXEC_COUNT> * kvector , bool doBufferLessEdges = false );
 
 std::string print_schedule (models::EventGraph* eg, models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT res ) ;
-//std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> 
+
 scheduling_t generateKperiodicSchedule    (models::Dataflow* const dataflow , bool verbose) ;
     void print_kperiodic_scheduling         (models::Dataflow* const  dataflow, parameters_list_t);
     void print_kperiodic_expansion_graph    (models::Dataflow* const  dataflow, parameters_list_t);
@@ -49,8 +51,8 @@ void                compute_Kperiodic_throughput              (models::Dataflow 
     void                compute_NKperiodic_throughput             (models::Dataflow* const  dataflow, parameters_list_t);
     void                compute_GKperiodic_throughput  		      (models::Dataflow* const  dataflow, parameters_list_t);
 
-    std::pair<TIME_UNIT, std::set<Edge> > KSchedule             (models::Dataflow *  const ,std::map<Vertex,EXEC_COUNT> * kvector  , TIME_UNIT bound = 0) ;
-    std::pair<TIME_UNIT, std::set<Edge> > KScheduleBufferLess   (models::Dataflow *  const ,std::map<Vertex,EXEC_COUNT> * kvector  , TIME_UNIT bound = 0) ;
+    kperiodic_result_t KSchedule             (models::Dataflow *  const ,std::map<Vertex,EXEC_COUNT> * kvector  , TIME_UNIT bound = 0) ;
+    kperiodic_result_t KScheduleBufferLess   (models::Dataflow *  const ,std::map<Vertex,EXEC_COUNT> * kvector  , TIME_UNIT bound = 0) ;
 
     void                                     updateVectorWithFullNi   (models::Dataflow *  const  ,std::map<Vertex,EXEC_COUNT> *  , std::set<Edge> * ) ;
     bool                                     updateVectorWithLocalNi  (models::Dataflow *  const  ,std::map<Vertex,EXEC_COUNT> *  , std::set<Edge> * ) ;
