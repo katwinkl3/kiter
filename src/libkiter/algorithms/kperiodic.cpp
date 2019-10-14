@@ -1929,10 +1929,11 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     minStorageDist.removeStorageDistribution(minStorageDist.getNextDistribution());
     minStorageDist.addStorageDistribution(zeroDist);
   }
+
+  minStorageDist.print_distributions();
+  std::cout << "\n";
   std::cout << "Done with search!" << std::endl;
   std::cout << "Number of computations: " << counter << std::endl;
-  std::cout << "\n";
   std::cout << "Number of pareto points: " << minStorageDist.getSize() << std::endl;
-  minStorageDist.print_distributions();
 }
 
