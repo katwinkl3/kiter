@@ -1616,7 +1616,7 @@ std::pair<TIME_UNIT, std::set<Edge>> algorithms::compute_Kperiodic_throughput_an
     }}
 
 
-    std::pair<TIME_UNIT, std::set<Edge> > result;
+    kperiodic_result_t result;
 
 
 
@@ -1673,7 +1673,7 @@ std::pair<TIME_UNIT, std::set<Edge>> algorithms::compute_Kperiodic_throughput_an
             iteration_count++;
             ////////////// SCHEDULE CALL // BEGIN : resultprime = KSchedule(dataflow,&kvector);
 
-            std::pair<TIME_UNIT, std::set<Edge> > resultprime;
+            kperiodic_result_t resultprime;
 
             //VERBOSE_ASSERT( algorithms::normalize(dataflow),"inconsistent graph");
             VERBOSE_INFO("KPeriodic EventGraph generation");
