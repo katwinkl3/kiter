@@ -59,7 +59,7 @@ void print_graph (models::Dataflow * to, models::Dataflow* original) {
 	myfile2.open ("software_noc_" + commons::toString(counter) + ".dot");
 	myfile2 << printers::GenerateDOT(to);
 	myfile2.close();
-	std::cout << "=========== Write file " << counter << "\n";
+	VERBOSE_INFO("=========== Write file " << counter << "\n");
 	commons::writeSDF3File("software_noc_" + commons::toString(counter) + ".xml", to);
 	to->reset_computation();
 
@@ -993,18 +993,18 @@ void removeAllEdgesVertex(models::Dataflow* d, Vertex vtx)
 
 //Function to remove the edges and obtain phase vector values
 //v1 -> cfg -> v2
-void getEdgesPhaseVector(models::Dataflow* d, Vertex v1, Vertex cfg, Vertex v2, std::vector<TOKEN_UNIT>& in, std::vector<TOKEN_UNIT>& out)
+void getEdgesPhaseVector(models::Dataflow* d, Vertex& v1, Vertex cfg, Vertex& v2, std::vector<TOKEN_UNIT>& in, std::vector<TOKEN_UNIT>& out)
 {
 	//std::cout << "inside fn: v1=" << d->getVertexName(v1) << ",cfg=" << d->getVertexName(cfg) << ",v2=" << d->getVertexName(v2) << "\n";
 	{ForInputEdges(d, cfg, E)	{
 		in = d->getEdgeInVector(E);
-		//std::cout << "innnnnn=" << commons::toString(in) << ",size=" << in.size() << "\n";
+		v1 = d->getEdgeSource(E);
 		d->removeEdge(E);
 		break;
 	}}
 	{ForOutputEdges(d, cfg, E)	{
 		out = d->getEdgeOutVector(E);
-		//std::cout << "outttttt=" << commons::toString(out) << ",size=" << out.size() << "\n";
+		v2 = d->getEdgeTarget(E);
 		d->removeEdge(E);
 		break;
 	}}
@@ -1042,10 +1042,8 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex dst, int origV)
 	//1B. Do some sanity check here
 	VERBOSE_ASSERT (dstedges.size() == rtredges.size() ,  "BIG ERROR in resolveDestConflicts" );
 
-	if(dstedges.size() <= 1) {
-		//std::cout << "no resolveDestConflicts for vertex " << d->getVertexId(dst) << "\n";
+	if(dstedges.size() <= 1)
 		return false;
-	}
 
 	//1C. Initialize token vector
 	std::vector<TOKEN_UNIT> temp;
@@ -1105,7 +1103,7 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex dst, int origV)
 		auto v2 = d->getEdgeTarget(rtredges[i]);
 		auto loc_preload = d->getPreload(rtredges[i]);
 
-		std::cout << "dst=" << d->getVertexName(dst) << ",big_middle=" << d->getVertexName(middle) << ",v1=" << d->getVertexName(v1) << ",deleting=" << d->getVertexName(v2) << "\n";
+		//std::cout << "dst=" << d->getVertexName(dst) << ",big_middle=" << d->getVertexName(middle) << ",v1=" << d->getVertexName(v1) << ",deleting=" << d->getVertexName(v2) << "\n";
 		removeAllEdgesVertex(d, v2);
 
 		auto new_edge = d->addEdge(v1, middle);
@@ -1123,124 +1121,50 @@ bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytup
 {
 	if (mergeNodes.size() <= 1)
 		return false;
+	d->reset_computation();
 
-d->reset_computation();
 	int mn_size = (int)mergeNodes.size();
-	//VERBOSE_INFO (
-	std::cout << "mergeConfigNodes " << commons::toString(mergeNodes) << " for " << name << "\n";
+	//std::cout << "mergeConfigNodes " << commons::toString(mergeNodes) << " for " << name << "\n";
 	models::Dataflow* temp_d = new models::Dataflow(*d);
 	VERBOSE_ASSERT(computeRepetitionVector(temp_d),"inconsistent graph");
 
-	TOKEN_UNIT flow = (TOKEN_UNIT)mn_size, preload = 0, temp_flow = 0, temp_flow_2 = 0;
-	LARGE_INT gcd_value = 0, a, b, gcd_value_2 = 0;
-	bool myflag = false;
-
-/*
-	for(int i = 0; i < mn_size; i++)
-	{
-		auto config_node = d->getVertexById(get<0>(mergeNodes[i]));
-		{ForOutputEdges(d,config_node,outE) {
-			std::cout << "oute:" << d->getVertexName(config_node) << ":o=" << d->getEdgeOutPhasesCount(outE) << ",i=" << d->getEdgeInPhasesCount(outE) << "\n";
-			std::cout << "src:" << d->getVertexName(d->getEdgeSource(outE)) << ",tgt=" << d->getVertexName(d->getEdgeTarget(outE)) << "\n";
-			if( d->getEdgeOutPhasesCount(outE) > 1 || d->getEdgeInPhasesCount(outE) > 1)
-			{
-				myflag = true;//exit(0);
-				//return false;
-			}
-		}}
-		{ForInputEdges(d,config_node,inE) {
-			std::cout << "ine:" << d->getVertexName(config_node) << ":o=" << d->getEdgeOutPhasesCount(inE) << ",i=" << d->getEdgeInPhasesCount(inE) << "\n";
-			std::cout << "src:" << d->getVertexName(d->getEdgeSource(inE)) << ",tgt=" << d->getVertexName(d->getEdgeTarget(inE)) << "\n";
-			if( d->getEdgeOutPhasesCount(inE) > 1 || d->getEdgeInPhasesCount(inE) > 1)
-			{
-				myflag = true;//exit(0);
-				//return false;
-			}
-		}}
-	}
-	if(myflag)
-		exit(0);
-*/
-
+	TOKEN_UNIT flow = (TOKEN_UNIT)mn_size, preload = 0, temp_flow = 0;
+	LARGE_INT gcd_value = 0, a, b;
 	//Find GCD value
 	for(int i = 0; i < mn_size; i++)
 	{
-		Vertex vi = temp_d->getVertexById(get<1>(mergeNodes[i]));
+		Vertex vi = temp_d->getVertexById(get<0>(mergeNodes[i]));
 		auto ni = (LARGE_INT) temp_d->getNi(vi);
 		if(gcd_value == 0)
 			gcd_value = ni;
 		gcd_value = gcdExtended(gcd_value, ni, &a, &b);
-
-		vi = temp_d->getVertexById(get<2>(mergeNodes[i]));
-		ni = (LARGE_INT) temp_d->getNi(vi);
-		if(gcd_value_2 == 0)
-			gcd_value_2 = ni;
-		gcd_value_2 = gcdExtended(gcd_value_2, ni, &a, &b);
 	}
 	//Find the total flow
 	for(int i = 0; i < mn_size; i++)
 	{
-		Vertex vi = temp_d->getVertexById(get<1>(mergeNodes[i]));
+		Vertex vi = temp_d->getVertexById(get<0>(mergeNodes[i]));
 		auto ni = (LARGE_INT) temp_d->getNi(vi);
 		temp_flow += ni/gcd_value;
-
-		Vertex vi2 = temp_d->getVertexById(get<2>(mergeNodes[i]));
-		auto ni2 = (LARGE_INT) temp_d->getNi(vi2);
-		temp_flow_2 += ni2/gcd_value_2;
-		std::cout << "ni=" << ni << ",gcd=" << gcd_value << ",ni2=" << ni2 << ",gcd22=" << gcd_value_2 << "\n";
 	}
 	flow = temp_flow;
-	std::cout << "flow=" << flow << "\n";
+	//std::cout << "flow=" << flow << "\n";
 
 	//1. Initialize token vecot
 	std::vector<TOKEN_UNIT> temp(flow, 0);
 	std::vector< std::vector<TOKEN_UNIT> > token_vec (mn_size, temp);
 	std::vector<TIME_UNIT> phaseDurVec(flow, NULL_DURATION); //Create the phase duration
 	LARGE_INT start = 0, end;
-	for(LARGE_INT i = 0; i < mn_size; i++)
+	for(int i = 0; i < mn_size; i++)
 	{
-		Vertex vi = temp_d->getVertexById(get<1>(mergeNodes[i]));
+		Vertex vi = temp_d->getVertexById(get<0>(mergeNodes[i]));
 		auto ni = (LARGE_INT) temp_d->getNi(vi);
 		end = start + ni/gcd_value;
-		//std::cout << "start=" << start << ",end=" << end << ",ni=" << ni << ",gcd_value=" << gcd_value << "\n";
+		//std::cout << "ni=" << ni << ",s=" << start << ",end=" << end << "\n";
 		for(LARGE_INT j = start; j < end; j++)
 			token_vec[i][j] = 1;
 		start = end;
 	}
-
-	std::vector<TOKEN_UNIT> temp_2(temp_flow_2, 0);
-	std::vector< std::vector<TOKEN_UNIT> > token_vec_2 (mn_size, temp_2);
-	std::vector<TIME_UNIT> phaseDurVec_2(temp_flow_2, NULL_DURATION); //Create the phase duration
-	start = 0;
-	for(LARGE_INT i = 0; i < mn_size; i++)
-	{
-		Vertex vi = temp_d->getVertexById(get<2>(mergeNodes[i]));
-		auto ni = (LARGE_INT) temp_d->getNi(vi);
-
-		end = start + ni/gcd_value_2;
-		for(LARGE_INT j = start; j < end; j++)
-			token_vec_2[i][j] = 1;
-		start = end;
-
-		//Vertex cfgVtx = d->getVertexById( get<0>(mergeNodes[i]) );
-		//Vertex v1 = d->getVertexById( get<1>(mergeNodes[i]) );
-		//Vertex v2 = d->getVertexById( get<2>(mergeNodes[i]) );
-		//std::cout << "v1=" << d->getVertexName(v1) << ",cfg=" << d->getVertexName(cfgVtx) << ",v2=" << d->getVertexName(v2) << "\n";
-	}
-
-	std::cout << "token2=" << commons::toString(token_vec_2) << "\n";
-	std::cout << "token=" << commons::toString(token_vec) << "\n";
-
-	/*
-	//1. Initialize token vecot
-	std::vector<TOKEN_UNIT> temp(flow, 0);
-	std::vector< std::vector<TOKEN_UNIT> > token_vec (flow, temp);
-	std::vector<TIME_UNIT> phaseDurVec(flow, 0); //Create the phase duration
-
-	//2. calculate the preload and flow values of all outgoing edges from source vertices
-	for(int i = 0; i < (int)flow; i++)
-		token_vec[i][i] = 1;
-	*/
+	//std::cout << "token=" << commons::toString(token_vec) << "\n";
 
 	//3. Create the BIG router
 	auto middle = d->addVertex();
@@ -1248,30 +1172,22 @@ d->reset_computation();
 	d->setPhasesQuantity(middle, flow); // number of state for the actor, only one in SDF
 	d->setVertexDuration(middle, phaseDurVec); // is specify for every state , only one for SDF.
 	d->setReentrancyFactor(middle, 1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
-	//VERBOSE_INFO ( "Done creating config router node  " << d->getVertexId(middle) );
-	//std::cout << "Done creating config router node  " << d->getVertexId(middle) << "\n";
-	//std::cout << "token_vec_s=" << token_vec[0].size() << ",token_vec2_s=" << token_vec_2[0].size() << "\n";
 
-	//4. Remove the edges before/after the config node and multiple config nodes
-	//Setup the flow appropriately. Remove the router nodes
-	for(int i = 0; i < (int)mergeNodes.size(); i++)
+	//4. Remove the edges before/after the config node. Setup the flow. Remove the router nodes.
+	for(int i = 0; i < mn_size; i++)
 	{
 		Vertex cfgVtx = d->getVertexById( get<0>(mergeNodes[i]) );
-		Vertex v1 = d->getVertexById( get<1>(mergeNodes[i]) );
-		Vertex v2 = d->getVertexById( get<2>(mergeNodes[i]) );
+		Vertex v1;// = d->getVertexById( get<1>(mergeNodes[i]) );
+		Vertex v2;// = d->getVertexById( get<2>(mergeNodes[i]) );
 
-		//VERBOSE_INFO ( "cfgVtx=" << get<0>(mergeNodes[i]) << " v1=" << get<1>(mergeNodes[i]) << " v2=" << get<2>(mergeNodes[i]) );
-		//std::cout << "cfgVtx=" << get<0>(mergeNodes[i])  << "[" << temp_d->getNi( get<0>(mergeNodes[i]) ) << "]" << " v1=" << get<1>(mergeNodes[i]) << "[" << temp_d->getNi( get<1>(mergeNodes[i]) ) << "]" << " v2=" << get<2>(mergeNodes[i]) << "[" << temp_d->getNi( get<2>(mergeNodes[i]) ) << "]" << "\n";
-
-		std::cout << "v1=" << d->getVertexName(v1) << ",cfg=" << d->getVertexName(cfgVtx) << ",v2=" << d->getVertexName(v2) << "\n";
-		//removeAllEdgesVertex(d, cfgVtx);
 		std::vector<TOKEN_UNIT> myin, myout;
 		getEdgesPhaseVector(d, v1, cfgVtx, v2, myin, myout);
 
-		std::cout << "myin " << commons::toString(myin) << "\n";
-		std::cout << "myout " << commons::toString(myout) << "\n";
-		std::cout << "token_vec_size=" << token_vec[i].size() << ",myin_size=" << myin.size() << "\n";
-		std::cout << "token_vec_2_size=" << token_vec_2[i].size() << ",myout_size=" << myout.size() << "\n";
+		//std::cout << "v1=" << d->getVertexName(v1) << ",cfg=" << d->getVertexName(cfgVtx) << ",v2=" << d->getVertexName(v2) << "\n";
+		//std::cout << "myin " << commons::toString(myin) << "\n";
+		//std::cout << "myout " << commons::toString(myout) << "\n";
+		//std::cout << "token_vec_size=" << token_vec[i].size() << ",myin_size=" << myin.size() << "\n";
+		//std::cout << "adding edge between " << v1 << " and " << middle << "\n";
 
 		auto new_edge = d->addEdge(v1, middle);
 		d->setEdgeType(new_edge,EDGE_TYPE::BUFFERLESS_EDGE);
@@ -1280,25 +1196,16 @@ d->reset_computation();
 		d->setEdgeInPhases(new_edge, myin);
 		d->setEdgeOutPhases(new_edge, token_vec[i]);
 
-		new_edge = d->addEdge(middle, v2);
-		d->setEdgeType(new_edge,EDGE_TYPE::BUFFERLESS_EDGE);
-		d->setPreload(new_edge, preload);
-		d->setEdgeInPhases(new_edge, token_vec_2[i]);
-		//d->setEdgeOutPhases(new_edge, {1});
-		d->setEdgeOutPhases(new_edge, myout);
-
-/*
+		//std::cout << "adding edge between " << middle << " and " << v2 << "\n";
 		new_edge = d->addEdge(middle, v2);
 		d->setEdgeType(new_edge,EDGE_TYPE::BUFFERLESS_EDGE);
 		d->setPreload(new_edge, preload);
 		d->setEdgeInPhases(new_edge, token_vec[i]);
-		d->setEdgeOutPhases(new_edge, {1});
-*/
+		//d->setEdgeOutPhases(new_edge, {1});
+		d->setEdgeOutPhases(new_edge, myout);
 	}
-	//VERBOSE_INFO ( "merging " << name << " done");
-	std::cout << "merging " << name << " done\n";
-
-d->reset_computation();
+	//std::cout << "merging " << name << " done\n";
+	d->reset_computation();
 	return true;
 }
 
@@ -1405,7 +1312,7 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 		auto v2 = d->getEdgeTarget(rtredges[i]);
 		auto loc_preload = d->getPreload(rtredges[i]);
 
-		std::cout << "src=" << d->getVertexName(src) << ",rtr_new=" << d->getVertexName(middle) << ",v2=" << d->getVertexName(v2) << ",deleting=" << d->getVertexName(v1) << "\n";
+		//std::cout << "src=" << d->getVertexName(src) << ",rtr_new=" << d->getVertexName(middle) << ",v2=" << d->getVertexName(v2) << ",deleting=" << d->getVertexName(v1) << "\n";
 		removeAllEdgesVertex(d, v1);
 
 		auto new_edge = d->addEdge(middle, v2);
@@ -1474,9 +1381,6 @@ std::vector<mytuple> checkForConflicts(conflictEtype& conflictEdges, models::Dat
 				auto taski = conflictEdges[edge_id][i].first;
 				auto taskj = conflictEdges[edge_id][j].first;
 
-
-				//std::cout << "KKK-" << edge_id << "," << to->getVertexName(taski_vtx) << "," << to->getVertexName(taskj_vtx) << "\n";
-
 				auto ni = to->getNi(taski_vtx);
 				auto nj = to->getNi(taskj_vtx);
 
@@ -1498,8 +1402,7 @@ std::vector<mytuple> checkForConflicts(conflictEtype& conflictEdges, models::Dat
 
 						if( algorithms::isConflictPresent((LARGE_INT) HP, si, (LARGE_INT) ni, sj, (LARGE_INT) nj) )
 						{
-							//VERBOSE_INFO ( 
-							std::cout << "conflict between " << to->getVertexName(taski_vtx) << " and " << to->getVertexName(taskj_vtx) << "\n";// );
+							VERBOSE_INFO ("confl: " << to->getVertexName(taski_vtx) << " and " << to->getVertexName(taskj_vtx) << "\n");
 							conflictname = to->getVertexName(taski_vtx);
 							get<0>(tuple_temp) = taski;
 							getPrevAndNextVertex(taski, to, prev, next);
@@ -1526,7 +1429,6 @@ std::vector<mytuple> checkForConflicts(conflictEtype& conflictEdges, models::Dat
 								mergeNodes.push_back(tuple_temp);
 								std::cout << prev << "-> " << taskj << "->" << next << "\n";
 								return mergeNodes;
-								//break;
 							}
 						}
 					}
@@ -1579,9 +1481,12 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 	for (auto  key : persched) {
 		auto task = key.first;
 		auto task_vtx = to->getVertexById(key.first);
+		std::stringstream ss;
+		for(int i = 0; i < (int)persched[task].second.size(); i++)
+			ss << std::setprecision(13) << persched[task].second[i] << " ";
+
 		*HP =    ( persched[task].first * to->getNi(task_vtx) ) / (persched[task].second.size()) ;
-		VERBOSE_INFO ( "Task " <<  to->getVertexName(task_vtx) <<  " : duration=[ " << commons::toString(to->getVertexPhaseDuration(task_vtx)) <<  "] period=" <<  persched[task].first << " HP=" << *HP << " Ni=" << to->getNi(task_vtx)
-				<< " starts=[ " << commons::toString(persched[task].second) << "]");
+		VERBOSE_INFO ( "Task " <<  to->getVertexName(task_vtx) <<  " : duration=[ " << commons::toString(to->getVertexPhaseDuration(task_vtx)) <<  "] period=" <<  persched[task].first << " HP=" << *HP << " Ni=" << to->getNi(task_vtx) << " starts=[ " << ss.str() << "]");
 		*LCM = boost::math::lcm(*LCM, to->getNi(task_vtx));
 
 	}
@@ -1823,12 +1728,12 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 	//if (param_list.count("skip_merge") != 1)
 	//if (false)
-	int myid = 0;
+	//int myid = 0;
 	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++)
 	{
 		VERBOSE_INFO ("Call mergeConfigNodes");
 		mergeConfigNodes(to, it->first, it->second);
-		std::cout << "returned " << myid++ << "\n";
+		//std::cout << "returned " << myid++ << "\n";
 	}
 	print_graph(to, original_df);
 
