@@ -104,16 +104,23 @@ void StorageDistribution::updateDistributionSize() {
 
 // Prints member data of StorageDistribution for debugging
 void StorageDistribution::print_info() {
-  std::cout << "Current StorageDistribution info:" << std::endl;
-  std::cout << "Number of edges: " << this->edge_count << std::endl;
-  std::cout << "Channel quantities: " << std::endl;
+  std::cout << "\tCurrent StorageDistribution info:" << std::endl;
+  std::cout << "\tNumber of edges: " << this->edge_count << std::endl;
+  std::cout << "\tChannel quantities:" << std::endl;
+  unsigned int ch_count = 0;
   for (auto it = this->channel_quantities.begin();
        it != this->channel_quantities.end(); it++) {
+    if (!ch_count)
+      std::cout << "\t";
     std::cout << it->second << " ";
+    ch_count++;
+    if (ch_count == (this->edge_count / 2)) {
+      std::cout << std::endl << "\t";
+    }
   }
-  std::cout << std::endl;
-  std::cout << "Distribution size: " << this->distribution_size << std::endl;
-  std::cout << "Throughput: " << this->thr << std::endl;
+  std::cout << std::endl; // double line return to mark end of channel quantities
+  std::cout << "\tDistribution size: " << this->distribution_size << std::endl;
+  std::cout << "\tThroughput: " << this->thr << std::endl;
 }
 
 StorageDistributionSet::StorageDistributionSet() {
@@ -130,25 +137,27 @@ StorageDistributionSet::StorageDistributionSet(TOKEN_UNIT dist_sz,
 
 /*
  * Add a new storage distribution to the set of storage distributions
- * Will not add storage distribution if an identical one already exists in the set
+ * Will not add storage distribution if:
+ * - An identical storage distribution already exists in the set
  */
 void StorageDistributionSet::addStorageDistribution(StorageDistribution new_distribution) {
-  // std::cout << "Attempting to add storage distribution of dist sz: "
-  //           << new_distribution.getDistributionSize() << std::endl;
+  std::cout << "\t\tAttempting to add storage distribution of dist sz: "
+            << new_distribution.getDistributionSize()
+            << " to set" << std::endl;
   if (!hasDistribution(new_distribution.getDistributionSize())) { // first storage distribution of this distribution size
-    // std::cout << "First of this distribution size: adding new distribution" << std::endl;
+    std::cout << "\t\t\tFirst of this distribution size: adding new distribution" << std::endl;
     this->set[new_distribution.getDistributionSize()].push_back(new_distribution);
   } else { // there's already a storage distribution with the same distribution size
     for (auto &distribution : this->set[new_distribution.getDistributionSize()]) {
       // don't add storage distributions that are already in checklist
       if (new_distribution == distribution) {
-        // std::cout << "Found matching distribution: not adding new distribution" << std::endl;
+        std::cout << "\t\t\tFound matching distribution: not adding new distribution" << std::endl;
         return;
       }
     }
     // no matching storage distributions of equal distribution size
-    // std::cout << "Adding new distribution" << std::endl;
     this->set[new_distribution.getDistributionSize()].push_back(new_distribution);
+    std::cout << "\t\t\tNew storage distribution added!" << std::endl;
   }
 
   // update maximum throughput and corresponding distribution size in set
@@ -285,8 +294,8 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
   // minChannelSizes = new EXEC_COUNT [dataflow->getEdgesCount()];
   
   {ForEachEdge(dataflow, c) {
-      // initialise channel size to maximum int size (should use ULONG_MAX but it's a really large value)
-      minChannelSizes[c] = INT_MAX;
+      // initialise channel size to maximum int size
+      minChannelSizes[c] = INT_MAX; // NOTE (should use ULONG_MAX but it's a really large value)
       TOKEN_UNIT ratePeriod = (TOKEN_UNIT) boost::math::gcd(dataflow->getEdgeInPhasesCount(c),
                                                             dataflow->getEdgeOutPhasesCount(c));
       // std::cout << "Rate period for " << dataflow->getEdgeName(c) << ": "
@@ -296,7 +305,10 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
         TOKEN_UNIT tokensProduced = dataflow->getEdgeInVector(c)[i % dataflow->getEdgeInPhasesCount(c)];
         TOKEN_UNIT tokensConsumed = dataflow->getEdgeOutVector(c)[i % dataflow->getEdgeOutPhasesCount(c)];
         TOKEN_UNIT tokensInitial = dataflow->getPreload(c);
-        // std::cout << "p, c, t: " << tokensProduced << ", " << tokensConsumed << ", " << tokensInitial << std::endl;
+        std::cout << "Stats for channel " << dataflow->getEdgeName(c)
+                  << std::endl;
+        std::cout << "p, c, t: " << tokensProduced << ", "
+                  << tokensConsumed << ", " << tokensInitial << std::endl;
         TOKEN_UNIT lowerBound;
 
         if (boost::math::gcd(tokensProduced, tokensConsumed)) {
