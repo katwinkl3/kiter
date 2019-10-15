@@ -305,8 +305,6 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
         TOKEN_UNIT tokensProduced = dataflow->getEdgeInVector(c)[i % dataflow->getEdgeInPhasesCount(c)];
         TOKEN_UNIT tokensConsumed = dataflow->getEdgeOutVector(c)[i % dataflow->getEdgeOutPhasesCount(c)];
         TOKEN_UNIT tokensInitial = dataflow->getPreload(c);
-        std::cout << "Stats for channel " << dataflow->getEdgeName(c)
-                  << std::endl;
         std::cout << "p, c, t: " << tokensProduced << ", "
                   << tokensConsumed << ", " << tokensInitial << std::endl;
         TOKEN_UNIT lowerBound;
@@ -323,11 +321,11 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
         
         // take the lowest bound amongst phases of prod/cons
         if (lowerBound < minChannelSizes[c]) {
-          minChannelSizes[c] = lowerBound;
+          minChannelSizes[c] = lowerBound - tokensInitial;
         }
       }
       std::cout << "Minimum channel size for " << dataflow->getEdgeName(c)
-                << ": " << minChannelSizes[c] << std::endl;      
+                << ": " << minChannelSizes[c] << std::endl;
     }}
 }
 
