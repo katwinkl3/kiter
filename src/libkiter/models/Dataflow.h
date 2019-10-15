@@ -32,6 +32,7 @@
 /* Dataflow defintion */
 
 enum EDGE_TYPE {NORMAL_EDGE, BUFFERLESS_EDGE, CONFIG_EDGE};
+enum VERTEX_TYPE {NORMAL_VERTEX, PERIODIC_VERTEX};
 
 namespace boost
 {
@@ -42,6 +43,7 @@ namespace boost
 	enum vertex_Ni_t { vertex_Ni      };
 	enum vertex_mapping_t { vertex_mapping      };
 	enum vertex_reentrancy_t { vertex_reentrancy      };
+	enum vertex_type_t       { vertex_type      };
 	enum edge_input_port_name_t        { edge_input_port_name             };
 	enum edge_output_port_name_t       { edge_output_port_name            };
 	enum edge_inputs_t        { edge_inputs             };
@@ -60,6 +62,7 @@ namespace boost
 	BOOST_INSTALL_PROPERTY(vertex,   Zi  );
 	BOOST_INSTALL_PROPERTY(vertex,   Ni  );
 	BOOST_INSTALL_PROPERTY(vertex,   reentrancy  );
+	BOOST_INSTALL_PROPERTY(vertex,   type  );
 	BOOST_INSTALL_PROPERTY(edge,   inputs  );
 	BOOST_INSTALL_PROPERTY(edge,   outputs );
 	BOOST_INSTALL_PROPERTY(edge,   alpha );
@@ -82,7 +85,8 @@ typedef boost::property < boost::vertex_name_t,       std::string ,             
 		boost::property < boost::vertex_Ni_t,     EXEC_COUNT   ,                            // Repetition Vector : Ni
 		boost::property < boost::vertex_phaseduration_t, std::vector<TIME_UNIT>   ,             // Task phase durations
 		boost::property < boost::vertex_reentrancy_t,     EXEC_COUNT   ,                         // maximum reentacy (0 : never)
-		boost::property < boost::vertex_phasecount_t, EXEC_COUNT    > > > > > > > > vertexProperties;  // Task phase count
+		boost::property < boost::vertex_type_t,     VERTEX_TYPE   ,                         // vertex type
+		boost::property < boost::vertex_phasecount_t, EXEC_COUNT    > > > > > > > > > vertexProperties;  // Task phase count
 
 typedef boost::property < boost::edge_name_t, std::string,                                    // buffer name
 		boost::property < boost::edge_input_port_name_t, std::string,                         // input port name
@@ -94,7 +98,7 @@ typedef boost::property < boost::edge_name_t, std::string,                      
 		boost::property < boost::edge_preload_t,TOKEN_UNIT   ,                                // initial marking
 		boost::property < boost::edge_alpha_t,TOKEN_FRACT   ,                                // NORMALIZATION : ALPHA
 		boost::property < boost::edge_tokensize_t,TOKEN_UNIT   ,                                // token size
-		boost::property < boost::edge_type_t,EDGE_TYPE   ,                                // token size
+		boost::property < boost::edge_type_t,EDGE_TYPE   ,                                // edge type
 		boost::property < boost::edge_index_t, ARRAY_INDEX > > > > > > > > > > > >  edgeProperties;           // buffer id
 
 
@@ -486,6 +490,22 @@ public :
     }
 
 
+    inline void                 setVertexType (const Vertex v,
+                                           const VERTEX_TYPE t)    {
+		ASSERT_WRITABLE();
+		reset_computation();
+		boost::put(boost::vertex_type, this->getG(), v.v, t);}
+    inline VERTEX_TYPE           getVertexType (const Vertex v )    const     {return boost::get(get(boost::vertex_type, this->getG()), v.v);}
+    inline std::string           getVertexTypeStr (const Vertex v )    const     {
+    	VERTEX_TYPE vt = this->getVertexType(v);
+    	switch (vt) {
+    		case NORMAL_VERTEX : return "NORMAL_VERTEX";
+    		case  PERIODIC_VERTEX : return "PERIODIC_VERTEX";
+    		default : return "UNKNOWN";
+    	}
+    }
+
+
     inline void                 setMapping (const Vertex t,
                                            const node_id_t core_id)    {
 		ASSERT_WRITABLE();
@@ -649,7 +669,7 @@ public :
 	 * GCDA work
 	 */
     std::map<ARRAY_INDEX, TOKEN_UNIT >              channelGCDA;          //!< dams precompute dam
-    inline TOKEN_UNIT computeFineGCD(Edge c)  {
+    inline TOKEN_UNIT computeFineGCD(Edge c) const  {
 
     // compute Channel GCD (multiple commun à toutes les valeurs wa1 wa2 .. va1 va2...)
     TOKEN_UNIT channelGCD = getEdgeInPhase(c,1);
@@ -666,6 +686,12 @@ public :
     return channelGCD;
 
     }
+    inline   TOKEN_UNIT getFineGCD(Edge c) const {
+    	 std::map<ARRAY_INDEX,TOKEN_UNIT >::const_iterator res = channelGCDA.find(this->getEdgeId(c));
+    	 if (res != channelGCDA.end()) return res->second;
+    	 return computeFineGCD(c);
+    }
+
     inline   TOKEN_UNIT getFineGCD(Edge c)  {
 
     	//return computeFineGCD(c);

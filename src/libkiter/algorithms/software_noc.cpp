@@ -27,7 +27,6 @@
 #include <commons/SDF3Wrapper.h>
 
 static TIME_UNIT NULL_DURATION = 0;
-static bool DO_BUFFERLESS = false;
 //static bool STOP_AT_FIRST = false;
 //static bool GET_PREVIOUS = false;
 
@@ -49,7 +48,7 @@ typedef std::map< std::string, std::vector< mytuple > > conflictConfigs;
 
 
 void print_graph (models::Dataflow * to, models::Dataflow* original) {
-
+	return;
 	static int counter = 0;
 	counter ++ ;
 
@@ -85,8 +84,11 @@ void print_graph (models::Dataflow * to, models::Dataflow* original) {
 		ratio = new_ratio;
 	}}
 
-	TIME_UNIT throughput;
-	scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to , DO_BUFFERLESS, throughput) ;
+	scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to) ;
+
+	TIME_UNIT throughput = 0;
+	VERBOSE_ASSERT(throughput > 0, "fix me: period is P_i * N_I");
+
 	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, DO_BUFFERLESS , STOP_AT_FIRST, GET_PREVIOUS);
 	to->reset_computation();
 
@@ -1494,70 +1496,6 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 }
 
 
-void algorithms::software_noc(models::Dataflow* const  dataflow, parameters_list_t param_list)
-{
-	// STEP 0.2 - Assert SDF
-	models::Dataflow* to = new models::Dataflow(*dataflow);
-
-	for (Vertex t : to->vertices()) {
-		VERBOSE_INFO( "Task " << to->getVertexName(t) << " Reetrancy = " << to->getReentrancyFactor(t) );
-	}
-
-	models::Dataflow* to2 = new models::Dataflow(*dataflow);
-	//symbolic execution to find program execution order
-	std::vector<ARRAY_INDEX> prog_order = symbolic_execution(to2);
-
-	//Init NoC
-	int mesh_row = (int)ceil(sqrt(dataflow->getVerticesCount()));
-
-	if(mesh_row <= 4)
-		mesh_row = 4;
-
-	NoC *noc = new NoC(mesh_row, mesh_row, 1);
-	noc->generateShortestPaths();
-
-	//do some processing to perfrom task mapping, NoC route determination and add intermediate nodes
-	std::map<int, route_t> routes = graphProcessing(to, noc, prog_order);
-
-	conflictEtype conflictEdges; //stores details of flows that share noc edges
-	conflictConfigs configs;
-	if (param_list.find("skipIN") == param_list.end())
-	{
-		addIntermediateNodes(to, noc, conflictEdges, routes, configs);
-	}
-
-
-	double xscale  = 1;
-	double yscale = 1;
-	if (param_list.count("xscale") == 1) xscale = std::stod(param_list["xscale"]);
-	if (param_list.count("yscale") == 1) yscale = std::stod(param_list["yscale"]);
-
-	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
-	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
-
-	//scheduling_t persched =  algorithms::generateKperiodicSchedule   (to , false) ;
-
-	//std::cout << printers::GenerateDOT(to);
-
-	for (Vertex t : to->vertices()) {
-		VERBOSE_INFO( "Task " << to->getVertexName(t) << " Reetrancy = " << to->getReentrancyFactor(t) );
-	}
-
-
-	std::map<Vertex,EXEC_COUNT> kvector;
-			{ForEachVertex(to,v) {
-				kvector[v] = 1;
-			}}
-    std::pair<TIME_UNIT, std::set<Edge> > result = algorithms::KScheduleBufferLess(to,&kvector);
-    scheduling_t persched = period2scheduling(to,kvector,result.first);
-
-	unsigned long LCM;
-	TIME_UNIT HP;
-	findHP(dataflow, to, persched, &HP, &LCM);
-	std::string name;
-	checkForConflicts(conflictEdges, to, HP, persched, dataflow, name);
-}
-
 
 bool algorithms::isConflictPresent(LARGE_INT HP, TIME_UNIT si, LARGE_INT ni, TIME_UNIT sj, LARGE_INT nj)
 {
@@ -1683,9 +1621,12 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	models::Dataflow* to = new models::Dataflow(*dataflow);
 	models::Dataflow* original_df = new models::Dataflow(*dataflow);
 
+<<<<<<< HEAD
 	TIME_UNIT throughput;
 	algorithms::scheduling::CSDF_KPeriodicScheduling    (to , DO_BUFFERLESS, throughput) ;
 	//print_graph(to, original_df);
+=======
+>>>>>>> 5761a9da9dda3a95e23dfa46bcd9014e1637f125
 	std::map<int, Edge> edge_list;
 
 	//symbolic execution to find program execution order
@@ -1724,7 +1665,12 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		auto dest = to->getVertexById(i);
 		resolveDestConflicts(to, dest, origV);
 	}
+<<<<<<< HEAD
 	print_graph(to, original_df);
+=======
+*/
+	//print_graph(to, original_df);
+>>>>>>> 5761a9da9dda3a95e23dfa46bcd9014e1637f125
 
 	//if (param_list.count("skip_merge") != 1)
 	//if (false)
@@ -1732,10 +1678,16 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++)
 	{
 		VERBOSE_INFO ("Call mergeConfigNodes");
+<<<<<<< HEAD
 		mergeConfigNodes(to, it->first, it->second);
 		//std::cout << "returned " << myid++ << "\n";
+=======
+		//if( mergeConfigNodes(to, it->first, it->second))
+		//	print_graph(to, original_df);
+>>>>>>> 5761a9da9dda3a95e23dfa46bcd9014e1637f125
 	}
-	print_graph(to, original_df);
+	/*
+	 * 	print_graph(to, original_df);
 
 	//Remove conflicts at source and destination router links as a big node has been created
 	for(auto it:routes)
@@ -1745,13 +1697,27 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		if(cf_it != conflictEdges.end())
 	 		conflictEdges.erase(cf_it);
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5761a9da9dda3a95e23dfa46bcd9014e1637f125
 		auto mysize = routes[it.first].size() - 1;
 		auto end_id = routes[it.first][mysize];
 		auto cf_it2 = conflictEdges.find((unsigned int)end_id);
 		if(cf_it2 != conflictEdges.end())
 	 		conflictEdges.erase(cf_it2);
+<<<<<<< HEAD
 	}
 
+=======
+
+	}
+*/
+	VERBOSE_INFO("resolving conflicts done");
+	//Original graph
+
+
+>>>>>>> 5761a9da9dda3a95e23dfa46bcd9014e1637f125
 	// This removes the vertices disconnected
 	for (bool removeme = true; removeme; ) {
 		{ForEachVertex(to,v) {
@@ -1771,16 +1737,28 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	//std::cout << printers::GenerateDOT(to);
 	//Given the graph "to" the perform the Kperiodic scheduling and get "persched" in return
 	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, false, false);
+	//scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling    (to) ;
 
+	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
+	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (to, algorithms::scheduling::generateNPeriodicVector(to));
+
+<<<<<<< HEAD
 	scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to , DO_BUFFERLESS, throughput) ;
 	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, DO_BUFFERLESS, STOP_AT_FIRST, GET_PREVIOUS);
+=======
+	TIME_UNIT omega = scheduling_res.getGraphPeriod();
+	std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
+	std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
+>>>>>>> 5761a9da9dda3a95e23dfa46bcd9014e1637f125
 
 	VERBOSE_INFO("findHP");
 	unsigned long LCM;
 	TIME_UNIT HP;
-	findHP(dataflow, to, persched, &HP, &LCM);
+	findHP(dataflow, to, scheduling_res.getTaskSchedule(), &HP, &LCM);
 
 
+
+<<<<<<< HEAD
 	while(true)
 	{
 		std::vector< mytuple > mergeNodes;
@@ -1794,6 +1772,11 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		to->reset_computation();
 		print_graph(to, original_df);
 	}
+=======
+		std::string name;
+		std::vector< mytuple > mergeNodes;
+		mergeNodes = checkForConflicts(conflictEdges, to, HP, scheduling_res.getTaskSchedule(), dataflow, name);
+>>>>>>> 5761a9da9dda3a95e23dfa46bcd9014e1637f125
 
 	VERBOSE_INFO ( "LCM=" << LCM );
 }

@@ -129,6 +129,17 @@ bool calcRepetitionVector(models::Dataflow *from,std::map<Vertex,EXEC_COUNT_FRAC
     	 repetitionVector[v] = repetitionVector[v] * ratePeriod;
     }}
 
+    // Workaround for repetition vector issues
+    EXEC_COUNT subrate = ratePeriod;
+    {ForEachVertex(from,v) {
+    	subrate =  boost::math::gcd(subrate, repetitionVector[v] / from->getPhasesQuantity(v));
+    }}
+    VERBOSE_DEBUG("SubRate = " << subrate);
+
+    {ForEachVertex(from,v) {
+    	 repetitionVector[v] = repetitionVector[v] / subrate;
+    }}
+
     VERBOSE_DEBUG("Repetition Vector :");
     {ForEachVertex(from,v) {
     	 from->setNi(v,repetitionVector[v]);

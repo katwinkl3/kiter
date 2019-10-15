@@ -17,6 +17,7 @@
 #include <algorithms/repetition_vector.h>
 
 
+
 bool algorithms::sameset(models::Dataflow* const dataflow, std::set<Edge> *cc1 , std::set<Edge>* cc2) {
 
     VERBOSE_DEBUG_ASSERT(cc1,"cc1 is not valid");
@@ -111,7 +112,7 @@ void algorithms::print_kperiodic_expansion_graph    (models::Dataflow* const  da
             kvector[v] =  commons::fromString<EXEC_COUNT> ( str_value );
         }
     }}
-    std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
+    kperiodic_result_t result = KSchedule(dataflow,&kvector);
 
     //STEP 1 - Generate Event Graph
     models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
@@ -174,15 +175,15 @@ void algorithms::print_kperiodic_scheduling    (models::Dataflow* const  dataflo
             kvector[v] =  commons::fromString<EXEC_COUNT> ( str_value );
         }
     }}
-    std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
+    kperiodic_result_t result = KSchedule(dataflow,&kvector);
     print_function    ( dataflow, kvector , result.first , true, true, true);
     VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
 
 }
 
-std::pair<TIME_UNIT, std::set<Edge> > algorithms::KSchedule(models::Dataflow *  const dataflow ,std::map<Vertex,EXEC_COUNT> * kvector , TIME_UNIT bound )  {
+kperiodic_result_t algorithms::KSchedule(models::Dataflow *  const dataflow ,std::map<Vertex,EXEC_COUNT> * kvector , TIME_UNIT bound )  {
 
-    std::pair<TIME_UNIT, std::set<Edge> > result;
+	kperiodic_result_t result;
 
     // STEP 0.1 - PRE
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
@@ -232,9 +233,9 @@ std::pair<TIME_UNIT, std::set<Edge> > algorithms::KSchedule(models::Dataflow *  
     return result;
 }
 
-std::pair<TIME_UNIT, std::set<Edge> > algorithms::KScheduleBufferLess(models::Dataflow *  const dataflow ,std::map<Vertex,EXEC_COUNT> * kvector , TIME_UNIT bound )  {
+kperiodic_result_t algorithms::KScheduleBufferLess(models::Dataflow *  const dataflow ,std::map<Vertex,EXEC_COUNT> * kvector , TIME_UNIT bound )  {
 
-    std::pair<TIME_UNIT, std::set<Edge> > result;
+    kperiodic_result_t result;
 
     // STEP 0.1 - PRE
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
@@ -847,7 +848,7 @@ void algorithms::compute_NKperiodic_throughput            (models::Dataflow* con
         kvector[t] = dataflow->getNi(t);
     }}
 
-    std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
+    kperiodic_result_t result = KSchedule(dataflow,&kvector);
 
     TIME_UNIT res = result.first;
     std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
@@ -868,7 +869,7 @@ void algorithms::compute_2Kperiodic_throughput            (models::Dataflow* con
         kvector[t] = 2;
     }}
 
-    std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
+    kperiodic_result_t result = KSchedule(dataflow,&kvector);
     TIME_UNIT res = result.first;
     std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
     std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
@@ -891,7 +892,7 @@ void algorithms::compute_1Kperiodic_throughput            (models::Dataflow* con
         kvector[t] = 1;
     }}
 
-    std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
+    kperiodic_result_t result = KSchedule(dataflow,&kvector);
 
     if (printRequired) {
     	print_function    ( dataflow, kvector , result.first , false,false,true);
@@ -920,7 +921,7 @@ std::map<Vertex,EXEC_COUNT> algorithms::get_Kvector(models::Dataflow *  const da
     }}
 
 
-    std::pair<TIME_UNIT, std::set<Edge> > result;
+    kperiodic_result_t result;
 
 
 
@@ -968,7 +969,7 @@ std::map<Vertex,EXEC_COUNT> algorithms::get_Kvector(models::Dataflow *  const da
             iteration_count++;
             ////////////// SCHEDULE CALL // BEGIN : resultprime = KSchedule(dataflow,&kvector);
 
-            std::pair<TIME_UNIT, std::set<Edge> > resultprime;
+            kperiodic_result_t resultprime;
 
             //VERBOSE_ASSERT( algorithms::normalize(dataflow),"inconsistent graph");
             VERBOSE_INFO("KPeriodic EventGraph generation");
@@ -1043,7 +1044,7 @@ void algorithms::compute_KperiodicSlow_throughput    (models::Dataflow* const da
     {ForEachVertex(dataflow,t) {
         kvector[t] = 1;
     }}
-    std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
+    kperiodic_result_t result = KSchedule(dataflow,&kvector);
 
     if (result.second.size() != 0) {
 
@@ -1053,7 +1054,7 @@ void algorithms::compute_KperiodicSlow_throughput    (models::Dataflow* const da
         while (true) {
             iteration_count++;
             updateVectorWithLocalNi(dataflow,&kvector,&(result.second));
-            std::pair<TIME_UNIT, std::set<Edge> > resultprime = KSchedule(dataflow,&kvector);
+            kperiodic_result_t resultprime = KSchedule(dataflow,&kvector);
             if (sameset(dataflow,&(resultprime.second),&(result.second)))  {
                 VERBOSE_INFO("Critical circuit is the same");
                 result = resultprime;
@@ -1123,7 +1124,7 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
     }}
 
 
-    std::pair<TIME_UNIT, std::set<Edge> > result;
+    kperiodic_result_t result;
 
 
 
@@ -1176,7 +1177,7 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
             iteration_count++;
             ////////////// SCHEDULE CALL // BEGIN : resultprime = KSchedule(dataflow,&kvector);
 
-            std::pair<TIME_UNIT, std::set<Edge> > resultprime;
+            kperiodic_result_t resultprime;
 
             //VERBOSE_ASSERT( algorithms::normalize(dataflow),"inconsistent graph");
             VERBOSE_INFO("KPeriodic EventGraph generation");
@@ -1309,7 +1310,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
     }}
 
 
-    std::pair<TIME_UNIT, std::set<Edge> > result;
+    kperiodic_result_t result;
 
 
 
@@ -1366,7 +1367,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
             iteration_count++;
             ////////////// SCHEDULE CALL // BEGIN : resultprime = KSchedule(dataflow,&kvector);
 
-            std::pair<TIME_UNIT, std::set<Edge> > resultprime;
+            kperiodic_result_t resultprime;
 
             //VERBOSE_ASSERT( algorithms::normalize(dataflow),"inconsistent graph");
             VERBOSE_INFO("KPeriodic EventGraph generation");
@@ -1479,7 +1480,7 @@ void algorithms::compute_KperiodicSlow2_throughput    (models::Dataflow* const d
     {ForEachVertex(dataflow,t) {
         kvector[t] = 1;
     }}
-    std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
+    kperiodic_result_t result = KSchedule(dataflow,&kvector);
 
     if (result.second.size() != 0) {
 
@@ -1492,7 +1493,7 @@ void algorithms::compute_KperiodicSlow2_throughput    (models::Dataflow* const d
 	    {ForEachVertex(dataflow,v) {
 		VERBOSE_INFO("New vector " << dataflow->getVertexName(v) << " = " << kvector[v]  << "( Ni=" << dataflow->getNi(v) << ")" );
 	      }}
-	    std::pair<TIME_UNIT, std::set<Edge> > resultprime = KSchedule(dataflow,&kvector);
+	    kperiodic_result_t resultprime = KSchedule(dataflow,&kvector);
             if (sameset(dataflow,&(resultprime.second),&(result.second)))  {
                 VERBOSE_INFO("Critical circuit is the same");
                 result = resultprime;
@@ -1535,7 +1536,7 @@ EXEC_COUNT algorithms::test_Kperiodic_throughput    (models::Dataflow* const dat
     {ForEachVertex(dataflow,t) {
         kvector[t] = 1;
     }}
-    std::pair<TIME_UNIT, std::set<Edge> > result = KSchedule(dataflow,&kvector);
+    kperiodic_result_t result = KSchedule(dataflow,&kvector);
 
     if (result.second.size() != 0) {
 
@@ -1545,7 +1546,7 @@ EXEC_COUNT algorithms::test_Kperiodic_throughput    (models::Dataflow* const dat
         while (true) {
             iteration_count++;
             updateVectorWithLocalNi(dataflow,&kvector,&(result.second));
-            std::pair<TIME_UNIT, std::set<Edge> > resultprime = KSchedule(dataflow,&kvector);
+            kperiodic_result_t resultprime = KSchedule(dataflow,&kvector);
             if (sameset(dataflow,&(resultprime.second),&(result.second)))  {
                 VERBOSE_INFO("Critical circuit is the same");
                 result = resultprime;

@@ -199,7 +199,7 @@ template <typename entier,typename flottant>
 template <typename entier>
    inline entier ceil  ( entier v , entier c){ return (entier) std::ceil ((TIME_UNIT) v / (TIME_UNIT) c) * c; }
 template <typename entier>
-   inline entier floor ( entier v , entier c){ return (entier) std::floor((TIME_UNIT) v / (TIME_UNIT) c) * c; }
+   inline const entier floor ( entier v , entier c){ return (entier) std::floor((TIME_UNIT) v / (TIME_UNIT) c) * c; }
 template <typename entier>
    inline entier flooru  ( entier v , entier c){ return (entier) std::floor(commons::division(v,c)) * c; }
 template <typename entier>
