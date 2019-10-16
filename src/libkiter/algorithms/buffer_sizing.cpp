@@ -321,7 +321,7 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
         
         // take the lowest bound amongst phases of prod/cons
         if (lowerBound < minChannelSizes[c]) {
-          minChannelSizes[c] = lowerBound - tokensInitial;
+          minChannelSizes[c] = lowerBound;
         }
       }
       std::cout << "Minimum channel size for " << dataflow->getEdgeName(c)

@@ -1819,9 +1819,9 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   {
     ForEachEdge(dataflow_prime, c) {
       // subtract initial tokens from buffer size to model any initial tokens in buffer
-      // dataflow_prime->setPreload(c, (initDist.getChannelQuantity(c) -
-      //                                initialTokens[c]));
-      dataflow_prime->setPreload(c, initDist.getChannelQuantity(c));
+      dataflow_prime->setPreload(c, (initDist.getChannelQuantity(c) -
+                                     initialTokens[c]));
+      // dataflow_prime->setPreload(c, initDist.getChannelQuantity(c));
     }
   }
   // NOTE uncomment to get XMLs of lower bound distribution
@@ -1835,6 +1835,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   //     }}
 
   // calculate max throughput and current throughput with lower bound distribution
+  // TODO refactor pairs to use kperiodic_result_t over pairs
   std::pair<TIME_UNIT, std::set<Edge>> result_max = compute_Kperiodic_throughput_and_cycles(dataflow, parameters); // calculate max throughput of graph
   std::cout << "Max throughput: " << result_max.first << std::endl;
   std::pair<TIME_UNIT, std::set<Edge>> result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
@@ -1869,8 +1870,8 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
                                                                          * entire graph every time?
                                                                          */
           dataflow_prime->reset_computation(); // make graph writeable to alter channel size
-          // dataflow_prime->setPreload(c, checkDist.getChannelQuantity(c) - initialTokens[c]); // subtract initial tokens in buffer
-          dataflow_prime->setPreload(c, checkDist.getChannelQuantity(c));
+          dataflow_prime->setPreload(c, checkDist.getChannelQuantity(c) - initialTokens[c]); // subtract initial tokens in buffer
+          // dataflow_prime->setPreload(c, checkDist.getChannelQuantity(c));
         }
       }}
 
