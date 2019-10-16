@@ -57,6 +57,7 @@ public:
   void print_distributions(TOKEN_UNIT dist_sz); /* prints info of all storage distributions 
                                                    of given distribution size */
   void print_distributions(); // prints info of all storage distributions in set
+  void write_csv(std::string filename); // writes to a CSV file for plots
   
 private:
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> set; /* store storage distributions 

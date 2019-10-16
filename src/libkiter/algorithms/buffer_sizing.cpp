@@ -6,6 +6,8 @@
 #include <boost/math/common_factor_rt.hpp>  // for boost::math::gcd, lcm
 #include <algorithms/buffer_sizing.h>
 #include <models/Dataflow.h>
+#include <iostream>
+#include <fstream>
 
 StorageDistribution::StorageDistribution()
   :edge_count{0}, thr{0}, distribution_size{0} {
@@ -265,6 +267,21 @@ void StorageDistributionSet::print_distributions() {
   }
 }
 
+/* Writes storage distribution set info to a CSV file to plot data
+   Takes in file name as argument --- explicitly state file 
+   format (e.g. "example_filename.csv") */
+void StorageDistributionSet::write_csv(std::string filename) {
+  std::ofstream outputFile;
+  outputFile.open(filename);
+  outputFile << "storage distribution size,throughput" << std::endl; // initialise headers
+  for (auto &it : this->set) {
+    for (auto &sd : this->set[it.first]) {
+      outputFile << it.first << "," << sd.getThroughput() << std::endl;
+    }
+  }
+  outputFile.close();
+}
+
 // Returns the minimum step size for each channel in the given dataflow graph
 void findMinimumStepSz(models::Dataflow *dataflow,
                        std::map<Edge, TOKEN_UNIT> &minStepSizes) {
@@ -353,4 +370,3 @@ void initSearchParameters(models::Dataflow *dataflow,
   findMinimumStepSz(dataflow, minStepSizes);
   findMinimumChannelSz(dataflow, minChannelSizes);
 }
-

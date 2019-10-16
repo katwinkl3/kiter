@@ -1943,5 +1943,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   std::cout << "Done with search!" << std::endl;
   std::cout << "Number of computations: " << counter << std::endl;
   std::cout << "Number of pareto points: " << minStorageDist.getSize() << std::endl;
+
+  // minStorageDist.write_csv("test.csv");
 }
 
