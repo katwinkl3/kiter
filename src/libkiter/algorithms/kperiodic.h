@@ -68,7 +68,7 @@ void                compute_Kperiodic_throughput              (models::Dataflow 
     void print_2periodic_eventgraph                                 (models::Dataflow* const  dataflow, parameters_list_t);
     void print_NKperiodic_eventgraph                                (models::Dataflow *  const , parameters_list_t);
     EXEC_COUNT test_Kperiodic_throughput    (models::Dataflow* const dataflow, parameters_list_t) ;
-    std::pair<TIME_UNIT, std::set<Edge>> compute_Kperiodic_throughput_and_cycles(models::Dataflow* const dataflow, parameters_list_t);
+    kperiodic_result_t compute_Kperiodic_throughput_and_cycles(models::Dataflow* const dataflow, parameters_list_t);
     void compute_Kperiodic_throughput_dse (models::Dataflow* const  dataflow, parameters_list_t);
 }
 

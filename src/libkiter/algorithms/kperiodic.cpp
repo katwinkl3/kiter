@@ -1586,7 +1586,7 @@ EXEC_COUNT algorithms::test_Kperiodic_throughput    (models::Dataflow* const dat
 /*
  * Compute and return period and causal dependency cycles of given dataflow graph
  */
-std::pair<TIME_UNIT, std::set<Edge>> algorithms::compute_Kperiodic_throughput_and_cycles(models::Dataflow* const dataflow, parameters_list_t parameters) {
+kperiodic_result_t algorithms::compute_Kperiodic_throughput_and_cycles(models::Dataflow* const dataflow, parameters_list_t parameters) {
   
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
@@ -1835,10 +1835,9 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   //     }}
 
   // calculate max throughput and current throughput with lower bound distribution
-  // TODO refactor pairs to use kperiodic_result_t over pairs
-  std::pair<TIME_UNIT, std::set<Edge>> result_max = compute_Kperiodic_throughput_and_cycles(dataflow, parameters); // calculate max throughput of graph
+  kperiodic_result_t result_max = compute_Kperiodic_throughput_and_cycles(dataflow, parameters); // calculate max throughput of graph
   std::cout << "Max throughput: " << result_max.first << std::endl;
-  std::pair<TIME_UNIT, std::set<Edge>> result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
+  kperiodic_result_t result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
   std::cout << "Initial Throughput (from lowerbound distribution): "
             << result.first << std::endl;
   initDist.setThroughput(result.first); // set throughput given initial distribution
