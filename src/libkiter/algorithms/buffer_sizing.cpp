@@ -112,8 +112,9 @@ void StorageDistribution::print_info() {
   unsigned int ch_count = 0;
   for (auto it = this->channel_quantities.begin();
        it != this->channel_quantities.end(); it++) {
-    if (!ch_count)
+    if (!ch_count) {
       std::cout << "\t";
+    }
     std::cout << it->second << " ";
     ch_count++;
     if (ch_count == (this->edge_count / 2)) {
@@ -123,6 +124,22 @@ void StorageDistribution::print_info() {
   std::cout << std::endl; // double line return to mark end of channel quantities
   std::cout << "\tDistribution size: " << this->distribution_size << std::endl;
   std::cout << "\tThroughput: " << this->thr << std::endl;
+}
+
+std::string StorageDistribution::print_quantities_csv() {
+  std::string output("\"");
+  std::string delim("");
+  unsigned int ch_count = 0;
+  for (auto &it : this->channel_quantities) {
+    if (ch_count >= (this->edge_count / 2)) {
+      output += delim;
+      output += std::to_string(it.second);
+      delim = ",";
+    }
+    ch_count++;
+  }
+  output += "\"";
+  return output;
 }
 
 StorageDistributionSet::StorageDistributionSet() {
@@ -273,10 +290,10 @@ void StorageDistributionSet::print_distributions() {
 void StorageDistributionSet::write_csv(std::string filename) {
   std::ofstream outputFile;
   outputFile.open(filename);
-  outputFile << "storage distribution size,throughput" << std::endl; // initialise headers
+  outputFile << "storage distribution size,throughput,channel quantities" << std::endl; // initialise headers
   for (auto &it : this->set) {
     for (auto &sd : this->set[it.first]) {
-      outputFile << it.first << "," << sd.getThroughput() << std::endl;
+      outputFile << it.first << "," << sd.getThroughput() << "," << sd.print_quantities_csv() << std::endl;
     }
   }
   outputFile.close();

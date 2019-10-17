@@ -33,6 +33,7 @@ public:
   bool operator!=(const StorageDistribution& distribution) const;
   void updateDistributionSize();
   void print_info();
+  std::string print_quantities_csv();
 private:
   unsigned int edge_count;
   TIME_UNIT thr; // throughput of given storage distribution

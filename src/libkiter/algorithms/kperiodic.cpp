@@ -1854,7 +1854,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   while (!minStorageDist.isSearchComplete(checklist, result_max.first)) {
     // Remove first storage distribution in checklist
     std::cout << "Checking next storage distribution in checklist --- current checklist size: "
-              << checklist.getSize() << ", max throughput: " << result.first
+              << checklist.getSize() // << ", max throughput: " << result.first
               << std::endl;
     StorageDistribution checkDist(checklist.getNextDistribution()); // copy distribution to check
     checklist.removeStorageDistribution(checklist.getNextDistribution());
@@ -1896,6 +1896,11 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     // std::cout << std::endl;
 
     // Create new storage distributions for every storage dependency found; add new storage distributions to checklist
+    std::cout << "Printing critical channels:" << std::endl;
+    for (std::set<Edge>::iterator it = (result.second).begin();
+         it != (result.second).end(); it++) {
+      std::cout << dataflow_prime->getEdgeName(*it) << std::endl;
+    }
     for (std::set<Edge>::iterator it = (result.second).begin();
          it != (result.second).end(); it++) {
       StorageDistribution newDist(checkDist);
@@ -1944,6 +1949,6 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   std::cout << "Number of computations: " << counter << std::endl;
   std::cout << "Number of pareto points: " << minStorageDist.getSize() << std::endl;
 
-  // minStorageDist.write_csv("test.csv");
+  minStorageDist.write_csv("test.csv");
 }
 
