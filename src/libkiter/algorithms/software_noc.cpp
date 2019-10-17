@@ -1621,12 +1621,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	models::Dataflow* to = new models::Dataflow(*dataflow);
 	models::Dataflow* original_df = new models::Dataflow(*dataflow);
 
-<<<<<<< HEAD
-	TIME_UNIT throughput;
-	algorithms::scheduling::CSDF_KPeriodicScheduling    (to , DO_BUFFERLESS, throughput) ;
 	//print_graph(to, original_df);
-=======
->>>>>>> 5761a9da9dda3a95e23dfa46bcd9014e1637f125
 	std::map<int, Edge> edge_list;
 
 	//symbolic execution to find program execution order
@@ -1665,30 +1660,15 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		auto dest = to->getVertexById(i);
 		resolveDestConflicts(to, dest, origV);
 	}
-<<<<<<< HEAD
 	print_graph(to, original_df);
-=======
-*/
-	//print_graph(to, original_df);
->>>>>>> 5761a9da9dda3a95e23dfa46bcd9014e1637f125
 
 	//if (param_list.count("skip_merge") != 1)
 	//if (false)
-	//int myid = 0;
+	VERBOSE_INFO ("Call mergeConfigNodes");
 	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++)
-	{
-		VERBOSE_INFO ("Call mergeConfigNodes");
-<<<<<<< HEAD
 		mergeConfigNodes(to, it->first, it->second);
-		//std::cout << "returned " << myid++ << "\n";
-=======
-		//if( mergeConfigNodes(to, it->first, it->second))
-		//	print_graph(to, original_df);
->>>>>>> 5761a9da9dda3a95e23dfa46bcd9014e1637f125
-	}
-	/*
-	 * 	print_graph(to, original_df);
 
+	print_graph(to, original_df);
 	//Remove conflicts at source and destination router links as a big node has been created
 	for(auto it:routes)
 	{
@@ -1697,27 +1677,17 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		if(cf_it != conflictEdges.end())
 	 		conflictEdges.erase(cf_it);
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 5761a9da9dda3a95e23dfa46bcd9014e1637f125
 		auto mysize = routes[it.first].size() - 1;
 		auto end_id = routes[it.first][mysize];
 		auto cf_it2 = conflictEdges.find((unsigned int)end_id);
 		if(cf_it2 != conflictEdges.end())
 	 		conflictEdges.erase(cf_it2);
-<<<<<<< HEAD
 	}
 
-=======
-
-	}
-*/
 	VERBOSE_INFO("resolving conflicts done");
 	//Original graph
 
 
->>>>>>> 5761a9da9dda3a95e23dfa46bcd9014e1637f125
 	// This removes the vertices disconnected
 	for (bool removeme = true; removeme; ) {
 		{ForEachVertex(to,v) {
@@ -1739,26 +1709,23 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, false, false);
 	//scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling    (to) ;
 
-	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
-	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (to, algorithms::scheduling::generateNPeriodicVector(to));
-
-<<<<<<< HEAD
-	scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to , DO_BUFFERLESS, throughput) ;
+	//TIME_UNIT throughput;
+	scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to);// , DO_BUFFERLESS, throughput) ;
 	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, DO_BUFFERLESS, STOP_AT_FIRST, GET_PREVIOUS);
-=======
-	TIME_UNIT omega = scheduling_res.getGraphPeriod();
-	std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
-	std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
->>>>>>> 5761a9da9dda3a95e23dfa46bcd9014e1637f125
+
+	//VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
+	//models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, algorithms::scheduling::generateNPeriodicVector(to));
+	//TIME_UNIT omega = scheduling_res.getGraphPeriod();
+	//std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
+	//std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
 
 	VERBOSE_INFO("findHP");
 	unsigned long LCM;
 	TIME_UNIT HP;
-	findHP(dataflow, to, scheduling_res.getTaskSchedule(), &HP, &LCM);
+	//findHP(dataflow, to, scheduling_res.getTaskSchedule(), &HP, &LCM);
+	findHP(dataflow, to, persched, &HP, &LCM);
 
 
-
-<<<<<<< HEAD
 	while(true)
 	{
 		std::vector< mytuple > mergeNodes;
@@ -1768,16 +1735,10 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 			break;
 		mergeConfigNodes(to, name, mergeNodes);
 		to->reset_computation();
-		persched = algorithms::scheduling::CSDF_KPeriodicScheduling    (to , DO_BUFFERLESS, throughput) ;
+		persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to);// , DO_BUFFERLESS, throughput) ;
 		to->reset_computation();
 		print_graph(to, original_df);
 	}
-=======
-		std::string name;
-		std::vector< mytuple > mergeNodes;
-		mergeNodes = checkForConflicts(conflictEdges, to, HP, scheduling_res.getTaskSchedule(), dataflow, name);
->>>>>>> 5761a9da9dda3a95e23dfa46bcd9014e1637f125
-
 	VERBOSE_INFO ( "LCM=" << LCM );
 }
 
