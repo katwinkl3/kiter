@@ -238,11 +238,22 @@ void StorageDistributionSet::minimizeStorageDistributions(StorageDistribution ne
      of the addStorageDistribution function if we don't increment by minStepSizes */
   for (auto &distribution_sz : this->set) {
     for (auto &storage_dist : distribution_sz.second) {
+      // std::cout << "Comparing new SD of size: "
+      //           << newDistSz << " to SD of size: "
+      //           << storage_dist.getDistributionSize() << ", throughput (new): "
+      //           << newThr << ", (old): "
+      //           << storage_dist.getThroughput() << std::endl;
       if ((newDistSz > storage_dist.getDistributionSize() &&
-           newThr <= storage_dist.getThroughput()) ||
+           (newThr < storage_dist.getThroughput() ||
+            commons::AreSame(newThr, storage_dist.getThroughput()))) || // needed to compare floats
           (newDistSz >= storage_dist.getDistributionSize() &&
            newThr < storage_dist.getThroughput())) {
+        std::cout << "\t\tNew storage distribution of size "
+                  << newDist.getDistributionSize()
+                  << " found to be non-minimal: removing from set"
+                  << std::endl;
         this->removeStorageDistribution(newDist);
+        return; // no need to iterate through rest of set once newDist has been removed
       }
     }
   }
