@@ -285,7 +285,7 @@ bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
   /* search is complete when the max throughput has been found and there 
      isn't any more storage distributions of the same distribution size
      left to check */
-  return (((this->p_max.second == target_thr) &&
+  return ((commons::AreSame(this->p_max.second, target_thr) &&
           (!checklist.hasDistribution(this->p_max.first))) ||
           (checklist.getSize() <= 0)); // also end when we're out of distributions to check
 }
