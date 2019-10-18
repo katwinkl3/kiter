@@ -18,14 +18,17 @@ public:
   StorageDistribution();
   StorageDistribution(unsigned int edge_count,
                       TIME_UNIT thr,
-                      std::map<Edge, TOKEN_UNIT> channel_quantities,
+                      std::map<Edge,
+                      std::pair<TOKEN_UNIT, TOKEN_UNIT>> channel_quantities,
                       TOKEN_UNIT distribution_size);
   //  StorageDistribution(const StorageDistribution&)=default; // using default copy constructor for now
 
   void setChannelQuantity(Edge e, TOKEN_UNIT quantity);
+  void setInitialTokens(Edge e, TOKEN_UNIT token_count);
   void setDistributionSize(TOKEN_UNIT sz);
   void setThroughput(TIME_UNIT thr);
   TOKEN_UNIT getChannelQuantity(Edge e) const;
+  TOKEN_UNIT getInitialTokens(Edge e) const;
   TOKEN_UNIT getDistributionSize() const;
   TIME_UNIT getThroughput() const;
   unsigned int getEdgeCount() const;
@@ -38,7 +41,7 @@ private:
   unsigned int edge_count;
   TIME_UNIT thr; // throughput of given storage distribution
   TOKEN_UNIT distribution_size; // should be equal to sum of channel quantities
-  std::map<Edge, TOKEN_UNIT> channel_quantities; // amount of space (in tokens per channel)
+  std::map<Edge, std::pair<TOKEN_UNIT, TOKEN_UNIT>> channel_quantities; // amount of space (in tokens per channel)
 };
 
 class StorageDistributionSet {
@@ -71,10 +74,13 @@ private:
 void findMinimumStepSz(models::Dataflow *dataflow,
                        std::map<Edge, TOKEN_UNIT> &minStepSizes);
 void findMinimumChannelSz(models::Dataflow *dataflow,
-                          std::map<Edge, TOKEN_UNIT> &minChannelSizes);
+                          std::map<Edge,
+                          std::pair<TOKEN_UNIT, TOKEN_UNIT>> &minChannelSizes); // initial tokens in first element of pair and channel quantity in second element of pair
 TOKEN_UNIT findMinimumDistributionSz(models::Dataflow *dataflow,
-                                     std::map<Edge, TOKEN_UNIT> minChannelSizes);
+                                     std::map<Edge,
+                                     std::pair<TOKEN_UNIT, TOKEN_UNIT>> minChannelSizes);
 void initSearchParameters(models::Dataflow *dataflow,
                           std::map<Edge, TOKEN_UNIT> &minStepSizes,
-                          std::map<Edge, TOKEN_UNIT> &minChannelSizes);
+                          std::map<Edge,
+                          std::pair<TOKEN_UNIT, TOKEN_UNIT>> &minChannelSizes);
 #endif /* BUFFER_SIZING_H_ */

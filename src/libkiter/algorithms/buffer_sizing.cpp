@@ -14,21 +14,28 @@ StorageDistribution::StorageDistribution()
     // TODO: initialise empty map
                           }
 
-StorageDistribution::StorageDistribution(
-                                         unsigned int edge_count,
-                                         TIME_UNIT thr, std::map<Edge, TOKEN_UNIT> channel_quantities,
+StorageDistribution::StorageDistribution(unsigned int edge_count,
+                                         TIME_UNIT thr,
+                                         std::map<Edge, std::pair<TOKEN_UNIT, TOKEN_UNIT>> channel_quantities,
                                          TOKEN_UNIT distribution_size)
   :edge_count{edge_count}, thr{thr}, channel_quantities{channel_quantities},
    distribution_size{distribution_size} {
-     // TODO: could replace distribution_size declaration with updateDistributionSize()
+     // NOTE: could replace distribution_size declaration with updateDistributionSize()
    }
 
 // Set edge to given quantity
 void StorageDistribution::setChannelQuantity(Edge e,
                                              TOKEN_UNIT quantity) {
-  this->channel_quantities[e] = quantity;
+  this->channel_quantities[e].second = quantity;
   this->updateDistributionSize();
 }
+
+// Set initial token count of edge
+void StorageDistribution::setInitialTokens(Edge e,
+                                           TOKEN_UNIT token_count) {
+  this->channel_quantities[e].first = token_count;
+}
+
 
 // Set distribution size of storage distribution
 void StorageDistribution::setDistributionSize(TOKEN_UNIT sz) {
@@ -43,7 +50,13 @@ void StorageDistribution::setThroughput(TIME_UNIT thr) {
 // Return channel quantity of edge
 TOKEN_UNIT StorageDistribution::getChannelQuantity(Edge e) const {
   assert(channel_quantities.find(e) != channel_quantities.end()); // edge quantity not in map
-  return this->channel_quantities.at(e);
+  return this->channel_quantities.at(e).second;
+}
+
+// Return initial token count of edge
+TOKEN_UNIT StorageDistribution::getInitialTokens(Edge e) const {
+  assert(channel_quantities.find(e) != channel_quantities.end()); // edge quantity not in map
+  return this->channel_quantities.at(e).first;
 }
 
 // Return distribution size of storage distribution
@@ -97,7 +110,7 @@ void StorageDistribution::updateDistributionSize() {
   TOKEN_UNIT new_dist_sz = 0;
   for (auto it = this->channel_quantities.begin();
        it != this->channel_quantities.end(); it++) {
-    new_dist_sz += it->second;
+    new_dist_sz += it->second.second;
   }
   if (new_dist_sz != this->getDistributionSize()) {
     this->setDistributionSize(new_dist_sz);
@@ -115,7 +128,7 @@ void StorageDistribution::print_info() {
     if (!ch_count) {
       std::cout << "\t";
     }
-    std::cout << it->second << " ";
+    std::cout << it->second.second << " ";
     ch_count++;
     if (ch_count == (this->edge_count / 2)) {
       std::cout << std::endl << "\t";
@@ -133,7 +146,7 @@ std::string StorageDistribution::print_quantities_csv() {
   for (auto &it : this->channel_quantities) {
     if (ch_count >= (this->edge_count / 2)) {
       output += delim;
-      output += std::to_string(it.second);
+      output += std::to_string(it.second.second);
       delim = ",";
     }
     ch_count++;
@@ -333,14 +346,15 @@ void findMinimumStepSz(models::Dataflow *dataflow,
 /* Returns the minimum channel size for each channel for which we might have non-zero throughput
    in the given dataflow graph */
 void findMinimumChannelSz(models::Dataflow *dataflow,
-                          std::map<Edge, TOKEN_UNIT> &minChannelSizes) {
+                          std::map<Edge,
+                          std::pair<TOKEN_UNIT, TOKEN_UNIT>> &minChannelSizes) {
   std::cout << "Calculating minimal channel sizes (for postive throughput)..."
             << std::endl;
   // minChannelSizes = new EXEC_COUNT [dataflow->getEdgesCount()];
   
   {ForEachEdge(dataflow, c) {
       // initialise channel size to maximum int size
-      minChannelSizes[c] = INT_MAX; // NOTE (should use ULONG_MAX but it's a really large value)
+      minChannelSizes[c].second = INT_MAX; // NOTE (should use ULONG_MAX but it's a really large value)
       TOKEN_UNIT ratePeriod = (TOKEN_UNIT) boost::math::gcd(dataflow->getEdgeInPhasesCount(c),
                                                             dataflow->getEdgeOutPhasesCount(c));
       // std::cout << "Rate period for " << dataflow->getEdgeName(c) << ": "
@@ -365,12 +379,12 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
         lowerBound = (lowerBound > tokensInitial ? lowerBound : tokensInitial);
         
         // take the lowest bound amongst phases of prod/cons
-        if (lowerBound < minChannelSizes[c]) {
-          minChannelSizes[c] = lowerBound;
+        if (lowerBound < minChannelSizes[c].second) {
+          minChannelSizes[c].second = lowerBound;
         }
       }
       std::cout << "Minimum channel size for " << dataflow->getEdgeName(c)
-                << ": " << minChannelSizes[c] << std::endl;
+                << ": " << minChannelSizes[c].second << std::endl;
     }}
 }
 
@@ -379,13 +393,14 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
  * on every channel
  */
 TOKEN_UNIT findMinimumDistributionSz(models::Dataflow *dataflow,
-                                     std::map<Edge, TOKEN_UNIT> minChannelSizes) {
+                                     std::map<Edge,
+                                     std::pair<TOKEN_UNIT, TOKEN_UNIT>> minChannelSizes) {
   TOKEN_UNIT minDistributionSize = 0;
   // for (int i = 0; i < dataflow->getEdgesCount(); i++) {
   //   minDistributionSize += minChannelSizes[i];
   // }
   for (auto it = minChannelSizes.begin(); it != minChannelSizes.end(); it++) {
-    minDistributionSize += it->second;
+    minDistributionSize += it->second.second;
   }
   std::cout << "Lower bound distribution size: " << minDistributionSize << std::endl;
   return minDistributionSize;
@@ -394,7 +409,8 @@ TOKEN_UNIT findMinimumDistributionSz(models::Dataflow *dataflow,
 // Calculates and writes necessary information for DSE algorithm to input arguments
 void initSearchParameters(models::Dataflow *dataflow,
                           std::map<Edge, TOKEN_UNIT> &minStepSizes,
-                          std::map<Edge, TOKEN_UNIT> &minChannelSizes) {
+                          std::map<Edge,
+                          std::pair<TOKEN_UNIT, TOKEN_UNIT>> &minChannelSizes) {
   findMinimumStepSz(dataflow, minStepSizes);
   findMinimumChannelSz(dataflow, minChannelSizes);
 }
