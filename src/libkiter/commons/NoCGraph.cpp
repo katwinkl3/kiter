@@ -19,6 +19,11 @@ NoCGraph::NoCGraph(int V)
 
 void NoCGraph::addEdge(int u, int v)
 {
+	if(u < 0 || v < 0 || u > V*V || v > V*V)
+	{
+		std::cout << "u=" << u << ",v=" << v << "\n";
+		exit(0);
+	}
 	adj[u].push_back(v); // Add v to u’s list.
 }
 
@@ -122,6 +127,80 @@ void NoCGraph::printAllPathsUtil(int u, int d, bool visited[], int path[], int &
 			{
 				printAllPathsUtil(*i, d, visited, path, path_index);
 			}
+	}
+	// Remove current vertex from path[] and mark it as unvisited
+	path_index--;
+	visited[u] = false;
+}
+
+
+//find the path contention cost
+int NoCGraph::findPathCost(std::vector<int>& mypath)
+{
+	int util = 0;
+	//std::cout << "mypath_size=" << mypath.size() << "\n";
+	for (int i = 0; i < (int)mypath.size()-1; i++)
+	{
+	//	std::cout << "mypath=" << mypath[i] << "," << mypath[i+1] << "\n";
+		util += linkUtil[ getMapIndex(mypath[i], mypath[i+1]) ];
+	}
+	//std::cout << "util=" << util << "\n";
+	return util;
+}
+
+
+// A recursive function to print all paths from 'u' to 'd'.
+// visited[] keeps track of vertices in current path.
+// path[] stores actual vertices and path_index is current
+// index in path[]
+void NoCGraph::findLeastCostPath(int u, int d, bool visited[], int path[], int &path_index)
+{
+	if(u > V*V)
+	{
+		std::cout << "u=" << u << ",d=" << d << ",pids=" << path_index << "\n";
+		exit(0);
+	}
+
+	// Mark the current node and store it in path[]
+	visited[u] = true;
+	path[path_index] = u;
+	path_index++;
+
+	//std::cout << "marking u=" << u << ",path_idx=" << path_index << "\n";
+
+	// If current vertex is same as destination, then print current path[]
+	if (u == d)
+	{
+		if(dumpPaths && path[0] != d)
+		{
+			std::vector<int> mypath;
+			for (int i = 0; i<path_index; i++)
+				mypath.push_back(path[i]);
+			//std::cout << "before mypath_cost\n";
+			int new_util = findPathCost(mypath);
+			//std::cout << "before return path\n";
+			int curr_util = findPathCost(returnPath);
+			//std::cout << "after return path\n";
+
+			if(returnPath.size() == 0)
+				returnPath = mypath;
+			else if(new_util < curr_util)
+				returnPath = mypath;
+		}
+	}
+	else // If current vertex is not destination
+	{
+		if( (path_index-1) >= const_length)
+		{
+			visited[u] = false;
+			path_index--;
+			return;
+		}
+		// Recur for all the vertices adjacent to current vertex
+		std::list<int>::iterator i;
+		for (i = adj[u].begin(); i != adj[u].end(); ++i)
+			if (!visited[*i])
+				findLeastCostPath(*i, d, visited, path, path_index);
 	}
 	// Remove current vertex from path[] and mark it as unvisited
 	path_index--;

@@ -488,20 +488,141 @@ void printSCCs(models::Dataflow* to, Vertex start)
 }
 
 
-//void setmap(std::vector<int> paths, std::map<int, int>& curr_util, NoC* noc)
 void setmap(std::vector<int> paths, std::vector<int>& curr_util, NoC* noc)
 {
 	for(unsigned int p_j = 1; p_j < paths.size()-2; p_j++)
 	{
 		int mapindex = noc->getMapIndex(paths[p_j], paths[p_j+1]);
-		//if(curr_util.find(mapindex) == curr_util.end())
-		//	curr_util[mapindex] = 0;
 		curr_util[mapindex] += 1;
 	}
 }
 
 
-//int findPaths(int src, NoC* noc, int core_considered, std::map<int, int>& curr_util, std::map<int, route_t>& store_path, int storepath_id)
+int new_findPaths(int src, NoC* noc, int core_considered, std::vector<int>& curr_util, std::map<int, route_t>& store_path, int storepath_id)
+{
+	if(src != -1 && core_considered != -1)
+	{
+		std::vector<int> paths = noc->getPath(src, core_considered);
+		int max_contention = noc->findPathCost(paths);
+		//std::cout << "s=" << src << ",d=" << core_considered << ",#paths=" << paths.size() << ",cont=" << max_contention << "\n";
+		route_t path_str;
+		for(unsigned int p_j = 0; p_j < paths.size()-1; p_j++)
+			path_str.push_back(  (edge_id_t)noc->getMapIndex(paths[p_j], paths[p_j+1]) );
+		store_path[storepath_id] = path_str;
+		setmap(paths, curr_util, noc);
+		//std::cout << "end\n";
+		return max_contention;
+	}
+	return 0;
+}
+
+
+void new_mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::Dataflow* d, std::vector<int>& avail_cores, std::map<int, route_t>& routes)
+{
+	const int start_core = avail_cores[0];
+	auto index = d->getVertexId(vtx);
+	if((int)avail_cores.size() == noc->size())
+	{
+		core_mapping[index] = start_core;
+		std::remove(avail_cores.begin(), avail_cores.end(), start_core); 
+		avail_cores.resize( avail_cores.size() - 1);
+		return;
+	}
+
+	float best_contention_l1 = -1;
+	std::map<int, route_t> best_store_path;
+	std::vector<int> best_util;
+	int core_allocated = -1;
+
+	for (auto core_considered : avail_cores)
+	{
+		std::cout << "core_considered=" << core_considered << "\n";
+		int cont_l1 = -1;
+		std::vector<int> curr_util = noc->getLinkUtil();
+		std::map<int, route_t> store_path; //variable to store the route to be utilized by the (src,dest) core
+		unsigned int counter = 0;
+		unsigned int pathlen = 0;
+
+
+		{ForInputEdges(d, vtx, e){	//Find the core index
+			Vertex source_vtx = d->getEdgeSource(e);
+			auto source = d->getVertexId(source_vtx);
+			int src_core = core_mapping[source];
+			int storepath_id = noc->getMapIndex((int)source, (int)index);
+			if(src_core != -1)
+				pathlen += noc->getPathLength(src_core, core_considered);
+		}}
+
+		{ForOutputEdges(d, vtx, e){
+			Vertex target_vtx = d->getEdgeTarget(e);
+			auto target = d->getVertexId(target_vtx);
+			int tgt_core = core_mapping[target];
+			int storepath_id = noc->getMapIndex((int)index, (int)target);
+			if(tgt_core != -1)
+				pathlen += noc->getPathLength(core_considered, tgt_core);
+		}}
+
+
+		if(best_contention_l1 != -1 && pathlen > best_contention_l1) //reducing search space
+			continue;
+
+		{ForInputEdges(d, vtx, e){	//Find the core index
+			Vertex source_vtx = d->getEdgeSource(e);
+			auto source = d->getVertexId(source_vtx);
+			int src_core = core_mapping[source];
+			int storepath_id = noc->getMapIndex((int)source, (int)index);
+			if(src_core != -1)
+			{
+				counter++;
+				auto temp_cont_l1 = new_findPaths(src_core, noc, core_considered, curr_util, store_path, storepath_id);
+				cont_l1 = std::max( temp_cont_l1, cont_l1 );
+			}
+		}}
+
+		{ForOutputEdges(d, vtx, e){
+			Vertex target_vtx = d->getEdgeTarget(e);
+			auto target = d->getVertexId(target_vtx);
+			int tgt_core = core_mapping[target];
+			int storepath_id = noc->getMapIndex((int)index, (int)target);
+			if(tgt_core != -1)
+			{
+				counter++;
+				auto temp_cont_l1 = new_findPaths(core_considered, noc, tgt_core, curr_util, store_path, storepath_id);
+				cont_l1 = std::max( temp_cont_l1, cont_l1 );
+			}
+		}}
+
+		float cost = (float)cont_l1;
+		if(counter > 0 )
+			cost += (float)pathlen/(float)counter;
+
+
+		std::cout << "cost=" << cost << "\n";
+
+		if(best_contention_l1 == -1 || cost < best_contention_l1)
+		{
+			best_contention_l1 = cost;
+			best_store_path = store_path;
+			core_allocated = core_considered;
+			best_util = curr_util;
+		}
+	}
+
+	core_mapping[index] = core_allocated;
+	std::remove(avail_cores.begin(), avail_cores.end(), core_allocated);
+	avail_cores.resize(avail_cores.size()-1);
+	noc->setLinkUtil(best_util);
+
+	for(auto it: best_store_path)
+	{
+		if(routes.find(it.first) != routes.end())
+			VERBOSE_INFO ( "already one route is stored fro this");
+		routes[it.first] = it.second;
+	}
+	std::cout << "allocating to " << core_allocated << "\n";
+}
+
+
 int findPaths(int src, NoC* noc, int core_considered, std::vector<int>& curr_util, std::map<int, route_t>& store_path, int storepath_id)
 {
 	if(src != -1 && core_considered != -1)
@@ -668,8 +789,11 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 		pq.pop();
 		if(top != start)
 		{
-			//std::cout << "mapping " << to->getVertexId(top) << "\n";
-			mapping(top, core_mapping, noc, input, available_cores, routes);
+			std::cout << "mapping " << to->getVertexId(top) << "\n";
+			if( noc->getMeshSize() <= 9)
+				mapping(top, core_mapping, noc, input, available_cores, routes);
+			else
+				new_mapping(top, core_mapping, noc, input, available_cores, routes);
 		}
 		visited[to->getVertexId(top)] = true;
 
@@ -915,7 +1039,7 @@ std::map<int, route_t> graphProcessing(models::Dataflow* dataflow, NoC* noc, std
 		{
 			myflag = true;
 			to->addEdge(start, t);
-			//std::cout << "adding new edge between start " << to->getVertexId(t) << "\n";
+			std::cout << "adding new edge between start " << to->getVertexId(t) << "\n";
 		}
 	}}
 
@@ -1540,9 +1664,15 @@ void algorithms::generate_lte_sdf(models::Dataflow* const , parameters_list_t   
 
 	std::vector<phase_info> phases;
 
-	phases.push_back( getPhaseStruct(4, 392504, 16, "miwf"));
-	phases.push_back( getPhaseStruct(2, 230635, 32, "cwac"));
 /*
+	//phases.push_back( getPhaseStruct(4, 392504, 16, "miwf"));
+	//phases.push_back( getPhaseStruct(2, 230635, 32, "cwac"));
+
+	phases.push_back( getPhaseStruct(2, 392504, 16, "miwf"));
+	phases.push_back( getPhaseStruct(2, 230635, 32, "cwac"));
+	phases.push_back( getPhaseStruct(2, 353448, 32, "ifft"));
+	phases.push_back( getPhaseStruct(2, 267559, 32, "dd"));
+
 	phases.push_back( getPhaseStruct(1, 392504, 64/4, "miwf"));
 	phases.push_back( getPhaseStruct(5, 230635, 128/4, "cwac"));
 	phases.push_back( getPhaseStruct(3, 353448, 128/4, "ifft"));
@@ -1552,12 +1682,12 @@ void algorithms::generate_lte_sdf(models::Dataflow* const , parameters_list_t   
 	phases.push_back( getPhaseStruct(19, 230635, 128/4, "cwac"));
 	phases.push_back( getPhaseStruct(12, 353448, 128/4, "ifft"));
 	phases.push_back( getPhaseStruct(19, 267559, 32, "dd"));
-
+*/
 	phases.push_back( getPhaseStruct(64, 392504, 16, "miwf"));
 	phases.push_back( getPhaseStruct(75, 230635, 32, "cwac"));
 	phases.push_back( getPhaseStruct(24, 353448, 32, "ifft"));
 	phases.push_back( getPhaseStruct(75, 267559, 32, "dd"));
-*/
+
 
 	std::vector< std::vector<ARRAY_INDEX> > vertex_info;
 	for(unsigned int i = 0; i < phases.size(); i++)
@@ -1599,7 +1729,7 @@ void algorithms::generate_lte_sdf(models::Dataflow* const , parameters_list_t   
 		}
 	}
 
-	commons::writeSDF3File("lte_sdf_4node.xml", &to);
+	commons::writeSDF3File("lte_sdf_238.xml", &to);
 }
 
 void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, parameters_list_t   param_list)
@@ -1615,7 +1745,9 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		mesh_row = 4;
 
 	NoC *noc = new NoC(mesh_row, mesh_row, 1); //Init NoC
-	noc->generateShortestPaths();
+
+	if(mesh_row <= 9)
+		noc->generateShortestPaths();
 
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);
