@@ -1949,7 +1949,8 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     minStorageDist.removeStorageDistribution(minStorageDist.getNextDistribution());
     minStorageDist.addStorageDistribution(zeroDist);
   }
-  std::cout << "\nDSE RESULTS [START]:" << std::endl;
+  std::cout << "\nDSE RESULTS [START] (target throughput: " << result_max.first
+            << "):" << std::endl;
   minStorageDist.print_distributions();
   std::cout << "DSE RESULTS [END]" << std::endl;
   std::cout << "Done with search!" << std::endl;
