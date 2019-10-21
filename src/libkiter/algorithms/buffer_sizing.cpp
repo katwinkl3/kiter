@@ -267,6 +267,9 @@ void StorageDistributionSet::minimizeStorageDistributions(StorageDistribution ne
                   << std::endl;
         this->removeStorageDistribution(newDist);
         return; // no need to iterate through rest of set once newDist has been removed
+      } else if (newDistSz == storage_dist.getDistributionSize() && // remove existing equal storage dist (size) with lower thr
+                 newThr > storage_dist.getThroughput()) {
+        this->removeStorageDistribution(storage_dist);
       }
     }
   }
