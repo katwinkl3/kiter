@@ -48,7 +48,7 @@ typedef std::map< std::string, std::vector< mytuple > > conflictConfigs;
 
 
 void print_graph (models::Dataflow * to, models::Dataflow* original) {
-	return;
+
 	static int counter = 0;
 	counter ++ ;
 
@@ -1243,11 +1243,12 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex dst, int origV)
 }
 
 
-bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytuple >& mergeNodes)
-{
+bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytuple >& mergeNodes) {
+
 	VERBOSE_INFO ("STEP 1");
-	if (mergeNodes.size() <= 1)
-		return false;
+	if (mergeNodes.size() <= 1)	return false;
+
+
 	d->reset_computation();
 
 	int mn_size = (int)mergeNodes.size();
@@ -1784,7 +1785,6 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		addPathNode(to, e, it.second, conflictEdges, configs, true);
 		//print_graph(to, original_df);
 	}
-	print_graph(to, original_df);
 
 	//resolve cnflicts for all the  (a) sources that sent data to multiple nodes. 
 	//				(b) destinations that receive data from multiple nodes.
@@ -1796,14 +1796,12 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		auto src = to->getVertexById(i);
 		resolveSrcConflicts(to, src, origV);
 	}
-	print_graph(to, original_df);
 
 	for(int i = 1; i <= origV; i++)
 	{
 		auto dest = to->getVertexById(i);
 		resolveDestConflicts(to, dest, origV);
 	}
-	print_graph(to, original_df);
 
 	//if (param_list.count("skip_merge") != 1)
 	//if (false)
@@ -1816,7 +1814,6 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 	VERBOSE_INFO ("mergeConfigNodes Done.");
 
-	print_graph(to, original_df);
 	//Remove conflicts at source and destination router links as a big node has been created
 	for(auto it:routes)
 	{
@@ -1843,7 +1840,6 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 			if (to->getVertexDegree(v) == 0) {
 				VERBOSE_INFO ( " I remove one task (" << to->getVertexId(v) << ",name=" << to->getVertexName(v) << ") lah!");
 				to->removeVertex(v);
-				//print_graph(to, original_df);
 				removeme=true;
 				break;
 			}
