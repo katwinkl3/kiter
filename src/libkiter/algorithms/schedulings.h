@@ -37,6 +37,7 @@ namespace algorithms {
 		scheduling_t CSDF_KPeriodicScheduling    (models::Dataflow* const dataflow) ;
 		models::Scheduling CSDF_KPeriodicScheduling_LP    (const models::Dataflow* const dataflow, const periodicity_vector_t& kvector);
 		const periodicity_vector_t generate1PeriodicVector(const models::Dataflow* dataflow);
+		const periodicity_vector_t generateKPeriodicVector(const models::Dataflow* dataflow, int k);
 		const periodicity_vector_t generateNPeriodicVector(const models::Dataflow* dataflow);
 
 		 void CSDF_1PeriodicScheduling_LP (models::Dataflow*  dataflow, parameters_list_t );

@@ -1243,17 +1243,20 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex dst, int origV)
 }
 
 
-bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytuple > mergeNodes)
+bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytuple >& mergeNodes)
 {
+	VERBOSE_INFO ("STEP 1");
 	if (mergeNodes.size() <= 1)
 		return false;
 	d->reset_computation();
 
 	int mn_size = (int)mergeNodes.size();
 	//std::cout << "mergeConfigNodes " << commons::toString(mergeNodes) << " for " << name << "\n";
+
 	models::Dataflow* temp_d = new models::Dataflow(*d);
 	VERBOSE_ASSERT(computeRepetitionVector(temp_d),"inconsistent graph");
 
+	VERBOSE_INFO ("STEP 2");
 	TOKEN_UNIT flow = (TOKEN_UNIT)mn_size, preload = 0, temp_flow = 0;
 	LARGE_INT gcd_value = 0, a, b;
 	//Find GCD value
@@ -1265,6 +1268,8 @@ bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytup
 			gcd_value = ni;
 		gcd_value = gcdExtended(gcd_value, ni, &a, &b);
 	}
+
+	VERBOSE_INFO ("STEP 3");
 	//Find the total flow
 	for(int i = 0; i < mn_size; i++)
 	{
@@ -1275,6 +1280,7 @@ bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytup
 	flow = temp_flow;
 	//std::cout << "flow=" << flow << "\n";
 
+	VERBOSE_INFO ("STEP 4");
 	//1. Initialize token vecot
 	std::vector<TOKEN_UNIT> temp(flow, 0);
 	std::vector< std::vector<TOKEN_UNIT> > token_vec (mn_size, temp);
@@ -1290,6 +1296,8 @@ bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytup
 			token_vec[i][j] = 1;
 		start = end;
 	}
+
+	VERBOSE_INFO ("STEP 5");
 	//std::cout << "token=" << commons::toString(token_vec) << "\n";
 
 	//3. Create the BIG router
@@ -1374,7 +1382,7 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 			exit(0);
 		}
 	}}
-	in_flow /= mygcd;
+
 
 	//1B. Do some sanity check here
 	VERBOSE_ASSERT(srcedges.size() == rtredges.size(),  "BIG ERROR in resolveSrcConflicts\n");
@@ -1383,6 +1391,9 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 		//std::cout << "no resolveSrcConflicts for vertex " << d->getVertexId(src) << "\n";
 		return false;
 	}
+
+	VERBOSE_ASSERT(mygcd > 0 , "Division by zero");
+	in_flow = in_flow / mygcd;
 
 	//1C. Initialize token vector
 	std::vector<TOKEN_UNIT> temp;
@@ -1797,8 +1808,13 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	//if (param_list.count("skip_merge") != 1)
 	//if (false)
 	VERBOSE_INFO ("Call mergeConfigNodes");
-	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++)
+	int idx = 0;
+	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++) {
+		VERBOSE_INFO ("Working on merge " << idx++ << " over " << configs.size()) ;
 		mergeConfigNodes(to, it->first, it->second);
+	}
+
+	VERBOSE_INFO ("mergeConfigNodes Done.");
 
 	print_graph(to, original_df);
 	//Remove conflicts at source and destination router links as a big node has been created
@@ -1842,12 +1858,15 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	//scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling    (to) ;
 
 	//TIME_UNIT throughput;
-	scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to);// , DO_BUFFERLESS, throughput) ;
+	//scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to);// , DO_BUFFERLESS, throughput) ;
 	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, DO_BUFFERLESS, STOP_AT_FIRST, GET_PREVIOUS);
 
 	//VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
-	//models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, algorithms::scheduling::generateNPeriodicVector(to));
-	//TIME_UNIT omega = scheduling_res.getGraphPeriod();
+
+	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
+	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, algorithms::scheduling::generateNPeriodicVector(to));
+	TIME_UNIT omega = scheduling_res.getGraphPeriod();
+	scheduling_t persched = scheduling_res.getTaskSchedule();
 	//std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
 	//std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
 
@@ -1867,7 +1886,13 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 			break;
 		mergeConfigNodes(to, name, mergeNodes);
 		to->reset_computation();
-		persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to);// , DO_BUFFERLESS, throughput) ;
+
+		VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
+		models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, algorithms::scheduling::generateNPeriodicVector(to));
+		TIME_UNIT omega = scheduling_res.getGraphPeriod();
+		persched = scheduling_res.getTaskSchedule();
+
+		//persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to);// , DO_BUFFERLESS, throughput) ;
 		to->reset_computation();
 		print_graph(to, original_df);
 	}

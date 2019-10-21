@@ -357,10 +357,15 @@ models::Scheduling  algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (cons
 
 
  const periodicity_vector_t algorithms::scheduling::generate1PeriodicVector(const models::Dataflow* dataflow) {
+	 return algorithms::scheduling::generateKPeriodicVector(dataflow, 1);
+}
+
+
+ const periodicity_vector_t algorithms::scheduling::generateKPeriodicVector(const models::Dataflow* dataflow, int k) {
 
 	periodicity_vector_t kvector;
 	for (Vertex v : dataflow->vertices()){
-	        kvector[v] = 1;
+	        kvector[v] = k;
 	}
 	return kvector;
 }
