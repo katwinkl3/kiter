@@ -1788,6 +1788,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
                        minChannelSizes);
   
   // NOTE workaround for setting original (non-modelled) edges to 0
+
   // std::cout << "\tOriginal min sizes:" << std::endl;
   // for (auto &it : minChannelSizes) {
   //   std::cout << it.second << " ";
@@ -1830,12 +1831,6 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   // NOTE uncomment to get XMLs of lower bound distribution
   // commons::writeSDF3File("dse_min_distribution_" + dataflow_prime->getName() +
   //                        ".xml", dataflow_prime);
-  // std::cout << "Modelled graph:" << std::endl;
-  // {ForEachEdge(dataflow_prime, c)
-  //     {
-  //       std::cout << "Channel " << dataflow_prime->getEdgeName(c) << ": "
-  //                 << dataflow_prime->getPreload(c) << std::endl;
-  //     }}
 
   // calculate max throughput and current throughput with lower bound distribution
   kperiodic_result_t result_max = compute_Kperiodic_throughput_and_cycles(dataflow, parameters); // calculate max throughput of graph
@@ -1851,7 +1846,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   // add initial distribution to list of storage distributions
   StorageDistributionSet checklist(initDist.getDistributionSize(),
                                    initDist);
-      
+  
   // Initialise set of minimal storage distributions (a set of pairs of throughput and storage distribution)
   StorageDistributionSet minStorageDist;
 
@@ -1860,8 +1855,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   while (!minStorageDist.isSearchComplete(checklist, result_max.first)) {
     // Remove first storage distribution in checklist
     std::cout << "Checking next storage distribution in checklist --- current checklist size: "
-              << checklist.getSize() // << ", max throughput: " << result.first
-              << std::endl;
+              << checklist.getSize() << std::endl;
     StorageDistribution checkDist(checklist.getNextDistribution()); // copy distribution to check
     checklist.removeStorageDistribution(checklist.getNextDistribution());
     std::cout << "\nExploring new storage distribution: " << std::endl;
@@ -1869,12 +1863,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     // Update graph with storage distribution just removed from checklist
     dataflow_prime->reset_computation(); // make graph writeable to alter channel size
     {ForEachEdge(dataflow_prime, c) {
-        if (dataflow_prime->getEdgeId(c) > dataflow->getEdgesCount()) { /* TODO: decide if this if statement is necessary:
-                                                                         * we only increase channel sizes in the modelled
-                                                                         * buffers after all, but what if this increases
-                                                                         * efficiency by saving us time rewriting the 
-                                                                         * entire graph every time?
-                                                                         */
+        if (dataflow_prime->getEdgeId(c) > dataflow->getEdgesCount()) { // NOTE only modelled buffer preloads are changed
           dataflow_prime->setPreload(c, (checkDist.getChannelQuantity(c) -
                                          checkDist.getInitialTokens(c))); // subtract initial tokens in buffer
         }
@@ -1937,11 +1926,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   }
 
   // The minimum storage distribution for a throughput of 0 is (0, 0,..., 0)
-  if (minStorageDist.getNextDistribution().getThroughput() == 0) { /* FIXME: doesn't account for negative throughputs 
-                                                                    results in a bug if any storage distribution other
-                                                                    than the first element has a throughput of 0 as it
-                                                                    doesn't check for anything beyond the first throughput 
-                                                                    How do you even end up with negative throughput though? */
+  if (minStorageDist.getNextDistribution().getThroughput() == 0) { // if first SD in set has throughput 0
     StorageDistribution zeroDist(minStorageDist.getNextDistribution());
     {ForEachEdge(dataflow_prime, c) {
         zeroDist.setChannelQuantity(c, 0);
@@ -1956,7 +1941,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   std::cout << "Done with search!" << std::endl;
   std::cout << "Number of computations: " << computation_counter << std::endl;
   std::cout << "Number of pareto points: " << minStorageDist.getSize() << std::endl;
-
+  
   minStorageDist.write_csv("test.csv");
 }
 
