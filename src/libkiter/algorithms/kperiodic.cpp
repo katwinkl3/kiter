@@ -1829,8 +1829,9 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     }
   }
   // NOTE uncomment to get XMLs of lower bound distribution
-  // commons::writeSDF3File("dse_min_distribution_" + dataflow_prime->getName() +
-  //                        ".xml", dataflow_prime);
+  std::string dirName = "./data/";
+  commons::writeSDF3File(dirName + "dse_min_distribution_" + dataflow_prime->getName() +
+                         ".xml", dataflow_prime);
 
   // calculate max throughput and current throughput with lower bound distribution
   kperiodic_result_t result_max = compute_Kperiodic_throughput_and_cycles(dataflow, parameters); // calculate max throughput of graph
@@ -1942,6 +1943,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   std::cout << "Number of computations: " << computation_counter << std::endl;
   std::cout << "Number of pareto points: " << minStorageDist.getSize() << std::endl;
   
-  minStorageDist.write_csv("test.csv");
+  minStorageDist.write_csv(dirName + dataflow_prime->getName() +
+                           "_pp_kiter.csv");
 }
 
