@@ -25,10 +25,9 @@
 #include <queue>
 #include <tuple>
 #include <commons/SDF3Wrapper.h>
+#include <unordered_map>
 
 static TIME_UNIT NULL_DURATION = 0;
-//static bool STOP_AT_FIRST = false;
-//static bool GET_PREVIOUS = false;
 
 //vector stores the cycle length in each of the vertices
 std::vector< std::vector<unsigned int> > cycles;
@@ -42,10 +41,10 @@ struct node{
 };
 
 //typedef std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEtype;
-typedef std::map< unsigned int, std::vector< mypair > > conflictEtype;
-typedef std::map< std::string, std::vector< mytuple > > conflictConfigs;
-
-
+//typedef std::map< unsigned int, std::vector< mypair > > conflictEtype;
+typedef std::unordered_map< unsigned int, std::vector<ARRAY_INDEX> > conflictEtype;
+typedef std::unordered_map< std::string, std::vector< mytuple > > conflictConfigs;
+typedef std::unordered_map< ARRAY_INDEX, unsigned int> vid_to_nocEid;
 
 void print_graph (models::Dataflow * to, models::Dataflow* original) {
 
@@ -789,10 +788,10 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 		pq.pop();
 		if(top != start)
 		{
-			std::cout << "mapping " << to->getVertexId(top) << "\n";
-			if( noc->getMeshSize() <= 9)
-				mapping(top, core_mapping, noc, input, available_cores, routes);
-			else
+			std::cout << "mapping " << to->getVertexId(top) << ",mesh=" << noc->getMeshSize() << "\n";
+			//if( noc->getMeshSize() <= 9*9)
+			//	mapping(top, core_mapping, noc, input, available_cores, routes);
+			//else
 				new_mapping(top, core_mapping, noc, input, available_cores, routes);
 		}
 		visited[to->getVertexId(top)] = true;
@@ -843,7 +842,7 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 
 //remove the current edge between nodes
 //add intermediate nodes based on the path between them
-std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, conflictEtype& returnValue, conflictConfigs& configs, bool addConfigNode)
+std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, conflictEtype& returnValue, conflictConfigs& configs, vid_to_nocEid& vid_to_conflict_map, bool addConfigNode)
 {
 	d->reset_computation();
 	std::vector<Vertex> new_vertices;
@@ -881,11 +880,8 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 		std::stringstream ss;
 		ss << "mid-" << source << "," << target << "-" << e;
 
-		mypair pair_temp;
-		pair_temp.first = d->getVertexId(middle);
-		pair_temp.second = d->getVertexId(source_vtx);
-
-		returnValue[(unsigned int)e].push_back(pair_temp);
+		returnValue[(unsigned int)e].push_back(  d->getVertexId(middle)  );
+		vid_to_conflict_map[ d->getVertexId(middle) ] = (unsigned int)e;
 
 		d->setVertexName(middle,ss.str());
 
@@ -1070,9 +1066,10 @@ void addIntermediateNodes(models::Dataflow* dataflow, NoC* noc, conflictEtype& r
 {
 	std::map<int, Edge> edge_list;
 	generateEdgesMap(dataflow, edge_list, noc);
+	vid_to_nocEid vid_to_conflict_map;
 
 	for(auto it:routes)
-		addPathNode(dataflow, edge_list[it.first], it.second, returnValue, configs, false);
+		addPathNode(dataflow, edge_list[it.first], it.second, returnValue, configs, vid_to_conflict_map, false);
 }
 
 
@@ -1247,7 +1244,6 @@ bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytup
 
 	VERBOSE_INFO ("STEP 1");
 	if (mergeNodes.size() <= 1)	return false;
-
 
 	d->reset_computation();
 
@@ -1463,6 +1459,35 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 	return true;
 }
 
+
+void removeOrphanNodes(models::Dataflow* to, vid_to_nocEid& vid_to_conflict_map, conflictEtype& conflictEdgeMap)
+{
+	for (bool removeme = true; removeme; ) {
+		{ForEachVertex(to,v) {
+			if (to->getVertexDegree(v) == 0) {
+				ARRAY_INDEX vid = to->getVertexId(v);
+				std::string vname = to->getVertexName(v);
+				VERBOSE_INFO ( " I remove one task (" << vid << ",name=" << vname << ") lah!");
+				to->removeVertex(v);
+
+				if(vid_to_conflict_map.find(vid) != vid_to_conflict_map.end())
+				{
+					unsigned int eid = vid_to_conflict_map[vid];
+					std::vector<ARRAY_INDEX>::iterator it = std::find(conflictEdgeMap[eid].begin(), conflictEdgeMap[eid].end(), vid);
+					if(it != conflictEdgeMap[eid].end())
+					{
+						conflictEdgeMap[eid].erase(it);
+						std::cout << "erasing " << vname << "\n";
+					}
+				}
+				removeme=true;
+				break;
+			}
+			removeme=false;
+		}}
+	}
+}
+
 void getPrevAndNextVertex(ARRAY_INDEX vtx_id, models::Dataflow* to, ARRAY_INDEX& prev, ARRAY_INDEX& next)
 {
 	auto vtx = to->getVertexById(vtx_id);
@@ -1514,10 +1539,13 @@ std::vector<mytuple> checkForConflicts(conflictEtype& conflictEdges, models::Dat
 			{
 				if (i <= j) //ignore the upper triangle
 					continue;
-				auto taski_vtx = to->getVertexById(conflictEdges[edge_id][i].first);
-				auto taskj_vtx = to->getVertexById(conflictEdges[edge_id][j].first);
-				auto taski = conflictEdges[edge_id][i].first;
-				auto taskj = conflictEdges[edge_id][j].first;
+				auto taski = conflictEdges[edge_id][i];
+				auto taskj = conflictEdges[edge_id][j];
+
+				std::cout << "problem in " << edge_id << ",vid=" << conflictEdges[edge_id][i] << ",vid2=" << conflictEdges[edge_id][j] << "\n";
+
+				auto taski_vtx = to->getVertexById(taski);
+				auto taskj_vtx = to->getVertexById(taskj);
 
 				auto ni = to->getNi(taski_vtx);
 				auto nj = to->getNi(taskj_vtx);
@@ -1541,7 +1569,7 @@ std::vector<mytuple> checkForConflicts(conflictEtype& conflictEdges, models::Dat
 						if( algorithms::isConflictPresent((LARGE_INT) HP, si, (LARGE_INT) ni, sj, (LARGE_INT) nj) )
 						{
 							VERBOSE_INFO ("confl: " << to->getVertexName(taski_vtx) << " and " << to->getVertexName(taskj_vtx) << "\n");
-							conflictname = to->getVertexName(taski_vtx);
+							conflictname = to->getVertexName(taski_vtx) + "_" + to->getVertexName(taskj_vtx);
 							get<0>(tuple_temp) = taski;
 							getPrevAndNextVertex(taski, to, prev, next);
 							get<1>(tuple_temp) = prev;
@@ -1596,6 +1624,14 @@ std::vector<mytuple> checkForConflicts(conflictEtype& conflictEdges, models::Dat
 	VERBOSE_INFO ( "total_conflict=" << total_conflict );
 	VERBOSE_INFO ( "NEW HP=" << HP*orig_ni/mod_ni );
 	return mergeNodes;
+}
+
+
+void printTasks(models::Dataflow* to)
+{
+	{ForEachVertex(to, to_v) {
+		std::cout << "NODE " << to->getVertexName(to_v) << "\n";
+	}}
 }
 
 
@@ -1744,6 +1780,7 @@ void algorithms::generate_lte_sdf(models::Dataflow* const , parameters_list_t   
 	commons::writeSDF3File("lte_sdf_238.xml", &to);
 }
 
+//print_graph(to, original_df);
 void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, parameters_list_t   param_list)
 {
 	double yscale = 1;
@@ -1751,6 +1788,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 	conflictEtype conflictEdges; //stores details of flows that share noc edges
 	conflictConfigs configs; //stores the details of the router configs that are shared
+	vid_to_nocEid vid_to_conflict_map; //used to index newly added nodes into the conflict table, so as to remove it easily
 	int mesh_row = (int)ceil(sqrt(dataflow->getVerticesCount()));
 
 	if(mesh_row <= 4)
@@ -1765,7 +1803,6 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	models::Dataflow* to = new models::Dataflow(*dataflow);
 	models::Dataflow* original_df = new models::Dataflow(*dataflow);
 
-	//print_graph(to, original_df);
 	std::map<int, Edge> edge_list;
 
 	//symbolic execution to find program execution order
@@ -1777,12 +1814,14 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	std::map<int, route_t> routes = graphProcessing(to, noc, prog_order);
 	generateEdgesMap(to, edge_list, noc);
 
+	printTasks(to);
+
 	//print_graph(to, original_df);
 	for(auto it:routes) {
 		Edge e = edge_list[it.first];
 		Vertex esrc = to->getEdgeSource(e);
 		VERBOSE_INFO("replace edge " << e << "by a sequence");
-		addPathNode(to, e, it.second, conflictEdges, configs, true);
+		addPathNode(to, e, it.second, conflictEdges, configs, vid_to_conflict_map, true);
 		//print_graph(to, original_df);
 	}
 
@@ -1803,15 +1842,12 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		resolveDestConflicts(to, dest, origV);
 	}
 
-	//if (param_list.count("skip_merge") != 1)
-	//if (false)
 	VERBOSE_INFO ("Call mergeConfigNodes");
 	int idx = 0;
 	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++) {
 		VERBOSE_INFO ("Working on merge " << idx++ << " over " << configs.size()) ;
 		mergeConfigNodes(to, it->first, it->second);
 	}
-
 	VERBOSE_INFO ("mergeConfigNodes Done.");
 
 	//Remove conflicts at source and destination router links as a big node has been created
@@ -1832,32 +1868,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	VERBOSE_INFO("resolving conflicts done");
 	//Original graph
 
-
-	// This removes the vertices disconnected
-	for (bool removeme = true; removeme; ) {
-		{ForEachVertex(to,v) {
-
-			if (to->getVertexDegree(v) == 0) {
-				VERBOSE_INFO ( " I remove one task (" << to->getVertexId(v) << ",name=" << to->getVertexName(v) << ") lah!");
-				to->removeVertex(v);
-				removeme=true;
-				break;
-			}
-			removeme=false;
-		}}
-	}
-
-	print_graph(to, original_df);
-	//std::cout << printers::GenerateDOT(to);
-	//Given the graph "to" the perform the Kperiodic scheduling and get "persched" in return
-	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, false, false);
-	//scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling    (to) ;
-
-	//TIME_UNIT throughput;
-	//scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to);// , DO_BUFFERLESS, throughput) ;
-	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, DO_BUFFERLESS, STOP_AT_FIRST, GET_PREVIOUS);
-
-	//VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
+	removeOrphanNodes(to, vid_to_conflict_map, conflictEdges);
 
 	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, algorithms::scheduling::generateNPeriodicVector(to));
@@ -1865,11 +1876,9 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	scheduling_t persched = scheduling_res.getTaskSchedule();
 	//std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
 	//std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
-
 	VERBOSE_INFO("findHP");
 	unsigned long LCM;
 	TIME_UNIT HP;
-	//findHP(dataflow, to, scheduling_res.getTaskSchedule(), &HP, &LCM);
 	findHP(dataflow, to, persched, &HP, &LCM);
 
 
@@ -1878,9 +1887,18 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		std::vector< mytuple > mergeNodes;
 		std::string name;
 		mergeNodes = checkForConflicts(conflictEdges, to, HP, persched, dataflow, name);
+
 		if(mergeNodes.size() == 0)
 			break;
+	
+		std::cout << "conflict in " << name << "\n";
 		mergeConfigNodes(to, name, mergeNodes);
+
+		std::cout << "before removeme\n";
+		removeOrphanNodes(to, vid_to_conflict_map, conflictEdges);
+		std::cout << "before compp\n";
+
+		//print_graph(to, original_df);
 		to->reset_computation();
 
 		VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
@@ -1890,8 +1908,9 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 		//persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to);// , DO_BUFFERLESS, throughput) ;
 		to->reset_computation();
-		print_graph(to, original_df);
 	}
+
+	findHP(dataflow, to, persched, &HP, &LCM);
 	VERBOSE_INFO ( "LCM=" << LCM );
 }
 
@@ -1906,4 +1925,16 @@ void showstack(std::stack<Vertex> s)
 	}
 	std::cout << '\n';
 }
+
+
+	//std::cout << printers::GenerateDOT(to);
+	//Given the graph "to" the perform the Kperiodic scheduling and get "persched" in return
+	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, false, false);
+	//scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling    (to) ;
+
+	//TIME_UNIT throughput;
+	//scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to);// , DO_BUFFERLESS, throughput) ;
+	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, DO_BUFFERLESS, STOP_AT_FIRST, GET_PREVIOUS);
+
+	//VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 
