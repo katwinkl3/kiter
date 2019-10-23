@@ -1945,6 +1945,6 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   
   minStorageDist.write_csv(dirName + dataflow_prime->getName() +
                            "_pp_kiter.csv");
-  // minStorageDist.printGraphs(dataflow_prime); // TODO write DOT output to separate file
+  minStorageDist.printGraphs(dataflow_prime);
 }
 

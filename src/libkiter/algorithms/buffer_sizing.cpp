@@ -157,7 +157,7 @@ std::string StorageDistribution::print_quantities_csv() {
 }
 
 // Print a DOT file of the given graph modelled with a storage distribution
-void StorageDistribution::printGraph(models::Dataflow* const dataflow) {
+std::string StorageDistribution::printGraph(models::Dataflow* const dataflow) {
   // copy graph to model
   /* NOTE doesn't work with a copy:
      can't find channel quantity for given edges  */
@@ -171,7 +171,7 @@ void StorageDistribution::printGraph(models::Dataflow* const dataflow) {
                                  this->getInitialTokens(c))); // subtract initial tokens in buffer
       }
     }}
-  printers::printGraph(dataflow);
+  return printers::GenerateDOT(dataflow);
 }
 
 StorageDistributionSet::StorageDistributionSet() {
@@ -348,9 +348,17 @@ void StorageDistributionSet::write_csv(std::string filename) {
 /* Iterate through storage distribution set and print graphs
    in DOT format */
 void StorageDistributionSet::printGraphs(models::Dataflow* const dataflow) {
+  std::ofstream outputFile;
+  int graphCount = 0;
+
   for (auto &it : this->set) {
     for (auto &sd : this->set[it.first]) {
-      sd.printGraph(dataflow);
+      std::string fileName = "./data/dotfiles/" + dataflow->getName() +
+        "_" + std::to_string(graphCount) + ".dot";
+      outputFile.open(fileName);
+      outputFile << sd.printGraph(dataflow);
+      outputFile.close();
+      graphCount++;
     }
   }
 }

@@ -37,7 +37,7 @@ public:
   void updateDistributionSize();
   void print_info();
   std::string print_quantities_csv();
-  void printGraph(models::Dataflow* const dataflow);
+  std::string printGraph(models::Dataflow* const dataflow);
 private:
   unsigned int edge_count;
   TIME_UNIT thr; // throughput of given storage distribution
