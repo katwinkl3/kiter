@@ -6,6 +6,7 @@
 #include <boost/math/common_factor_rt.hpp>  // for boost::math::gcd, lcm
 #include <algorithms/buffer_sizing.h>
 #include <models/Dataflow.h>
+#include <printers/stdout.h> // to print DOT files
 #include <iostream>
 #include <fstream>
 
@@ -153,6 +154,24 @@ std::string StorageDistribution::print_quantities_csv() {
   }
   output += "\"";
   return output;
+}
+
+// Print a DOT file of the given graph modelled with a storage distribution
+void StorageDistribution::printGraph(models::Dataflow* const dataflow) {
+  // copy graph to model
+  /* NOTE doesn't work with a copy:
+     can't find channel quantity for given edges  */
+  // models::Dataflow* modelledGraph = new models::Dataflow(*dataflow);
+  dataflow->reset_computation();
+  {ForEachEdge(dataflow, c) {
+      // FIXME feels kinda hacky to be using half of the edge count to check for modelled edges
+      if (dataflow->getEdgeId(c) > (dataflow->getEdgesCount() / 2)) { /* don't deal with non-modelled edges
+                                                                         as those quantities don't change */
+        dataflow->setPreload(c, (this->getChannelQuantity(c) -
+                                 this->getInitialTokens(c))); // subtract initial tokens in buffer
+      }
+    }}
+  printers::printGraph(dataflow);
 }
 
 StorageDistributionSet::StorageDistributionSet() {
@@ -324,6 +343,16 @@ void StorageDistributionSet::write_csv(std::string filename) {
     }
   }
   outputFile.close();
+}
+
+/* Iterate through storage distribution set and print graphs
+   in DOT format */
+void StorageDistributionSet::printGraphs(models::Dataflow* const dataflow) {
+  for (auto &it : this->set) {
+    for (auto &sd : this->set[it.first]) {
+      sd.printGraph(dataflow);
+    }
+  }
 }
 
 // Returns the minimum step size for each channel in the given dataflow graph

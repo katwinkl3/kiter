@@ -37,6 +37,7 @@ public:
   void updateDistributionSize();
   void print_info();
   std::string print_quantities_csv();
+  void printGraph(models::Dataflow* const dataflow);
 private:
   unsigned int edge_count;
   TIME_UNIT thr; // throughput of given storage distribution
@@ -62,6 +63,7 @@ public:
                                                    of given distribution size */
   void print_distributions(); // prints info of all storage distributions in set
   void write_csv(std::string filename); // writes to a CSV file for plots
+  void printGraphs(models::Dataflow* const dataflow); // iterate through storage distribution set and print graphs
   
 private:
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> set; /* store storage distributions 
