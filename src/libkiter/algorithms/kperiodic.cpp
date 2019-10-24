@@ -1878,7 +1878,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     } else {
       checkDist.setThroughput(result.first);
     }
-    checkDist.print_info();
+    checkDist.printInfo();
     
     // Add storage distribution and computed throughput to set of minimal storage distributions
     std::cout << "\n\tUpdating set of minimal storage distributions..."
@@ -1888,7 +1888,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     std::cout << std::endl;
     std::cout << "\t Minimum Storage Distributions (before) ("
               << minStorageDist.getSize() << "): " << std::endl;
-    minStorageDist.print_distributions();
+    minStorageDist.printDistributions();
     std::cout << std::endl;
 
     // Create new storage distributions for every storage dependency found; add new storage distributions to checklist
@@ -1922,7 +1922,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     std::cout << std::endl;
     std::cout << "\t Minimum Storage Distributions (after) ("
               << minStorageDist.getSize() << "): " << std::endl;
-    minStorageDist.print_distributions();
+    minStorageDist.printDistributions();
     std::cout << std::endl;
   }
 
@@ -1937,13 +1937,13 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   }
   std::cout << "\nDSE RESULTS [START] (target throughput: " << result_max.first
             << "):" << std::endl;
-  minStorageDist.print_distributions();
+  minStorageDist.printDistributions();
   std::cout << "DSE RESULTS [END]" << std::endl;
   std::cout << "Done with search!" << std::endl;
   std::cout << "Number of computations: " << computation_counter << std::endl;
   std::cout << "Number of pareto points: " << minStorageDist.getSize() << std::endl;
   
-  minStorageDist.write_csv(dirName + dataflow_prime->getName() +
+  minStorageDist.writeCSV(dirName + dataflow_prime->getName() +
                            "_pp_kiter.csv");
   minStorageDist.printGraphs(dataflow_prime);
 }

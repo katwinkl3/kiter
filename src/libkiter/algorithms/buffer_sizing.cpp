@@ -119,7 +119,7 @@ void StorageDistribution::updateDistributionSize() {
 }
 
 // Prints member data of StorageDistribution for debugging
-void StorageDistribution::print_info() {
+void StorageDistribution::printInfo() {
   std::cout << "\tCurrent StorageDistribution info:" << std::endl;
   std::cout << "\tNumber of edges: " << this->edge_count << std::endl;
   std::cout << "\tChannel quantities:" << std::endl;
@@ -313,27 +313,27 @@ bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
 }
 
 // Print info of all storage distributions of a given distribution size in set
-void StorageDistributionSet::print_distributions(TOKEN_UNIT dist_sz) {
+void StorageDistributionSet::printDistributions(TOKEN_UNIT dist_sz) {
   assert(set.find(dist_sz) != set.end());
 
   std::cout << "Printing storage distributions of distribution size: "
             << dist_sz << std::endl;
   for (auto &i : set[dist_sz]) {
-    i.print_info();
+    i.printInfo();
   }
 }
 
 // Print info of all storage distributions in set
-void StorageDistributionSet::print_distributions() {
+void StorageDistributionSet::printDistributions() {
   for (auto &it : this->set) {
-    print_distributions(it.first);
+    printDistributions(it.first);
   }
 }
 
 /* Writes storage distribution set info to a CSV file to plot data
    Takes in file name as argument --- explicitly state file 
    format (e.g. "example_filename.csv") */
-void StorageDistributionSet::write_csv(std::string filename) {
+void StorageDistributionSet::writeCSV(std::string filename) {
   std::ofstream outputFile;
   outputFile.open(filename);
   outputFile << "storage distribution size,throughput,channel quantities" << std::endl; // initialise headers

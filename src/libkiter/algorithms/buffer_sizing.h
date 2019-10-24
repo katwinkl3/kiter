@@ -35,7 +35,7 @@ public:
   bool operator==(const StorageDistribution& distribution) const;
   bool operator!=(const StorageDistribution& distribution) const;
   void updateDistributionSize();
-  void print_info();
+  void printInfo();
   std::string print_quantities_csv();
   std::string printGraph(models::Dataflow* const dataflow);
 private:
@@ -59,10 +59,10 @@ public:
   void minimizeStorageDistributions(StorageDistribution newDist);
   bool hasDistribution(TOKEN_UNIT dist_sz);
   bool isSearchComplete(StorageDistributionSet checklist, TIME_UNIT target_thr);
-  void print_distributions(TOKEN_UNIT dist_sz); /* prints info of all storage distributions 
+  void printDistributions(TOKEN_UNIT dist_sz); /* prints info of all storage distributions 
                                                    of given distribution size */
-  void print_distributions(); // prints info of all storage distributions in set
-  void write_csv(std::string filename); // writes to a CSV file for plots
+  void printDistributions(); // prints info of all storage distributions in set
+  void writeCSV(std::string filename); // writes to a CSV file for plots
   void printGraphs(models::Dataflow* const dataflow); // iterate through storage distribution set and print graphs
   
 private:
