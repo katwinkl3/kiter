@@ -42,6 +42,7 @@ namespace algorithms {
 
 		 void CSDF_1PeriodicScheduling_LP (models::Dataflow*  dataflow, parameters_list_t );
 		 void CSDF_NPeriodicScheduling_LP (models::Dataflow*  dataflow, parameters_list_t );
+		 void CSDF_NPeriodicScheduling    (models::Dataflow*  dataflow, parameters_list_t );
 
 
 	}

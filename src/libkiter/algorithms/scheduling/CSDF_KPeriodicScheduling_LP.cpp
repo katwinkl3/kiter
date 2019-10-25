@@ -392,3 +392,23 @@ models::Scheduling  algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (cons
 
 }
 
+
+ void algorithms::scheduling::CSDF_NPeriodicScheduling (models::Dataflow*  dataflow, parameters_list_t )  {
+
+	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+    //STEP 1 - Generate Event Graph
+	auto kvector = generateNPeriodicVector(dataflow);
+    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector, false);
+
+
+    VERBOSE_INFO("KPeriodic EventGraph generation Done");
+
+    //STEP 2 - resolve the MCRP on this Event Graph
+    std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
+    TIME_UNIT omega = 1/howard_res.first;
+
+    std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
+    std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
+
+}
+

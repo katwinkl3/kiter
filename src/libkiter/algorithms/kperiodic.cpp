@@ -1437,6 +1437,10 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
     {ForEachVertex(dataflow,t) {
         total_ki += kvector[t];
     }}
+    sumKi = 0;
+    {ForEachVertex(dataflow,t) {
+    	sumKi += kvector[t];
+    }}
 
     VERBOSE_INFO("K-periodic schedule - total_ki=" << sumKi << " total_ni=" << sumNi );
 
