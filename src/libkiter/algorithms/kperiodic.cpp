@@ -452,6 +452,7 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
 
 
     VERBOSE_INFO("Update event graph - Step 0 - Compute new K and check changed");
+    //VERBOSE_INFO("Update event graph -  Critical path = " << commons::toString(*cc) );
 
     std::map<Vertex,EXEC_COUNT>  kvector ;
     for ( std::map<Vertex,EXEC_COUNT>::iterator it = oldkvector->begin() ; it != oldkvector->end(); it++ ) {
@@ -463,6 +464,7 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
 
     bool changed = updateVectorWithLocalNi(dataflow,&kvector,cc);
 
+    VERBOSE_INFO("Update event graph -  New KVector = " << commons::toString(kvector) );
     if (!changed) {
         VERBOSE_INFO("Unchanged ...");
         return NULL;
@@ -814,19 +816,28 @@ bool algorithms::updateVectorWithLocalNi(models::Dataflow *  const dataflow ,std
     EXEC_COUNT gcdNi = 0;
     for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
         Vertex source = dataflow->getEdgeSource(*it);
-        gcdNi = boost::math::gcd(gcdNi,dataflow->getNi(source) );
+        gcdNi = boost::math::gcd(gcdNi,dataflow->getNi(source)  / dataflow->getPhasesQuantity(source) );
     }
+
+    VERBOSE_INFO("      updateVectorWithLocalNi -  gcdNi = " << commons::toString(gcdNi) );
 
     for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
         Vertex source = dataflow->getEdgeSource(*it);
         Vertex target = dataflow->getEdgeTarget(*it);
 
-        EXEC_COUNT Ni =  dataflow->getNi(source);
-        EXEC_COUNT Nj =  dataflow->getNi(target);
+        EXEC_COUNT Ni =  dataflow->getNi(source) / dataflow->getPhasesQuantity(source);
+        EXEC_COUNT Nj =  dataflow->getNi(target) / dataflow->getPhasesQuantity(target);
 
         EXEC_COUNT newki = boost::math::lcm( kvector->at(source),  Ni / gcdNi);
 
         if (newki != kvector->at(source) ) changed = true;
+
+
+        VERBOSE_INFO("      updateVectorWithLocalNi - "
+        		<< " Source = " << dataflow->getVertexName(source)
+        		<< " Ni = " << Ni
+				<< " ki = "  <<  kvector->at(source)
+				<< " newki = " << newki );
 
         kvector->at(source) = newki;
         VERBOSE_ASSERT(kvector->at(source) <= Ni , "Bad idea");
@@ -1316,6 +1327,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 
     VERBOSE_INFO("KPeriodic EventGraph generation");
 
+    VERBOSE_INFO("KVector = " << commons::toString(kvector) );
     //STEP 1 - Generate Event Graph
     models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector,do_buffer_less);
 
@@ -1324,6 +1336,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 
     //STEP 2 - resolve the MCRP on this Event Graph
     std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
+    VERBOSE_INFO("Kperiodic throughput = " << howard_res.first);
 
     std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res.second);
 
@@ -1375,10 +1388,12 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
             //STEP 1 - Generate Event Graph and update vector
             if (!updateEventGraph( dataflow ,  &kvector, &(result.second), eg, verbose)) break ;
 
+            VERBOSE_INFO("KVector = " << commons::toString(kvector) );
             VERBOSE_INFO("KPeriodic EventGraph generation Done");
 
             //STEP 2 - resolve the MCRP on this Event Graph
             std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res_bis = eg->MinCycleRatio();
+            VERBOSE_INFO("Kperiodic throughput = " << howard_res_bis.first);
 
             std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res_bis.second);
 
