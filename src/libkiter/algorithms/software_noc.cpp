@@ -25,10 +25,9 @@
 #include <queue>
 #include <tuple>
 #include <commons/SDF3Wrapper.h>
+#include <unordered_map>
 
 static TIME_UNIT NULL_DURATION = 0;
-//static bool STOP_AT_FIRST = false;
-//static bool GET_PREVIOUS = false;
 
 //vector stores the cycle length in each of the vertices
 std::vector< std::vector<unsigned int> > cycles;
@@ -42,37 +41,45 @@ struct node{
 };
 
 //typedef std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEtype;
-typedef std::map< unsigned int, std::vector< mypair > > conflictEtype;
-typedef std::map< std::string, std::vector< mytuple > > conflictConfigs;
-
-
+//typedef std::map< unsigned int, std::vector< mypair > > conflictEtype;
+typedef std::unordered_map< unsigned int, std::vector<ARRAY_INDEX> > conflictEtype;
+typedef std::unordered_map< std::string, std::vector< mytuple > > conflictConfigs;
+typedef std::unordered_map< ARRAY_INDEX, unsigned int> vid_to_nocEid;
 
 void print_graph (models::Dataflow * to, models::Dataflow* original) {
-	return;
+
 	static int counter = 0;
 	counter ++ ;
+
+	to->reset_computation();
 	// Write the input as a dot file
 	std::ofstream myfile2;
 	myfile2.open ("software_noc_" + commons::toString(counter) + ".dot");
 	myfile2 << printers::GenerateDOT(to);
 	myfile2.close();
+	VERBOSE_INFO("=========== Write file " << counter << "\n");
+	commons::writeSDF3File("software_noc_" + commons::toString(counter) + ".xml", to);
+	to->reset_computation();
+
+/*
 	std::string cmd = "dot software_noc_" + commons::toString(counter) + ".dot -T pdf -o software_noc_" + commons::toString(counter) + ".pdf";
 	auto out_err = system(cmd.c_str());
 	if(out_err)
 		VERBOSE_INFO ("System call returns error\n");
 
-	commons::writeSDF3File("software_noc_" + commons::toString(counter) + ".xml", to);
 	to->reset_computation();
-	VERBOSE_ASSERT(computeRepetitionVector(original),"inconsistent graph");
 	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
-
+	VERBOSE_ASSERT(computeRepetitionVector(original),"inconsistent graph");
 	float ratio = -1;
 	{ForEachVertex(original,orig_v) {
 		auto orig_vid = original->getVertexId(orig_v);
                 auto to_v = to->getVertexById(orig_vid);
                 float new_ratio = (float) to->getNi(to_v) / (float)original->getNi(orig_v);
 		if(ratio != -1 && ratio != new_ratio)
+		{
 			std::cout << "NODE " << to->getVertexName(to_v) << ",ni=" <<  to->getNi(to_v) << " failed\n";
+			exit(0);
+		}
 		ratio = new_ratio;
 	}}
 
@@ -82,13 +89,14 @@ void print_graph (models::Dataflow * to, models::Dataflow* original) {
 	VERBOSE_ASSERT(throughput > 0, "fix me: period is P_i * N_I");
 
 	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, DO_BUFFERLESS , STOP_AT_FIRST, GET_PREVIOUS);
-	VERBOSE_INFO ("=========== Write file " << counter);
 	to->reset_computation();
 
 	if(throughput == 0)
 	{
-		std::cout << "throughput == 0, exiting\n"; exit(0);
+		std::cout << "throughput == 0, exiting\n";
+		exit(0);
 	}
+*/
 }
 
 route_t get_route_wrapper(models::Dataflow* to, Edge c, NoC* noc)
@@ -479,20 +487,141 @@ void printSCCs(models::Dataflow* to, Vertex start)
 }
 
 
-//void setmap(std::vector<int> paths, std::map<int, int>& curr_util, NoC* noc)
 void setmap(std::vector<int> paths, std::vector<int>& curr_util, NoC* noc)
 {
 	for(unsigned int p_j = 1; p_j < paths.size()-2; p_j++)
 	{
 		int mapindex = noc->getMapIndex(paths[p_j], paths[p_j+1]);
-		//if(curr_util.find(mapindex) == curr_util.end())
-		//	curr_util[mapindex] = 0;
 		curr_util[mapindex] += 1;
 	}
 }
 
 
-//int findPaths(int src, NoC* noc, int core_considered, std::map<int, int>& curr_util, std::map<int, route_t>& store_path, int storepath_id)
+int new_findPaths(int src, NoC* noc, int core_considered, std::vector<int>& curr_util, std::map<int, route_t>& store_path, int storepath_id)
+{
+	if(src != -1 && core_considered != -1)
+	{
+		std::vector<int> paths = noc->getPath(src, core_considered);
+		int max_contention = noc->findPathCost(paths);
+		//std::cout << "s=" << src << ",d=" << core_considered << ",#paths=" << paths.size() << ",cont=" << max_contention << "\n";
+		route_t path_str;
+		for(unsigned int p_j = 0; p_j < paths.size()-1; p_j++)
+			path_str.push_back(  (edge_id_t)noc->getMapIndex(paths[p_j], paths[p_j+1]) );
+		store_path[storepath_id] = path_str;
+		setmap(paths, curr_util, noc);
+		//std::cout << "end\n";
+		return max_contention;
+	}
+	return 0;
+}
+
+
+void new_mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::Dataflow* d, std::vector<int>& avail_cores, std::map<int, route_t>& routes)
+{
+	const int start_core = avail_cores[0];
+	auto index = d->getVertexId(vtx);
+	if((int)avail_cores.size() == noc->size())
+	{
+		core_mapping[index] = start_core;
+		std::remove(avail_cores.begin(), avail_cores.end(), start_core); 
+		avail_cores.resize( avail_cores.size() - 1);
+		return;
+	}
+
+	float best_contention_l1 = -1;
+	std::map<int, route_t> best_store_path;
+	std::vector<int> best_util;
+	int core_allocated = -1;
+
+	for (auto core_considered : avail_cores)
+	{
+		std::cout << "core_considered=" << core_considered << "\n";
+		int cont_l1 = -1;
+		std::vector<int> curr_util = noc->getLinkUtil();
+		std::map<int, route_t> store_path; //variable to store the route to be utilized by the (src,dest) core
+		unsigned int counter = 0;
+		unsigned int pathlen = 0;
+
+
+		{ForInputEdges(d, vtx, e){	//Find the core index
+			Vertex source_vtx = d->getEdgeSource(e);
+			auto source = d->getVertexId(source_vtx);
+			int src_core = core_mapping[source];
+			int storepath_id = noc->getMapIndex((int)source, (int)index);
+			if(src_core != -1)
+				pathlen += noc->getPathLength(src_core, core_considered);
+		}}
+
+		{ForOutputEdges(d, vtx, e){
+			Vertex target_vtx = d->getEdgeTarget(e);
+			auto target = d->getVertexId(target_vtx);
+			int tgt_core = core_mapping[target];
+			int storepath_id = noc->getMapIndex((int)index, (int)target);
+			if(tgt_core != -1)
+				pathlen += noc->getPathLength(core_considered, tgt_core);
+		}}
+
+
+		if(best_contention_l1 != -1 && pathlen > best_contention_l1) //reducing search space
+			continue;
+
+		{ForInputEdges(d, vtx, e){	//Find the core index
+			Vertex source_vtx = d->getEdgeSource(e);
+			auto source = d->getVertexId(source_vtx);
+			int src_core = core_mapping[source];
+			int storepath_id = noc->getMapIndex((int)source, (int)index);
+			if(src_core != -1)
+			{
+				counter++;
+				auto temp_cont_l1 = new_findPaths(src_core, noc, core_considered, curr_util, store_path, storepath_id);
+				cont_l1 = std::max( temp_cont_l1, cont_l1 );
+			}
+		}}
+
+		{ForOutputEdges(d, vtx, e){
+			Vertex target_vtx = d->getEdgeTarget(e);
+			auto target = d->getVertexId(target_vtx);
+			int tgt_core = core_mapping[target];
+			int storepath_id = noc->getMapIndex((int)index, (int)target);
+			if(tgt_core != -1)
+			{
+				counter++;
+				auto temp_cont_l1 = new_findPaths(core_considered, noc, tgt_core, curr_util, store_path, storepath_id);
+				cont_l1 = std::max( temp_cont_l1, cont_l1 );
+			}
+		}}
+
+		float cost = (float)cont_l1;
+		if(counter > 0 )
+			cost += (float)pathlen/(float)counter;
+
+
+		std::cout << "cost=" << cost << "\n";
+
+		if(best_contention_l1 == -1 || cost < best_contention_l1)
+		{
+			best_contention_l1 = cost;
+			best_store_path = store_path;
+			core_allocated = core_considered;
+			best_util = curr_util;
+		}
+	}
+
+	core_mapping[index] = core_allocated;
+	std::remove(avail_cores.begin(), avail_cores.end(), core_allocated);
+	avail_cores.resize(avail_cores.size()-1);
+	noc->setLinkUtil(best_util);
+
+	for(auto it: best_store_path)
+	{
+		if(routes.find(it.first) != routes.end())
+			VERBOSE_INFO ( "already one route is stored fro this");
+		routes[it.first] = it.second;
+	}
+	std::cout << "allocating to " << core_allocated << "\n";
+}
+
+
 int findPaths(int src, NoC* noc, int core_considered, std::vector<int>& curr_util, std::map<int, route_t>& store_path, int storepath_id)
 {
 	if(src != -1 && core_considered != -1)
@@ -659,8 +788,11 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 		pq.pop();
 		if(top != start)
 		{
-			//std::cout << "mapping " << to->getVertexId(top) << "\n";
-			mapping(top, core_mapping, noc, input, available_cores, routes);
+			std::cout << "mapping " << to->getVertexId(top) << ",mesh=" << noc->getMeshSize() << "\n";
+			//if( noc->getMeshSize() <= 9*9)
+			//	mapping(top, core_mapping, noc, input, available_cores, routes);
+			//else
+				new_mapping(top, core_mapping, noc, input, available_cores, routes);
 		}
 		visited[to->getVertexId(top)] = true;
 
@@ -710,7 +842,7 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 
 //remove the current edge between nodes
 //add intermediate nodes based on the path between them
-std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, conflictEtype& returnValue, conflictConfigs& configs, bool addConfigNode)
+std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, conflictEtype& returnValue, conflictConfigs& configs, vid_to_nocEid& vid_to_conflict_map, bool addConfigNode)
 {
 	d->reset_computation();
 	std::vector<Vertex> new_vertices;
@@ -748,11 +880,8 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 		std::stringstream ss;
 		ss << "mid-" << source << "," << target << "-" << e;
 
-		mypair pair_temp;
-		pair_temp.first = d->getVertexId(middle);
-		pair_temp.second = d->getVertexId(source_vtx);
-
-		returnValue[(unsigned int)e].push_back(pair_temp);
+		returnValue[(unsigned int)e].push_back(  d->getVertexId(middle)  );
+		vid_to_conflict_map[ d->getVertexId(middle) ] = (unsigned int)e;
 
 		d->setVertexName(middle,ss.str());
 
@@ -906,7 +1035,7 @@ std::map<int, route_t> graphProcessing(models::Dataflow* dataflow, NoC* noc, std
 		{
 			myflag = true;
 			to->addEdge(start, t);
-			//std::cout << "adding new edge between start " << to->getVertexId(t) << "\n";
+			std::cout << "adding new edge between start " << to->getVertexId(t) << "\n";
 		}
 	}}
 
@@ -937,9 +1066,10 @@ void addIntermediateNodes(models::Dataflow* dataflow, NoC* noc, conflictEtype& r
 {
 	std::map<int, Edge> edge_list;
 	generateEdgesMap(dataflow, edge_list, noc);
+	vid_to_nocEid vid_to_conflict_map;
 
 	for(auto it:routes)
-		addPathNode(dataflow, edge_list[it.first], it.second, returnValue, configs, false);
+		addPathNode(dataflow, edge_list[it.first], it.second, returnValue, configs, vid_to_conflict_map, false);
 }
 
 
@@ -984,6 +1114,26 @@ void removeAllEdgesVertex(models::Dataflow* d, Vertex vtx)
 }
 
 
+//Function to remove the edges and obtain phase vector values
+//v1 -> cfg -> v2
+void getEdgesPhaseVector(models::Dataflow* d, Vertex& v1, Vertex cfg, Vertex& v2, std::vector<TOKEN_UNIT>& in, std::vector<TOKEN_UNIT>& out)
+{
+	//std::cout << "inside fn: v1=" << d->getVertexName(v1) << ",cfg=" << d->getVertexName(cfg) << ",v2=" << d->getVertexName(v2) << "\n";
+	{ForInputEdges(d, cfg, E)	{
+		in = d->getEdgeInVector(E);
+		v1 = d->getEdgeSource(E);
+		d->removeEdge(E);
+		break;
+	}}
+	{ForOutputEdges(d, cfg, E)	{
+		out = d->getEdgeOutVector(E);
+		v2 = d->getEdgeTarget(E);
+		d->removeEdge(E);
+		break;
+	}}
+}
+
+
 bool resolveDestConflicts(models::Dataflow* d, Vertex dst, int origV)
 {
 	LARGE_INT mygcd = 0, a, b;
@@ -1015,10 +1165,8 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex dst, int origV)
 	//1B. Do some sanity check here
 	VERBOSE_ASSERT (dstedges.size() == rtredges.size() ,  "BIG ERROR in resolveDestConflicts" );
 
-	if(dstedges.size() <= 1) {
-		//std::cout << "no resolveDestConflicts for vertex " << d->getVertexId(dst) << "\n";
+	if(dstedges.size() <= 1)
 		return false;
-	}
 
 	//1C. Initialize token vector
 	std::vector<TOKEN_UNIT> temp;
@@ -1078,6 +1226,7 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex dst, int origV)
 		auto v2 = d->getEdgeTarget(rtredges[i]);
 		auto loc_preload = d->getPreload(rtredges[i]);
 
+		//std::cout << "dst=" << d->getVertexName(dst) << ",big_middle=" << d->getVertexName(middle) << ",v1=" << d->getVertexName(v1) << ",deleting=" << d->getVertexName(v2) << "\n";
 		removeAllEdgesVertex(d, v2);
 
 		auto new_edge = d->addEdge(v1, middle);
@@ -1085,68 +1234,68 @@ bool resolveDestConflicts(models::Dataflow* d, Vertex dst, int origV)
 		d->setEdgeOutPhases(new_edge, token_vec[i]);
 		d->setEdgeInPhases(new_edge, {1});
 		d->setPreload(new_edge,loc_preload);  // preload is M0
+
 	}
 	return true;
 }
 
 
-bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytuple > mergeNodes)
-{
-	if (mergeNodes.size() <= 1)
-		return false;
+bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytuple >& mergeNodes) {
+
+	VERBOSE_INFO ("STEP 1");
+	if (mergeNodes.size() <= 1)	return false;
+
+	d->reset_computation();
 
 	int mn_size = (int)mergeNodes.size();
-	VERBOSE_INFO ("mergeConfigNodes for " << name << " and " << commons::toString(mergeNodes));
+	//std::cout << "mergeConfigNodes " << commons::toString(mergeNodes) << " for " << name << "\n";
+
 	models::Dataflow* temp_d = new models::Dataflow(*d);
 	VERBOSE_ASSERT(computeRepetitionVector(temp_d),"inconsistent graph");
 
+	VERBOSE_INFO ("STEP 2");
 	TOKEN_UNIT flow = (TOKEN_UNIT)mn_size, preload = 0, temp_flow = 0;
 	LARGE_INT gcd_value = 0, a, b;
-	std::cout << "mn_szie=" << mn_size << "\n";
 	//Find GCD value
 	for(int i = 0; i < mn_size; i++)
 	{
-		auto ni = (LARGE_INT) temp_d->getNi(get<1>(mergeNodes[i]));
-		std::cout << "ni=" << ni << ",gcd=" << gcd_value << "\n";
+		Vertex vi = temp_d->getVertexById(get<0>(mergeNodes[i]));
+		auto ni = (LARGE_INT) temp_d->getNi(vi);
 		if(gcd_value == 0)
 			gcd_value = ni;
 		gcd_value = gcdExtended(gcd_value, ni, &a, &b);
 	}
+
+	VERBOSE_INFO ("STEP 3");
 	//Find the total flow
 	for(int i = 0; i < mn_size; i++)
 	{
-		auto ni = (LARGE_INT) temp_d->getNi(get<1>(mergeNodes[i]));
-		std::cout << "ni=" << ni << ",gcd=" << gcd_value << "\n";
+		Vertex vi = temp_d->getVertexById(get<0>(mergeNodes[i]));
+		auto ni = (LARGE_INT) temp_d->getNi(vi);
 		temp_flow += ni/gcd_value;
 	}
 	flow = temp_flow;
+	//std::cout << "flow=" << flow << "\n";
 
-	std::cout << "flow=" << flow << "\n";
-
+	VERBOSE_INFO ("STEP 4");
 	//1. Initialize token vecot
 	std::vector<TOKEN_UNIT> temp(flow, 0);
 	std::vector< std::vector<TOKEN_UNIT> > token_vec (mn_size, temp);
 	std::vector<TIME_UNIT> phaseDurVec(flow, NULL_DURATION); //Create the phase duration
-	int start = 0, end;
+	LARGE_INT start = 0, end;
 	for(int i = 0; i < mn_size; i++)
 	{
-		auto ni = (LARGE_INT) temp_d->getNi(get<1>(mergeNodes[i]));
-		end = start + (int)ni/(int)gcd_value;
-		for(int j = start; j < end; j++)
+		Vertex vi = temp_d->getVertexById(get<0>(mergeNodes[i]));
+		auto ni = (LARGE_INT) temp_d->getNi(vi);
+		end = start + ni/gcd_value;
+		//std::cout << "ni=" << ni << ",s=" << start << ",end=" << end << "\n";
+		for(LARGE_INT j = start; j < end; j++)
 			token_vec[i][j] = 1;
 		start = end;
 	}
 
-	/*
-	//1. Initialize token vecot
-	std::vector<TOKEN_UNIT> temp(flow, 0);
-	std::vector< std::vector<TOKEN_UNIT> > token_vec (flow, temp);
-	std::vector<TIME_UNIT> phaseDurVec(flow, 0); //Create the phase duration
-
-	//2. calculate the preload and flow values of all outgoing edges from source vertices
-	for(int i = 0; i < (int)flow; i++)
-		token_vec[i][i] = 1;
-	*/
+	VERBOSE_INFO ("STEP 5");
+	//std::cout << "token=" << commons::toString(token_vec) << "\n";
 
 	//3. Create the BIG router
 	auto middle = d->addVertex();
@@ -1154,35 +1303,40 @@ bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< mytup
 	d->setPhasesQuantity(middle, flow); // number of state for the actor, only one in SDF
 	d->setVertexDuration(middle, phaseDurVec); // is specify for every state , only one for SDF.
 	d->setReentrancyFactor(middle, 1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
-	//VERBOSE_INFO ( "Done creating config router node  " << d->getVertexId(middle) );
-	std::cout << "Done creating config router node  " << d->getVertexId(middle) << "\n";
 
-	//4. Remove the edges before/after the config node and multiple config nodes
-	//Setup the flow appropriately. Remove the router nodes
-	for(int i = 0; i < (int)mergeNodes.size(); i++)
+	//4. Remove the edges before/after the config node. Setup the flow. Remove the router nodes.
+	for(int i = 0; i < mn_size; i++)
 	{
 		Vertex cfgVtx = d->getVertexById( get<0>(mergeNodes[i]) );
-		Vertex v1 = d->getVertexById( get<1>(mergeNodes[i]) );
-		Vertex v2 = d->getVertexById( get<2>(mergeNodes[i]) );
+		Vertex v1;// = d->getVertexById( get<1>(mergeNodes[i]) );
+		Vertex v2;// = d->getVertexById( get<2>(mergeNodes[i]) );
 
-		//VERBOSE_INFO ( "cfgVtx=" << get<0>(mergeNodes[i]) << " v1=" << get<1>(mergeNodes[i]) << " v2=" << get<2>(mergeNodes[i]) );
-		std::cout << "cfgVtx=" << get<0>(mergeNodes[i])  << "[" << temp_d->getNi( get<0>(mergeNodes[i]) ) << "]" << " v1=" << get<1>(mergeNodes[i]) << "[" << temp_d->getNi( get<1>(mergeNodes[i]) ) << "]" << " v2=" << get<2>(mergeNodes[i]) << "[" << temp_d->getNi( get<2>(mergeNodes[i]) ) << "]" << "\n";
+		std::vector<TOKEN_UNIT> myin, myout;
+		getEdgesPhaseVector(d, v1, cfgVtx, v2, myin, myout);
 
-		removeAllEdgesVertex(d, cfgVtx);
+		//std::cout << "v1=" << d->getVertexName(v1) << ",cfg=" << d->getVertexName(cfgVtx) << ",v2=" << d->getVertexName(v2) << "\n";
+		//std::cout << "myin " << commons::toString(myin) << "\n";
+		//std::cout << "myout " << commons::toString(myout) << "\n";
+		//std::cout << "token_vec_size=" << token_vec[i].size() << ",myin_size=" << myin.size() << "\n";
+		//std::cout << "adding edge between " << v1 << " and " << middle << "\n";
+
 		auto new_edge = d->addEdge(v1, middle);
 		d->setEdgeType(new_edge,EDGE_TYPE::BUFFERLESS_EDGE);
 		d->setPreload(new_edge, preload);
-		d->setEdgeInPhases(new_edge, {1});
+		//d->setEdgeInPhases(new_edge, {1});
+		d->setEdgeInPhases(new_edge, myin);
 		d->setEdgeOutPhases(new_edge, token_vec[i]);
 
+		//std::cout << "adding edge between " << middle << " and " << v2 << "\n";
 		new_edge = d->addEdge(middle, v2);
 		d->setEdgeType(new_edge,EDGE_TYPE::BUFFERLESS_EDGE);
 		d->setPreload(new_edge, preload);
 		d->setEdgeInPhases(new_edge, token_vec[i]);
-		d->setEdgeOutPhases(new_edge, {1});
+		//d->setEdgeOutPhases(new_edge, {1});
+		d->setEdgeOutPhases(new_edge, myout);
 	}
-	//VERBOSE_INFO ( "merging " << name << " done");
-	std::cout << "merging " << name << " done\n";
+	//std::cout << "merging " << name << " done\n";
+	d->reset_computation();
 	return true;
 }
 
@@ -1193,7 +1347,7 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 	VERBOSE_INFO ( "resolveSrcConflicts for "  << d->getVertexName(src) << " with original number of vertices " << origV);
 
 	std::vector<Edge> srcedges, rtredges;
-	TOKEN_UNIT flow = 0;
+	TOKEN_UNIT in_flow = 0;
 	TOKEN_UNIT preload = 0;
 	LARGE_INT mygcd = 0, a, b;
 
@@ -1205,19 +1359,27 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 		if((int)d->getVertexId(next_node) > origV && next_node!= src)
 		{
 			srcedges.push_back(outE);
-
-                        auto edgeout = d->getEdgeOut(outE);
+                        auto edgein = d->getEdgeIn(outE);
+			in_flow += edgein;
+			preload += d->getPreload(outE);
+			VERBOSE_INFO ( "states=" << in_flow << ",preload=" << preload );
                         if(mygcd == 0)
-                                mygcd = edgeout;
+                                mygcd = edgein;
                         else
-                                mygcd = gcdExtended(edgeout, mygcd, &a, &b);
+                                mygcd = gcdExtended(edgein, mygcd, &a, &b);
 
 			{ForOutputEdges(d,next_node,inE)     {
 				if(next_node != d->getEdgeTarget(inE))
 					rtredges.push_back(inE);
 			}}
 		}
+		else if((int)d->getVertexId(next_node) <= origV)
+		{
+			std::cout << "src=" << d->getVertexName(src) << " still has outgoing edge to " << d->getVertexName(next_node) << "\n";
+			exit(0);
+		}
 	}}
+
 
 	//1B. Do some sanity check here
 	VERBOSE_ASSERT(srcedges.size() == rtredges.size(),  "BIG ERROR in resolveSrcConflicts\n");
@@ -1226,6 +1388,9 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 		//std::cout << "no resolveSrcConflicts for vertex " << d->getVertexId(src) << "\n";
 		return false;
 	}
+
+	VERBOSE_ASSERT(mygcd > 0 , "Division by zero");
+	in_flow = in_flow / mygcd;
 
 	//1C. Initialize token vector
 	std::vector<TOKEN_UNIT> temp;
@@ -1238,7 +1403,7 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 	{
 		for(int j = 0; j < (int)srcedges.size(); j++)
 		{
-			for(int vi = 0; vi < (int)d->getEdgeIn(srcedges[i]); vi++)
+			for(int vi = 0; vi < (int)d->getEdgeIn(srcedges[i])/mygcd; vi++)
 			{
 				if (i == j)
 					token_vec[j].push_back(1);
@@ -1246,25 +1411,20 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 					token_vec[j].push_back(0);
 			}
 		}
-		flow += d->getEdgeIn( srcedges[i] );
-		preload += d->getPreload( srcedges[i] );	
-		VERBOSE_INFO ( "states=" << flow << ",preload=" << preload );
 	}
-	flow /= mygcd;
 	VERBOSE_INFO ( "done with removing edges");
-
-	VERBOSE_ASSERT(flow > 0, "This case is not supported: flow between task has to be strictly positive");
+	VERBOSE_ASSERT(in_flow > 0, "This case is not supported: flow between task has to be strictly positive");
 
 	//2B. Create the phase duration and token per phase for the new router node
-	std::vector<TOKEN_UNIT> srctoken(flow, 1);
-	std::vector<TIME_UNIT> phaseDurVec(flow, 1.0);
+	std::vector<TOKEN_UNIT> srctoken(in_flow, 1);
+	std::vector<TIME_UNIT> phaseDurVec(in_flow, 1.0);
 
 	//3. Create the BIG router
 	auto middle = d->addVertex();
 	std::stringstream ss;
 	ss << d->getVertexId(src) << "-S";
 	d->setVertexName(middle, ss.str());
-	d->setPhasesQuantity(middle, flow); // number of state for the actor, only one in SDF
+	d->setPhasesQuantity(middle, in_flow); // number of state for the actor, only one in SDF
 	d->setVertexDuration(middle, phaseDurVec); // is specify for every state , only one for SDF.
 	d->setReentrancyFactor(middle, 1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
 	VERBOSE_INFO ( "SRC_CONF(ID="<< d->getVertexId(src) << "):Done creating big router node  " << d->getVertexId(middle) );
@@ -1272,7 +1432,7 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 	//3B. Add edge between source vertex and big router node
 	auto srcEdge = d->addEdge(src, middle);
 	d->setPreload(srcEdge, preload);
-	d->setEdgeInPhases(srcEdge, {flow*mygcd});
+	d->setEdgeInPhases(srcEdge, {in_flow*mygcd});
 	d->setEdgeOutPhases(srcEdge, srctoken);
 
 
@@ -1286,6 +1446,7 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 		auto v2 = d->getEdgeTarget(rtredges[i]);
 		auto loc_preload = d->getPreload(rtredges[i]);
 
+		//std::cout << "src=" << d->getVertexName(src) << ",rtr_new=" << d->getVertexName(middle) << ",v2=" << d->getVertexName(v2) << ",deleting=" << d->getVertexName(v1) << "\n";
 		removeAllEdgesVertex(d, v1);
 
 		auto new_edge = d->addEdge(middle, v2);
@@ -1293,8 +1454,38 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, int origV)
 		d->setEdgeInPhases(new_edge, token_vec[i]);
 		d->setEdgeOutPhases(new_edge, {1});
 		d->setPreload(new_edge,loc_preload);  // preload is M0
+
 	}
 	return true;
+}
+
+
+void removeOrphanNodes(models::Dataflow* to, vid_to_nocEid& vid_to_conflict_map, conflictEtype& conflictEdgeMap)
+{
+	for (bool removeme = true; removeme; ) {
+		{ForEachVertex(to,v) {
+			if (to->getVertexDegree(v) == 0) {
+				ARRAY_INDEX vid = to->getVertexId(v);
+				std::string vname = to->getVertexName(v);
+				VERBOSE_INFO ( " I remove one task (" << vid << ",name=" << vname << ") lah!");
+				to->removeVertex(v);
+
+				if(vid_to_conflict_map.find(vid) != vid_to_conflict_map.end())
+				{
+					unsigned int eid = vid_to_conflict_map[vid];
+					std::vector<ARRAY_INDEX>::iterator it = std::find(conflictEdgeMap[eid].begin(), conflictEdgeMap[eid].end(), vid);
+					if(it != conflictEdgeMap[eid].end())
+					{
+						conflictEdgeMap[eid].erase(it);
+						std::cout << "erasing " << vname << "\n";
+					}
+				}
+				removeme=true;
+				break;
+			}
+			removeme=false;
+		}}
+	}
 }
 
 void getPrevAndNextVertex(ARRAY_INDEX vtx_id, models::Dataflow* to, ARRAY_INDEX& prev, ARRAY_INDEX& next)
@@ -1348,13 +1539,13 @@ std::vector<mytuple> checkForConflicts(conflictEtype& conflictEdges, models::Dat
 			{
 				if (i <= j) //ignore the upper triangle
 					continue;
-				auto taski_vtx = to->getVertexById(conflictEdges[edge_id][i].first);
-				auto taskj_vtx = to->getVertexById(conflictEdges[edge_id][j].first);
-				auto taski = conflictEdges[edge_id][i].first;
-				auto taskj = conflictEdges[edge_id][j].first;
+				auto taski = conflictEdges[edge_id][i];
+				auto taskj = conflictEdges[edge_id][j];
 
+				std::cout << "problem in " << edge_id << ",vid=" << conflictEdges[edge_id][i] << ",vid2=" << conflictEdges[edge_id][j] << "\n";
 
-				//std::cout << "KKK-" << edge_id << "," << to->getVertexName(taski_vtx) << "," << to->getVertexName(taskj_vtx) << "\n";
+				auto taski_vtx = to->getVertexById(taski);
+				auto taskj_vtx = to->getVertexById(taskj);
 
 				auto ni = to->getNi(taski_vtx);
 				auto nj = to->getNi(taskj_vtx);
@@ -1377,12 +1568,13 @@ std::vector<mytuple> checkForConflicts(conflictEtype& conflictEdges, models::Dat
 
 						if( algorithms::isConflictPresent((LARGE_INT) HP, si, (LARGE_INT) ni, sj, (LARGE_INT) nj) )
 						{
-							VERBOSE_INFO ( "conflict between " << to->getVertexName(taski_vtx) << " and " << to->getVertexName(taskj_vtx) );
-							conflictname = to->getVertexName(taski_vtx);
+							VERBOSE_INFO ("confl: " << to->getVertexName(taski_vtx) << " and " << to->getVertexName(taskj_vtx) << "\n");
+							conflictname = to->getVertexName(taski_vtx) + "_" + to->getVertexName(taskj_vtx);
 							get<0>(tuple_temp) = taski;
 							getPrevAndNextVertex(taski, to, prev, next);
 							get<1>(tuple_temp) = prev;
 							get<2>(tuple_temp) = next;
+							std::cout << prev << "-> " << taski << "->" << next << "\n";
 							mergeNodes.push_back(tuple_temp);
 
 							get<0>(tuple_temp) = taskj;
@@ -1401,8 +1593,8 @@ std::vector<mytuple> checkForConflicts(conflictEtype& conflictEdges, models::Dat
 								get<1>(tuple_temp) = prev;
 								get<2>(tuple_temp) = next;
 								mergeNodes.push_back(tuple_temp);
+								std::cout << prev << "-> " << taskj << "->" << next << "\n";
 								return mergeNodes;
-								//break;
 							}
 						}
 					}
@@ -1435,6 +1627,14 @@ std::vector<mytuple> checkForConflicts(conflictEtype& conflictEdges, models::Dat
 }
 
 
+void printTasks(models::Dataflow* to)
+{
+	{ForEachVertex(to, to_v) {
+		std::cout << "NODE " << to->getVertexName(to_v) << "\n";
+	}}
+}
+
+
 void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched, TIME_UNIT* HP, unsigned long* LCM)
 {
 	//fins ratio between orig and new graph for the nodes
@@ -1455,9 +1655,12 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 	for (auto  key : persched) {
 		auto task = key.first;
 		auto task_vtx = to->getVertexById(key.first);
+		std::stringstream ss;
+		for(int i = 0; i < (int)persched[task].second.size(); i++)
+			ss << std::setprecision(13) << persched[task].second[i] << " ";
+
 		*HP =    ( persched[task].first * to->getNi(task_vtx) ) / (persched[task].second.size()) ;
-		VERBOSE_INFO ( "Task " <<  to->getVertexName(task_vtx) <<  " : duration=[ " << commons::toString(to->getVertexPhaseDuration(task_vtx)) <<  "] period=" <<  persched[task].first << " HP=" << *HP << " Ni=" << to->getNi(task_vtx)
-				<< " starts=[ " << commons::toString(persched[task].second) << "]");
+		VERBOSE_INFO ( "Task " <<  to->getVertexName(task_vtx) <<  " : duration=[ " << commons::toString(to->getVertexPhaseDuration(task_vtx)) <<  "] period=" <<  persched[task].first << " HP=" << *HP << " Ni=" << to->getNi(task_vtx) << " starts=[ " << ss.str() << "]");
 		*LCM = boost::math::lcm(*LCM, to->getNi(task_vtx));
 
 	}
@@ -1508,10 +1711,31 @@ void algorithms::generate_lte_sdf(models::Dataflow* const , parameters_list_t   
 	models::Dataflow to;
 
 	std::vector<phase_info> phases;
+
+/*
+	//phases.push_back( getPhaseStruct(4, 392504, 16, "miwf"));
+	//phases.push_back( getPhaseStruct(2, 230635, 32, "cwac"));
+
+	phases.push_back( getPhaseStruct(2, 392504, 16, "miwf"));
+	phases.push_back( getPhaseStruct(2, 230635, 32, "cwac"));
+	phases.push_back( getPhaseStruct(2, 353448, 32, "ifft"));
+	phases.push_back( getPhaseStruct(2, 267559, 32, "dd"));
+
+	phases.push_back( getPhaseStruct(1, 392504, 64/4, "miwf"));
+	phases.push_back( getPhaseStruct(5, 230635, 128/4, "cwac"));
+	phases.push_back( getPhaseStruct(3, 353448, 128/4, "ifft"));
+	phases.push_back( getPhaseStruct(3, 267559, 32, "dd"));
+
+	phases.push_back( getPhaseStruct(16, 392504, 64/4, "miwf"));
+	phases.push_back( getPhaseStruct(19, 230635, 128/4, "cwac"));
+	phases.push_back( getPhaseStruct(12, 353448, 128/4, "ifft"));
+	phases.push_back( getPhaseStruct(19, 267559, 32, "dd"));
+*/
 	phases.push_back( getPhaseStruct(64, 392504, 16, "miwf"));
 	phases.push_back( getPhaseStruct(75, 230635, 32, "cwac"));
 	phases.push_back( getPhaseStruct(24, 353448, 32, "ifft"));
 	phases.push_back( getPhaseStruct(75, 267559, 32, "dd"));
+
 
 	std::vector< std::vector<ARRAY_INDEX> > vertex_info;
 	for(unsigned int i = 0; i < phases.size(); i++)
@@ -1553,9 +1777,10 @@ void algorithms::generate_lte_sdf(models::Dataflow* const , parameters_list_t   
 		}
 	}
 
-	commons::writeSDF3File("lte_sdf.xml", &to);
+	commons::writeSDF3File("lte_sdf_238.xml", &to);
 }
 
+//print_graph(to, original_df);
 void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, parameters_list_t   param_list)
 {
 	double yscale = 1;
@@ -1563,13 +1788,16 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 	conflictEtype conflictEdges; //stores details of flows that share noc edges
 	conflictConfigs configs; //stores the details of the router configs that are shared
+	vid_to_nocEid vid_to_conflict_map; //used to index newly added nodes into the conflict table, so as to remove it easily
 	int mesh_row = (int)ceil(sqrt(dataflow->getVerticesCount()));
 
 	if(mesh_row <= 4)
 		mesh_row = 4;
 
 	NoC *noc = new NoC(mesh_row, mesh_row, 1); //Init NoC
-	noc->generateShortestPaths();
+
+	if(mesh_row <= 9)
+		noc->generateShortestPaths();
 
 	// STEP 0.2 - Assert SDF
 	models::Dataflow* to = new models::Dataflow(*dataflow);
@@ -1577,24 +1805,25 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 	std::map<int, Edge> edge_list;
 
-
 	//symbolic execution to find program execution order
 	models::Dataflow* to2 = new models::Dataflow(*dataflow);
 	std::vector<ARRAY_INDEX> prog_order = symbolic_execution(to2);
 	delete to2;
+
 	//do some processing to perfrom task mapping, NoC route determination and add intermediate nodes
 	std::map<int, route_t> routes = graphProcessing(to, noc, prog_order);
 	generateEdgesMap(to, edge_list, noc);
 
+	printTasks(to);
 
+	//print_graph(to, original_df);
 	for(auto it:routes) {
 		Edge e = edge_list[it.first];
 		Vertex esrc = to->getEdgeSource(e);
 		VERBOSE_INFO("replace edge " << e << "by a sequence");
-		addPathNode(to, e, it.second, conflictEdges, configs, true);
+		addPathNode(to, e, it.second, conflictEdges, configs, vid_to_conflict_map, true);
 		//print_graph(to, original_df);
 	}
-
 
 	//resolve cnflicts for all the  (a) sources that sent data to multiple nodes. 
 	//				(b) destinations that receive data from multiple nodes.
@@ -1605,92 +1834,83 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	{
 		auto src = to->getVertexById(i);
 		resolveSrcConflicts(to, src, origV);
-		//print_graph(to, original_df);
 	}
 
-/*
 	for(int i = 1; i <= origV; i++)
 	{
 		auto dest = to->getVertexById(i);
 		resolveDestConflicts(to, dest, origV);
-		print_graph(to, original_df);
 	}
-*/
-	//print_graph(to, original_df);
 
-	//if (param_list.count("skip_merge") != 1)
-	//if (false)
-	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++)
-	{
-		VERBOSE_INFO ("Call mergeConfigNodes");
-		//if( mergeConfigNodes(to, it->first, it->second))
-		//	print_graph(to, original_df);
+	VERBOSE_INFO ("Call mergeConfigNodes");
+	int idx = 0;
+	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++) {
+		VERBOSE_INFO ("Working on merge " << idx++ << " over " << configs.size()) ;
+		mergeConfigNodes(to, it->first, it->second);
 	}
-	/*
-	 * 	print_graph(to, original_df);
+	VERBOSE_INFO ("mergeConfigNodes Done.");
 
 	//Remove conflicts at source and destination router links as a big node has been created
 	for(auto it:routes)
 	{
-
 		auto start_id = routes[it.first][0];
 		auto cf_it = conflictEdges.find((unsigned int)start_id);
 		if(cf_it != conflictEdges.end())
 	 		conflictEdges.erase(cf_it);
-
 
 		auto mysize = routes[it.first].size() - 1;
 		auto end_id = routes[it.first][mysize];
 		auto cf_it2 = conflictEdges.find((unsigned int)end_id);
 		if(cf_it2 != conflictEdges.end())
 	 		conflictEdges.erase(cf_it2);
-
 	}
-*/
+
 	VERBOSE_INFO("resolving conflicts done");
 	//Original graph
 
-
-	// This removes the vertices disconnected
-	for (bool removeme = true; removeme; ) {
-		{ForEachVertex(to,v) {
-
-			if (to->getVertexDegree(v) == 0) {
-				VERBOSE_INFO ( " I remove one task (" << to->getVertexId(v) << ") lah!");
-				to->removeVertex(v);
-				//print_graph(to, original_df);
-				removeme=true;
-				break;
-			}
-			removeme=false;
-		}}
-	}
-
-	print_graph(to, original_df);
-	//std::cout << printers::GenerateDOT(to);
-	//Given the graph "to" the perform the Kperiodic scheduling and get "persched" in return
-	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, false, false);
-	//scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling    (to) ;
+	removeOrphanNodes(to, vid_to_conflict_map, conflictEdges);
 
 	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
-	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (to, algorithms::scheduling::generateNPeriodicVector(to));
-
+	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, algorithms::scheduling::generateNPeriodicVector(to));
 	TIME_UNIT omega = scheduling_res.getGraphPeriod();
-	std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
-	std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
-
-
+	scheduling_t persched = scheduling_res.getTaskSchedule();
+	//std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
+	//std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
 	VERBOSE_INFO("findHP");
 	unsigned long LCM;
 	TIME_UNIT HP;
-	findHP(dataflow, to, scheduling_res.getTaskSchedule(), &HP, &LCM);
+	findHP(dataflow, to, persched, &HP, &LCM);
 
 
-
-		std::string name;
+	while(true)
+	{
 		std::vector< mytuple > mergeNodes;
-		mergeNodes = checkForConflicts(conflictEdges, to, HP, scheduling_res.getTaskSchedule(), dataflow, name);
+		std::string name;
+		mergeNodes = checkForConflicts(conflictEdges, to, HP, persched, dataflow, name);
 
+		if(mergeNodes.size() == 0)
+			break;
+	
+		std::cout << "conflict in " << name << "\n";
+		mergeConfigNodes(to, name, mergeNodes);
+
+		std::cout << "before removeme\n";
+		removeOrphanNodes(to, vid_to_conflict_map, conflictEdges);
+		std::cout << "before compp\n";
+
+		//print_graph(to, original_df);
+		to->reset_computation();
+
+		VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
+		models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, algorithms::scheduling::generateNPeriodicVector(to));
+		TIME_UNIT omega = scheduling_res.getGraphPeriod();
+		persched = scheduling_res.getTaskSchedule();
+
+		//persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to);// , DO_BUFFERLESS, throughput) ;
+		to->reset_computation();
+	}
+
+	findHP(dataflow, to, persched, &HP, &LCM);
 	VERBOSE_INFO ( "LCM=" << LCM );
 }
 
@@ -1705,4 +1925,16 @@ void showstack(std::stack<Vertex> s)
 	}
 	std::cout << '\n';
 }
+
+
+	//std::cout << printers::GenerateDOT(to);
+	//Given the graph "to" the perform the Kperiodic scheduling and get "persched" in return
+	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, false, false);
+	//scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling    (to) ;
+
+	//TIME_UNIT throughput;
+	//scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to);// , DO_BUFFERLESS, throughput) ;
+	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, DO_BUFFERLESS, STOP_AT_FIRST, GET_PREVIOUS);
+
+	//VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 

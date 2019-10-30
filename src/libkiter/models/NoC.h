@@ -58,6 +58,10 @@ public :
 	int getMapIndex(int x, int y) { return g->getMapIndex(x,y); }
 	void getMapIndexPair(int index, int* x, int* y) { return g->getMapIndexPair(index, x, y); }
 	int getPathLength(int src, int dst) { return g->getPathLength(src, dst); }
+	std::vector<int> getPath(int src, int dst) { return g->getPath(src, dst); }
+	int findPathCost(std::vector<int>& mypath) { return g->findPathCost(mypath); }
+
+
 	std::map<int, int> edgeIndexMap;
 
 	//the routers are from (0 to (NXN)-1)

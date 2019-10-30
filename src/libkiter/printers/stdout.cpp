@@ -201,11 +201,11 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
       returnStream << "  t_" << tid << " [" << std::endl;
       returnStream << "    shape=circle," << std::endl;
       returnStream << "    label = \" " << dataflow->getVertexName(t)
-    		  << "(id:" << tid
-    		  << " Phases:" << commons::toString(dataflow->getPhasesQuantity(t))
-    		  << " Ni:" << commons::toString(dataflow->getNi(t))
-    		  << " duration:" << commons::toString(dataflow->getVertexPhaseDuration(t))
-              << " reentrancy:" << commons::toString(dataflow->getReentrancyFactor(t)) <<  ")" << "\"" << std::endl;
+    		  << "\nid:" << tid
+    		  << "\nPhases:" << commons::toString(dataflow->getPhasesQuantity(t))
+    		  << "\nNi:" << commons::toString(dataflow->getNi(t))
+    		  << "\nduration:" << commons::toString(dataflow->getVertexPhaseDuration(t))
+              << "\nreentrancy:" << commons::toString(dataflow->getReentrancyFactor(t)) << "\"" << std::endl;
       
       returnStream  << "  ];" << std::endl;
       returnStream << std::endl;
@@ -220,7 +220,9 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
       returnStream << std::endl;
       std::string bl = dataflow->getEdgeTypeStr(c) ;
       ARRAY_INDEX eid = dataflow->getEdgeId(c) ;
-      returnStream << "    label=\"" << bl << " id:" << eid << " preload:"  << commons::toString(dataflow->getPreload(c)) << "\"," << std::endl;
+      returnStream << "    label=\"" << bl
+    		  	  << "\nid:" << eid
+				  << "\npreload:"  << commons::toString(dataflow->getPreload(c)) << "\"," << std::endl;
       returnStream << "    headlabel=\"" <<  commons::toString(dataflow->getEdgeOutVector(c)) << "\"," << std::endl;
       returnStream << "    taillabel=\"" <<  commons::toString(dataflow->getEdgeInVector(c)) << "\"," << std::endl;
       returnStream << " ] ;" << std::endl;
