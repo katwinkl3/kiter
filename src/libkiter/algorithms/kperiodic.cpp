@@ -1856,10 +1856,11 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   kperiodic_result_t result_max = compute_Kperiodic_throughput_and_cycles(dataflow, parameters); // calculate max throughput of graph
   std::cout << "Max throughput: " << result_max.first << std::endl;
   kperiodic_result_t result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
-  if (result.first < 0)
+  if (result.first < 0) {
     initDist.setThroughput(0);
-  else
+  } else {
     initDist.setThroughput(result.first); // set throughput given initial distribution
+  }
   std::cout << "Initial Throughput (from lowerbound distribution): "
             << initDist.getThroughput() << std::endl;
   
