@@ -1863,16 +1863,20 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   }
   std::cout << "Initial Throughput (from lowerbound distribution): "
             << initDist.getThroughput() << std::endl;
-  
+
   // add initial distribution to list of storage distributions
   StorageDistributionSet checklist(initDist.getDistributionSize(),
                                    initDist);
-  
+
   // Initialise set of minimal storage distributions (a set of pairs of throughput and storage distribution)
   StorageDistributionSet minStorageDist;
 
   // Start search algorithm
   std::cout << "\nDSE BEGIN:" << std::endl;
+  std::ofstream dseLog; // save search path data in DSE log
+  dseLog.open(dirName + dataflow_prime->getName() + "_dselog.csv");
+  dseLog << "storage distribution size,throughput,channel quantities,computation duration"
+         << std::endl; // initialise headers
   while (!minStorageDist.isSearchComplete(checklist, result_max.first)) {
     // Remove first storage distribution in checklist
     std::cout << "Checking next storage distribution in checklist --- current checklist size: "
@@ -1891,14 +1895,25 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
       }}
 
     // Compute throughput and storage deps
+    auto startTime = std::chrono::system_clock::now();
     result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
+    auto endTime = std::chrono::system_clock::now();
+    auto elapsedTime = endTime - startTime;
+    double totalTime = elapsedTime.count() / 1000000.0; // ms duration
     computation_counter++;
+
     if (result.first < 0) { // TODO check that -ve throughput is same as 0
       checkDist.setThroughput(0);
     } else {
       checkDist.setThroughput(result.first);
     }
     checkDist.printInfo();
+
+    // write current storage distribution info to file
+    dseLog << checkDist.getDistributionSize() << ","
+           << checkDist.getThroughput() << ","
+           << checkDist.print_quantities_csv() << ","
+           << totalTime << std::endl;
     
     // Add storage distribution and computed throughput to set of minimal storage distributions
     std::cout << "\n\tUpdating set of minimal storage distributions..."
@@ -1962,7 +1977,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   std::cout << "Done with search!" << std::endl;
   std::cout << "Number of computations: " << computation_counter << std::endl;
   std::cout << "Number of pareto points: " << minStorageDist.getSize() << std::endl;
-  
+  dseLog.close();
   minStorageDist.writeCSV(dirName + dataflow_prime->getName() +
                            "_pp_kiter.csv");
   minStorageDist.printGraphs(dataflow_prime);
