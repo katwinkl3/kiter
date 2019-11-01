@@ -650,6 +650,8 @@ void dijkstra_mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, mode
 		core_mapping[index] = start_core;
 		std::remove(avail_cores.begin(), avail_cores.end(), start_core); 
 		avail_cores.resize( avail_cores.size() - 1);
+
+		std::cout << "allocating " << index << " to " << start_core << "\n";
 		return;
 	}
 
