@@ -212,6 +212,9 @@ void NoCGraph::findLeastCostPath(int u, int d, bool visited[], int path[], int &
 
 std::vector<int> NoCGraph::findPathDijkstra(int u, int d)
 {
+	u += MESH_SIZE;
+	d += MESH_SIZE;
+
 	// Initialize all vertices as not visited
 	std::vector<bool> visited(V, false);
 	std::vector<int> prev(V, -1);

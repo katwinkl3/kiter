@@ -914,9 +914,9 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 		if(top != start)
 		{
 			//std::cout << "mapping " << to->getVertexId(top) << ",mesh=" << noc->getMeshSize() << "\n";
-			if( noc->getMeshSize() <= 9*9)
-				mapping(top, core_mapping, noc, input, available_cores, routes);
-			else
+			//if( noc->getMeshSize() <= 9*9)
+			//	mapping(top, core_mapping, noc, input, available_cores, routes);
+			//else
 				dijkstra_mapping(top, core_mapping, noc, input, available_cores, routes);
 				//new_mapping(top, core_mapping, noc, input, available_cores, routes);
 
