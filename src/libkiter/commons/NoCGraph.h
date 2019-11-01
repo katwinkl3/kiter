@@ -40,6 +40,7 @@ class NoCGraph
 
 	int findPathCost(std::vector<int>& mypath);
 	void findLeastCostPath(int u, int d, bool visited[], int path[], int &path_index);
+	std::vector<int> findPathDijkstra(int u, int d);
 	std::vector<int> getPath(int s, int d)
 	{
 		dumpPaths = true;

@@ -547,7 +547,7 @@ void new_mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::D
 			Vertex source_vtx = d->getEdgeSource(e);
 			auto source = d->getVertexId(source_vtx);
 			int src_core = core_mapping[source];
-			int storepath_id = noc->getMapIndex((int)source, (int)index);
+			//int storepath_id = noc->getMapIndex((int)source, (int)index);
 			if(src_core != -1)
 				pathlen += noc->getPathLength(src_core, core_considered);
 		}}
@@ -556,7 +556,7 @@ void new_mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::D
 			Vertex target_vtx = d->getEdgeTarget(e);
 			auto target = d->getVertexId(target_vtx);
 			int tgt_core = core_mapping[target];
-			int storepath_id = noc->getMapIndex((int)index, (int)target);
+			//int storepath_id = noc->getMapIndex((int)index, (int)target);
 			if(tgt_core != -1)
 				pathlen += noc->getPathLength(core_considered, tgt_core);
 		}}
@@ -619,6 +619,131 @@ void new_mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::D
 		routes[it.first] = it.second;
 	}
 	std::cout << "allocating to " << core_allocated << "\n";
+}
+
+
+int dijkstra_findPaths(int src, NoC* noc, int core_considered, std::vector<int>& curr_util, std::map<int, route_t>& store_path, int storepath_id)
+{
+	if(src != -1 && core_considered != -1)
+	{
+		std::vector<int> paths = noc->findPathDijkstra(src, core_considered);
+		int max_contention = noc->findPathCost(paths);
+		//std::cout << "s=" << src << ",d=" << core_considered << ",#paths=" << paths.size() << ",cont=" << max_contention << "\n";
+		route_t path_str;
+		for(unsigned int p_j = 0; p_j < paths.size()-1; p_j++)
+			path_str.push_back(  (edge_id_t)noc->getMapIndex(paths[p_j], paths[p_j+1]) );
+		store_path[storepath_id] = path_str;
+		setmap(paths, curr_util, noc);
+		//std::cout << "end\n";
+		return max_contention;
+	}
+	return 0;
+}
+
+
+void dijkstra_mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::Dataflow* d, std::vector<int>& avail_cores, std::map<int, route_t>& routes)
+{
+	const int start_core = avail_cores[0];
+	auto index = d->getVertexId(vtx);
+	if((int)avail_cores.size() == noc->size())
+	{
+		core_mapping[index] = start_core;
+		std::remove(avail_cores.begin(), avail_cores.end(), start_core); 
+		avail_cores.resize( avail_cores.size() - 1);
+		return;
+	}
+
+	float best_contention_l1 = -1;
+	std::map<int, route_t> best_store_path;
+	std::vector<int> best_util;
+	int core_allocated = -1;
+
+	for (auto core_considered : avail_cores)
+	{
+		//std::cout << "dijk core_considered=" << core_considered << "\n";
+		int cont_l1 = -1;
+		std::vector<int> curr_util = noc->getLinkUtil();
+		std::map<int, route_t> store_path; //variable to store the route to be utilized by the (src,dest) core
+		unsigned int counter = 0;
+		unsigned int pathlen = 0;
+
+
+		{ForInputEdges(d, vtx, e){	//Find the core index
+			Vertex source_vtx = d->getEdgeSource(e);
+			auto source = d->getVertexId(source_vtx);
+			int src_core = core_mapping[source];
+			//int storepath_id = noc->getMapIndex((int)source, (int)index);
+			if(src_core != -1)
+				pathlen += noc->getPathLength(src_core, core_considered);
+		}}
+
+		{ForOutputEdges(d, vtx, e){
+			Vertex target_vtx = d->getEdgeTarget(e);
+			auto target = d->getVertexId(target_vtx);
+			int tgt_core = core_mapping[target];
+			//int storepath_id = noc->getMapIndex((int)index, (int)target);
+			if(tgt_core != -1)
+				pathlen += noc->getPathLength(core_considered, tgt_core);
+		}}
+
+
+		if(best_contention_l1 != -1 && pathlen > best_contention_l1) //reducing search space
+			continue;
+
+		{ForInputEdges(d, vtx, e){	//Find the core index
+			Vertex source_vtx = d->getEdgeSource(e);
+			auto source = d->getVertexId(source_vtx);
+			int src_core = core_mapping[source];
+			int storepath_id = noc->getMapIndex((int)source, (int)index);
+			if(src_core != -1)
+			{
+				counter++;
+				auto temp_cont_l1 = dijkstra_findPaths(src_core, noc, core_considered, curr_util, store_path, storepath_id);
+				cont_l1 = std::max( temp_cont_l1, cont_l1 );
+			}
+		}}
+
+		{ForOutputEdges(d, vtx, e){
+			Vertex target_vtx = d->getEdgeTarget(e);
+			auto target = d->getVertexId(target_vtx);
+			int tgt_core = core_mapping[target];
+			int storepath_id = noc->getMapIndex((int)index, (int)target);
+			if(tgt_core != -1)
+			{
+				counter++;
+				auto temp_cont_l1 = dijkstra_findPaths(core_considered, noc, tgt_core, curr_util, store_path, storepath_id);
+				cont_l1 = std::max( temp_cont_l1, cont_l1 );
+			}
+		}}
+
+		float cost = (float)cont_l1;
+		if(counter > 0 )
+			cost += (float)pathlen/(float)counter;
+
+
+		//std::cout << "cost=" << cost << "\n";
+
+		if(best_contention_l1 == -1 || cost < best_contention_l1)
+		{
+			best_contention_l1 = cost;
+			best_store_path = store_path;
+			core_allocated = core_considered;
+			best_util = curr_util;
+		}
+	}
+
+	core_mapping[index] = core_allocated;
+	std::remove(avail_cores.begin(), avail_cores.end(), core_allocated);
+	avail_cores.resize(avail_cores.size()-1);
+	noc->setLinkUtil(best_util);
+
+	for(auto it: best_store_path)
+	{
+		if(routes.find(it.first) != routes.end())
+			VERBOSE_INFO ( "already one route is stored fro this");
+		routes[it.first] = it.second;
+	}
+	std::cout << "allocating " << index << " to " << core_allocated << "\n";
 }
 
 
@@ -788,11 +913,13 @@ void taskAndNoCMapping(models::Dataflow* input, models::Dataflow* to, Vertex sta
 		pq.pop();
 		if(top != start)
 		{
-			std::cout << "mapping " << to->getVertexId(top) << ",mesh=" << noc->getMeshSize() << "\n";
-			//if( noc->getMeshSize() <= 9*9)
-			//	mapping(top, core_mapping, noc, input, available_cores, routes);
-			//else
-				new_mapping(top, core_mapping, noc, input, available_cores, routes);
+			//std::cout << "mapping " << to->getVertexId(top) << ",mesh=" << noc->getMeshSize() << "\n";
+			if( noc->getMeshSize() <= 9*9)
+				mapping(top, core_mapping, noc, input, available_cores, routes);
+			else
+				dijkstra_mapping(top, core_mapping, noc, input, available_cores, routes);
+				//new_mapping(top, core_mapping, noc, input, available_cores, routes);
+
 		}
 		visited[to->getVertexId(top)] = true;
 
@@ -1814,7 +1941,8 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	std::map<int, route_t> routes = graphProcessing(to, noc, prog_order);
 	generateEdgesMap(to, edge_list, noc);
 
-	printTasks(to);
+	std::cout << "dont path finding, add paths now\n";
+	//printTasks(to);
 
 	//print_graph(to, original_df);
 	for(auto it:routes) {
@@ -1825,6 +1953,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		//print_graph(to, original_df);
 	}
 
+	std::cout << "adding path nodes done\n";
 	//resolve cnflicts for all the  (a) sources that sent data to multiple nodes. 
 	//				(b) destinations that receive data from multiple nodes.
 	//				(c) nodes that correspond to the same coniguration
@@ -1835,12 +1964,14 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		auto src = to->getVertexById(i);
 		resolveSrcConflicts(to, src, origV);
 	}
+	std::cout << "done source conflict resolve\n";
 
 	for(int i = 1; i <= origV; i++)
 	{
 		auto dest = to->getVertexById(i);
 		resolveDestConflicts(to, dest, origV);
 	}
+	std::cout << "done dest conflict resolve\n";
 
 	VERBOSE_INFO ("Call mergeConfigNodes");
 	int idx = 0;
@@ -1849,6 +1980,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		mergeConfigNodes(to, it->first, it->second);
 	}
 	VERBOSE_INFO ("mergeConfigNodes Done.");
+	std::cout << "done merge conflict resolve\n";
 
 	//Remove conflicts at source and destination router links as a big node has been created
 	for(auto it:routes)
@@ -1870,9 +2002,12 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 	removeOrphanNodes(to, vid_to_conflict_map, conflictEdges);
 
+	std::cout << "calling scheduling\n";
+
+
 	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, algorithms::scheduling::generateNPeriodicVector(to));
-	TIME_UNIT omega = scheduling_res.getGraphPeriod();
+	//TIME_UNIT omega = scheduling_res.getGraphPeriod();
 	scheduling_t persched = scheduling_res.getTaskSchedule();
 	//std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
 	//std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
@@ -1881,6 +2016,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	TIME_UNIT HP;
 	findHP(dataflow, to, persched, &HP, &LCM);
 
+	std::cout << "checking more conflicts\n";
 
 	while(true)
 	{
@@ -1903,7 +2039,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 		VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 		models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, algorithms::scheduling::generateNPeriodicVector(to));
-		TIME_UNIT omega = scheduling_res.getGraphPeriod();
+		//TIME_UNIT omega = scheduling_res.getGraphPeriod();
 		persched = scheduling_res.getTaskSchedule();
 
 		//persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to);// , DO_BUFFERLESS, throughput) ;
