@@ -1897,11 +1897,10 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
       }}
 
     // Compute throughput and storage deps
-    auto startTime = std::chrono::system_clock::now();
+    auto startTime = std::chrono::steady_clock::now();
     result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
-    auto endTime = std::chrono::system_clock::now();
-    auto elapsedTime = endTime - startTime;
-    double totalTime = elapsedTime.count() / 1000000.0; // ms duration
+    auto endTime = std::chrono::steady_clock::now();
+    std::chrono::duration<double, std::milli> elapsedTime = endTime - startTime;
     computation_counter++;
 
     if (result.first < 0) { // TODO check that -ve throughput is same as 0
@@ -1915,12 +1914,12 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     dseLog << checkDist.getDistributionSize() << ","
            << checkDist.getThroughput() << ","
            << checkDist.print_quantities_csv() << ","
-           << totalTime << std::endl;
+           << elapsedTime.count() << std::endl;
     
     // Add storage distribution and computed throughput to set of minimal storage distributions
     std::cout << "\n\tUpdating set of minimal storage distributions..."
               << std::endl;
-      minStorageDist.addStorageDistribution(checkDist);
+    minStorageDist.addStorageDistribution(checkDist);
     std::cout << std::endl;
     std::cout << std::endl;
     std::cout << "\t Minimum Storage Distributions (before) ("
