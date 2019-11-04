@@ -1876,8 +1876,9 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   // Start search algorithm
   std::cout << "\nDSE BEGIN:" << std::endl;
   std::ofstream dseLog; // save search path data in DSE log
+  std::chrono::duration<double, std::milli> cumulativeTime;
   dseLog.open(dirName + logDirName + dataflow_prime->getName() + "_dselog.csv");
-  dseLog << "storage distribution size,throughput,channel quantities,computation duration"
+  dseLog << "storage distribution size,throughput,channel quantities,computation duration,cumulative duration"
          << std::endl; // initialise headers
   while (!minStorageDist.isSearchComplete(checklist, result_max.first)) {
     // Remove first storage distribution in checklist
@@ -1900,7 +1901,8 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     auto startTime = std::chrono::steady_clock::now();
     result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
     auto endTime = std::chrono::steady_clock::now();
-    std::chrono::duration<double, std::milli> elapsedTime = endTime - startTime;
+    std::chrono::duration<double, std::milli> execTime = endTime - startTime; // duration in ms
+    cumulativeTime += execTime;
     computation_counter++;
 
     if (result.first < 0) { // TODO check that -ve throughput is same as 0
@@ -1914,7 +1916,8 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     dseLog << checkDist.getDistributionSize() << ","
            << checkDist.getThroughput() << ","
            << checkDist.print_quantities_csv() << ","
-           << elapsedTime.count() << std::endl;
+           << execTime.count() << ","
+           << cumulativeTime.count() << std::endl;
     
     // Add storage distribution and computed throughput to set of minimal storage distributions
     std::cout << "\n\tUpdating set of minimal storage distributions..."
