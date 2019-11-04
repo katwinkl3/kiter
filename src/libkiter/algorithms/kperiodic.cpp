@@ -1924,18 +1924,18 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
               << std::endl;
     minStorageDist.addStorageDistribution(checkDist);
     std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << "\t Minimum Storage Distributions (before) ("
-              << minStorageDist.getSize() << "): " << std::endl;
-    minStorageDist.printDistributions();
-    std::cout << std::endl;
+    // std::cout << std::endl;
+    // std::cout << "\t Minimum Storage Distributions (before) ("
+    //           << minStorageDist.getSize() << "): " << std::endl;
+    // minStorageDist.printDistributions();
+    // std::cout << std::endl;
 
     // Create new storage distributions for every storage dependency found; add new storage distributions to checklist
-    std::cout << "Printing critical channels:" << std::endl;
-    for (std::set<Edge>::iterator it = (result.second).begin();
-         it != (result.second).end(); it++) {
-      std::cout << dataflow_prime->getEdgeName(*it) << std::endl;
-    }
+    // std::cout << "Printing critical channels:" << std::endl;
+    // for (std::set<Edge>::iterator it = (result.second).begin();
+    //      it != (result.second).end(); it++) {
+    //   std::cout << dataflow_prime->getEdgeName(*it) << std::endl;
+    // }
     for (std::set<Edge>::iterator it = (result.second).begin();
          it != (result.second).end(); it++) {
       StorageDistribution newDist(checkDist);
@@ -1955,13 +1955,13 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
         std::cout << std::endl;
       }
     }
-    std::cout << "\tTrying to minimise set with distribution size: "
-              << checkDist.getDistributionSize() << std::endl;
+    // std::cout << "\tTrying to minimise set with distribution size: "
+    //           << checkDist.getDistributionSize() << std::endl;
     minStorageDist.minimizeStorageDistributions(checkDist);
-    std::cout << std::endl;
-    std::cout << "\t Minimum Storage Distributions (after) ("
-              << minStorageDist.getSize() << "): " << std::endl;
-    minStorageDist.printDistributions();
+    // std::cout << std::endl;
+    // std::cout << "\t Minimum Storage Distributions (after) ("
+    //           << minStorageDist.getSize() << "): " << std::endl;
+    // minStorageDist.printDistributions();
     std::cout << std::endl;
   }
 
