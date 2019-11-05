@@ -360,12 +360,22 @@ public :
     struct EdgeProperties {
         int weight;
     };
-    bool  computeStartingTime (TIME_UNIT fr ) {
-        TIME_UNIT omega = 1 / fr;
-        VERBOSE_DEBUG("minimalDistances (" << omega << ")");
+    bool  computeStartingTimeWithOmega (TIME_UNIT omega ) {
+
+    	if (omega == std::numeric_limits<TIME_UNIT>::infinity()) {
+            {ForEachEvent(this,e)   {
+                this->setStartingTime(e , 0);
+            }}
+            return false;
+    	}
+
+    	VERBOSE_ASSERT (omega < std::numeric_limits<TIME_UNIT>::infinity(), "Cannot compute starting time with infinite period.");
+
+        VERBOSE_DEBUG("computeStartingTime omega = " << omega);
 
         const EXEC_COUNT nb_vertices = this->getEventCount();
 
+        VERBOSE_DEBUG("computeStartingTime setFlow");
         {ForEachConstraint(this,e)   {
             this->setFlow(e, ( this->getDuration(e)  - omega * this->getWeight(e)));
         }}
@@ -373,6 +383,7 @@ public :
         //boost::property_map<BoostEventGraph, boost::edge_flow_t>::type weight_pmap = get(boost::edge_flow_t(), g);
         //boost::property_map<BoostEventGraph, boost::vertex_discover_time_t>::type distance_pmap = get(boost::vertex_discover_time_t(), g);
 
+        VERBOSE_DEBUG("computeStartingTime initStartingTime");
         bool first = true;
         {ForEachEvent(this,e)   {
             this->setStartingTime(e,(std::numeric_limits<TIME_UNIT>::min)());
@@ -382,6 +393,7 @@ public :
             }
         }}
 
+        VERBOSE_DEBUG("computeStartingTime parent");
         // init the predecessors (identity function)
         std::vector<std::size_t> parent(nb_vertices);
         for (EXEC_COUNT i = 0; i < nb_vertices; ++i) {
@@ -389,6 +401,7 @@ public :
         }
 
 
+        VERBOSE_DEBUG("computeStartingTime getStartingTime with " <<  this->getEventCount() << "eventCount");
         for (EXEC_COUNT i = 0 ; i < this->getEventCount() ; i ++ )
             {ForEachEvent(this,event1)   {
                 {ForEachOutputs(this,event1,constraint){
@@ -401,6 +414,7 @@ public :
 
 
 
+        VERBOSE_DEBUG("computeStartingTime min_time ");
 
         TIME_UNIT min_time = (std::numeric_limits<TIME_UNIT>::max)();
 
@@ -419,6 +433,7 @@ public :
         {ForEachEvent(this,e)   {
         	VERBOSE_DEBUG("distance(" << this->getEvent(e).toString() << ") = " <<  this->getStartingTime(e) - min_time);
         }}
+        VERBOSE_DEBUG("end of compute starts.");
         return true;
 
     }

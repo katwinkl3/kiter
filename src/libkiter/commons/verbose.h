@@ -42,6 +42,7 @@
 #define EXIT_ON_FAILURE()  {int* toto = NULL; *toto = 1;} exit(EXIT_FAILURE)
 
 #endif
+#define VERBOSE_IS_EXTRA_DEBUG()   (commons::VERBOSE_MODE >= commons::EXTRA_DEBUG_LEVEL)
 #define VERBOSE_IS_DEBUG()   (commons::VERBOSE_MODE >= commons::DEBUG_LEVEL)
 #define VERBOSE_IS_INFO()    (commons::VERBOSE_MODE >= commons::INFO_LEVEL)
 #define VERBOSE_IS_ERROR()   (commons::VERBOSE_MODE >= commons::ERROR_LEVEL)
@@ -50,6 +51,7 @@
 #define VERBOSE_IS_ILP()    (commons::VERBOSE_MODE >= commons::ILP_LEVEL)
 
 #ifndef __RELEASE_MODE__
+#define VERBOSE_EXTRA_DEBUG(m)   if (VERBOSE_IS_EXTRA_DEBUG())      std::cerr << BLUE_COLOR   << "[X]" << __SHOW_LEVEL << m << std::string(20,' ') << "\n" ; //PRINT_STATE();
 #define VERBOSE_DEBUG(m)   if (VERBOSE_IS_DEBUG())      std::cerr << BLUE_COLOR   << "[D]" << __SHOW_LEVEL << m << std::string(20,' ') << "\n" ; //PRINT_STATE();
 #define VERBOSE_ILP(m)     if (VERBOSE_IS_ILP())        std::cerr << PURPLE_COLOR << "[L]" << __SHOW_LEVEL << m << std::string(20,' ') << "\n" ;
 #define VERBOSE_DEBUG_ASSERT(test,mess) if (VERBOSE_IS_DEBUG())  if (!(test)) {VERBOSE_ERROR("Assertion failed : " << #test);VERBOSE_ERROR(mess);  ERROR();}
@@ -58,6 +60,7 @@
 #define VERBOSE_DEBUG_ASSERT_GreaterThan(a,b) if (VERBOSE_IS_DEBUG())   if (a <= b) {VERBOSE_ERROR("Assertion failed : " << #a << "(=" << a << ") >" << #b << "(=" << b << ")"); ERROR();}
 #define VERBOSE_DEBUG_ASSERT_GreaterEqualThan(a,b) if (VERBOSE_IS_DEBUG())  if (a < b)  {VERBOSE_ERROR("Assertion failed : " << #a << "(=" << a << ") >=" << #b << "(=" << b << ")"); ERROR();}
 #else
+#define VERBOSE_EXTRA_DEBUG(m)   ;
 #define VERBOSE_DEBUG(m)   ;
 #define VERBOSE_ILP(m)     ;
 #define VERBOSE_DEBUG_ASSERT(test,mess)      ;
@@ -100,12 +103,13 @@ extern bool VERBOSE_GUESS;
 const int  MIN_LEVEL     =   0;
 const int  MAX_LEVEL     =  10;
 
-const int  ERROR_LEVEL   =   1;
-const int  WARNING_LEVEL =   2;
-const int  PB_LEVEL 	 =   3;
-const int  INFO_LEVEL    =   4;
-const int  ILP_LEVEL     =   7;
-const int  DEBUG_LEVEL   =  10;
+const int  ERROR_LEVEL         =   1;
+const int  WARNING_LEVEL       =   2;
+const int  PB_LEVEL 	       =   3;
+const int  INFO_LEVEL          =   4;
+const int  ILP_LEVEL           =   7;
+const int  DEBUG_LEVEL         =   8;
+const int  EXTRA_DEBUG_LEVEL   =  10;
 
   void print_trace( const char *file, int line);
   inline void set_verbose_mode(const int m){

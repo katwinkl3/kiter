@@ -53,9 +53,8 @@ std::string algorithms::cc2string  (models::Dataflow* const dataflow,std::set<Ed
 std::string algorithms::print_schedule (models::EventGraph* eg, models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT res ) {
 	std::ostringstream returnStream;
 
-
-    eg->computeStartingTime (res);
     TIME_UNIT omega = 1 / res ;
+    eg->computeStartingTimeWithOmega (omega);
     returnStream << "\\begin{scheduling}{" << dataflow->getVerticesCount() <<  "}{" << 0 <<  "}{3.2}{5}" << std::endl;
 
     {ForEachVertex(dataflow,v) {
@@ -128,8 +127,9 @@ models::Scheduling period2Scheduling    (models::Dataflow* const  dataflow,  std
 	scheduling_t scheduling_result;
 
     models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
-    eg->computeStartingTime (throughput);
+
     TIME_UNIT omega = 1 / throughput ;
+    eg->computeStartingTimeWithOmega (omega);
 
 
     {ForEachEvent(eg,e) {
@@ -165,8 +165,10 @@ scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<
 	scheduling_t scheduling_result;
 
     models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
-    eg->computeStartingTime (throughput);
+
     TIME_UNIT omega = 1 / throughput ;
+    eg->computeStartingTimeWithOmega (omega);
+
 
 
     {ForEachEvent(eg,e) {
@@ -737,15 +739,15 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
 #endif
 
                     models::EventGraphVertex target_event = g->getEventGraphVertex(target_id,pj,kj);
-                    VERBOSE_DEBUG("  stepa=" << stepa);
-                    VERBOSE_DEBUG("  ki=" << ki<<" kj=" << kj << " (" <<  source_event  << "," << target_event  << ")");
-                    VERBOSE_DEBUG("  alphamin=" << alphamin <<"   alphamax=" << alphamax );
+                    VERBOSE_EXTRA_DEBUG("  stepa=" << stepa);
+                    VERBOSE_EXTRA_DEBUG("  ki=" << ki<<" kj=" << kj << " (" <<  source_event  << "," << target_event  << ")");
+                    VERBOSE_EXTRA_DEBUG("  alphamin=" << alphamin <<"   alphamax=" << alphamax );
                     if (alphamin <= alphamax) {
 
 
                         TIME_UNIT w = ((TIME_UNIT) alphamax * source_phase_count * maxki ) / ( (TIME_UNIT) Wc  * (TIME_UNIT) dataflow->getNi(source) );
-                        VERBOSE_DEBUG("   w = (" << alphamax << " * " << dataflow->getPhasesQuantity(source) * maxki << ") / (" << Wc << " * " << dataflow->getNi(source) / maxki << ")");
-                        VERBOSE_DEBUG("   d = (" << d << ")");
+                        VERBOSE_EXTRA_DEBUG("   w = (" << alphamax << " * " << dataflow->getPhasesQuantity(source) * maxki << ") / (" << Wc << " * " << dataflow->getNi(source) / maxki << ")");
+                        VERBOSE_EXTRA_DEBUG("   d = (" << d << ")");
 
                         if (doBufferLessEdges) {
                             g->addEventConstraint(target_event ,source_event,0,-d,id);
@@ -1290,8 +1292,8 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
 
     TIME_UNIT res = result.first;
 
-    eg->computeStartingTime (res);
     TIME_UNIT omega = 1 / res ;
+    eg->computeStartingTimeWithOmega (omega);
 
 
     {ForEachEvent(eg,e) {

@@ -11,10 +11,16 @@
 
 #include <algorithms/kperiodic.h>
 #include <models/EventGraph.h>
+#include <commons/SDF3Wrapper.h>
 
 
 models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::Dataflow* const dataflow) {
 
+	if (VERBOSE_IS_DEBUG()) {
+	    VERBOSE_DEBUG("Save SDF3 XML file.");
+		static int count = 0;
+		commons::writeSDF3File( "CSDF_KPeriodicScheduling_" + std::to_string(count++) + ".xml", dataflow);
+	}
 
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
@@ -24,7 +30,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
     EXEC_COUNT sumKi = dataflow->getVerticesCount();
 
     {ForEachTask(dataflow,t) {
-        sumNi += dataflow->getNi(t) ;
+        sumNi += dataflow->getNi(t) / dataflow->getPhasesQuantity(t) ;
     }}
 
     // STEP 0.1 - PRE
@@ -46,6 +52,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
 
     VERBOSE_INFO("KPeriodic EventGraph generation");
 
+    VERBOSE_INFO("KVector = " << commons::toString(kvector) );
     //STEP 1 - Generate Event Graph
     models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector,false);
 
@@ -54,6 +61,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
 
     //STEP 2 - resolve the MCRP on this Event Graph
     std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
+    VERBOSE_INFO("Kperiodic throughput = " << howard_res.first);
 
     std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res.second);
 
@@ -103,10 +111,12 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
             //STEP 1 - Generate Event Graph and update vector
             if (!algorithms::updateEventGraph( dataflow ,  &kvector, &(result.second), eg, false)) break ;
 
+            VERBOSE_INFO("KVector = " << commons::toString(kvector) );
             VERBOSE_INFO("KPeriodic EventGraph generation Done");
 
             //STEP 2 - resolve the MCRP on this Event Graph
             std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res_bis = eg->MinCycleRatio();
+            VERBOSE_INFO("Kperiodic throughput = " << howard_res_bis.first);
 
             std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res_bis.second);
 
