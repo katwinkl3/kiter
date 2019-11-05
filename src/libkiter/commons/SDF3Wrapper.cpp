@@ -24,14 +24,13 @@
 using std::vector;
 
 #define TXT_XML_ERROR "TXT_XML_ERROR"
-
-// TODO add timing reader for SDF3
+static const std::string INIT_PERIODIC_SEPARATOR = ";";
 
 template<typename T>
 std::string vectorAsStr(const std::vector<T>& t)
 {
 	 std::stringstream s;
-		for (int idx = 0 ; idx < t.size() ; idx++) {
+		for (typename std::vector<T>::size_type idx = 0 ; idx < t.size() ; idx++) {
 			if (idx > 0) {
 				 s << ",";
 			}
@@ -68,24 +67,44 @@ std::pair<T1,T2> splitAndDefault(const std::string &s,char del,T2 d) {
 
 void                        readSDF3OutputSpec      (models::Dataflow *to, const Edge c, const std::string rates) {
 
-	std::vector<std::string>  phases = split (rates, ',');
-	std::vector<TOKEN_UNIT>   cons;
-	for (unsigned int i = 1 ; i <= phases.size() ; i++) {
-		cons.push_back(commons::fromString<TOKEN_UNIT>(phases[i-1]));
+	std::vector<std::string>  init_periodic = split (rates, INIT_PERIODIC_SEPARATOR);
+	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? split (init_periodic[0], ',') : std::vector<std::string>() ;
+	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? split (init_periodic[0], ',') : split (init_periodic[1], ',') ;
+	std::vector<TOKEN_UNIT>   init_cons;
+	std::vector<TOKEN_UNIT>   periodic_cons;
+
+	for (unsigned int i = 1 ; i <= init_phases.size() ; i++) {
+		init_cons.push_back(commons::fromString<TOKEN_UNIT>(init_phases[i-1]));
 	}
 
-	to->setEdgeOutPhases(c,cons);
+	for (unsigned int i = 1 ; i <= periodic_phases.size() ; i++) {
+		periodic_cons.push_back(commons::fromString<TOKEN_UNIT>(periodic_phases[i-1]));
+	}
+
+	to->setEdgeOutInitPhases(c,init_cons);
+	to->setEdgeOutPhases(c,periodic_cons);
 
 }
 
 void                        readSDF3InputSpec      (models::Dataflow *to, const Edge c, const std::string rates) {
 
-	std::vector<std::string>  phases = split (rates, ',');
-	std::vector<TOKEN_UNIT>   prod;
-	for (unsigned int i = 1 ; i <= phases.size() ; i++) {
-		prod.push_back(commons::fromString<TOKEN_UNIT>(phases[i-1]));
+	std::vector<std::string>  init_periodic = split (rates, INIT_PERIODIC_SEPARATOR);
+	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? split (init_periodic[0], ',') : std::vector<std::string>() ;
+	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? split (init_periodic[0], ',') : split (init_periodic[1], ',') ;
+	std::vector<TOKEN_UNIT>   init_prod;
+	std::vector<TOKEN_UNIT>   periodic_prod;
+
+	for (unsigned int i = 1 ; i <= init_phases.size() ; i++) {
+		init_prod.push_back(commons::fromString<TOKEN_UNIT>(init_phases[i-1]));
 	}
-	to->setEdgeInPhases(c,prod);
+
+	for (unsigned int i = 1 ; i <= periodic_phases.size() ; i++) {
+		periodic_prod.push_back(commons::fromString<TOKEN_UNIT>(periodic_phases[i-1]));
+	}
+
+	to->setEdgeInInitPhases(c,init_prod);
+	to->setEdgeInPhases(c,periodic_prod);
+
 }
 
 void readSDF3VertexPorts (models::Dataflow *to,xmlNodePtr taskNode) {
@@ -201,16 +220,24 @@ void readSDF3VertexTimings (models::Dataflow *to,xmlNodePtr taskNode) {
 		}
 	}
 
+	std::vector<std::string>  init_periodic = split (timings, INIT_PERIODIC_SEPARATOR);
+	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? splitSDF3List (init_periodic[0]) : std::vector<std::string>() ;
+	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? splitSDF3List (init_periodic[0]) : splitSDF3List (init_periodic[1]) ;
 
-	std::vector<std::string> list = splitSDF3List(timings);
-	std::vector<TIME_UNIT> times;
-	to->setPhasesQuantity(pVertex,list.size());
-	//to->initVertexDuration(pVertex,1);
-	for (unsigned int i = 1 ; i <= list.size() ; i++) {
-		times.push_back(commons::fromString<TIME_UNIT>(list[i-1]));
-		//to->setVertexDuration(pVertex,(EXEC_COUNT)i,commons::fromString<TIME_UNIT>(list[i-1]));
+	std::vector<TIME_UNIT> init_times;
+	std::vector<TIME_UNIT> periodic_times;
+
+	to->setInitPhasesQuantity(pVertex,init_phases.size());
+	to->setPhasesQuantity(pVertex,periodic_phases.size());
+
+	for (unsigned int i = 1 ; i <= periodic_phases.size() ; i++) {
+		periodic_times.push_back(commons::fromString<TIME_UNIT>(periodic_phases[i-1]));
 	}
-	to->setVertexDuration(pVertex,times);
+	for (unsigned int i = 1 ; i <= init_phases.size() ; i++) {
+		init_times.push_back(commons::fromString<TIME_UNIT>(init_phases[i-1]));
+	}
+	to->setVertexDuration(pVertex,periodic_times);
+	to->setVertexInitDuration(pVertex,init_times);
 
 }
 
@@ -260,12 +287,20 @@ void readSDF3VertexReentrancy (models::Dataflow *to,xmlNodePtr taskNode) {
 
 }
 
-bool onlyOneRate(std::string rate) {
-	// '1' and ',' alternate
-	bool val = (rate[0] == '1') ? true : false;
-	for (unsigned int i = 0 ; i < rate.size() ; i++) {
-		if (!(val?rate[i]=='1':rate[i]==',')) return false;
-		val = !val;
+bool onlyOneRate(std::string rates) {
+	std::vector<std::string>  init_periodic = split (rates, INIT_PERIODIC_SEPARATOR);
+	if (init_periodic.size() > 1) {
+		for (auto x : init_periodic) {
+			if (not onlyOneRate(x)) {return false;}
+		}
+	} else {
+		auto rate = init_periodic[0];
+		// '1' and ',' alternate
+		bool val = (rate[0] == '1') ? true : false;
+		for (unsigned int i = 0 ; i < rate.size() ; i++) {
+			if (!(val?rate[i]=='1':rate[i]==',')) return false;
+			val = !val;
+		}
 	}
 
 	return true;
@@ -621,16 +656,19 @@ void writeLoopbackChannel (xmlTextWriterPtr writer, const models::Dataflow* data
 void writeLoopbackPorts (xmlTextWriterPtr writer, const models::Dataflow* dataflow, const Vertex t) {
 	const std::string out_port = "out_R" + dataflow->getVertexName(t);
 	const std::string in_port = "in_R" + dataflow->getVertexName(t);
-	const std::vector<TOKEN_UNIT> rates        = std::vector<TOKEN_UNIT> (dataflow->getPhasesQuantity(t),1) ;
+	const std::vector<TOKEN_UNIT> periodic_rates        =    std::vector<TOKEN_UNIT> (dataflow->getPhasesQuantity(t),1) ;
+	const std::vector<TOKEN_UNIT> init_rates        =    std::vector<TOKEN_UNIT> (dataflow->getInitPhasesQuantity(t),1) ;
+	std::string rates = vectorAsStr(periodic_rates);
+	if (init_rates.size()) rates = vectorAsStr(init_rates) + INIT_PERIODIC_SEPARATOR +   rates ;
 	xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) out_port.c_str());
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "in");
-	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) vectorAsStr(rates).c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) rates.c_str());
 	xmlTextWriterEndElement(writer);
 	xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) in_port.c_str());
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "out");
-	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) vectorAsStr(rates).c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) rates.c_str());
 	xmlTextWriterEndElement(writer);
 }
 
@@ -657,6 +695,7 @@ void writeChannel (xmlTextWriterPtr writer, const models::Dataflow* dataflow, co
 
 
 void writeSDF3File         (std::string filename, const models::Dataflow* dataflow)  {
+
 
 	xmlTextWriterPtr writer = xmlNewTextWriterFilename(filename.c_str(), 0);
 	xmlTextWriterStartDocument(writer, NULL, "UTF-8", NULL);
@@ -686,22 +725,32 @@ void writeSDF3File         (std::string filename, const models::Dataflow* datafl
 					for (auto it : dataflow->in_edges(t)) {
 									Edge e = *it;
 									const std::string in_port =  dataflow->getEdgeOutputPortName(e);
+									const auto in_init_rates = dataflow->getEdgeInitOutVector(e);
 									const auto in_rates = dataflow->getEdgeOutVector(e);
 									xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
 									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) in_port.c_str());
 									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "in");
-									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) vectorAsStr(in_rates).c_str());
+									std::string rates_str = vectorAsStr(in_rates);
+									if (in_init_rates.size()) {
+										rates_str = vectorAsStr(in_init_rates) + INIT_PERIODIC_SEPARATOR + rates_str;
+									}
+									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) rates_str.c_str());
 									xmlTextWriterEndElement(writer);
 					}
 
 					for (auto it : dataflow->out_edges(t)) {
 									Edge e = *it;
 									const std::string out_port =  dataflow->getEdgeInputPortName(e);
+									const auto out_init_rates = dataflow->getEdgeInitInVector(e);
 									const auto out_rates = dataflow->getEdgeInVector(e);
 									xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
 									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) out_port.c_str());
 									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "out");
-									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) vectorAsStr(out_rates).c_str());
+									std::string rates_str = vectorAsStr(out_rates);
+									if (out_init_rates.size()) {
+										rates_str = vectorAsStr(out_init_rates) + INIT_PERIODIC_SEPARATOR + rates_str;
+									}
+									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) rates_str.c_str());
 									xmlTextWriterEndElement(writer);
 					}
 					if (dataflow->getReentrancyFactor(t)) {
@@ -737,9 +786,14 @@ void writeSDF3File         (std::string filename, const models::Dataflow* datafl
 								xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"default", (const xmlChar*) "true");
 								{
 
-									auto executionTime = dataflow->getVertexPhaseDuration(t);
+									auto periodicExecutionTime = dataflow->getVertexPhaseDuration(t);
+									auto initExecutionTime = dataflow->getVertexInitPhaseDuration(t);
+									std::string times_str = vectorAsStr(periodicExecutionTime);
+									if (initExecutionTime.size()) {
+										times_str = vectorAsStr(initExecutionTime) + INIT_PERIODIC_SEPARATOR + times_str;
+									}
 									xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "executionTime");
-									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"time", (const xmlChar*)  vectorAsStr(executionTime).c_str());
+									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"time", (const xmlChar*)  times_str.c_str());
 									xmlTextWriterEndElement(writer);
 								}
 								xmlTextWriterEndElement(writer);

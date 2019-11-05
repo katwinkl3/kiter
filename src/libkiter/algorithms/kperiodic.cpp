@@ -707,19 +707,21 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
 
 
     for (EXEC_COUNT ki = 1; ki <= maxki ; ki++ ) {
-        for (EXEC_COUNT pi = 1; pi <= source_phase_count ; pi++ ) {
+    	auto first_pi = 1; // could be 1 - source_init_phase_count ;
+        for (EXEC_COUNT pi = first_pi; pi <= source_phase_count ; pi++ ) {
 
-            TIME_UNIT  d =  dataflow->getVertexDuration(source, pi); // L(a) = l(ti)
+            TIME_UNIT  d =  dataflow->getVertexDuration(source, pi); // getVertexDuration should be able to give init duration too
             TOKEN_UNIT normdamkp = 0;
-            const TOKEN_UNIT wak        = dataflow->getEdgeInPhase(c,pi)   ;
+            const TOKEN_UNIT wak        = dataflow->getEdgeInPhase(c,pi)   ; // getEdgeInPhase should be able to give init prod too
             normdapk += wak;
             models::EventGraphVertex source_event = g->getEventGraphVertex(source_id,pi,ki);
 
 
             for (EXEC_COUNT kj = 1; kj <= maxkj ; kj++ ) {
-                for (EXEC_COUNT pj = 1; pj <= target_phase_count ; pj++ ) {
+            	auto first_pj = 1; // could be 1 - target_init_phase_count ;
+                for (EXEC_COUNT pj = first_pj; pj <= target_phase_count ; pj++ ) {
 
-                    const TOKEN_UNIT vakp       = dataflow->getEdgeOutPhase(c,pj) ;
+                    const TOKEN_UNIT vakp       = dataflow->getEdgeOutPhase(c,pj) ; // getEdgeOutPhase should be able to give init cons too
                     normdamkp += vakp;
 
 #ifdef NOT_OPTIMIZED
@@ -748,6 +750,7 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
                         TIME_UNIT w = ((TIME_UNIT) alphamax * source_phase_count * maxki ) / ( (TIME_UNIT) Wc  * (TIME_UNIT) dataflow->getNi(source) );
                         VERBOSE_EXTRA_DEBUG("   w = (" << alphamax << " * " << dataflow->getPhasesQuantity(source) * maxki << ") / (" << Wc << " * " << dataflow->getNi(source) / maxki << ")");
                         VERBOSE_EXTRA_DEBUG("   d = (" << d << ")");
+
 
                         if (doBufferLessEdges) {
                             g->addEventConstraint(target_event ,source_event,0,-d,id);
