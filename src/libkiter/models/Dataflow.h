@@ -592,10 +592,19 @@ public :
 
 
     inline  TOKEN_UNIT          getEdgeOutPhase   (const Edge c, EXEC_COUNT k)  const  {
-        if (boost::get(get(boost::edge_outputs, this->getG()), c.e).size() < k) {
+
+    	if (boost::get(get(boost::edge_outputs, this->getG()), c.e).size() < k) {
             VERBOSE_ERROR("k value ("<< k << ") is too high (output list is about "<< boost::get(get(boost::edge_outputs, this->getG()), c.e).size() <<" values ).");
             VERBOSE_FAILURE();
         }
+
+
+    	if (k <= 0 ) {
+  		  return getEdgeOutInitPhase(c, k + boost::get(get(boost::edge_init_outputs, this->getG()), c.e).size());
+    	}
+
+
+
         return boost::get(get(boost::edge_outputs, this->getG()), c.e).at(k-1);
     }
 
@@ -636,12 +645,20 @@ public :
 
     inline  TOKEN_UNIT          getEdgeIn    (const Edge c)  		       const   {return boost::get(get(boost::edge_total_input, this->getG()), c.e);}
     inline  TOKEN_UNIT          getEdgeInPhase    (const Edge c, EXEC_COUNT k)  const  {
-           if (boost::get(get(boost::edge_inputs, this->getG()), c.e).size() < k) {
-               VERBOSE_ERROR("k value ("<< k << ") is too high (input list is about "<< boost::get(get(boost::edge_inputs, this->getG()), c.e).size() <<" values ).");
-               VERBOSE_FAILURE();
-           }
-           return boost::get(get(boost::edge_inputs, this->getG()), c.e).at(k-1);
-       }
+
+    	if (boost::get(get(boost::edge_inputs, this->getG()), c.e).size() < k) {
+    		VERBOSE_ERROR("k value ("<< k << ") is too high (input list is about "<< boost::get(get(boost::edge_inputs, this->getG()), c.e).size() <<" values ).");
+    		VERBOSE_FAILURE();
+    	}
+
+    	if (k <= 0 ) {
+  		  return getEdgeInInitPhase(c, k + boost::get(get(boost::edge_init_inputs, this->getG()), c.e).size());
+    	}
+
+    	return boost::get(get(boost::edge_inputs, this->getG()), c.e).at(k-1);
+    }
+
+
        inline  void                setEdgeInPhases   (const Edge c,
                                                       std::vector<TOKEN_UNIT> l)    {
        	ASSERT_WRITABLE();
@@ -730,9 +747,17 @@ public :
     	  return boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).at(0);
       }
 
-    inline  TIME_UNIT          getVertexDuration    (const Vertex t, EXEC_COUNT k)   const {
-    	return boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).at(k-1);
-    }
+      inline  TIME_UNIT          getVertexDuration    (const Vertex t, EXEC_COUNT k)   const {
+    	  if (k <= 0 ) {
+    		  return getVertexInitDuration(t, k + getInitPhasesQuantity(t));
+    	  }
+      	return boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).at(k-1);
+      }
+
+      inline  TIME_UNIT          getVertexInitDuration    (const Vertex t, EXEC_COUNT k)   const {
+      	return boost::get(get(boost::vertex_initphaseduration, this->getG()), t.v).at(k-1);
+      }
+
     inline  void                setVertexDuration (const Vertex t,
                                                    std::vector<TIME_UNIT> l)    {
 		ASSERT_WRITABLE();
