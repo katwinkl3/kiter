@@ -13,7 +13,7 @@
 #include <models/EventGraph.h>
 
 
-scheduling_t algorithms::scheduling::CSDF_KPeriodicScheduling    (models::Dataflow* const dataflow) {
+models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::Dataflow* const dataflow) {
 
 
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
@@ -172,9 +172,9 @@ scheduling_t algorithms::scheduling::CSDF_KPeriodicScheduling    (models::Datafl
     VERBOSE_INFO( "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   );
 
 
-    scheduling_t persched = period2scheduling(dataflow,kvector,result.first);
-    return persched;
+    models::Scheduling persched = period2Scheduling(dataflow,kvector,result.first);
 
+    return persched;
 
 }
 

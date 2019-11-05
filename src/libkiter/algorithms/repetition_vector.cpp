@@ -129,6 +129,7 @@ bool calcRepetitionVector(models::Dataflow *from,std::map<Vertex,EXEC_COUNT_FRAC
     	 repetitionVector[v] = repetitionVector[v] * ratePeriod;
     }}
 
+#ifdef CRAZY
     // Workaround for repetition vector issues
     EXEC_COUNT subrate = ratePeriod;
     {ForEachVertex(from,v) {
@@ -139,6 +140,7 @@ bool calcRepetitionVector(models::Dataflow *from,std::map<Vertex,EXEC_COUNT_FRAC
     {ForEachVertex(from,v) {
     	 repetitionVector[v] = repetitionVector[v] / subrate;
     }}
+#endif
 
     VERBOSE_DEBUG("Repetition Vector :");
     {ForEachVertex(from,v) {

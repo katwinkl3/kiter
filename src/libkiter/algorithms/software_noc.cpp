@@ -562,7 +562,7 @@ void new_mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, models::D
 		}}
 
 
-		if(best_contention_l1 != -1 && pathlen > best_contention_l1) //reducing search space
+		if(best_contention_l1 != -1 && (float)pathlen > best_contention_l1) //reducing search space
 			continue;
 
 		{ForInputEdges(d, vtx, e){	//Find the core index
@@ -689,7 +689,7 @@ void dijkstra_mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, mode
 		}}
 
 
-		if(best_contention_l1 != -1 && pathlen > best_contention_l1) //reducing search space
+		if(best_contention_l1 != -1 && (float)pathlen > best_contention_l1) //reducing search space
 			continue;
 
 		{ForInputEdges(d, vtx, e){	//Find the core index
@@ -2008,7 +2008,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 
 	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
-	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, algorithms::scheduling::generateNPeriodicVector(to));
+	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling(to);
 	//TIME_UNIT omega = scheduling_res.getGraphPeriod();
 	scheduling_t persched = scheduling_res.getTaskSchedule();
 	//std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
@@ -2040,7 +2040,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		to->reset_computation();
 
 		VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
-		models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, algorithms::scheduling::generateNPeriodicVector(to));
+		models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling(to);
 		//TIME_UNIT omega = scheduling_res.getGraphPeriod();
 		persched = scheduling_res.getTaskSchedule();
 

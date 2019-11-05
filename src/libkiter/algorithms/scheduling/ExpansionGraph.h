@@ -99,8 +99,8 @@ private:
 			    const TOKEN_UNIT  alphab     = ( Zi * ai  - Zj * aj) / gcdz ;
 
 
-				const TOKEN_UNIT pibmax =    std::floor(  (double) ( Zi - gcdz - mop -  alphab * gcdz) /  (double) gcdk);
-				const TOKEN_UNIT pibmin =    std::ceil( (double)  (std::max(Zi - Zj, (TOKEN_UNIT) 0) - mop - alphab * gcdz) /  (double) gcdk) ;
+				const TOKEN_UNIT pibmax =  (TOKEN_UNIT)  std::floor(  (double) ( Zi - gcdz - mop -  alphab * gcdz) /  (double) gcdk);
+				const TOKEN_UNIT pibmin =  (TOKEN_UNIT)   std::ceil( (double)  (std::max(Zi - Zj, (TOKEN_UNIT) 0) - mop - alphab * gcdz) /  (double) gcdk) ;
 
 				if (pibmin <= pibmax) {
 

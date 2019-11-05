@@ -123,6 +123,42 @@ void algorithms::print_kperiodic_expansion_graph    (models::Dataflow* const  da
 
 }
 
+models::Scheduling period2Scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) {
+
+	scheduling_t scheduling_result;
+
+    models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
+    eg->computeStartingTime (throughput);
+    TIME_UNIT omega = 1 / throughput ;
+
+
+    {ForEachEvent(eg,e) {
+        models::SchedulingEvent se = eg->getEvent(e);
+        EXEC_COUNT ti = se.getTaskId();
+        Vertex v = dataflow->getVertexById(ti);
+        TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
+        scheduling_result[dataflow->getVertexId(v)].first = period;
+
+        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " " << period  );
+
+    }}
+
+    {ForEachEvent(eg,e) {
+        models::SchedulingEvent se = eg->getEvent(e);
+        EXEC_COUNT ti = se.getTaskId();
+        TIME_UNIT start = eg->getStartingTime(e);
+        Vertex v = dataflow->getVertexById(ti);
+        scheduling_result[dataflow->getVertexId(v)].second.push_back( start );
+        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " " << start  );
+
+
+    }}
+
+
+
+	return models::Scheduling(dataflow, omega, scheduling_result);
+}
+
 scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) {
 
 

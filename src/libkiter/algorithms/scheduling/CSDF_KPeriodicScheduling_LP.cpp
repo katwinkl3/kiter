@@ -133,7 +133,7 @@ bool add_precedences_constraints (commons::GLPSol &g, commons::idx_t OMEGA_COL, 
 
 		TOKEN_UNIT thr_a_kp   = 0;
 		TOKEN_UNIT thr_a_kpm1 = 0;
-		TOKEN_UNIT up_a_k_kp  = thr_a_kp + in_a_k ;
+		//TOKEN_UNIT up_a_k_kp  = thr_a_kp + in_a_k ;
 		TOKEN_UNIT low_a_k_kp = std::max(thr_a_kp, thr_a_kpm1 + in_a_k - out_a_kp ) ;
 
 
