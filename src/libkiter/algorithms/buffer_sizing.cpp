@@ -292,6 +292,10 @@ void StorageDistributionSet::minimizeStorageDistributions(StorageDistribution ne
         return; // no need to iterate through rest of set once newDist has been removed
       } else if (newDistSz == storage_dist.getDistributionSize() && // remove existing equal storage dist (size) with lower thr
                  newThr > storage_dist.getThroughput()) {
+        std::cout << "\t\tExisting storage distribution of size "
+                  << storage_dist.getDistributionSize()
+                  << " found to be non-minimal: removing from set"
+                  << std::endl;
         this->removeStorageDistribution(storage_dist);
       }
     }

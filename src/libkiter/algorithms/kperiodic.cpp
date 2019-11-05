@@ -1863,8 +1863,6 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   } else {
     initDist.setThroughput(result.first); // set throughput given initial distribution
   }
-  std::cout << "Initial Throughput (from lowerbound distribution): "
-            << initDist.getThroughput() << std::endl;
 
   // add initial distribution to list of storage distributions
   StorageDistributionSet checklist(initDist.getDistributionSize(),
@@ -1951,12 +1949,12 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
                   << newDist.getChannelQuantity(*it) << std::endl;
         std::cout << "\tUpdating checklist with new storage distribution..." << std::endl;
         checklist.addStorageDistribution(newDist);
-        std::cout << "\t\t\tNew checklist size: " << checklist.getSize() << std::endl;
-        std::cout << std::endl;
+        // std::cout << "\t\t\tNew checklist size: " << checklist.getSize() << std::endl;
+        // std::cout << std::endl;
       }
     }
-    // std::cout << "\tTrying to minimise set with distribution size: "
-    //           << checkDist.getDistributionSize() << std::endl;
+    std::cout << "\tTrying to minimise set with distribution size: "
+              << checkDist.getDistributionSize() << std::endl;
     minStorageDist.minimizeStorageDistributions(checkDist);
     // std::cout << std::endl;
     // std::cout << "\t Minimum Storage Distributions (after) ("
