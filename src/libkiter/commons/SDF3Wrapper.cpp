@@ -24,7 +24,7 @@
 using std::vector;
 
 #define TXT_XML_ERROR "TXT_XML_ERROR"
-static const std::string INIT_PERIODIC_SEPARATOR = ";";
+static const char INIT_PERIODIC_SEPARATOR = ';';
 
 template<typename T>
 std::string vectorAsStr(const std::vector<T>& t)
