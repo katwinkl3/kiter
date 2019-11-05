@@ -690,6 +690,10 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
     EXEC_COUNT source_phase_count = dataflow->getEdgeInPhasesCount(c);
     EXEC_COUNT target_phase_count = dataflow->getEdgeOutPhasesCount(c);
 
+
+    EXEC_COUNT source_init_phase_count = dataflow->getEdgeInInitPhasesCount(c);
+    EXEC_COUNT target_init_phase_count = dataflow->getEdgeOutInitPhasesCount(c);
+
     const EXEC_COUNT  maxki        = kValues->at(source) ;
     const EXEC_COUNT  maxkj        = kValues->at(target) ;
 
@@ -707,21 +711,21 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
 
 
     for (EXEC_COUNT ki = 1; ki <= maxki ; ki++ ) {
-    	auto first_pi = 1; // could be 1 - source_init_phase_count ;
+    	auto first_pi = 1 - source_init_phase_count ;
         for (EXEC_COUNT pi = first_pi; pi <= source_phase_count ; pi++ ) {
 
-            TIME_UNIT  d =  dataflow->getVertexDuration(source, pi); // getVertexDuration should be able to give init duration too
+            TIME_UNIT  d =  dataflow->getVertexDuration(source, pi);
             TOKEN_UNIT normdamkp = 0;
-            const TOKEN_UNIT wak        = dataflow->getEdgeInPhase(c,pi)   ; // getEdgeInPhase should be able to give init prod too
+            const TOKEN_UNIT wak        = dataflow->getEdgeInPhase(c,pi)   ;
             normdapk += wak;
             models::EventGraphVertex source_event = g->getEventGraphVertex(source_id,pi,ki);
 
 
             for (EXEC_COUNT kj = 1; kj <= maxkj ; kj++ ) {
-            	auto first_pj = 1; // could be 1 - target_init_phase_count ;
+            	auto first_pj = 1 - target_init_phase_count ;
                 for (EXEC_COUNT pj = first_pj; pj <= target_phase_count ; pj++ ) {
 
-                    const TOKEN_UNIT vakp       = dataflow->getEdgeOutPhase(c,pj) ; // getEdgeOutPhase should be able to give init cons too
+                    const TOKEN_UNIT vakp       = dataflow->getEdgeOutPhase(c,pj) ;
                     normdamkp += vakp;
 
 #ifdef NOT_OPTIMIZED
