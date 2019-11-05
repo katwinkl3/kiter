@@ -243,9 +243,13 @@ StorageDistribution StorageDistributionSet::getNextDistribution() const {
   return this->set.begin()->second.front();
 }
 
-// returns number of unique distribution sizes in storage distribuiton set
+// returns number of storage distributions in set
 size_t StorageDistributionSet::getSize() const {
-  return this->set.size();
+  size_t total_size = 0;
+  for (auto &d : this->set) {
+    total_size += d.second.size();
+  }
+  return total_size;
 }
 
 /* Removes the new storage distribution from the storage distribution set if:
