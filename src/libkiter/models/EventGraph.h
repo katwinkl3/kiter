@@ -180,13 +180,14 @@ public :
     }
     inline EventGraphVertex getEventGraphVertex(ARRAY_INDEX taskId, EXEC_COUNT phase, EXEC_COUNT execution) {
 
+
     	VERBOSE_ASSERT(schedulingEvent2Vertex.size() > taskId, "Task id " << taskId << " is not within the EventGraph");
     	VERBOSE_ASSERT(schedulingEvent2Vertex[taskId].size() > phase, "Task phase " << phase << " is not within the EventGraph for task " << taskId);
     	VERBOSE_ASSERT(schedulingEvent2Vertex[taskId][(unsigned int) phase].size() > execution, "Task execution " << execution << " is not within the EventGraph for task " << taskId << " with phase " << phase);
 
         EventGraphVertex res= schedulingEvent2Vertex[taskId][(unsigned int) phase][(unsigned int) execution];
         VERBOSE_DEBUG_ASSERT(getTaskId(res),   taskId);
-        VERBOSE_DEBUG_ASSERT(getPhase(res),phase);
+        // VERBOSE_DEBUG_ASSERT(getPhase(res),phase); // This can be negative or null now
         VERBOSE_DEBUG_ASSERT(getExecution(res),execution);
         return res;
     }
