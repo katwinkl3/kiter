@@ -1,22 +1,11 @@
 cmake_minimum_required(VERSION 2.6)
 
-#
-#  ######### SOURCES ##########
-#
+add_executable(DataflowTest DataflowTest.cpp)
 
-SET ( tests  testBufferLessScheduling.cpp )
 INCLUDE_DIRECTORIES(${KITER_INCLUDE_DIR})
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
-
-#          ######### SCDUMP EXEC ##########
-
-ADD_EXECUTABLE         (testBufferLessScheduling  testBufferLessScheduling.cpp)
-TARGET_LINK_LIBRARIES  (testBufferLessScheduling libkiter -lz)
-
-
-#
-#  ######### INSTALL PART ##########
-#
-
-INSTALL(TARGETS testBufferLessScheduling DESTINATION bin)
+target_link_libraries(DataflowTest
+					  libkiter
+                      ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+                      )
     
+add_test(NAME DataflowTest COMMAND DataflowTest)
