@@ -59,8 +59,8 @@ set_property(TARGET libkiter PROPERTY FRAMEWORK ON)
 
 if(GUROBI_FOUND)
     message(STATUS "GUROBI FOUND")
-    target_include_directories(libkiter PRIVATE ${GUROBI_INCLUDE_DIRS} )
-    TARGET_LINK_LIBRARIES( libkiter ${GUROBI_LIBRARIES} )
+    target_include_directories(libkiter PRIVATE ${GUROBI_INCLUDE_DIRS})
+    TARGET_LINK_LIBRARIES(libkiter ${GUROBI_LIBRARIES} )
     target_compile_definitions(libkiter PRIVATE __GUROBILIB__=1)
 endif(GUROBI_FOUND)
 

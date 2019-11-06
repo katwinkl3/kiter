@@ -1,6 +1,6 @@
-project(Kiter)
-
 cmake_minimum_required(VERSION 2.6)
+project(Kiter)
+enable_testing()
 
 #
 #  ######### GENERATOR PART ##########
@@ -38,7 +38,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/modules/")
 #  ######### BOOST ##########
 
 SET(Boost_USE_STATIC_LIBS  TRUE)
-FIND_PACKAGE( Boost 1.33.0 COMPONENTS graph  system QUIET) # remove REQUIRED to check by hand !
+FIND_PACKAGE( Boost 1.33.0 COMPONENTS  graph  system   unit_test_framework  QUIET) # remove REQUIRED to check by hand !
 
 
 IF (EXISTS "/usr/include/boost141/boost/")
