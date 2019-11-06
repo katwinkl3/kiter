@@ -47,6 +47,7 @@ public :
 		g->printAllPaths((int)s + size(), (int)d + size(), (int)length);
 	}
 
+	std::vector<int> findPathDijkstra(int u, int d) { return g->findPathDijkstra(u, d); }
 	void generateShortestPaths() { g->generateAllShortestPaths(); }
 	std::vector< std::vector<int> > getShortestPaths(int s, int d) { return g->getShortestPaths(s, d); }
 	//std::map<int, int> getLinkUtil() { return g->getLinkUtil(); }

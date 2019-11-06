@@ -55,9 +55,8 @@ std::string algorithms::cc2string  (models::Dataflow* const dataflow,std::set<Ed
 std::string algorithms::print_schedule (models::EventGraph* eg, models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT res ) {
 	std::ostringstream returnStream;
 
-
-    eg->computeStartingTime (res);
     TIME_UNIT omega = 1 / res ;
+    eg->computeStartingTimeWithOmega (omega);
     returnStream << "\\begin{scheduling}{" << dataflow->getVerticesCount() <<  "}{" << 0 <<  "}{3.2}{5}" << std::endl;
 
     {ForEachVertex(dataflow,v) {
@@ -125,14 +124,53 @@ void algorithms::print_kperiodic_expansion_graph    (models::Dataflow* const  da
 
 }
 
+models::Scheduling period2Scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) {
+
+	scheduling_t scheduling_result;
+
+    models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
+
+    TIME_UNIT omega = 1 / throughput ;
+    eg->computeStartingTimeWithOmega (omega);
+
+
+    {ForEachEvent(eg,e) {
+        models::SchedulingEvent se = eg->getEvent(e);
+        EXEC_COUNT ti = se.getTaskId();
+        Vertex v = dataflow->getVertexById(ti);
+        TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
+        scheduling_result[dataflow->getVertexId(v)].first = period;
+
+        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " " << period  );
+
+    }}
+
+    {ForEachEvent(eg,e) {
+        models::SchedulingEvent se = eg->getEvent(e);
+        EXEC_COUNT ti = se.getTaskId();
+        TIME_UNIT start = eg->getStartingTime(e);
+        Vertex v = dataflow->getVertexById(ti);
+        scheduling_result[dataflow->getVertexId(v)].second.push_back( start );
+        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " " << start  );
+
+
+    }}
+
+
+
+	return models::Scheduling(dataflow, omega, scheduling_result);
+}
+
 scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) {
 
 
 	scheduling_t scheduling_result;
 
     models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
-    eg->computeStartingTime (throughput);
+
     TIME_UNIT omega = 1 / throughput ;
+    eg->computeStartingTimeWithOmega (omega);
+
 
 
     {ForEachEvent(eg,e) {
@@ -298,9 +336,16 @@ models::EventGraph* algorithms::generateKPeriodicEventGraph(models::Dataflow * c
 
     /* generate nodes */
     {ForEachVertex(dataflow,t) {
-        EXEC_COUNT phase_count = dataflow->getPhasesQuantity(t);
+        EXEC_COUNT init_phase_count = dataflow->getInitPhasesQuantity(t);
+        EXEC_COUNT periodic_phase_count = dataflow->getPhasesQuantity(t);
+
+        for (EXEC_COUNT i = 1; i <= init_phase_count ; i++ ) {
+            g->addEvent(models::SchedulingEvent(dataflow->getVertexId(t),1-i,1));
+        }
+
+
         for (EXEC_COUNT j = 1; j <= kValues->at(t) ; j++ ) {
-            for (EXEC_COUNT i = 1; i <= phase_count ; i++ ) {
+            for (EXEC_COUNT i = 1; i <= periodic_phase_count ; i++ ) {
                 g->addEvent(models::SchedulingEvent(dataflow->getVertexId(t),i,j));
             }
         }
@@ -654,6 +699,10 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
     EXEC_COUNT source_phase_count = dataflow->getEdgeInPhasesCount(c);
     EXEC_COUNT target_phase_count = dataflow->getEdgeOutPhasesCount(c);
 
+
+    EXEC_COUNT source_init_phase_count = dataflow->getEdgeInInitPhasesCount(c);
+    EXEC_COUNT target_init_phase_count = dataflow->getEdgeOutInitPhasesCount(c);
+
     const EXEC_COUNT  maxki        = kValues->at(source) ;
     const EXEC_COUNT  maxkj        = kValues->at(target) ;
 
@@ -671,9 +720,10 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
 
 
     for (EXEC_COUNT ki = 1; ki <= maxki ; ki++ ) {
-        for (EXEC_COUNT pi = 1; pi <= source_phase_count ; pi++ ) {
+    	auto first_pi = (ki == 1) ?  1 - source_init_phase_count : 1 ;
+        for (EXEC_COUNT pi = first_pi; pi <= source_phase_count ; pi++ ) {
 
-            TIME_UNIT  d =  dataflow->getVertexDuration(source, pi); // L(a) = l(ti)
+            TIME_UNIT  d =  dataflow->getVertexDuration(source, pi);
             TOKEN_UNIT normdamkp = 0;
             const TOKEN_UNIT wak        = dataflow->getEdgeInPhase(c,pi)   ;
             normdapk += wak;
@@ -681,7 +731,8 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
 
 
             for (EXEC_COUNT kj = 1; kj <= maxkj ; kj++ ) {
-                for (EXEC_COUNT pj = 1; pj <= target_phase_count ; pj++ ) {
+            	auto first_pj = (kj == 1) ?  1 - target_init_phase_count : 1 ;
+                for (EXEC_COUNT pj = first_pj; pj <= target_phase_count ; pj++ ) {
 
                     const TOKEN_UNIT vakp       = dataflow->getEdgeOutPhase(c,pj) ;
                     normdamkp += vakp;
@@ -703,15 +754,16 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
 #endif
 
                     models::EventGraphVertex target_event = g->getEventGraphVertex(target_id,pj,kj);
-                    VERBOSE_DEBUG("  stepa=" << stepa);
-                    VERBOSE_DEBUG("  ki=" << ki<<" kj=" << kj << " (" <<  source_event  << "," << target_event  << ")");
-                    VERBOSE_DEBUG("  alphamin=" << alphamin <<"   alphamax=" << alphamax );
+                    VERBOSE_EXTRA_DEBUG("  stepa=" << stepa);
+                    VERBOSE_EXTRA_DEBUG("  ki=" << ki<<" kj=" << kj << " (" <<  source_event  << "," << target_event  << ")");
+                    VERBOSE_EXTRA_DEBUG("  alphamin=" << alphamin <<"   alphamax=" << alphamax );
                     if (alphamin <= alphamax) {
 
 
                         TIME_UNIT w = ((TIME_UNIT) alphamax * source_phase_count * maxki ) / ( (TIME_UNIT) Wc  * (TIME_UNIT) dataflow->getNi(source) );
-                        VERBOSE_DEBUG("   w = (" << alphamax << " * " << dataflow->getPhasesQuantity(source) * maxki << ") / (" << Wc << " * " << dataflow->getNi(source) / maxki << ")");
-                        VERBOSE_DEBUG("   d = (" << d << ")");
+                        VERBOSE_EXTRA_DEBUG("   w = (" << alphamax << " * " << dataflow->getPhasesQuantity(source) * maxki << ") / (" << Wc << " * " << dataflow->getNi(source) / maxki << ")");
+                        VERBOSE_EXTRA_DEBUG("   d = (" << d << ")");
+
 
                         if (doBufferLessEdges) {
                             g->addEventConstraint(target_event ,source_event,0,-d,id);
@@ -737,12 +789,14 @@ void algorithms::generateKperiodicSelfloop(models::Dataflow * const dataflow , E
     VERBOSE_DEBUG("generate reentrancy loops for task " <<  dataflow->getVertexId(t) << " with ki=" << ki);
 
 
-    models::EventGraphVertex source_event = g->getEventGraphVertex(task_id,1,1);
-    models::EventGraphVertex target_event = g->getEventGraphVertex(task_id,1,1);
     EXEC_COUNT pq = dataflow->getPhasesQuantity(t);
     TIME_UNIT lti = timefactor * dataflow->getVertexDuration(t,1);
     EXEC_COUNT i = 1;
-    EXEC_COUNT p = 1;
+    EXEC_COUNT p = 1 - dataflow->getInitPhasesQuantity(t);
+
+    models::EventGraphVertex source_event = g->getEventGraphVertex(task_id,p,i);
+    models::EventGraphVertex target_event = g->getEventGraphVertex(task_id,p,i);
+
     while (i <= ki) {
         p += 1;
         if (p > pq) {p = 1; i += 1;}
@@ -1256,8 +1310,8 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
 
     TIME_UNIT res = result.first;
 
-    eg->computeStartingTime (res);
     TIME_UNIT omega = 1 / res ;
+    eg->computeStartingTimeWithOmega (omega);
 
 
     {ForEachEvent(eg,e) {
@@ -1465,20 +1519,18 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
     std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
     std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 
-    if (verbose) {
-    	scheduling_t persched = period2scheduling    (dataflow,  kvector , res);
-    	for (auto  key : persched) {
+    scheduling_t persched = period2scheduling    (dataflow,  kvector , res);
+    for (auto  key : persched) {
     			auto task = key.first;
     			auto task_vtx = dataflow->getVertexById(key.first);
-    			std::cout <<  "Task " <<  dataflow->getVertexName(task_vtx)
+    			VERBOSE_INFO(  "Task " <<  dataflow->getVertexName(task_vtx)
     					<<  " : duration=" << dataflow->getVertexTotalDuration(task_vtx)
 						<<  " period=" <<  persched[task].first
 						<<  " Ni=" << dataflow->getNi(task_vtx)
-    					<<  " starts=[ " << commons::toString(persched[task].second) << "]" << std::endl;
-
-    		}
+    					<<  " starts=[ " << commons::toString(persched[task].second) << "]");
 
     }
+
 
 
 }

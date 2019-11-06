@@ -6,8 +6,9 @@
  */
 
 
-#include<commons/NoCGraph.h>
-
+#include <commons/NoCGraph.h>
+#include <climits>
+#include <algorithm>
 
 NoCGraph::NoCGraph(int V)
 {
@@ -142,7 +143,7 @@ int NoCGraph::findPathCost(std::vector<int>& mypath)
 	for (int i = 0; i < (int)mypath.size()-1; i++)
 	{
 	//	std::cout << "mypath=" << mypath[i] << "," << mypath[i+1] << "\n";
-		util += linkUtil[ getMapIndex(mypath[i], mypath[i+1]) ];
+		util = std::max(util, linkUtil[ getMapIndex(mypath[i], mypath[i+1]) ]);
 	}
 	//std::cout << "util=" << util << "\n";
 	return util;
@@ -206,3 +207,118 @@ void NoCGraph::findLeastCostPath(int u, int d, bool visited[], int path[], int &
 	path_index--;
 	visited[u] = false;
 }
+
+
+
+std::vector<int> NoCGraph::findPathDijkstra(int u, int d)
+{
+	u += MESH_SIZE;
+	d += MESH_SIZE;
+
+	// Initialize all vertices as not visited
+	std::vector<bool> visited(V, false);
+	std::vector<int> prev(V, -1);
+	std::vector<int> cost_vec(V, INT_MAX);
+	std::vector<int> link_util(V, INT_MAX);
+
+	std::vector<int> path_vec;
+
+	if(u == d)
+		return path_vec;
+
+	// Mark the current node and store it in path[]
+	cost_vec[u] = 0;
+
+	for(int i = 0; i < V ; i++)
+	{
+		int vid = -1;
+		int max_dist = INT_MAX;
+		for(int j = 0; j < (int)cost_vec.size(); j++)
+		{
+			if(visited[j])
+			{
+				continue;
+			}
+			if(max_dist > cost_vec[j])
+			{
+				max_dist = cost_vec[j];
+				vid = j;
+			}
+		}
+
+		//std::cout << "marking " <<  vid << " visited\n";
+		if(vid < 0)
+			continue;
+
+		visited[vid] = true;
+		for(std::list<int>::iterator j = adj[vid].begin(); j != adj[vid].end(); j++)
+		{
+			int dst = *j;
+			if(visited[dst]) continue;
+
+			int alt = cost_vec[vid] + 1;
+			int myutil = linkUtil[getMapIndex(vid, dst)];
+
+			if((alt == cost_vec[dst] && myutil < link_util[dst]) || (alt < cost_vec[dst]))
+			{
+				cost_vec[dst] = alt;
+				prev[dst] = vid;
+				link_util[dst] = myutil;
+			}
+		}
+	}
+
+	path_vec.push_back(d);
+	for(int i = prev[d]; i != u; i = prev[i])
+		path_vec.push_back(i);
+	path_vec.push_back(u);
+	std::reverse(path_vec.begin(), path_vec.end());
+
+	return path_vec;
+}
+
+	/*
+	struct mypair_struct
+	{
+		int cost; int index;
+		void init(int c, int i)
+		{
+			cost = c; index = i;
+		}
+	};
+	typedef struct mypair_struct mypair;
+	class mycomparator
+	{
+		bool operator() (mypair const& a, mypair const& b)
+		{
+			return a.cost > b.cost;
+		}
+	};
+
+	priority_queue <mypair, std::vector<mypair>, mycomparator> mypq;
+	mypair temp;
+	temp.init(0, u);
+	mypq.push(temp);
+
+	while(!mypq.empty())
+	{
+		mypair mytop = mypq.top();
+		mypq.pop();
+
+		for (std::list<int>::iterator it = adj[u].begin(); it != adj[u].end(); ++it)
+		{
+			if (!visited[*i])
+
+		}
+	}
+
+
+
+
+	// If current vertex is same as destination, then print current path[]
+	std::vector<int> mypath;
+	for (int i = 0; i<path_index; i++)
+		mypath.push_back(path[i]);
+	int new_util = findPathCost(mypath);
+	int curr_util = findPathCost(returnPath);
+	*/
