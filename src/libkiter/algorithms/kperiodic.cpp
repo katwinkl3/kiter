@@ -1927,7 +1927,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   std::cout << "\nDSE BEGIN:" << std::endl;
   std::ofstream dseLog; // save search path data in DSE log
   std::chrono::duration<double, std::milli> cumulativeTime;
-  dseLog.open(dirName + logDirName + dataflow_prime->getName() + "_dselog.csv");
+  dseLog.open(dirName + logDirName + dataflow_prime->getName() + "_dselog_kiter.csv");
   dseLog << "storage distribution size,throughput,channel quantities,computation duration,cumulative duration"
          << std::endl; // initialise headers
   while (!minStorageDist.isSearchComplete(checklist, result_max.first)) {
