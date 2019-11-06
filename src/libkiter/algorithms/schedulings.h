@@ -22,6 +22,7 @@ void bufferless_scheduling (models::Dataflow* const  dataflow, periodicity_vecto
 
 
 scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  periodicity_vector_t & kvector , TIME_UNIT throughput) ;
+models::Scheduling  period2Scheduling    (models::Dataflow* const  dataflow,  periodicity_vector_t & kvector , TIME_UNIT throughput) ;
 
 namespace algorithms {
 
@@ -34,7 +35,7 @@ namespace algorithms {
 		void SDFKPeriodicScheduling (models::Dataflow* const  dataflow, parameters_list_t params) ;
 		void bufferlessKPeriodicScheduling (models::Dataflow* const  dataflow, parameters_list_t params) ;
 
-		scheduling_t CSDF_KPeriodicScheduling    (models::Dataflow* const dataflow) ;
+		models::Scheduling CSDF_KPeriodicScheduling       (models::Dataflow* const dataflow) ;
 		models::Scheduling CSDF_KPeriodicScheduling_LP    (const models::Dataflow* const dataflow, const periodicity_vector_t& kvector);
 		const periodicity_vector_t generate1PeriodicVector(const models::Dataflow* dataflow);
 		const periodicity_vector_t generateKPeriodicVector(const models::Dataflow* dataflow, int k);

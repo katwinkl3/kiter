@@ -20,8 +20,8 @@ void algorithms::print_1periodic_scheduling    (models::Dataflow* const  dataflo
     TIME_UNIT SCHEDULING_SIZE = 26;
     TIME_UNIT res = optimal_1periodic_throughput(dataflow);
     models::EventGraph* eg =  algorithms::generateEventGraph( dataflow  );
-    eg->computeStartingTime (res);
     TIME_UNIT omega = 1 / res ;
+    eg->computeStartingTimeWithOmega (omega);
     std::cout << "\\begin{scheduling}{" << dataflow->getVerticesCount() <<  "}{" << SCHEDULING_SIZE <<  "}{3.2}{5}" << std::endl;
 
     {ForEachVertex(dataflow,v) {
