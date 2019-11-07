@@ -17,7 +17,7 @@
 #include <algorithms/kperiodic.h>
 #include <algorithms/repetition_vector.h>
 #include <algorithms/buffer_sizing.h>
-
+#include <chrono> // to take computation timings
 
 
 bool algorithms::sameset(models::Dataflow* const dataflow, std::set<Edge> *cc1 , std::set<Edge>* cc2) {
