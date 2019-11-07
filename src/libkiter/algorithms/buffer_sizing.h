@@ -21,7 +21,6 @@ public:
                       std::map<Edge,
                       std::pair<TOKEN_UNIT, TOKEN_UNIT>> channel_quantities,
                       TOKEN_UNIT distribution_size);
-  //  StorageDistribution(const StorageDistribution&)=default; // using default copy constructor for now
 
   void setChannelQuantity(Edge e, TOKEN_UNIT quantity);
   void setInitialTokens(Edge e, TOKEN_UNIT token_count);
@@ -42,7 +41,8 @@ private:
   unsigned int edge_count;
   TIME_UNIT thr; // throughput of given storage distribution
   TOKEN_UNIT distribution_size; // should be equal to sum of channel quantities
-  std::map<Edge, std::pair<TOKEN_UNIT, TOKEN_UNIT>> channel_quantities; // amount of space (in tokens per channel)
+  std::map<Edge, std::pair<TOKEN_UNIT, // initial tokens
+                           TOKEN_UNIT>> channel_quantities; // amount of space (in tokens per channel)
 };
 
 class StorageDistributionSet {

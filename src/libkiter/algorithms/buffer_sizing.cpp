@@ -227,9 +227,6 @@ void StorageDistributionSet::removeStorageDistribution(StorageDistribution dist_
   
   // remove distribution size from set if there aren't any storage distributions left
   if (this->set[dist_to_rm.getDistributionSize()].empty()) {
-    // std::cout << "No more storage dist of dist sz "
-    //           << dist_to_rm.getDistributionSize()
-    //           << ": removing key" << std::endl;
     removeDistributionSize(dist_to_rm.getDistributionSize());
   }
 }
@@ -274,11 +271,6 @@ void StorageDistributionSet::minimizeStorageDistributions(StorageDistribution ne
      of the addStorageDistribution function if we don't increment by minStepSizes */
   for (auto &distribution_sz : this->set) {
     for (auto &storage_dist : distribution_sz.second) {
-      // std::cout << "Comparing new SD of size: "
-      //           << newDistSz << " to SD of size: "
-      //           << storage_dist.getDistributionSize() << ", throughput (new): "
-      //           << newThr << ", (old): "
-      //           << storage_dist.getThroughput() << std::endl;
       if ((newDistSz > storage_dist.getDistributionSize() &&
            (newThr < storage_dist.getThroughput() ||
             commons::AreSame(newThr, storage_dist.getThroughput()))) || // needed to compare floats
@@ -387,8 +379,6 @@ void findMinimumStepSz(models::Dataflow *dataflow,
       std::cout << "Min. step size for channel " << dataflow->getEdgeName(c)
                 << ": " << minStepSz << std::endl;
     }}
-  // std::cout << "Minimum step sizes calculated!\n" << std::endl;
-  // return minStepSizes;
 }
 
 /* Returns the minimum channel size for each channel for which we might have non-zero throughput
@@ -398,15 +388,13 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
                           std::pair<TOKEN_UNIT, TOKEN_UNIT>> &minChannelSizes) {
   std::cout << "Calculating minimal channel sizes (for postive throughput)..."
             << std::endl;
-  // minChannelSizes = new EXEC_COUNT [dataflow->getEdgesCount()];
   
   {ForEachEdge(dataflow, c) {
       // initialise channel size to maximum int size
       minChannelSizes[c].second = INT_MAX; // NOTE (should use ULONG_MAX but it's a really large value)
       TOKEN_UNIT ratePeriod = (TOKEN_UNIT) boost::math::gcd(dataflow->getEdgeInPhasesCount(c),
                                                             dataflow->getEdgeOutPhasesCount(c));
-      // std::cout << "Rate period for " << dataflow->getEdgeName(c) << ": "
-      //           << ratePeriod << std::endl;
+      
       for (EXEC_COUNT i = 0; i < ratePeriod; i++) {
         // might want to change variables to p, c, and t for legibility
         TOKEN_UNIT tokensProduced = dataflow->getEdgeInVector(c)[i % dataflow->getEdgeInPhasesCount(c)];
@@ -444,12 +432,11 @@ TOKEN_UNIT findMinimumDistributionSz(models::Dataflow *dataflow,
                                      std::map<Edge,
                                      std::pair<TOKEN_UNIT, TOKEN_UNIT>> minChannelSizes) {
   TOKEN_UNIT minDistributionSize = 0;
-  // for (int i = 0; i < dataflow->getEdgesCount(); i++) {
-  //   minDistributionSize += minChannelSizes[i];
-  // }
+  
   for (auto it = minChannelSizes.begin(); it != minChannelSizes.end(); it++) {
     minDistributionSize += it->second.second;
   }
+  
   std::cout << "Lower bound distribution size: " << minDistributionSize << std::endl;
   return minDistributionSize;
 }
