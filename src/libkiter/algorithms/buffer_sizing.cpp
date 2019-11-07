@@ -119,25 +119,29 @@ void StorageDistribution::updateDistributionSize() {
 }
 
 // Prints member data of StorageDistribution for debugging
-void StorageDistribution::printInfo() {
-  std::cout << "\tCurrent StorageDistribution info:" << std::endl;
-  std::cout << "\tNumber of edges: " << this->edge_count << std::endl;
-  std::cout << "\tChannel quantities:" << std::endl;
+std::string StorageDistribution::printInfo() {
+  std::string sdInfo;
   unsigned int ch_count = 0;
+
+  sdInfo += "\tCurrent StorageDistribution info:\n";
+  sdInfo += "\tNumber of edges: " + std::to_string(this->edge_count) + "\n";
+  sdInfo += "\tChannel quantities:\n";  
   for (auto it = this->channel_quantities.begin();
        it != this->channel_quantities.end(); it++) {
     if (!ch_count) {
-      std::cout << "\t";
+      sdInfo += "\t";
     }
-    std::cout << it->second.second << " ";
+    sdInfo += std::to_string(it->second.second) + " ";
     ch_count++;
     if (ch_count == (this->edge_count / 2)) {
-      std::cout << std::endl << "\t";
+      sdInfo += "\n\t";
     }
   }
-  std::cout << std::endl; // double line return to mark end of channel quantities
-  std::cout << "\tDistribution size: " << this->distribution_size << std::endl;
-  std::cout << "\tThroughput: " << this->thr << std::endl;
+  sdInfo += "\n"; // double line return to mark end of channel quantities
+  sdInfo += "\tDistribution size: " + std::to_string(this->distribution_size) + "\n";
+  sdInfo += "\tThroughput: " + std::to_string(this->thr) + "\n";
+  
+  return sdInfo;
 }
 
 std::string StorageDistribution::print_quantities_csv() {
@@ -192,23 +196,23 @@ StorageDistributionSet::StorageDistributionSet(TOKEN_UNIT dist_sz,
  * - An identical storage distribution already exists in the set
  */
 void StorageDistributionSet::addStorageDistribution(StorageDistribution new_distribution) {
-  std::cout << "\t\tAttempting to add storage distribution of dist sz: "
-            << new_distribution.getDistributionSize()
-            << " to set" << std::endl;
+  VERBOSE_DSE("\t\tAttempting to add storage distribution of dist sz: "
+              << new_distribution.getDistributionSize()
+              << " to set" << std::endl);
   if (!hasDistribution(new_distribution.getDistributionSize())) { // first storage distribution of this distribution size
-    std::cout << "\t\t\tFirst of this distribution size: adding new distribution" << std::endl;
+    VERBOSE_DSE("\t\t\tFirst of this distribution size: adding new distribution" << std::endl);
     this->set[new_distribution.getDistributionSize()].push_back(new_distribution);
   } else { // there's already a storage distribution with the same distribution size
     for (auto &distribution : this->set[new_distribution.getDistributionSize()]) {
       // don't add storage distributions that are already in checklist
       if (new_distribution == distribution) {
-        std::cout << "\t\t\tFound matching distribution: not adding new distribution" << std::endl;
+        VERBOSE_DSE("\t\t\tFound matching distribution: not adding new distribution" << std::endl);
         return;
       }
     }
     // no matching storage distributions of equal distribution size
     this->set[new_distribution.getDistributionSize()].push_back(new_distribution);
-    std::cout << "\t\t\tNew storage distribution added!" << std::endl;
+    VERBOSE_DSE("\t\t\tNew storage distribution added!" << std::endl);
   }
 
   // update maximum throughput and corresponding distribution size in set
@@ -276,18 +280,18 @@ void StorageDistributionSet::minimizeStorageDistributions(StorageDistribution ne
             commons::AreSame(newThr, storage_dist.getThroughput()))) || // needed to compare floats
           (newDistSz >= storage_dist.getDistributionSize() &&
            newThr < storage_dist.getThroughput())) {
-        std::cout << "\t\tNew storage distribution of size "
-                  << newDist.getDistributionSize()
-                  << " found to be non-minimal: removing from set"
-                  << std::endl;
+        VERBOSE_DSE("\t\tNew storage distribution of size "
+                    << newDist.getDistributionSize()
+                    << " found to be non-minimal: removing from set"
+                    << std::endl);
         this->removeStorageDistribution(newDist);
         return; // no need to iterate through rest of set once newDist has been removed
       } else if (newDistSz == storage_dist.getDistributionSize() && // remove existing equal storage dist (size) with lower thr
                  newThr > storage_dist.getThroughput()) {
-        std::cout << "\t\tExisting storage distribution of size "
-                  << storage_dist.getDistributionSize()
-                  << " found to be non-minimal: removing from set"
-                  << std::endl;
+        VERBOSE_DSE("\t\tExisting storage distribution of size "
+                    << storage_dist.getDistributionSize()
+                    << " found to be non-minimal: removing from set"
+                    << std::endl);
         this->removeStorageDistribution(storage_dist);
       }
     }
@@ -313,21 +317,25 @@ bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
 }
 
 // Print info of all storage distributions of a given distribution size in set
-void StorageDistributionSet::printDistributions(TOKEN_UNIT dist_sz) {
+std::string StorageDistributionSet::printDistributions(TOKEN_UNIT dist_sz) {
   assert(set.find(dist_sz) != set.end());
 
-  std::cout << "Printing storage distributions of distribution size: "
-            << dist_sz << std::endl;
+  std::string dInfo;
+  dInfo += "Printing storage distributions of distribution size: "
+    + std::to_string(dist_sz) + "\n";
   for (auto &i : set[dist_sz]) {
-    i.printInfo();
+    dInfo += i.printInfo();
   }
+  return dInfo;
 }
 
 // Print info of all storage distributions in set
-void StorageDistributionSet::printDistributions() {
+std::string StorageDistributionSet::printDistributions() {
+  std::string allInfo;
   for (auto &it : this->set) {
-    printDistributions(it.first);
+    allInfo += printDistributions(it.first);
   }
+  return allInfo;
 }
 
 /* Writes storage distribution set info to a CSV file to plot data
@@ -366,8 +374,7 @@ void StorageDistributionSet::printGraphs(models::Dataflow* const dataflow) {
 // Returns the minimum step size for each channel in the given dataflow graph
 void findMinimumStepSz(models::Dataflow *dataflow,
                        std::map<Edge, TOKEN_UNIT> &minStepSizes) {
-  std::cout << "Calculating minimal channel step sizes..." << std::endl;
-  // std::cout << "Number of channels: " << dataflow->getEdgesCount() << std::endl;
+  VERBOSE_DSE("Calculating minimal channel step sizes..." << std::endl);
   {ForEachEdge(dataflow, c) { // get GCD of all possible combinations of rates of production and consumption in channel
       TOKEN_UNIT minStepSz;
       minStepSz = dataflow->getEdgeInVector(c)[0]; // initialise with first value
@@ -376,8 +383,8 @@ void findMinimumStepSz(models::Dataflow *dataflow,
       for (EXEC_COUNT i = 0; i < dataflow->getEdgeOutPhasesCount(c); i++)
         minStepSz = boost::math::gcd(minStepSz, dataflow->getEdgeOutVector(c)[i]);
       minStepSizes[c] = minStepSz;
-      std::cout << "Min. step size for channel " << dataflow->getEdgeName(c)
-                << ": " << minStepSz << std::endl;
+      VERBOSE_DSE("Min. step size for channel " << dataflow->getEdgeName(c)
+                  << ": " << minStepSz << std::endl);
     }}
 }
 
@@ -386,8 +393,7 @@ void findMinimumStepSz(models::Dataflow *dataflow,
 void findMinimumChannelSz(models::Dataflow *dataflow,
                           std::map<Edge,
                           std::pair<TOKEN_UNIT, TOKEN_UNIT>> &minChannelSizes) {
-  std::cout << "Calculating minimal channel sizes (for postive throughput)..."
-            << std::endl;
+  VERBOSE_DSE("Calculating minimal channel sizes (for postive throughput)..." << std::endl);
   
   {ForEachEdge(dataflow, c) {
       // initialise channel size to maximum int size
@@ -400,8 +406,8 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
         TOKEN_UNIT tokensProduced = dataflow->getEdgeInVector(c)[i % dataflow->getEdgeInPhasesCount(c)];
         TOKEN_UNIT tokensConsumed = dataflow->getEdgeOutVector(c)[i % dataflow->getEdgeOutPhasesCount(c)];
         TOKEN_UNIT tokensInitial = dataflow->getPreload(c);
-        std::cout << "p, c, t: " << tokensProduced << ", "
-                  << tokensConsumed << ", " << tokensInitial << std::endl;
+        VERBOSE_DSE("p, c, t: " << tokensProduced << ", "
+                    << tokensConsumed << ", " << tokensInitial << std::endl);
         TOKEN_UNIT lowerBound;
 
         if (boost::math::gcd(tokensProduced, tokensConsumed)) {
@@ -419,8 +425,8 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
           minChannelSizes[c].second = lowerBound;
         }
       }
-      std::cout << "Minimum channel size for " << dataflow->getEdgeName(c)
-                << ": " << minChannelSizes[c].second << std::endl;
+      VERBOSE_DSE("Minimum channel size for " << dataflow->getEdgeName(c)
+                  << ": " << minChannelSizes[c].second << std::endl);
     }}
 }
 
@@ -437,7 +443,7 @@ TOKEN_UNIT findMinimumDistributionSz(models::Dataflow *dataflow,
     minDistributionSize += it->second.second;
   }
   
-  std::cout << "Lower bound distribution size: " << minDistributionSize << std::endl;
+  VERBOSE_DSE("Lower bound distribution size: " << minDistributionSize << std::endl);
   return minDistributionSize;
 }
 

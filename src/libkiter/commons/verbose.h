@@ -73,6 +73,7 @@
 #define VERBOSE_INFO(m)    if (VERBOSE_IS_INFO())    	std::cerr << GREEN_COLOR  << "[I]" << __SHOW_LEVEL << m << std::string(20,' ') << "\n" ; //PRINT_STATE();
 #define VERBOSE_WARNING(m) if (VERBOSE_IS_WARNING())    std::cerr << YELLOW_COLOR << "[W]" << __SHOW_LEVEL << m << std::string(20,' ') << "\n" ;
 #define VERBOSE_ERROR(m)   if (VERBOSE_IS_ERROR())      std::cerr << RED_COLOR    << "[E]" << __SHOW_LEVEL << m << std::string(20,' ') << "\n" ;
+#define VERBOSE_DSE(m)     if (VERBOSE_IS_PB())         std::cerr << PURPLE_COLOR << "[DSE] " << RESET_COLOR << m;
 
 #define VERBOSE_ASSERT(test,mess) if (!(test)) {VERBOSE_ERROR("Assertion failed : " << #test);VERBOSE_ERROR(mess);  ERROR();}
 #define VERBOSE_ASSERT_CONTAIN(a,b) if (!(a | b)) {VERBOSE_ERROR("Assertion failed : " << #a << "(=" << a << ") ==" << #b << "(=" << b << ")"); ERROR();}
