@@ -355,13 +355,14 @@ void StorageDistributionSet::writeCSV(std::string filename) {
 
 /* Iterate through storage distribution set and print graphs
    in DOT format */
-void StorageDistributionSet::printGraphs(models::Dataflow* const dataflow) {
+void StorageDistributionSet::printGraphs(models::Dataflow* const dataflow,
+                                         std::string pathName) {
   std::ofstream outputFile;
   int graphCount = 0;
 
   for (auto &it : this->set) {
     for (auto &sd : this->set[it.first]) {
-      std::string fileName = "./data/dotfiles/" + dataflow->getName() +
+      std::string fileName = pathName + dataflow->getName() +
         "_" + std::to_string(graphCount) + ".dot";
       outputFile.open(fileName);
       outputFile << sd.printGraph(dataflow);

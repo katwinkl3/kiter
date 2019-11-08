@@ -63,7 +63,7 @@ public:
                                                    of given distribution size */
   std::string printDistributions(); // prints info of all storage distributions in set
   void writeCSV(std::string filename); // writes to a CSV file for plots
-  void printGraphs(models::Dataflow* const dataflow); // iterate through storage distribution set and print graphs
+  void printGraphs(models::Dataflow* const dataflow, std::string filename); // iterate through storage distribution set and print graphs
   
 private:
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> set; /* store storage distributions 

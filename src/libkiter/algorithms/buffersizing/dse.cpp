@@ -255,6 +255,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   std::string dirName = "./data/";
   std::string ppDirName = "pp_logs/"; // logs of pareto points
   std::string logDirName = "dse_logs/";
+  std::string dotfileDirName = "dotfiles/";
   // uncomment code block to get XMLs of lower bound distribution
   // commons::writeSDF3File(dirName + "dse_min_distribution_" +
   //                        dataflow_prime->getName() + "_kiter"
@@ -381,8 +382,21 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   VERBOSE_DSE("Done with search!" << std::endl);
   VERBOSE_DSE("Number of computations: " << computation_counter << std::endl);
   VERBOSE_DSE("Number of pareto points: " << minStorageDist.getSize() << std::endl);
+
+  // Write log files and print file paths
   dseLog.close();
+  std::cout << "\nDSE log has been written to: "
+            << dirName + logDirName + dataflow_prime->getName() + "_dselog_kiter.csv"
+            << std::endl;
   minStorageDist.writeCSV(dirName + ppDirName + dataflow_prime->getName() +
                            "_pp_kiter.csv");
-  minStorageDist.printGraphs(dataflow_prime);
+  std::cout << "\nPareto points have been written to: "
+            << dirName + ppDirName + dataflow_prime->getName() + "_pp_kiter.csv"
+            << std::endl;
+  minStorageDist.printGraphs(dataflow_prime,
+                             dirName + dotfileDirName);
+  std::cout << "\n" + std::to_string(minStorageDist.getSize()) + " "
+            << "graphs of minimal storage distributions written to: "
+            << dirName + dotfileDirName + dataflow_prime->getName() + "_n.dot"
+            << std::endl;
 }
