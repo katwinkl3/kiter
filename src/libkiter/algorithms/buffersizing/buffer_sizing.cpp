@@ -4,7 +4,7 @@
  */
 
 #include <boost/math/common_factor_rt.hpp>  // for boost::math::gcd, lcm
-#include <algorithms/buffer_sizing.h>
+#include <algorithms/buffersizing/buffer_sizing.h>
 #include <models/Dataflow.h>
 #include <printers/stdout.h> // to print DOT files
 #include <iostream>
