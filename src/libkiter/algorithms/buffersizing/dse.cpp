@@ -189,6 +189,11 @@ kperiodic_result_t algorithms::compute_Kperiodic_throughput_and_cycles(models::D
 
 void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataflow,
                                                    parameters_list_t  parameters) {
+  bool writeLogFiles = false;
+  if (parameters.find("LOG") != parameters.end()) {
+    writeLogFiles = true;
+  }
+  
   // graph to model bounded channel quantities
   models::Dataflow* dataflow_prime = new models::Dataflow(*dataflow);
   long int computation_counter = 0;
@@ -282,16 +287,20 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
      (a set of pairs of throughput and storage distribution) 
      --- this will store the results of our DSE */
   StorageDistributionSet minStorageDist;
-
+  
+  // initialise data logging file and timing variable
+  std::ofstream dseLog;
+  std::chrono::duration<double, std::milli> cumulativeTime;
+  if (writeLogFiles) {
+    dseLog.open(dirName + logDirName + dataflow_prime->getName() + "_dselog_kiter.csv");
+    dseLog << "storage distribution size,throughput,channel quantities,computation duration,cumulative duration"
+           << std::endl; // initialise headers
+  }
+  
   // Start search algorithm
   VERBOSE_DSE("\n");
   VERBOSE_DSE("DSE BEGIN:" << std::endl);
-  // initialise path data logging
-  std::ofstream dseLog;
-  std::chrono::duration<double, std::milli> cumulativeTime;
-  dseLog.open(dirName + logDirName + dataflow_prime->getName() + "_dselog_kiter.csv");
-  dseLog << "storage distribution size,throughput,channel quantities,computation duration,cumulative duration"
-         << std::endl; // initialise headers
+  
   while (!minStorageDist.isSearchComplete(checklist, result_max.first)) {    
     VERBOSE_DSE("Checking next storage distribution in checklist --- current checklist size: "
                 << checklist.getSize() << std::endl);
@@ -325,12 +334,14 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     VERBOSE_DSE(checkDist.printInfo());
 
     // write current storage distribution info to DSE log
-    dseLog << checkDist.getDistributionSize() << ","
-           << checkDist.getThroughput() << ","
-           << checkDist.print_quantities_csv() << ","
-           << execTime.count() << ","
-           << cumulativeTime.count() << std::endl;
-    
+    if (writeLogFiles) {
+      dseLog << checkDist.getDistributionSize() << ","
+             << checkDist.getThroughput() << ","
+             << checkDist.print_quantities_csv() << ","
+             << execTime.count() << ","
+             << cumulativeTime.count() << std::endl;
+    }
+
     // Add storage distribution and computed throughput to set of minimal storage distributions
     VERBOSE_DSE("\n");
     VERBOSE_DSE("\tUpdating set of minimal storage distributions..."
@@ -384,19 +395,24 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   VERBOSE_DSE("Number of pareto points: " << minStorageDist.getSize() << std::endl);
 
   // Write log files and print file paths
-  dseLog.close();
-  std::cout << "\nDSE log has been written to: "
-            << dirName + logDirName + dataflow_prime->getName() + "_dselog_kiter.csv"
-            << std::endl;
-  minStorageDist.writeCSV(dirName + ppDirName + dataflow_prime->getName() +
-                           "_pp_kiter.csv");
-  std::cout << "\nPareto points have been written to: "
-            << dirName + ppDirName + dataflow_prime->getName() + "_pp_kiter.csv"
-            << std::endl;
-  minStorageDist.printGraphs(dataflow_prime,
-                             dirName + dotfileDirName);
-  std::cout << "\n" + std::to_string(minStorageDist.getSize()) + " "
-            << "graphs of minimal storage distributions written to: "
-            << dirName + dotfileDirName + dataflow_prime->getName() + "_n.dot"
-            << std::endl;
+  if (writeLogFiles) {
+    dseLog.close();
+    std::cout << "\nDSE log has been written to: "
+              << dirName + logDirName + dataflow_prime->getName() + "_dselog_kiter.csv"
+              << std::endl;
+    minStorageDist.writeCSV(dirName + ppDirName + dataflow_prime->getName() +
+                            "_pp_kiter.csv");
+    std::cout << "\nPareto points have been written to: "
+              << dirName + ppDirName + dataflow_prime->getName() + "_pp_kiter.csv"
+              << std::endl;
+    minStorageDist.printGraphs(dataflow_prime,
+                               dirName + dotfileDirName);
+    std::cout << "\n" + std::to_string(minStorageDist.getSize()) + " "
+              << "graphs of minimal storage distributions written to: "
+              << dirName + dotfileDirName + dataflow_prime->getName() + "_n.dot"
+              << std::endl;
+  } else {
+    std::cout << "\nNote that you can use flag '-p LOG=true' to write logs of DSE"
+              << std::endl;
+  }
 }
