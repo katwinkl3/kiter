@@ -2303,14 +2303,14 @@ void algorithms::dynamic_noc(models::Dataflow* const  dataflow, parameters_list_
 	for(int i = 1; i <= origV; i++)
 	{
 		auto src = to->getVertexById(i);
-		resolveSrcConflicts(to, src, origV);
+		// resolveSrcConflicts(to, src, origV); // DOES NOT COMPILE
 	}
 	std::cout << "done source conflict resolve\n";
 
 	for(int i = 1; i <= origV; i++)
 	{
 		auto dest = to->getVertexById(i);
-		resolveDestConflicts(to, dest, origV);
+		// resolveDestConflicts(to, dest, origV); // DOES NOT COMPILE
 	}
 	std::cout << "done dest conflict resolve\n";
 
