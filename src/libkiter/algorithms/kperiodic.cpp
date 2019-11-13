@@ -286,7 +286,7 @@ kperiodic_result_t algorithms::KScheduleBufferLess(models::Dataflow *  const dat
     VERBOSE_INFO("KPeriodic EventGraph generation");
 
     //STEP 1 - Generate Event Graph
-    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,kvector, true);
+    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,kvector);
 
     VERBOSE_INFO("KPeriodic EventGraph generation Done, edges = " << eg->getConstraintsCount() << " vertex = " << eg->getEventCount());
 
@@ -326,7 +326,7 @@ kperiodic_result_t algorithms::KScheduleBufferLess(models::Dataflow *  const dat
 }
 
 
-models::EventGraph* algorithms::generateKPeriodicEventGraph(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues , bool doBufferLessEdges) {
+models::EventGraph* algorithms::generateKPeriodicEventGraph(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues ) {
 
 
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
@@ -366,7 +366,8 @@ models::EventGraph* algorithms::generateKPeriodicEventGraph(models::Dataflow * c
     // DEFINITION DES CONTRAINTES DE PRECEDENCES
     //******************************************************************
     {ForEachChannel(dataflow,c) {
-        generateKPeriodicConstraint(dataflow , kValues,   g ,  c, doBufferLessEdges);
+    	bool isbufferless = (dataflow->getEdgeType(c) == EDGE_TYPE::BUFFERLESS_EDGE);
+        generateKPeriodicConstraint(dataflow , kValues,   g ,  c);
     }}
 
 
@@ -533,13 +534,13 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
         EXEC_COUNT newki =  kvector.at(source);
         if (ki < newki) {
             ARRAY_INDEX task_id= dataflow->getVertexId(source);
-            for (EXEC_COUNT p = 1 ; p <= dataflow->getPhasesQuantity(source) ; p++) {
+            for (PHASE_INDEX p = 1 - dataflow->getInitPhasesQuantity(source) ; p <= dataflow->getPhasesQuantity(source) ; p++) {
                 for(ARRAY_INDEX k = 1 ; k <= ki ; k++) {
                     g->removeConnectedEdges(g->getEventGraphVertex(task_id,p,k));
                 }
             }
 
-            for (EXEC_COUNT p = 1 ; p <= dataflow->getPhasesQuantity(source) ; p++) {
+            for (PHASE_INDEX p = 1 - dataflow->getInitPhasesQuantity(source)  ; p <= dataflow->getPhasesQuantity(source) ; p++) {
                 g->addEventGroup(task_id,p,ki+1,newki);
             }
             if (newki > dataflow->getNi(source)) {
@@ -685,7 +686,7 @@ models::EventGraph*  algorithms::generateCycleOnly(models::Dataflow * const data
 
 
 
-void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues,  models::EventGraph* g , Edge c, bool doBufferLessEdges) {
+void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues,  models::EventGraph* g , Edge c) {
 
 
     VERBOSE_DEBUG("Constraint for " << dataflow->getEdgeName(c) );
@@ -719,7 +720,7 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
     TOKEN_UNIT normdapkm1 = 0;
     TOKEN_UNIT normdapk   = 0;
 
-
+    bool doBufferLessEdges = dataflow->getEdgeType(c) == EDGE_TYPE::BUFFERLESS_EDGE;
 
     for (EXEC_COUNT ki = 1; ki <= maxki ; ki++ ) {
     	auto first_pi = (ki == 1) ?  1 - source_init_phase_count : 1 ;
@@ -768,8 +769,8 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
 
 
                         if (doBufferLessEdges) {
-                            g->addEventConstraint(target_event ,source_event,0,-d,id);
-                            g->addEventConstraint(source_event ,target_event,0,d,id);
+                            //g->addEventConstraint(target_event ,source_event,w, d,id);
+                            g->addEventConstraint(source_event ,target_event,-w,d,id);
                         } else {
                             g->addEventConstraint(source_event ,target_event,-w,d,id);
                         }
@@ -1387,7 +1388,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 
     VERBOSE_INFO("KVector = " << commons::toString(kvector) );
     //STEP 1 - Generate Event Graph
-    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector,do_buffer_less);
+    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector);
 
 
     VERBOSE_INFO("KPeriodic EventGraph generation Done");

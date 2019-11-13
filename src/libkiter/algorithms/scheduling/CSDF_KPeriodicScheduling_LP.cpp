@@ -398,7 +398,7 @@ models::Scheduling  algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (cons
 	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
     //STEP 1 - Generate Event Graph
 	auto kvector = generateNPeriodicVector(dataflow);
-    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector, false);
+    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector);
 
 
     VERBOSE_INFO("KPeriodic EventGraph generation Done");

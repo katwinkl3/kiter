@@ -21,7 +21,7 @@ namespace algorithms {
 
 bool sameset(models::Dataflow* const dataflow, std::set<Edge> *cc1 , std::set<Edge>* cc2) ;
 std::string cc2string  (models::Dataflow* const dataflow,std::set<Edge>* cc) ;
-models::EventGraph* generateKPeriodicEventGraph(models::Dataflow * const dataflow, std::map<Vertex,EXEC_COUNT> * kvector , bool doBufferLessEdges = false );
+models::EventGraph* generateKPeriodicEventGraph(models::Dataflow * const dataflow, std::map<Vertex,EXEC_COUNT> * kvector  );
 
 std::string print_schedule (models::EventGraph* eg, models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT res ) ;
 
@@ -30,7 +30,7 @@ scheduling_t generateKperiodicSchedule    (models::Dataflow* const dataflow , bo
     void print_kperiodic_expansion_graph    (models::Dataflow* const  dataflow, parameters_list_t);
   void generateKperiodicSelfloop(models::Dataflow * const dataflow , EXEC_COUNT ki, models::EventGraph* g  , Vertex t  );
 
-  void generateKPeriodicConstraint(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues,  models::EventGraph* g, Edge c, bool doBufferLessEdges = false) ;
+  void generateKPeriodicConstraint(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues,  models::EventGraph* g, Edge c) ;
 
   void fastGenerateKPeriodicConstraint(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues,  models::EventGraph* g, Edge c) ;
   void newGenerateKPeriodicConstraint(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues,  models::EventGraph* g, Edge c) ;
