@@ -4,9 +4,7 @@
 ###
 
 SHELL = /bin/bash
-
-## BUILDS = release_build debug_build
-BUILDS = debug_build
+BUILDS = Debug/bin/kiter
 
 CPU_COUNT := $(shell cat /proc/cpuinfo |grep processor |wc -l)
 SDF3_BENCHMARK := ./sdf3bench/
@@ -17,8 +15,9 @@ SDF3_ROOT := ./sdf3/
 SDF3_BINARY_ROOT := ${SDF3_ROOT}/sdf3/build/release/Linux/bin/
 SDF3ANALYSIS_CSDF :=  timeout 180  ${SDF3_BINARY_ROOT}/sdf3analysis-csdf
 SDF3ANALYSIS_SDF := timeout 180   ${SDF3_BINARY_ROOT}/sdf3analysis-sdf
-KITER := timeout 180 ./release/bin/kiter
+KITER := timeout 180 ./Release/bin/kiter
 
+SOURCES=$(shell find src)
 
 info :
 	@echo "----------------------------------------"
@@ -36,7 +35,7 @@ all : build
 build: ${BUILDS}
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 clean:
-	rm -Rf release debug *.lp *.mps 
+	rm -Rf Release Debug *.lp *.mps 
 
 benchmark :  sdf.log  csdf.log csdf_sized.log
 
@@ -46,13 +45,13 @@ travis_test: ${SDF3_BENCHMARK}
 	${KITER} -f benchmark/sample.xml -a PrintKPeriodicThroughput -pA=1 -pB=1 -pC=1
 	${KITER} -f benchmark/sample.xml -a PrintKPeriodicThroughput -pA=2 -pB=1 -pC=2
 
-csdf.log:  ./release/bin/kiter Makefile 
+csdf.log:  ./Release/bin/kiter Makefile 
 	rm -f $@
 	@echo "==============================================================================================="
 	@echo "==============================================================================================="
 	for f in  benchmark/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput -a 1PeriodicThroughput -a KPeriodicThroughput  >> $@ ; if [ -d ${SDF3_BINARY_ROOT} ];then  ${SDF3ANALYSIS_CSDF}  --graph $$f  --algo throughput  >> $@ || true; fi ; done 
 
-csdf_sized.log:  ./release/bin/kiter Makefile
+csdf_sized.log:  ./Release/bin/kiter Makefile
 	rm -f $@
 	@echo "==============================================================================================="
 	@echo "==============================================================================================="
@@ -98,41 +97,34 @@ ${SDF3_BENCHMARK} : sdfg_throughput.zip
 	cd ${SDF3_BENCHMARK} && unzip graphs/graphs4/graphs.zip; for f in graph*.xml ; do mv $$f four_$$f ; done
 	cd ${SDF3_BENCHMARK} && rm graphs scripts sdfg_throughput.zip -rf
 
-sdf.log:  ./release/bin/kiter Makefile 
+sdf.log:  ./Release/bin/kiter Makefile 
 	rm -f $@
 	@echo "==============================================================================================="
 	@echo "==============================================================================================="
 	for f in  ${SDF3_BENCHMARK}/*.xml ; do echo === $$f  >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput  -a deGrooteThroughput >> $@ ; if [ -d ${SDF3_BINARY_ROOT} ];then ${SDF3ANALYSIS_SDF}  --graph $$f  --algo throughput  >> $@ || true ; fi ;  done
 
-release_build : release/Makefile
+%/bin/kiter: ${SOURCES}  %/Makefile
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	@$(MAKE) -C release all
+	@$(MAKE) -C $* all
 
-
-debug_build : debug/Makefile
+%/Makefile: ${SOURCES} CMakeLists.txt
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	@$(MAKE) -C debug all 
+	@mkdir -p $*
+	@pushd $* && cmake -D CMAKE_BUILD_TYPE=$* .. && popd
 
-release/Makefile: CMakeLists.txt
-	@echo "###########"" ENTER IN $@ : $^  #####################"
-	@mkdir -p release
-	@pushd release && cmake -D CMAKE_BUILD_TYPE=Release .. && popd
+test: Debug/bin/kiter Debug/Makefile
+	make -C Debug/ test
 
-debug/Makefile: CMakeLists.txt
-	@echo "###########"" ENTER IN $@ : $^  #####################"
-	@mkdir -p debug
-	@pushd debug && cmake -D CMAKE_BUILD_TYPE=Debug .. && popd
+various:
+	./Release/bin/kiter -f ./benchmark/21.xml -a KPeriodicThroughput -v 5
+	./Release/bin/kiter -f ./benchmark/BlackScholes.xml -a KPeriodicThroughput -v 5
+	./Release/bin/kiter -f ./benchmark/Echo.xml -a KPeriodicThroughput -v 5
+	./Release/bin/kiter -f ./benchmark/expansion_paper_norm_sdf.xml -a KPeriodicThroughput -v 5
+	./Release/bin/kiter -f ./benchmark/expansion_paper_sdf.xml -a KPeriodicThroughput -v 5
+	./Release/bin/kiter -f ./benchmark/H264.xml -a KPeriodicThroughput -v 5
+	./Release/bin/kiter -f ./benchmark/JPEG2000.xml -a KPeriodicThroughput -v 5
+	./Release/bin/kiter -f ./benchmark/new_benchmark.xml -a KPeriodicThroughput -v 5
+	./Release/bin/kiter -f ./benchmark/Pdectect.xml -a KPeriodicThroughput -v 5
+	./Release/bin/kiter -f ./benchmark/sample.xml -a KPeriodicThroughput -v 5
 
-test:
-	./release/bin/kiter -f ./benchmark/21.xml -a KPeriodicThroughput -v 5
-	./release/bin/kiter -f ./benchmark/BlackScholes.xml -a KPeriodicThroughput -v 5
-	./release/bin/kiter -f ./benchmark/Echo.xml -a KPeriodicThroughput -v 5
-	./release/bin/kiter -f ./benchmark/expansion_paper_norm_sdf.xml -a KPeriodicThroughput -v 5
-	./release/bin/kiter -f ./benchmark/expansion_paper_sdf.xml -a KPeriodicThroughput -v 5
-	./release/bin/kiter -f ./benchmark/H264.xml -a KPeriodicThroughput -v 5
-	./release/bin/kiter -f ./benchmark/JPEG2000.xml -a KPeriodicThroughput -v 5
-	./release/bin/kiter -f ./benchmark/new_benchmark.xml -a KPeriodicThroughput -v 5
-	./release/bin/kiter -f ./benchmark/Pdectect.xml -a KPeriodicThroughput -v 5
-	./release/bin/kiter -f ./benchmark/sample.xml -a KPeriodicThroughput -v 5
-
-.PHONY : release_build debug_build all clean tests test benchmark
+.PHONY :  all clean tests various test benchmark

@@ -7,12 +7,7 @@
 #  GUROBI_INCLUDE_DIRS - The Gurobi include directories
 #  GUROBI_LIBRARIES - The libraries needed to use Gurobi
 
-if (GUROBI_INCLUDE_DIR)
-  # in cache already
-  set(GUROBI_FOUND TRUE)
-  set(GUROBI_INCLUDE_DIRS "${GUROBI_INCLUDE_DIR}" )
-  set(GUROBI_LIBRARIES "${GUROBI_LIBRARY}" )
-else (GUROBI_INCLUDE_DIR)
+
 
 find_path(GUROBI_INCLUDE_DIR 
           NAMES gurobi_c++.h
@@ -60,4 +55,3 @@ find_package_handle_standard_args(GUROBI  DEFAULT_MSG
 
 mark_as_advanced(GUROBI_INCLUDE_DIR GUROBI_LIBRARY GUROBI_CXX_LIBRARY)
 
-endif(GUROBI_INCLUDE_DIR)

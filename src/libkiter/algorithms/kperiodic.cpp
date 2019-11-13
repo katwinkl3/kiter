@@ -161,6 +161,7 @@ models::Scheduling period2Scheduling    (models::Dataflow* const  dataflow,  std
 
 scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) {
 
+    VERBOSE_INFO("period2scheduling throughput = " << throughput  );
 
 	scheduling_t scheduling_result;
 
@@ -194,6 +195,7 @@ scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<
     }}
 
 
+    VERBOSE_INFO("period2scheduling done"  );
 
     return scheduling_result ;
 
@@ -1517,18 +1519,20 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
     std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
     std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 
-    scheduling_t persched = period2scheduling    (dataflow,  kvector , res);
-    for (auto  key : persched) {
-    			auto task = key.first;
-    			auto task_vtx = dataflow->getVertexById(key.first);
-    			VERBOSE_INFO(  "Task " <<  dataflow->getVertexName(task_vtx)
-    					<<  " : duration=" << dataflow->getVertexTotalDuration(task_vtx)
-						<<  " period=" <<  persched[task].first
-						<<  " Ni=" << dataflow->getNi(task_vtx)
-    					<<  " starts=[ " << commons::toString(persched[task].second) << "]");
+    if (VERBOSE_IS_INFO()) {
+		scheduling_t persched = period2scheduling    (dataflow,  kvector , res);
 
+		for (auto  key : persched) {
+					auto task = key.first;
+					auto task_vtx = dataflow->getVertexById(key.first);
+					VERBOSE_INFO(  "Task " <<  dataflow->getVertexName(task_vtx)
+							<<  " : duration=" << dataflow->getVertexTotalDuration(task_vtx)
+							<<  " period=" <<  persched[task].first
+							<<  " Ni=" << dataflow->getNi(task_vtx)
+							<<  " starts=[ " << commons::toString(persched[task].second) << "]");
+
+		}
     }
-
 
 
 }
