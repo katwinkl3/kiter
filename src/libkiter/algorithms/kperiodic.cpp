@@ -336,17 +336,19 @@ models::EventGraph* algorithms::generateKPeriodicEventGraph(models::Dataflow * c
 
     /* generate nodes */
     {ForEachVertex(dataflow,t) {
+    	const ARRAY_INDEX tid = dataflow->getVertexId(t);
+
         EXEC_COUNT init_phase_count = dataflow->getInitPhasesQuantity(t);
         EXEC_COUNT periodic_phase_count = dataflow->getPhasesQuantity(t);
 
         for (EXEC_COUNT i = 1; i <= init_phase_count ; i++ ) {
-            g->addEvent(models::SchedulingEvent(dataflow->getVertexId(t),1-i,1));
+            g->addEvent(models::SchedulingEvent(tid,1-i,1));
         }
 
 
         for (EXEC_COUNT j = 1; j <= kValues->at(t) ; j++ ) {
             for (EXEC_COUNT i = 1; i <= periodic_phase_count ; i++ ) {
-                g->addEvent(models::SchedulingEvent(dataflow->getVertexId(t),i,j));
+                g->addEvent(models::SchedulingEvent(tid,i,j));
             }
         }
     }}

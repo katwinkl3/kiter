@@ -35,6 +35,7 @@ namespace std {
 bool operator<(const boost::detail::edge_desc_impl<boost::bidirectional_tag, unsigned int>& lh, const boost::detail::edge_desc_impl<boost::bidirectional_tag, unsigned int>& rh);
 }
 
+typedef               long int  PHASE_INDEX;
 typedef unsigned      long int  EXEC_COUNT;
 typedef               long int  TOKEN_UNIT;
 typedef               long int  DATA_UNIT;
