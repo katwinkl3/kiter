@@ -1437,7 +1437,7 @@ bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::vector< 
 	for(ARRAY_INDEX vid :mergeNodes)
 	{
 		Vertex vi     = to->getVertexById(vid);
-		mergeVtxDuration = std::max(mergeVtxDuration, to->getVertexDuration(vid));
+		mergeVtxDuration = std::max(mergeVtxDuration, to->getVertexDuration(vi));
 		EXEC_COUNT ni = to->getNi(vi);
 		gcd_value = boost::math::gcd (gcd_value , ni) ;
 	}
