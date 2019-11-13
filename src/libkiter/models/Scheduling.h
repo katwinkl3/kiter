@@ -31,10 +31,10 @@ public :
 
 	}
 
-	TIME_UNIT getGraphPeriod () {
+	TIME_UNIT getGraphPeriod () const {
 		return this->_period;
 	}
-	scheduling_t& getTaskSchedule () {
+	const scheduling_t& getTaskSchedule () const{
 		return this->_tasks_schedule;
 	}
 

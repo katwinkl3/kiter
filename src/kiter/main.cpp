@@ -24,6 +24,7 @@
 #include <algorithms/backpressure.h>
 #include <algorithms/mappings.h>
 #include <algorithms/schedulings.h>
+#include <algorithms/transformations.h>
 
 struct algo_t {
 	std::string name;
@@ -82,6 +83,9 @@ std::vector<algo_t> algorithmslist = {
 		{ "genLTESDF" , "generate LTE SDF.", algorithms::generate_lte_sdf},
 		{ "SoftwareControlledNoCBufferless" , "Perform Bufferless NoC scheduling after deciding task mapping and routing.", algorithms::software_noc_bufferless},
 		{ "SymbolicExecutionWP" , "Execute task in ASAP fashion and print out the scheduling.", algorithms::symbolic_execution_with_packets},
+
+		// Trasnformation
+		{ "Merge" , "Merging tasks using Kperiodic scheduling and Initialization phases", algorithms::transformation::merge_tasks},
 
 
 		// Recent stuff

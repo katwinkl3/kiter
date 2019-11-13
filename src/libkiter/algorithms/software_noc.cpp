@@ -743,7 +743,7 @@ void dijkstra_mapping(Vertex vtx, std::vector<int>& core_mapping, NoC* noc, cons
 	for(auto it: best_store_path)
 	{
 		if(routes.find(it.first) != routes.end())
-			VERBOSE_INFO ( "already one route is stored fro this");
+			VERBOSE_INFO ( "already one route is stored for this");
 		routes[it.first] = it.second;
 	}
 	std::cout << "allocating " << index << " to " << core_allocated << "\n";
@@ -1491,11 +1491,11 @@ bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::vector< 
 		init_token_vec[vid]  = std::vector <TOKEN_UNIT> (init_start_times.size(), 0);
 	}
 
-	for (int i = 0 ; i < periodic_start_times.size() ; i++) {
+	for (unsigned int i = 0 ; i < periodic_start_times.size() ; i++) {
 		periodic_token_vec [periodic_start_times[i].second][i] = 1;
 	}
 
-	for (int i = 0 ; i < init_start_times.size() ; i++) {
+	for (unsigned int i = 0 ; i < init_start_times.size() ; i++) {
 		init_token_vec [init_start_times[i].second][i] = 1;
 	}
 
