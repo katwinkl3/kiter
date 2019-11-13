@@ -1416,10 +1416,12 @@ bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::vector< 
 
 	to->reset_computation();
 	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
+	std::cout << "calling csdf\n";
 	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling(to);
 	TIME_UNIT omega = scheduling_res.getGraphPeriod();
 	auto persched = scheduling_res.getTaskSchedule();
 
+	std::cout << "done done\n";
 	VERBOSE_ASSERT(omega != std::numeric_limits<TIME_UNIT>::infinity(), "Infinite period, this dataflow does not schedule, thus I cannot merge anymore.");
 
 	TIME_UNIT mergeVtxDuration = NULL_DURATION;
@@ -2193,7 +2195,10 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		//Change end
 
 		if(retval)
+		{
+			removeOrphanNodes(to, vid_to_conflict_map, conflictEdges);
 			print_graph(to);
+		}
 		/*{
 			to->reset_computation();
 			VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
