@@ -1253,13 +1253,14 @@ void removeAllEdgesVertex(models::Dataflow* d, Vertex vtx)
 
 //Function to remove the edges and obtain phase vector values
 //v1 -> cfg -> v2
-void getEdgesPhaseVector(models::Dataflow* d, Vertex& v1, Vertex cfg, Vertex& v2, std::vector<TOKEN_UNIT>& in, std::vector<TOKEN_UNIT>& out, TOKEN_UNIT& preload_v1, TOKEN_UNIT& preload_v2)
+void getEdgesPhaseVector(models::Dataflow* d, Vertex& v1, Vertex cfg, Vertex& v2, std::vector<TOKEN_UNIT>& in, std::vector<TOKEN_UNIT>& out, TOKEN_UNIT& preload_v1, TOKEN_UNIT& preload_v2, EDGE_TYPE& e_v1, EDGE_TYPE& e_v2)
 {
 	//std::cout << "inside fn: v1=" << d->getVertexName(v1) << ",cfg=" << d->getVertexName(cfg) << ",v2=" << d->getVertexName(v2) << "\n";
 	{ForInputEdges(d, cfg, E)	{
 		in = d->getEdgeInVector(E);
 		v1 = d->getEdgeSource(E);
 		preload_v1 =  d->getPreload(E);
+		e_v1 = d->getEdgeType(E);
 		d->removeEdge(E);
 		break;
 	}}
@@ -1267,6 +1268,7 @@ void getEdgesPhaseVector(models::Dataflow* d, Vertex& v1, Vertex cfg, Vertex& v2
 		out = d->getEdgeOutVector(E);
 		v2 = d->getEdgeTarget(E);
 		preload_v2 =  d->getPreload(E);
+		e_v2 = d->getEdgeType(E);
 		d->removeEdge(E);
 		break;
 	}}
@@ -1513,11 +1515,13 @@ bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::vector< 
 		Vertex v2;
 		std::vector<TOKEN_UNIT> myin, myout;
 		TOKEN_UNIT preload_v1, preload_v2;
-		getEdgesPhaseVector(to, v1, cfgVtx, v2, myin, myout, preload_v1, preload_v2);
+		EDGE_TYPE e_v1, e_v2;
+		getEdgesPhaseVector(to, v1, cfgVtx, v2, myin, myout, preload_v1, preload_v2, e_v1, e_v2);
 
 		auto new_edge = to->addEdge(v1, middle);
 		to->setEdgeType(new_edge,EDGE_TYPE::BUFFERLESS_EDGE);
 		to->setPreload(new_edge, preload_v1);
+		to->setEdgeType(new_edge, e_v1);
 
 		to->setEdgeInPhases(new_edge, myin);
 		to->setEdgeOutPhases(new_edge, periodic_token_vec[vid]);
@@ -1529,6 +1533,7 @@ bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::vector< 
 		to->setEdgeInPhases(new_edge, periodic_token_vec[vid]);
 		to->setEdgeInInitPhases(new_edge, init_token_vec[vid]);
 		to->setEdgeOutPhases(new_edge, myout);
+		to->setEdgeType(new_edge, e_v2);
 	}
 
 
@@ -1603,19 +1608,22 @@ bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< ARRAY
 		Vertex v2;
 		std::vector<TOKEN_UNIT> myin, myout;
 		TOKEN_UNIT preload_v1, preload_v2;
-		getEdgesPhaseVector(d, v1, cfgVtx, v2, myin, myout, preload_v1, preload_v2);
+		EDGE_TYPE e_v1, e_v2;
+		getEdgesPhaseVector(d, v1, cfgVtx, v2, myin, myout, preload_v1, preload_v2, e_v1, e_v2);
 
 		auto new_edge = d->addEdge(v1, middle);
 		d->setEdgeType(new_edge,EDGE_TYPE::BUFFERLESS_EDGE);
 		d->setPreload(new_edge, preload_v1);
 		d->setEdgeInPhases(new_edge, myin);
 		d->setEdgeOutPhases(new_edge, token_vec[i]);
+		d->setEdgeType(new_edge, e_v1);
 
 		new_edge = d->addEdge(middle, v2);
 		d->setEdgeType(new_edge,EDGE_TYPE::BUFFERLESS_EDGE);
 		d->setPreload(new_edge, preload_v2);
 		d->setEdgeInPhases(new_edge, token_vec[i]);
 		d->setEdgeOutPhases(new_edge, myout);
+		d->setEdgeType(new_edge, e_v2);
 	}
 	d->reset_computation();
 	return true;
