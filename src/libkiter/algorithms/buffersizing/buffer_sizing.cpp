@@ -11,8 +11,7 @@
 #include <fstream>
 
 StorageDistribution::StorageDistribution()
-  :edge_count{0}, thr{0}, distribution_size{0} {
-    // TODO: initialise empty map
+  :edge_count{0}, thr{0}, channel_quantities(), distribution_size{0} {
                           }
 
 StorageDistribution::StorageDistribution(unsigned int edge_count,
@@ -402,7 +401,7 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
       TOKEN_UNIT ratePeriod = (TOKEN_UNIT) boost::math::gcd(dataflow->getEdgeInPhasesCount(c),
                                                             dataflow->getEdgeOutPhasesCount(c));
       
-      for (EXEC_COUNT i = 0; i < ratePeriod; i++) {
+      for (TOKEN_UNIT i = 0; i < ratePeriod; i++) {
         // might want to change variables to p, c, and t for legibility
         TOKEN_UNIT tokensProduced = dataflow->getEdgeInVector(c)[i % dataflow->getEdgeInPhasesCount(c)];
         TOKEN_UNIT tokensConsumed = dataflow->getEdgeOutVector(c)[i % dataflow->getEdgeOutPhasesCount(c)];
