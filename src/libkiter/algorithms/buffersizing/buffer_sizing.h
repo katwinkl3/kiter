@@ -40,9 +40,9 @@ public:
 private:
   unsigned int edge_count;
   TIME_UNIT thr; // throughput of given storage distribution
-  TOKEN_UNIT distribution_size; // should be equal to sum of channel quantities
   std::map<Edge, std::pair<TOKEN_UNIT, // initial tokens
                            TOKEN_UNIT>> channel_quantities; // amount of space (in tokens per channel)
+  TOKEN_UNIT distribution_size; // should be equal to sum of channel quantities
 };
 
 class StorageDistributionSet {
