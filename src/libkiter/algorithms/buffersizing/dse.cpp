@@ -331,13 +331,13 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     } else {
       checkDist.setThroughput(result.first);
     }
-    VERBOSE_DSE(checkDist.printInfo());
+    VERBOSE_DSE(checkDist.printInfo(dataflow_prime));
 
     // write current storage distribution info to DSE log
     if (writeLogFiles) {
       dseLog << checkDist.getDistributionSize() << ","
              << checkDist.getThroughput() << ","
-             << checkDist.print_quantities_csv() << ","
+             << checkDist.print_quantities_csv(dataflow_prime) << ","
              << execTime.count() << ","
              << cumulativeTime.count() << std::endl;
     }
@@ -388,7 +388,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   VERBOSE_DSE("\n");
   VERBOSE_DSE("DSE RESULTS [START] (target throughput: " << result_max.first
               << "):" << std::endl);
-  VERBOSE_DSE("\n" << minStorageDist.printDistributions());
+  VERBOSE_DSE("\n" << minStorageDist.printDistributions(dataflow_prime));
   VERBOSE_DSE("DSE RESULTS [END]" << std::endl);
   VERBOSE_DSE("Done with search!" << std::endl);
   VERBOSE_DSE("Number of computations: " << computation_counter << std::endl);
@@ -401,7 +401,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
               << dirName + logDirName + dataflow_prime->getName() + "_dselog_kiter.csv"
               << std::endl;
     minStorageDist.writeCSV(dirName + ppDirName + dataflow_prime->getName() +
-                            "_pp_kiter.csv");
+                            "_pp_kiter.csv", dataflow_prime);
     std::cout << "\nPareto points have been written to: "
               << dirName + ppDirName + dataflow_prime->getName() + "_pp_kiter.csv"
               << std::endl;

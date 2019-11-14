@@ -118,24 +118,34 @@ void StorageDistribution::updateDistributionSize() {
 }
 
 // Prints member data of StorageDistribution for debugging
-std::string StorageDistribution::printInfo() {
+std::string StorageDistribution::printInfo(models::Dataflow* const dataflow) {
   std::string sdInfo;
   unsigned int ch_count = 0;
 
   sdInfo += "\tCurrent StorageDistribution info:\n";
   sdInfo += "\tNumber of edges: " + std::to_string(this->edge_count) + "\n";
   sdInfo += "\tChannel quantities:\n";  
-  for (auto it = this->channel_quantities.begin();
-       it != this->channel_quantities.end(); it++) {
-    if (!ch_count) {
-      sdInfo += "\t";
-    }
-    sdInfo += std::to_string(it->second.second) + " ";
-    ch_count++;
-    if (ch_count == (this->edge_count / 2)) {
-      sdInfo += "\n\t";
-    }
-  }
+  // for (auto it = this->channel_quantities.begin();
+  //      it != this->channel_quantities.end(); it++) {
+  //   if (!ch_count) {
+  //     sdInfo += "\t";
+  //   }
+  //   sdInfo += std::to_string(it->second.second) + " ";
+  //   ch_count++;
+  //   if (ch_count == (this->edge_count / 2)) {
+  //     sdInfo += "\n\t";
+  //   }
+  // }
+  {ForEachEdge(dataflow, c) {
+      if (!ch_count) {
+	sdInfo += "\t";
+      }
+      sdInfo += std::to_string(this->getChannelQuantity(c)) + " ";
+      ch_count++;
+      if (ch_count == (this->edge_count / 2)) {
+	sdInfo += "\n\t";
+      }
+    }}
   sdInfo += "\n"; // double line return to mark end of channel quantities
   sdInfo += "\tDistribution size: " + std::to_string(this->distribution_size) + "\n";
   sdInfo += "\tThroughput: " + std::to_string(this->thr) + "\n";
@@ -143,18 +153,27 @@ std::string StorageDistribution::printInfo() {
   return sdInfo;
 }
 
-std::string StorageDistribution::print_quantities_csv() {
+std::string StorageDistribution::print_quantities_csv(models::Dataflow* const dataflow) {
   std::string output("\"");
   std::string delim("");
   unsigned int ch_count = 0;
-  for (auto &it : this->channel_quantities) {
-    if (ch_count >= (this->edge_count / 2)) {
-      output += delim;
-      output += std::to_string(it.second.second);
-      delim = ",";
-    }
-    ch_count++;
-  }
+  // for (auto &it : this->channel_quantities) {
+  //   if (ch_count >= (this->edge_count / 2)) {
+  //     output += delim;
+  //     output += std::to_string(it.second.second);
+  //     delim = ",";
+  //   }
+  //   ch_count++;
+  // }
+  // output += "\"";
+  {ForEachEdge(dataflow, c) {
+      if (ch_count >= (this->edge_count / 2)) {
+	output += delim;
+	output += std::to_string(this->getChannelQuantity(c));
+	delim = ",";
+      }
+      ch_count++;
+    }}
   output += "\"";
   return output;
 }
@@ -316,23 +335,24 @@ bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
 }
 
 // Print info of all storage distributions of a given distribution size in set
-std::string StorageDistributionSet::printDistributions(TOKEN_UNIT dist_sz) {
+std::string StorageDistributionSet::printDistributions(TOKEN_UNIT dist_sz,
+						       models::Dataflow* const dataflow) {
   assert(set.find(dist_sz) != set.end());
 
   std::string dInfo;
   dInfo += "Printing storage distributions of distribution size: "
     + std::to_string(dist_sz) + "\n";
   for (auto &i : set[dist_sz]) {
-    dInfo += i.printInfo();
+    dInfo += i.printInfo(dataflow);
   }
   return dInfo;
 }
 
 // Print info of all storage distributions in set
-std::string StorageDistributionSet::printDistributions() {
+std::string StorageDistributionSet::printDistributions(models::Dataflow* const dataflow) {
   std::string allInfo;
   for (auto &it : this->set) {
-    allInfo += printDistributions(it.first);
+    allInfo += printDistributions(it.first, dataflow);
   }
   return allInfo;
 }
@@ -340,13 +360,15 @@ std::string StorageDistributionSet::printDistributions() {
 /* Writes storage distribution set info to a CSV file to plot data
    Takes in file name as argument --- explicitly state file 
    format (e.g. "example_filename.csv") */
-void StorageDistributionSet::writeCSV(std::string filename) {
+void StorageDistributionSet::writeCSV(std::string filename,
+				      models::Dataflow* const dataflow) {
   std::ofstream outputFile;
   outputFile.open(filename);
   outputFile << "storage distribution size,throughput,channel quantities" << std::endl; // initialise headers
   for (auto &it : this->set) {
     for (auto &sd : this->set[it.first]) {
-      outputFile << it.first << "," << sd.getThroughput() << "," << sd.print_quantities_csv() << std::endl;
+      outputFile << it.first << "," << sd.getThroughput() << ","
+		 << sd.print_quantities_csv(dataflow) << std::endl;
     }
   }
   outputFile.close();
