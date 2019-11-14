@@ -16,7 +16,7 @@
 #include <algorithms/repetition_vector.h>
 #include <algorithms/buffersizing/buffer_sizing.h>
 #include <chrono> // to take computation timings
-
+// #define WRITE_GRAPHS // uncomment to write dot files of explored graphs
 // Compute and return period and causal dependency cycles of given dataflow graph
 kperiodic_result_t algorithms::compute_Kperiodic_throughput_and_cycles(models::Dataflow* const dataflow, parameters_list_t parameters) {
   
@@ -260,7 +260,9 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   std::string dirName = "./data/";
   std::string ppDirName = "pp_logs/"; // logs of pareto points
   std::string logDirName = "dse_logs/";
+  #ifdef WRITE_GRAPHS
   std::string dotfileDirName = "dotfiles/";
+  #endif
   // uncomment code block to get XMLs of lower bound distribution
   // commons::writeSDF3File(dirName + "dse_min_distribution_" +
   //                        dataflow_prime->getName() + "_kiter"
@@ -405,12 +407,14 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     std::cout << "\nPareto points have been written to: "
               << dirName + ppDirName + dataflow_prime->getName() + "_pp_kiter.csv"
               << std::endl;
+    #ifdef WRITE_GRAPHS
     minStorageDist.printGraphs(dataflow_prime,
                                dirName + dotfileDirName);
     std::cout << "\n" + std::to_string(minStorageDist.getSize()) + " "
               << "graphs of minimal storage distributions written to: "
               << dirName + dotfileDirName + dataflow_prime->getName() + "_n.dot"
               << std::endl;
+    #endif
   } else {
     std::cout << "\nNote that you can use flag '-p LOG=true' to write logs of DSE"
               << std::endl;
