@@ -1416,12 +1416,12 @@ bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::vector< 
 
 	to->reset_computation();
 	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
-	std::cout << "calling csdf\n";
+	//std::cout << "calling csdf\n";
 	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling(to);
 	TIME_UNIT omega = scheduling_res.getGraphPeriod();
 	auto persched = scheduling_res.getTaskSchedule();
 
-	std::cout << "done done\n";
+	//std::cout << "done done\n";
 	VERBOSE_ASSERT(omega != std::numeric_limits<TIME_UNIT>::infinity(), "Infinite period, this dataflow does not schedule, thus I cannot merge anymore.");
 
 	TIME_UNIT mergeVtxDuration = NULL_DURATION;
@@ -1556,7 +1556,7 @@ bool mergeConfigNodes(models::Dataflow* d, std::string name , std::vector< ARRAY
 	VERBOSE_ASSERT(computeRepetitionVector(temp_d),"inconsistent graph");
 
 	VERBOSE_INFO ("STEP 2");
-	TOKEN_UNIT flow = (TOKEN_UNIT)mn_size, preload = 0, temp_flow = 0;
+	TOKEN_UNIT flow = (TOKEN_UNIT)mn_size, temp_flow = 0;
 	LARGE_INT gcd_value = 0, a, b;
 	//Find GCD value
 	for(int i = 0; i < mn_size; i++)
@@ -1770,7 +1770,7 @@ void removeOrphanNodes(models::Dataflow* to, vid_to_nocEid& vid_to_conflict_map,
 					if(it != conflictEdgeMap[eid].end())
 					{
 						conflictEdgeMap[eid].erase(it);
-						std::cout << "erasing " << vname << "\n";
+						//std::cout << "erasing " << vname << "\n";
 					}
 				}
 				removeme=true;
@@ -2175,7 +2175,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 	VERBOSE_INFO ( "done source conflict resolve" );
 
-	print_graph(to);
+	//print_graph(to);
 	for (auto vid : original_vertex_ids) 
 	{
 		auto dest = to->getVertexById(vid);
@@ -2197,7 +2197,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		if(retval)
 		{
 			removeOrphanNodes(to, vid_to_conflict_map, conflictEdges);
-			print_graph(to);
+			//print_graph(to);
 		}
 		/*{
 			to->reset_computation();
@@ -2218,14 +2218,14 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	// ###### Systematically merge configs because we can
 	// ############################################
 
-	print_graph(to);
+	//print_graph(to);
 
 	VERBOSE_INFO ("Call mergeConfigNodes");
 	int idx = 0;
 	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++) {
-		VERBOSE_INFO ("Working on merge " << idx++ << " over " << configs.size()) ;
+		std::cout << "Working on merge " << idx++ << " over " << configs.size() << "\n";
 		mergeConfigNodesInit(to, it->first, it->second);
-		print_graph(to);
+		//print_graph(to);
 	}
 	VERBOSE_INFO ("mergeConfigNodes Done.");
 	std::cout << "done merge conflict resolve\n";
