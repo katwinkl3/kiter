@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
 project(Kiter)
-enable_testing()
 
 #
 #  ######### GENERATOR PART ##########
@@ -34,31 +33,6 @@ ENDIF()
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/modules/")
 
-
-#  ######### BOOST ##########
-
-SET(Boost_USE_STATIC_LIBS  TRUE)
-FIND_PACKAGE( Boost 1.33.0 COMPONENTS  graph  system   unit_test_framework  QUIET) # remove REQUIRED to check by hand !
-
-
-IF (EXISTS "/usr/include/boost141/boost/")
-	SET(Boost_INCLUDE_DIR "/usr/include/boost141/")
-ENDIF()
-
-IF (NOT Boost_INCLUDE_DIR) 
-	MESSAGE( FATAL_ERROR "Boost includes not found !!") 
-ENDIF()
-	
-
-
-MESSAGE ( STATUS "Boost INCLUDES           = ${Boost_INCLUDE_DIR}" )
-MESSAGE ( STATUS "Boost VERSION            = ${Boost_VERSION}" )
-
-
-
-
-#  ######### LibXml2 PART ##########
-FIND_PACKAGE (LibXml2 REQUIRED)
 
 #
 #  ######### C++ FLAGS ##########
@@ -125,7 +99,8 @@ set(INCLUDE_OUTPUT_PATH    ${PROJECT_BINARY_DIR}/include/)
 #
 SET(KITER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/libkiter)
 
-ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/src/libkiter build_results/libkiter_binary_dir)
-ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/src/kiter build_results/kiter_binary_dir)
-ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/src/tests build_results/tests_binary_dir)
+ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/src build_results/src)
+
+enable_testing()
+ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/tests build_results/tests)
 

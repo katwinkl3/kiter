@@ -350,6 +350,12 @@ inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
 	inline 	void 					removeVertex		(const Vertex t) 		{
 		ASSERT_WRITABLE();
 		reset_computation();
+	    {ForInputEdges(this,t,e) {
+	    		    this->removeEdge(e);
+	    }}
+	    {ForOutputEdges(this,t,e) {
+	    		    this->removeEdge(e);
+	    }}
 		boost::remove_vertex(t.v,this->getG());
 	}
 	inline  void					removeEdge   		(const Edge c)			{
