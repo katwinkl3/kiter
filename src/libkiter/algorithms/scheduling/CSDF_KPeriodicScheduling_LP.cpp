@@ -251,6 +251,7 @@ models::Scheduling collect_lp_results (const commons::GLPSol &g, const models::D
 
 models::Scheduling  algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (const models::Dataflow* const dataflow, const periodicity_vector_t& kvector) {
 
+
     // STEP 0.1 - PRE
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
     VERBOSE_ASSERT(dataflow->is_repetition_vector(),"Please generate the repetition vector before using this function.");
@@ -258,6 +259,10 @@ models::Scheduling  algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (cons
     EXEC_COUNT sumKi = accumulate(kvector.begin(), kvector.end(), 0, [](int v, const periodicity_vector_t::value_type& p){return v + p.second;});
 
     VERBOSE_INFO("Start CSDF_KPeriodicScheduling_LP with SumKi=" << sumKi << " and sumNi=" << sumNi);
+
+    // We do not process empty graph.
+    if (dataflow->getVerticesCount() == 0) return models::Scheduling ();
+
     //##################################################################
     // Linear program generation
     //##################################################################

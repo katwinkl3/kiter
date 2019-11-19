@@ -6,25 +6,12 @@
  */
 
 #define BOOST_TEST_MODULE DataflowTest
-#include <boost/test/included/unit_test.hpp>
+#include "test_helper.h"
 
-#include <commons/verbose.h>
 #include <models/Dataflow.h>
 #include <printers/stdout.h>
 
-struct F {
-    F() {
-    	commons::set_verbose_mode(commons::INFO_LEVEL);
-    	BOOST_TEST_MESSAGE( "Setup Done" );
-    }
-    ~F()                    {
-    	BOOST_TEST_MESSAGE( "Teardown Done" );
-    }
-};
-
-
-
-BOOST_FIXTURE_TEST_SUITE( test_suite_create_dataflow , F)
+BOOST_FIXTURE_TEST_SUITE( test_suite_create_dataflow , WITH_VERBOSE)
 
 
 
@@ -65,7 +52,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 
-BOOST_FIXTURE_TEST_SUITE( test_suite_modify_dataflow , F)
+BOOST_FIXTURE_TEST_SUITE( test_suite_modify_dataflow , WITH_VERBOSE)
 
 BOOST_AUTO_TEST_CASE( test_remove_vertex )
 {

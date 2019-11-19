@@ -6,23 +6,12 @@
  */
 
 #define BOOST_TEST_MODULE EventGraphTest
-#include <boost/test/included/unit_test.hpp>
+#include "test_helper.h"
 
 #include <models/EventGraph.h>
 
-struct F {
-    F() {
-    	commons::set_verbose_mode(commons::INFO_LEVEL);
-    	BOOST_TEST_MESSAGE( "Setup Done" );
-    }
-    ~F()                    {
-    	BOOST_TEST_MESSAGE( "Teardown Done" );
-    }
-};
 
-
-
-BOOST_FIXTURE_TEST_SUITE( test_suite_create_eventgraph , F)
+BOOST_FIXTURE_TEST_SUITE( test_suite_create_eventgraph , WITH_VERBOSE)
 
 
 
