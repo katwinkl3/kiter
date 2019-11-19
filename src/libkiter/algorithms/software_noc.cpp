@@ -2284,6 +2284,14 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 	}
 
+
+	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
+	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling(to);
+	scheduling_t persched = scheduling_res.getTaskSchedule();
+	VERBOSE_INFO("findHP");
+	unsigned long LCM;
+	TIME_UNIT HP;
+	findHP(dataflow, to, persched, &HP, &LCM);
 }
 
 void algorithms::dynamic_noc(models::Dataflow* const  dataflow, parameters_list_t   param_list)
