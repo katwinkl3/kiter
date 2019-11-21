@@ -260,6 +260,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   std::string dirName = "./data/";
   std::string ppDirName = "pp_logs/"; // logs of pareto points
   std::string logDirName = "dse_logs/";
+  std::string debugXMLName = "xmls/";
   #ifdef WRITE_GRAPHS
   std::string dotfileDirName = "dotfiles/";
   #endif
@@ -319,6 +320,11 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
                                          checkDist.getInitialTokens(c))); // always account for initial tokens in buffer
         }
       }}
+
+    // UNCOMMENT TO WRITE XMLs OF EXPLORED GRAPHS
+    // commons::writeSDF3File(dirName + debugXMLName + "dse_min_distribution_" +
+    // 			   dataflow_prime->getName() + "_kiter" + std::to_string(computation_counter) +
+    // 			   ".xml", dataflow_prime);
 
     // Compute throughput and storage deps
     auto startTime = std::chrono::steady_clock::now();

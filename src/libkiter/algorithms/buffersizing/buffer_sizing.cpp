@@ -419,7 +419,7 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
   
   {ForEachEdge(dataflow, c) {
       // initialise channel size to maximum int size
-      minChannelSizes[c].second = ULONG_MAX; // NOTE (should use ULONG_MAX but it's a really large value)
+      minChannelSizes[c].second = INT_MAX; // NOTE (should use ULONG_MAX but it's a really large value)
       TOKEN_UNIT ratePeriod = (TOKEN_UNIT) boost::math::gcd(dataflow->getEdgeInPhasesCount(c),
                                                             dataflow->getEdgeOutPhasesCount(c));
       
