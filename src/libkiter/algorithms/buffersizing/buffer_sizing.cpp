@@ -283,7 +283,9 @@ void StorageDistributionSet::minimizeStorageDistributions(StorageDistribution ne
   // get distribution size and throughput early to avoid repeated function calls
   TOKEN_UNIT newDistSz = newDist.getDistributionSize();
   TIME_UNIT newThr = newDist.getThroughput();
-
+  // make copy of minimal distribution set
+  std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
+  
   // remove non-minimal storage distributions
   /* NOTE: we don't need to update the p_max values here as the conditions ensure
      that we always store the max throughput with the minimum distribution size
@@ -291,7 +293,7 @@ void StorageDistributionSet::minimizeStorageDistributions(StorageDistribution ne
      distribution with an absurdly high distribution size and thus get max 
      throughput --- that is, we will only need to consider updating p_max outside
      of the addStorageDistribution function if we don't increment by minStepSizes */
-  for (auto &distribution_sz : this->set) {
+  for (auto &distribution_sz : reference_set) {
     for (auto &storage_dist : distribution_sz.second) {
       if ((newDistSz > storage_dist.getDistributionSize() &&
            (newThr < storage_dist.getThroughput() ||
