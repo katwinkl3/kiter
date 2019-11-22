@@ -58,6 +58,7 @@ sdfg_designflow_case_study.zip
 /*.png
 /*.dot
 /Debug/
+/Release/
 /Testing/
 CSDF_KPeriodicScheduling_*.xml
 software_noc_*.xml
