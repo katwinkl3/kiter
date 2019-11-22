@@ -81,6 +81,8 @@ void                        readSDF3OutputSpec      (models::Dataflow *to, const
 		periodic_cons.push_back(commons::fromString<TOKEN_UNIT>(periodic_phases[i-1]));
 	}
 
+	VERBOSE_ASSERT(periodic_cons.size() > 0, "Edges output rates must have a periodic pattern. ");
+
 	to->setEdgeOutInitPhases(c,init_cons);
 	to->setEdgeOutPhases(c,periodic_cons);
 
@@ -102,6 +104,7 @@ void                        readSDF3InputSpec      (models::Dataflow *to, const 
 		periodic_prod.push_back(commons::fromString<TOKEN_UNIT>(periodic_phases[i-1]));
 	}
 
+	VERBOSE_ASSERT(periodic_prod.size() > 0, "Edges input rates must have a periodic pattern. ");
 	to->setEdgeInInitPhases(c,init_prod);
 	to->setEdgeInPhases(c,periodic_prod);
 
