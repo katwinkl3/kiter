@@ -168,6 +168,7 @@ scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<
     models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
 
     TIME_UNIT omega = 1 / throughput ;
+    VERBOSE_INFO("Compute starts "  );
     eg->computeStartingTimeWithOmega (omega);
 
 

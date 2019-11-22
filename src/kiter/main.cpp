@@ -90,8 +90,8 @@ std::vector<algo_t> algorithmslist = {
 
 
 		// Recent stuff
-		{ "LP1" , "Rewriting Bodin2013 Threshold CSDF Periodic Scheduling", algorithms::scheduling::CSDF_1PeriodicScheduling_LP},
-		{ "LPN" , "Rewriting Bodin2013 Threshold CSDF Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling_LP},
+		{ "LP1" , "Rewriting Bodin2016 Threshold CSDF 1-Periodic Scheduling", algorithms::scheduling::CSDF_1PeriodicScheduling_LP},
+		{ "LPN" , "Rewriting Bodin2016 Threshold CSDF N-Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling_LP},
 		{ "EGN" , "Rewriting Bodin2013 Threshold CSDF Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling}
 
 
