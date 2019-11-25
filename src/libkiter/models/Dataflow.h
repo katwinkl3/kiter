@@ -625,18 +625,18 @@ public :
 
 
 
-    inline  TOKEN_UNIT          getEdgeOutPhase   (const Edge c, EXEC_COUNT k)  const  {
+    inline  TOKEN_UNIT          getEdgeOutPhase   (const Edge c, PHASE_INDEX k)  const  {
 
-    	if (boost::get(get(boost::edge_outputs, this->getG()), c.e).size() < k) {
-            VERBOSE_ERROR("k value ("<< k << ") is too high (output list is about "<< boost::get(get(boost::edge_outputs, this->getG()), c.e).size() <<" values ).");
-            VERBOSE_FAILURE();
-        }
 
 
     	if (k <= 0 ) {
   		  return getEdgeOutInitPhase(c, k + boost::get(get(boost::edge_init_outputs, this->getG()), c.e).size());
     	}
 
+    	if ((PHASE_INDEX)  boost::get(get(boost::edge_outputs, this->getG()), c.e).size() < k) {
+            VERBOSE_ERROR("k value ("<< k << ") is too high (output list is about "<< boost::get(get(boost::edge_outputs, this->getG()), c.e).size() <<" values ).");
+            VERBOSE_FAILURE();
+        }
 
 
         return boost::get(get(boost::edge_outputs, this->getG()), c.e).at(k-1);
@@ -657,7 +657,7 @@ public :
     	this->setPhasesQuantity(this->getEdgeTarget(c),l.size());
     }
 
-    inline  TOKEN_UNIT          getEdgeOutInitPhase   (const Edge c, EXEC_COUNT k)  const  {
+    inline  TOKEN_UNIT          getEdgeOutInitPhase   (const Edge c, PHASE_INDEX k)  const  {
         if (boost::get(get(boost::edge_init_outputs, this->getG()), c.e).size() < k) {
             VERBOSE_ERROR("k value ("<< k << ") is too high (init output list is about "<< boost::get(get(boost::edge_init_outputs, this->getG()), c.e).size() <<" values ).");
             VERBOSE_FAILURE();
@@ -680,16 +680,16 @@ public :
 
 
     inline  TOKEN_UNIT          getEdgeIn    (const Edge c)  		       const   {return boost::get(get(boost::edge_total_input, this->getG()), c.e);}
-    inline  TOKEN_UNIT          getEdgeInPhase    (const Edge c, EXEC_COUNT k)  const  {
+    inline  TOKEN_UNIT          getEdgeInPhase    (const Edge c, PHASE_INDEX k)  const  {
 
-    	if (boost::get(get(boost::edge_inputs, this->getG()), c.e).size() < k) {
-    		VERBOSE_ERROR("k value ("<< k << ") is too high (input list is about "<< boost::get(get(boost::edge_inputs, this->getG()), c.e).size() <<" values ).");
-    		VERBOSE_FAILURE();
-    	}
 
     	if (k <= 0 ) {
   		  return getEdgeInInitPhase(c, k + boost::get(get(boost::edge_init_inputs, this->getG()), c.e).size());
     	}
+       	if ((PHASE_INDEX) boost::get(get(boost::edge_inputs, this->getG()), c.e).size() < k) {
+        		VERBOSE_ERROR("k value ("<< k << ") is too high (input list is about "<< boost::get(get(boost::edge_inputs, this->getG()), c.e).size() <<" values ).");
+        		VERBOSE_FAILURE();
+        	}
 
     	return boost::get(get(boost::edge_inputs, this->getG()), c.e).at(k-1);
     }
@@ -710,7 +710,7 @@ public :
        	this->setPhasesQuantity(this->getEdgeSource(c),l.size());
        }
 
-       inline  TOKEN_UNIT          getEdgeInInitPhase    (const Edge c, EXEC_COUNT k)  const  {
+       inline  TOKEN_UNIT          getEdgeInInitPhase    (const Edge c, PHASE_INDEX k)  const  {
               if (boost::get(get(boost::edge_init_inputs, this->getG()), c.e).size() < k) {
                   VERBOSE_ERROR("k value ("<< k << ") is too high (input list is about "<< boost::get(get(boost::edge_init_inputs, this->getG()), c.e).size() <<" values ).");
                   VERBOSE_FAILURE();

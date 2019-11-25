@@ -1017,7 +1017,7 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 
 		////PLLLEASE DONT CHANGE THE "mid-" value in the name"
 		std::stringstream ss;
-		ss << "mid-" << source << "," << target << "-" << e;
+		ss << "mid-" << source << "-" << target << "_" << e;
 
 		returnValue[(unsigned int)e].push_back(  d->getVertexId(middle)  );
 		vid_to_conflict_map[ d->getVertexId(middle) ] = (unsigned int)e;
@@ -1059,7 +1059,7 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 		{
 			std::stringstream config_key, config_name;
 			config_key << list[list_idx] << "_" << list[list_idx+1];
-			config_name << "cfg-" << source << "," << target << "-" << list[list_idx] << "_" << list[list_idx+1];
+			config_name << "cfg-" << source << "_" << target << "-" << list[list_idx] << "_" << list[list_idx+1];
 
 
 			auto vtx = d->addVertex();
@@ -1937,7 +1937,7 @@ void printTasks(models::Dataflow* to)
 }
 
 
-void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched, TIME_UNIT* HP, unsigned long* LCM)
+void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched, TIME_UNIT* HP, EXEC_COUNT* LCM)
 {
 	//fins ratio between orig and new graph for the nodes
 	float ratio = -1;
@@ -1971,7 +1971,7 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 		*LCM = boost::math::lcm(*LCM, to->getNi(task_vtx));
 
 	}
-	*LCM = boost::math::lcm(*LCM, (unsigned long)*HP);
+	*LCM = boost::math::lcm(*LCM, (EXEC_COUNT)*HP);
 }
 
 
@@ -2184,7 +2184,7 @@ void software_noc_bufferless_skipinit(models::Dataflow* const  dataflow)
 		models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling(to);
 		scheduling_t persched = scheduling_res.getTaskSchedule();
 		VERBOSE_INFO("findHP");
-		unsigned long LCM;
+		EXEC_COUNT LCM;
 		TIME_UNIT HP;
 		findHP(dataflow, to, persched, &HP, &LCM);
 		to->reset_computation();
@@ -2300,7 +2300,7 @@ void software_noc_bufferless_skipinit(models::Dataflow* const  dataflow)
 	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling(to);
 	scheduling_t persched = scheduling_res.getTaskSchedule();
 	VERBOSE_INFO("findHP");
-	unsigned long LCM;
+	EXEC_COUNT LCM;
 	TIME_UNIT HP;
 	findHP(dataflow, to, persched, &HP, &LCM);
 
@@ -2377,9 +2377,12 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	}
 
 
+
 	// ###### At this pint, we have a SDFG with artefacts for network.
 	VERBOSE_INFO ("adding path nodes done");
 	std::cout << "done addpath\n";
+
+	print_graph(to);
 
 	//resolve cnflicts for all the  (a) sources that sent data to multiple nodes. 
 	//				(b) destinations that receive data from multiple nodes.
@@ -2392,6 +2395,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	for (auto vid : original_vertex_ids) {
 		auto src = to->getVertexById(vid);
 		resolveSrcConflicts(to, src, original_vertex_ids);
+		print_graph(to);
 	}
 	std::cout << "done sourceconflict\n";
 
@@ -2411,6 +2415,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	VERBOSE_INFO ( "done source conflict resolve" );
 
 	//print_graph(to);
+#ifdef WITH_DEST_CONFLICT
 	for (auto vid : original_vertex_ids) 
 	{
 		auto dest = to->getVertexById(vid);
@@ -2437,7 +2442,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	}
 	std::cout << "done destconflict\n";
 	VERBOSE_INFO ( "done dest conflict resolve" ) ;
-
+#endif
 
 	// ###### Systematically merge configs because we can
 	// ############################################
@@ -2449,7 +2454,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++) {
 		std::cout << "Working on merge " << idx++ << " over " << configs.size() << "\n";
 		mergeConfigNodesInit(to, it->first, it->second);
-		//print_graph(to);
+		print_graph(to);
 	}
 	VERBOSE_INFO ("mergeConfigNodes Done.");
 	std::cout << "done merge conflict resolve\n";
@@ -2462,13 +2467,13 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		if(cf_it != conflictEdges.end())
 	 		conflictEdges.erase(cf_it);
 
-
+#ifdef WITH_DEST_CONFLICT
 		auto mysize = routes[it.first].size() - 1;
 		auto end_id = routes[it.first][mysize];
 		auto cf_it2 = conflictEdges.find((unsigned int)end_id);
 		if(cf_it2 != conflictEdges.end())
 	 		conflictEdges.erase(cf_it2);
-
+#endif
 	}
 
 	VERBOSE_INFO("resolving conflicts done");
@@ -2515,7 +2520,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling(to);
 	scheduling_t persched = scheduling_res.getTaskSchedule();
 	VERBOSE_INFO("findHP");
-	unsigned long LCM;
+	EXEC_COUNT LCM;
 	TIME_UNIT HP;
 	findHP(dataflow, to, persched, &HP, &LCM);
 }

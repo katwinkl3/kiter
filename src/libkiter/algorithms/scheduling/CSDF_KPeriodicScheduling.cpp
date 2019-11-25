@@ -88,7 +88,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
     ////////////// SCHEDULE CALL // END
 
 
-    VERBOSE_INFO("Iteration "<< std::fixed << std::setw( 4 ) << iteration_count <<  "      period = "  << std::fixed << std::setw( 15 ) << std::setprecision( 2 ) << 1.0/result.first  <<  "      complexity = "  << std::setw( 4 )  << (sumKi * 100) / sumNi );
+    VERBOSE_INFO("Iteration "<< std::fixed << std::setw( 4 ) << iteration_count <<  "      period = "  << std::fixed << std::setw( 15 ) << std::setprecision( 2 ) << 1.0/result.first  <<  "      complexity = "  << std::setw( 4 )  << (sumNi ?  ((sumKi * 100) / sumNi) : 0));
 
     if (result.second.size() != 0) {
 

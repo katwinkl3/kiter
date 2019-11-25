@@ -36,7 +36,7 @@ bool operator<(const boost::detail::edge_desc_impl<boost::bidirectional_tag, uns
 }
 
 typedef               long int  PHASE_INDEX;
-typedef unsigned      long int  EXEC_COUNT;
+typedef               long int  EXEC_COUNT;
 typedef               long int  TOKEN_UNIT;
 typedef               long int  DATA_UNIT;
 typedef unsigned      long int  ARRAY_INDEX;
@@ -234,8 +234,8 @@ inline std::string ConvertRGBtoHex(int r, int g, int b) {
  */
 TIME_UNIT roundIt(TIME_UNIT val,TIME_UNIT p);
 //
-std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
-std::vector<std::string> split(const std::string &s, char delim) ;
+std::vector<std::string> &split(const std::string &s, const char delim, std::vector<std::string> &elems);
+std::vector<std::string> split(const std::string &s, const char delim) ;
 std::vector<std::string> splitSDF3List(const std::string &s);
 
 int fibo (int index);

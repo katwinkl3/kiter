@@ -147,7 +147,7 @@ bool is_readable( const std::string & file )
      return elems;
  }
 
- std::vector<std::string> split(const std::string &s, char delim) {
+ std::vector<std::string> split(const std::string &s, const char delim) {
      std::vector<std::string> elems;
      return split(s, delim, elems);
  }

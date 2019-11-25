@@ -87,6 +87,8 @@ std::vector<algo_t> algorithmslist = {
 
 		// Trasnformation
 		{ "Merge" , "Merging tasks using Kperiodic scheduling and Initialization phases", algorithms::transformation::merge_tasks},
+		{ "bugfix" , "A bugfix tool that try to reduce the size of a graph while keeping anomaly between kiter and SDF3", algorithms::transformation::compare_sdf3_throughput},
+		{ "remove" , "Remove tasks with the name or the id specified", algorithms::transformation::remove_task},
 
 
 		// Recent stuff

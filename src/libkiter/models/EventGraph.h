@@ -369,11 +369,11 @@ public :
 
         VERBOSE_DEBUG("computeStartingTime omega = " << omega);
 
-        const EXEC_COUNT nb_vertices = this->getEventCount();
-
         VERBOSE_DEBUG("computeStartingTime setFlow");
         {ForEachConstraint(this,e)   {
-            this->setFlow(e, ( this->getDuration(e)  - omega * this->getWeight(e)));
+            auto flow = ( this->getDuration(e)  - omega * this->getWeight(e));
+            VERBOSE_EXTRA_DEBUG(" Edge " << e << ":" << this->getConstraint(e).toString() << " Flow = " << flow);
+            this->setFlow(e, flow );
         }}
         // gets the weight property
         //boost::property_map<BoostEventGraph, boost::edge_flow_t>::type weight_pmap = get(boost::edge_flow_t(), g);
@@ -382,32 +382,39 @@ public :
         VERBOSE_DEBUG("computeStartingTime initStartingTime");
         bool first = true;
         {ForEachEvent(this,e)   {
-            this->setStartingTime(e,(std::numeric_limits<TIME_UNIT>::min)());
+        	auto startingtime = - std::numeric_limits<TIME_UNIT>::infinity();
             if (first) {
                 first = false;
-                this->setStartingTime(e,0);
+                startingtime = 0;
             }
+            this->setStartingTime(e,startingtime);
+            VERBOSE_EXTRA_DEBUG(" Event " << e << ":" << this->getEvent(e).toString() << " Start = " << startingtime);
         }}
 
-        VERBOSE_DEBUG("computeStartingTime parent");
-        // init the predecessors (identity function)
-        std::vector<std::size_t> parent(nb_vertices);
-        for (EXEC_COUNT i = 0; i < nb_vertices; ++i) {
-            parent[i] = i;
-        }
-
-
-        VERBOSE_DEBUG("computeStartingTime getStartingTime with " <<  this->getEventCount() << "eventCount");
-        for (EXEC_COUNT i = 0 ; i < this->getEventCount() ; i ++ )
+        VERBOSE_DEBUG("computeStartingTime getStartingTime with " <<  this->getEventCount() << " eventCount");
+        for (EXEC_COUNT i = 0 ; i < this->getEventCount() ; i ++ ) {
+        	bool updated = false;
             {ForEachEvent(this,event1)   {
-                {ForEachOutputs(this,event1,constraint){
+                VERBOSE_EXTRA_DEBUG("Look for " << event1 << " outputs");
+            	{ForEachOutputs(this,event1,constraint){
                     models::EventGraphVertex event2 =this->getTarget(constraint);
+                    auto previous_start1 = this->getStartingTime(event1);
+                    auto previous_start2 = this->getStartingTime(event2);
+                    VERBOSE_EXTRA_DEBUG("  test " << event2 << " Start from " << previous_start2 << " to " << this->getFlow(constraint) << "+" <<  previous_start1);
+
                     if (this->getStartingTime(event2) - this->getStartingTime(event1) < this->getFlow(constraint)) {
                         this->setStartingTime(event2, this->getFlow(constraint) + this->getStartingTime(event1));
+                        VERBOSE_EXTRA_DEBUG("   Update " << event2 << " Start from " << previous_start2 << " to " << this->getFlow(constraint) << "+" <<  previous_start1);
+
+                        updated = true;
                     }
                 }}
             }}
-
+            if (!updated) {
+            	VERBOSE_EXTRA_DEBUG("  No nore updates.");
+            	break;
+            }
+        }
 
 
         VERBOSE_DEBUG("computeStartingTime min_time ");
@@ -418,18 +425,17 @@ public :
         {ForEachEvent(this,e)   {
             min_time = std::min (min_time , this->getStartingTime(e));
         }}
-        {ForEachEvent(this,e)   {
-            this->setStartingTime(e , this->getStartingTime(e)  - min_time);
-        }}
-        {ForEachConstraint(this,c)   {
-        	VERBOSE_DEBUG("distance(" << this->getConstraint(c).toString() << ") = " << this->getFlow(c));
 
-        }}
-        VERBOSE_DEBUG("min_time = " << min_time);
+        VERBOSE_DEBUG(" min_time = " << min_time);
+
         {ForEachEvent(this,e)   {
-        	VERBOSE_DEBUG("distance(" << this->getEvent(e).toString() << ") = " <<  this->getStartingTime(e) - min_time);
+        	auto old_start = this->getStartingTime(e);
+        	auto new_start = old_start  - min_time ;
+            VERBOSE_EXTRA_DEBUG("  Event " << e << ":"<< this->getEvent(e).toString() << " Adjusted Start from " << old_start << " to " << new_start );
+            this->setStartingTime(e , new_start);
         }}
-        VERBOSE_DEBUG("end of compute starts.");
+
+        VERBOSE_DEBUG("End of compute starts.");
         return true;
 
     }
