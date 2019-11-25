@@ -335,7 +335,7 @@ inline 	Vertex 				addVertex			() 							{
 	Vertex nt = Vertex(boost::add_vertex(this->getG()));
 	//std::cout << "orig:" << nt << ",vtx_id:" << auto_vertex_num << "\n";
 	this->setVertexIdUnsafe(nt,auto_vertex_num++);
-
+	this->setVertexName(nt,"Vertex" + std::to_string(this->getVertexId(nt)));
 	return nt;
 }
 inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
@@ -343,6 +343,7 @@ inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
 	reset_computation();
 	Vertex nt = Vertex(boost::add_vertex(this->getG()));
 	this->setVertexId(nt,id);
+	this->setVertexName(nt,"Vertex" + std::to_string(this->getVertexId(nt)));
 	return nt;}
 
 
@@ -461,8 +462,17 @@ public :
     inline  ARRAY_INDEX         getMaxEdgeId ()                  const     {return auto_edge_num; }
     inline  ARRAY_INDEX         getMaxVertexId    ()            const           {return auto_vertex_num; }
     inline  void                setVertexName   (const Vertex t,
-                                                 const std::string name)    {					ASSERT_WRITABLE();
-                                     			reset_computation();boost::put(boost::vertex_name, this->getG(), t.v, name);}
+                                                 const std::string name)    {
+    	ASSERT_WRITABLE();
+    	reset_computation();
+    	try {
+    		Vertex other = this->getVertexByName(name);
+    		VERBOSE_ASSERT(other == t , "Cannot name two vertex the same.");
+    	} catch (std::out_of_range& e) {
+
+    	}
+    	boost::put(boost::vertex_name, this->getG(), t.v, name);
+    }
     inline  const std::string   getVertexName   (const Vertex t)      const {return boost::get(get(boost::vertex_name, this->getG()), t.v);}
     inline  Vertex              getVertexByName (const std::string s) const
                                                 throw   (std::out_of_range)  {ForEachVertex(this,pVertex) {if (this->getVertexName(pVertex) == s)return pVertex;};throw std::out_of_range(TXT_TASK_NOT_FOUND + s);}

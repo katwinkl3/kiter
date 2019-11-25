@@ -14,7 +14,7 @@
 
 struct WITH_VERBOSE {
 	WITH_VERBOSE() {
-    	commons::set_verbose_mode(commons::INFO_LEVEL);
+    	commons::set_verbose_mode(commons::DEBUG_LEVEL);
     	BOOST_TEST_MESSAGE( "Setup Done" );
     }
     ~WITH_VERBOSE()                    {
