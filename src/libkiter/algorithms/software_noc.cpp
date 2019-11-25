@@ -1972,6 +1972,7 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 
 	}
 	*LCM = boost::math::lcm(*LCM, (EXEC_COUNT)*HP);
+
 }
 
 
@@ -2523,6 +2524,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	EXEC_COUNT LCM;
 	TIME_UNIT HP;
 	findHP(dataflow, to, persched, &HP, &LCM);
+	print_graph(to);
 }
 
 void algorithms::dynamic_noc(models::Dataflow* const  dataflow, parameters_list_t   param_list)

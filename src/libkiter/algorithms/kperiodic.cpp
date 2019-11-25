@@ -124,39 +124,8 @@ void algorithms::print_kperiodic_expansion_graph    (models::Dataflow* const  da
 
 models::Scheduling period2Scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) {
 
-	VERBOSE_INFO("Run period2Scheduling...");
-	scheduling_t scheduling_result;
-
-    models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
-
     TIME_UNIT omega = 1 / throughput ;
-    eg->computeStartingTimeWithOmega (omega);
-
-
-    {ForEachEvent(eg,e) {
-        models::SchedulingEvent se = eg->getEvent(e);
-        EXEC_COUNT ti = se.getTaskId();
-        Vertex v = dataflow->getVertexById(ti);
-        TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
-        scheduling_result[dataflow->getVertexId(v)].first = period;
-
-        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " " << period  );
-
-    }}
-
-    {ForEachEvent(eg,e) {
-        models::SchedulingEvent se = eg->getEvent(e);
-        EXEC_COUNT ti = se.getTaskId();
-        TIME_UNIT start = eg->getStartingTime(e);
-        Vertex v = dataflow->getVertexById(ti);
-        scheduling_result[dataflow->getVertexId(v)].second.push_back( start );
-        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " " << start  );
-
-
-    }}
-
-
-
+    scheduling_t scheduling_result = period2scheduling    (dataflow, kvector ,  throughput) ;
 	return models::Scheduling(dataflow, omega, scheduling_result);
 }
 
@@ -191,7 +160,7 @@ scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<
 
     	        TIME_UNIT start = eg->getStartingTime(se);
     	        scheduling_result[tid].second.push_back( start );
-    	        VERBOSE_DEBUG("  - Start " << se << ":" << start  );
+    	        VERBOSE_DEBUG("  - Start ki=" << ki << " pi=" << pi << " se=" << se << ":" << start  );
 
     		}
     	}
@@ -1543,7 +1512,8 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 					auto task = key.first;
 					auto task_vtx = dataflow->getVertexById(key.first);
 					VERBOSE_INFO(  "Task " <<  dataflow->getVertexName(task_vtx)
-							<<  " : duration=" << dataflow->getVertexTotalDuration(task_vtx)
+							<<  " : duration=" << commons::toString(dataflow->getVertexInitPhaseDuration(task_vtx))
+							<< ";" << commons::toString(dataflow->getVertexPhaseDuration(task_vtx))
 							<<  " period=" <<  persched[task].first
 							<<  " Ni=" << dataflow->getNi(task_vtx)
 							<<  " starts=[ " << commons::toString(persched[task].second) << "]");
