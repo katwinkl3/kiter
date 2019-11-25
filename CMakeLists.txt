@@ -79,8 +79,8 @@ endif()
 endif()
 
 # -g in debug mode
-SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O3 -std=c++11")
-# -fno-inline  -fno-default-inline
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -std=c++11 -fno-inline  -fno-default-inline -Wextra -fno-inline-small-functions")
+# -fno-inline  -fno-default-inline -Wextra -fno-inline-small-functions
 
 # -O3 in normal mode
 SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -std=c++11") #-Ofast -fno-signed-zeros -mtune=native -fno-signaling-nans -fno-trapping-math -fno-math-errno
