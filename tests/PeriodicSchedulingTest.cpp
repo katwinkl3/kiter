@@ -17,7 +17,7 @@ BOOST_FIXTURE_TEST_SUITE( test_suite_one_periodic , WITH_VERBOSE)
 
 
 
-BOOST_AUTO_TEST_CASE( test_scheduling_empty_dataflow )
+BOOST_AUTO_TEST_CASE( test_scheduling_simple_dataflow )
 {
     models::Dataflow* g = new models::Dataflow(0);
 

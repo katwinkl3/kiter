@@ -381,8 +381,11 @@ public :
 
         VERBOSE_DEBUG("computeStartingTime initStartingTime");
         bool first = true;
+        //TIME_UNIT defaultmin = - std::numeric_limits<TIME_UNIT>::infinity();
+        TIME_UNIT defaultmin = 0;
+
         {ForEachEvent(this,e)   {
-        	auto startingtime = - std::numeric_limits<TIME_UNIT>::infinity();
+        	auto startingtime = defaultmin;
             if (first) {
                 first = false;
                 startingtime = 0;
