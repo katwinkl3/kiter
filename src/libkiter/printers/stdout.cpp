@@ -223,8 +223,8 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
       returnStream << "    label=\"" << bl
     		  	  << "\nid:" << eid
 				  << "\npreload:"  << commons::toString(dataflow->getPreload(c)) << "\"," << std::endl;
-      returnStream << "    headlabel=\"" <<  commons::toString(dataflow->getEdgeOutVector(c)) << "\"," << std::endl;
-      returnStream << "    taillabel=\"" <<  commons::toString(dataflow->getEdgeInVector(c)) << "\"," << std::endl;
+      returnStream << "    headlabel=\"" <<  commons::toString(dataflow->getEdgeInitOutVector(c)) << ";" <<  commons::toString(dataflow->getEdgeOutVector(c)) << "\"," << std::endl;
+      returnStream << "    taillabel=\"" <<  commons::toString(dataflow->getEdgeInitInVector(c)) << ";" <<  commons::toString(dataflow->getEdgeInVector(c)) << "\"," << std::endl;
       returnStream << " ] ;" << std::endl;
     }}
   returnStream << std::endl;
@@ -270,7 +270,7 @@ void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list
               {ForEachTask(dataflow,t) {
 
                   std::cout << "  - "
-                		  << std::setw(20) << dataflow->getVertexName(t)
+                		  << std::setw(20) << dataflow->getVertexName(t) << "(" << dataflow->getVertexId(t) << ")"
                           << " T= " << std::fixed << std::setw(20) << dataflow->getVertexTotalDuration(t)
                 		  << " N=" << std::setw(5)<< dataflow->getNi(t)
                 		  << " P=" << std::setw(5)<< dataflow->getPhasesQuantity(t)
