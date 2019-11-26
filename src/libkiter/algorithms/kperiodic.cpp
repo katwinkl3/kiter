@@ -501,7 +501,7 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
     EXEC_COUNT current = 0;
     for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
         current ++ ;
-        if (verbose) {std::cout << "\rdelete edges ... " << std::setw(3) << ((current* 100)  / (total))   << "%" << std::setw( 11 ) << " ";std::cout.flush();}
+
         Vertex source = dataflow->getEdgeSource(*it);
         EXEC_COUNT ki = oldkvector->at(source);
         EXEC_COUNT newki =  kvector.at(source);
@@ -530,7 +530,7 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
     current = 0;
 
     for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
-        if (verbose) {std::cout << "\rreentrency edges ... " << std::setw(3) << ((current* 100)  / (total) ) << "%" << std::setw( 11 ) << " ";std::cout.flush();}
+
         current ++ ;
         Vertex t = dataflow->getEdgeSource(*it);
 
@@ -557,7 +557,7 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
 
     current = 0;
     for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end() ; it++) {
-        if (verbose) {std::cout << "\rconstraint edges ... " << std::setw(3) << ((current* 100)  / (total) )  << "% (" << std::setw( 11 ) << total << " edges)";std::cout.flush();}
+
         current ++ ;
         std::set<Edge>::iterator it_previous = it;
         if (it == cc->begin())  {
@@ -597,7 +597,7 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
         oldkvector->at(it->first) = kvector.at(it->first);
     }
 
-    if (verbose) {std::cout << "End of generation" << std::setw(30)  << "\r";std::cout.flush();}
+
 
 
     return g;
