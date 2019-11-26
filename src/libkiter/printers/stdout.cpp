@@ -20,7 +20,7 @@ std::string add_block ( std::string name , TIME_UNIT start, TIME_UNIT duration, 
 		return returnStream.str();
 }
 
-std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  dataflow, std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> periodic_scheduling , bool full,  double xscale , double yscale ) {
+std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  dataflow, std::map<ARRAY_INDEX,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> periodic_scheduling ,   TIME_UNIT last_execution_end_at, bool full,  double xscale , double yscale ) {
 
   std::ostringstream returnStream;
 
@@ -36,13 +36,15 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
   returnStream << "digraph {\n" << std::endl;
   returnStream << "graph [sep = \"0\", nodesep = \"0\"];" << std::endl;
 
-  TIME_UNIT last_execution_end_at = 0;
+
+  if (last_execution_end_at == 0)
   {ForEachVertex(dataflow,t) {
-  	  VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
+      auto tid = dataflow->getVertexId(t); 
+      //VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
   	  auto Ni = dataflow->getNi(t);
-  	  auto period = periodic_scheduling[t].first;
+  	  auto period = periodic_scheduling[tid].first;
   	  auto duration = dataflow->getVertexTotalDuration(t);
-  	  auto starts = periodic_scheduling[t].second;
+  	  auto starts = periodic_scheduling[tid].second;
 
         for (EXEC_COUNT iter = 0 ; iter < (Ni/starts.size()) ; iter++) {
       	  for (auto  start : starts) {
@@ -54,11 +56,12 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
 
   double idx = 0;
   {ForEachVertex(dataflow,t) {
-	  VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
+      auto tid = dataflow->getVertexId(t); 
+      //VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
 	  auto Ni = dataflow->getNi(t);
-	  auto period = periodic_scheduling[t].first;
+	  auto period = periodic_scheduling[tid].first;
 	  auto duration = dataflow->getVertexTotalDuration(t);
-	  auto starts = periodic_scheduling[t].second;
+	  auto starts = periodic_scheduling[tid].second;
 
 	  double current_task_y_pos = yscale * -20 * idx ;
 

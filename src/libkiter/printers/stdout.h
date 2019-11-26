@@ -12,11 +12,12 @@
 #include <commons/commons.h>
 #include <string>
 #include <models/Dataflow.h>
+#include <models/Scheduling.h>
 
 
 namespace printers {
 std::string GenerateDOT       (models::Dataflow* const  dataflow  );
-std::string PeriodicScheduling2DOT    (models::Dataflow* const  dataflow, std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> periodic_scheduling,  bool full , double xscale , double yscale );
+std::string PeriodicScheduling2DOT    (models::Dataflow* const  dataflow, scheduling_t periodic_scheduling,   TIME_UNIT last_execution_end_at,  bool full , double xscale , double yscale );
 void printGraph         (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
 void printGraphAsKiterScript (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
 void printInfos         (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());

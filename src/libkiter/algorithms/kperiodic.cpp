@@ -1333,10 +1333,15 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
 void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const dataflow, parameters_list_t  parameters  ) {
 
 
-	  bool do_buffer_less =    (parameters.find("do_buffer_less") != parameters.end() ) ;
+  bool do_buffer_less =    (parameters.find("do_buffer_less") != parameters.end() ) ;
 
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
+    TIME_UNIT end_of_sched = 0;
+    if (parameters.find("END") != parameters.end() ) {
+      end_of_sched = commons::fromString<TIME_UNIT>(parameters["END"]);
+    }
+    
     bool verbose = false;
     if (parameters.find("PRINT") != parameters.end() ) {
         verbose = true;
@@ -1405,9 +1410,6 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
     ////////////// SCHEDULE CALL // END
 
 
-    if (verbose) {
-        std::cout << "Iteration "<< std::fixed << std::setw( 4 ) << iteration_count <<  "      period = "  << std::fixed << std::setw( 15 ) << std::setprecision( 2 ) << 1.0/result.first  <<  "      complexity = "  << std::setw( 4 )  << (sumKi * 100) / sumNi << std::endl ;
-    }
 
     if (result.second.size() != 0) {
 
@@ -1473,14 +1475,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 
 
 
-            if (verbose) {
-                sumKi = 0;
-                {ForEachVertex(dataflow,t) {
-                    sumKi += kvector[t];
-                }}
-
-                std::cout << "Iteration "<< std::fixed << std::setw( 4 ) << iteration_count <<  "      period = "  << std::fixed << std::setw( 15 ) << std::setprecision( 2 ) << 1.0/result.first  <<  "      complexity = "  << std::setw( 4 )  << (sumKi * 100) / sumNi << std::endl ;
-            }
+         
 
         }
 
@@ -1502,9 +1497,14 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
     VERBOSE_INFO("K-periodic schedule - total_ki=" << sumKi << " total_ni=" << sumNi );
 
     TIME_UNIT res = result.first;
-    std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
-    std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
-
+    if (verbose) {
+      scheduling_t persched = period2scheduling    (dataflow,  kvector , res);
+      std::cout << printers::PeriodicScheduling2DOT    ( dataflow,persched  , end_of_sched , true, 1 , 1  ) ;
+    } else {
+	std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
+	std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
+      }
+    
     if (VERBOSE_IS_INFO()) {
 		scheduling_t persched = period2scheduling    (dataflow,  kvector , res);
 
