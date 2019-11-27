@@ -1966,7 +1966,7 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 		for(int i = 0; i < (int)persched[task].second.size(); i++)
 			ss << std::setprecision(13) << persched[task].second[i] << " ";
 
-		*HP =    ( persched[task].first * to->getNi(task_vtx) ) / new_ratio * (persched[task].second.size()) ;
+		*HP =    ( persched[task].first * to->getNi(task_vtx) ) / (new_ratio * (persched[task].second.size())) ;
 		VERBOSE_INFO ( "Task " <<  to->getVertexName(task_vtx) <<  " : duration=[ " << commons::toString(to->getVertexPhaseDuration(task_vtx)) <<  "] period=" <<  persched[task].first << " HP=" << *HP << " Ni=" << to->getNi(task_vtx) << " starts=[ " << ss.str() << "]");
 		*LCM = boost::math::lcm(*LCM, to->getNi(task_vtx));
 
