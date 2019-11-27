@@ -48,6 +48,7 @@ std::vector<algo_t> algorithmslist = {
 		{ "PrintXML" , "Print XML file", printers::printXML},		{ "PrintKiter" , "Generate C++ code to internally generate the graph inside Kiter.", printers::printGraphAsKiterScript} ,
 		{ "PrintInfos" , "Just print some graph informations.", printers::printInfos},
 		{ "PrintGraph" , "Print DOT file", printers::printGraph},
+		{ "PrintKPeriodicScheduling" , "Print KPeriodicScheduling", algorithms::print_kperiodic_scheduling},
 
 		// Helpers to map vertex to cores, need a way to also consider routers
 		{ "randomMapping" , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.", algorithms::mapping::randomMapping} ,
