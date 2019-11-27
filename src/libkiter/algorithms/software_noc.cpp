@@ -1942,16 +1942,35 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 	//fins ratio between orig and new graph for the nodes
 	float ratio = -1;
 	std::map<ARRAY_INDEX, float> ratio_arr;
+	std::map<ARRAY_INDEX, TIME_UNIT> delays;
 	VERBOSE_ASSERT(computeRepetitionVector(orig),"inconsistent graph");
 	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 	{ForEachVertex(orig,orig_v) {
 		auto orig_vid = orig->getVertexId(orig_v);
-                auto to_v = to->getVertexById(orig_vid);
-                float new_ratio = (float) to->getNi(to_v) / (float)orig->getNi(orig_v);
+		auto to_v = to->getVertexById(orig_vid);
+		float new_ratio = (float) to->getNi(to_v) / (float)orig->getNi(orig_v);
 		if(ratio != -1 && ratio != new_ratio)
 			std::cout << "NODE " << to->getVertexName(to_v) << ",ni=" <<  to->getNi(to_v) << " failed\n";
 		ratio = new_ratio;
 		ratio_arr[orig_vid] = new_ratio;
+
+
+		// Here I need to compute the Ni-th execution of a task
+		auto Ni = orig->getNi(orig_v);
+		auto periodic_start_count = persched[orig_vid].second.size();
+		VERBOSE_ASSERT(Ni % periodic_start_count == 0, "FIXME");
+		VERBOSE_ASSERT(orig->getPhasesQuantity(orig_v) == 1, "FIXME");
+
+
+
+		// I take Ni and I need to know which start correspond to this Ni-th
+		// auto start_index = Ni % periodic_start_count
+		auto start_index = periodic_start_count - 1;
+		auto end_of_last_start  = persched[orig_vid].second[start_index] * (Ni / periodic_start_count) + orig->getVertexDuration(orig_v);
+
+		delays[orig_vid] = end_of_last_start;
+
+
 	}}
 
 	*HP = 0.0;
@@ -1960,14 +1979,21 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 		auto task = key.first;
 		auto task_vtx = to->getVertexById(key.first);
 
-                float new_ratio = ratio_arr[key.first];
+		float new_ratio = ratio_arr[key.first];
 
 		std::stringstream ss;
 		for(int i = 0; i < (int)persched[task].second.size(); i++)
 			ss << std::setprecision(13) << persched[task].second[i] << " ";
 
 		*HP =    ( persched[task].first * to->getNi(task_vtx) ) / (new_ratio * (persched[task].second.size())) ;
-		VERBOSE_INFO ( "Task " <<  to->getVertexName(task_vtx) <<  " : duration=[ " << commons::toString(to->getVertexPhaseDuration(task_vtx)) <<  "] period=" <<  persched[task].first << " HP=" << *HP << " Ni=" << to->getNi(task_vtx) << " starts=[ " << ss.str() << "]");
+		auto delay = delays[key.first];
+		VERBOSE_INFO ( "Task " <<  to->getVertexName(task_vtx) <<  " : "
+				<< " duration=[ " << commons::toString(to->getVertexPhaseDuration(task_vtx)) <<  "]"
+				<< " period=" <<  persched[task].first << ""
+				<< " HP=" << *HP << ""
+				<< " Delay=" << delay << ""
+				<< " Ni=" << to->getNi(task_vtx) << ""
+				<< " starts=[ " << ss.str() << "]");
 		*LCM = boost::math::lcm(*LCM, to->getNi(task_vtx));
 
 	}
