@@ -889,12 +889,15 @@ void taskAndNoCMapping(const models::Dataflow* input, models::Dataflow* to, Vert
 	//list of cores that are available
 	std::vector<int> available_cores;//{5, 6, 10, 9, 8, 4, 0, 1, 2, 3, 7, 11, 15, 14, 13, 12};
 	int origV = input->getVerticesCount();
+/*
 	if(origV <= 4)
 	{
 		std::vector<int> temp_vec{0, 1, 3, 2};
 		available_cores = temp_vec;
 	}
-	else if(origV <= 16)
+	else
+*/
+	if(origV <= 16)
 	{
 		std::vector<int> temp_vec{5, 6, 10, 9, 8, 4, 0, 1, 2, 3, 7, 11, 15, 14, 13, 12};
 		available_cores = temp_vec;
@@ -971,7 +974,10 @@ void taskAndNoCMapping(const models::Dataflow* input, models::Dataflow* to, Vert
 	}
 */
 	VERBOSE_INFO ( "srjkvr-mapping " << commons::toString(core_mapping) ) ;
-
+	std::cout << "SRJKVR";
+	for(int i = 1; i < core_mapping.size()-1; i++)
+		std::cout << "," << core_mapping[i];
+	std::cout << "\n";
 }
 
 
@@ -2322,8 +2328,8 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 	// #### Generate NoC
 	int mesh_row = (int)ceil(sqrt(dataflow->getVerticesCount()));
-//	if(mesh_row <= 4)
-//		mesh_row = 4;
+	if(mesh_row <= 4)
+		mesh_row = 4;
 	std::cout << "mesh_row=" << mesh_row << "\n";
 	NoC *noc = new NoC(mesh_row, mesh_row, 1); //Init NoC
 //	if(mesh_row <= 9)
