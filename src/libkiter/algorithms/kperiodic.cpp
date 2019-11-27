@@ -1342,6 +1342,8 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
       end_of_sched = commons::fromString<TIME_UNIT>(parameters["END"]);
     }
     
+
+
     bool verbose = false;
     if (parameters.find("PRINT") != parameters.end() ) {
         verbose = true;
@@ -1498,8 +1500,17 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 
     TIME_UNIT res = result.first;
     if (verbose) {
+        TIME_UNIT xscale = 1;
+        if (parameters.find("xscale") != parameters.end() ) {
+        	xscale = commons::fromString<TIME_UNIT>(parameters["xscale"]);
+        }
+        TIME_UNIT yscale = 1;
+        if (parameters.find("yscale") != parameters.end() ) {
+        	yscale = commons::fromString<TIME_UNIT>(parameters["yscale"]);
+        }
+
       scheduling_t persched = period2scheduling    (dataflow,  kvector , res);
-      std::cout << printers::PeriodicScheduling2DOT    ( dataflow,persched  , end_of_sched , true, 1 , 1  ) ;
+      std::cout << printers::PeriodicScheduling2DOT    ( dataflow,persched  , end_of_sched , true, xscale , yscale  ) ;
     } else {
 	std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
 	std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;

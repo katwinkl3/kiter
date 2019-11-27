@@ -15,7 +15,7 @@ std::string add_block ( std::string name , TIME_UNIT start, TIME_UNIT duration, 
 		std::ostringstream returnStream;
 		returnStream<< "\"" << name << 0  << "\""
 				<< " [label=\"\", width=\"" << duration / 72 << "\", penwidth=\"" << line_width << "\"";
-		if (fill) returnStream <<  ", style=\"filled\" , color=blue" ;
+		if (fill) returnStream <<  ", style=\"filled\" , fillcolor=blue" ;
 		returnStream <<  ", height=\"" << node_height << "\", fixedsize=true, pos=\"" << start + (duration/2) << ","<< current_task_y_pos << "\",shape=box]" << std::endl;
 		return returnStream.str();
 }
@@ -58,9 +58,8 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
   {ForEachVertex(dataflow,t) {
       auto tid = dataflow->getVertexId(t); 
       //VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
-	  auto Ni = dataflow->getNi(t);
+      auto Ni = dataflow->getNi(t);
 	  auto period = periodic_scheduling[tid].first;
-	  auto duration = dataflow->getVertexTotalDuration(t);
 	  auto starts = periodic_scheduling[tid].second;
 
 	  double current_task_y_pos = yscale * -20 * idx ;
@@ -68,17 +67,35 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
       returnStream << "\""<< dataflow->getVertexName(t) << "\"" << " [label=\"" <<  dataflow->getVertexName(t) << "\\r\", margin=\"0,0\", width=\"" << label_node_width << "\", height=\"" << label_node_height << "\", fixedsize=true, pos=\"" << pixel_start << ","<< current_task_y_pos << "\",shape=plaintext]" << std::endl;
 
       EXEC_COUNT execution_index = 0;
-      for (EXEC_COUNT iter = 0 ; ((starts[0] + period * iter)) < last_execution_end_at ; iter++) {
-    	  for (auto  start : starts) {
-    		  bool fill = (execution_index >= Ni) ;
-		  fill = iter == 0;
-    		  if (!full) if (!fill) iter = (EXEC_COUNT) std::round(last_execution_end_at);
-    		  returnStream << add_block ( dataflow->getVertexName(t) + std::to_string(execution_index++),
-    				  xscale * (start + period * iter),
-					  xscale * (duration),  node_height,   current_task_y_pos,  line_width , fill ) ;
 
+      bool fill_init  = true;
+      bool fill_first = true;
+      bool fill_per   = false;
+
+      for (EXEC_COUNT init_phase = 0 ; init_phase < dataflow->getInitPhasesQuantity(t) ; init_phase++) {
+    	  TIME_UNIT start = starts[init_phase];
+		  auto duration = dataflow->getVertexInitDuration(t,init_phase+1);
+		  returnStream << add_block (
+				  dataflow->getVertexName(t) + std::to_string(execution_index++),
+				  xscale * (start),
+				  xscale * (duration),  node_height,   current_task_y_pos,  line_width , fill_init ) ;
+      }
+
+
+      EXEC_COUNT first_start_index = dataflow->getInitPhasesQuantity(t);
+
+      for (EXEC_COUNT iter = 0 ;  ((starts[first_start_index] + period * iter)) < last_execution_end_at ; iter++) {
+    	  for (EXEC_COUNT sidx = first_start_index; sidx < starts.size() ; sidx++) {
+    		  auto current_phase = 1 +  sidx % dataflow->getPhasesQuantity(t);
+    		  auto duration = dataflow->getVertexDuration(t,current_phase);
+    		  bool fill = iter == 0 ? fill_first : fill_per;
+        	  TIME_UNIT start = starts[sidx];
+    		  returnStream << add_block ( dataflow->getVertexName(t) + std::to_string(execution_index++),
+    		     				  xscale * (start + period * iter),
+    		 					  xscale * (duration),  node_height,   current_task_y_pos,  line_width , fill ) ;
     	  }
       }
+
       idx+=1;
 
     }}
@@ -178,7 +195,7 @@ void  printers::printGraphAsKiterScript (models::Dataflow* const  dataflow, para
 
 }
 
-std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
+std::string printers::GenerateDOT    (models::Dataflow* const  dataflow , bool simple) {
 
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
@@ -201,16 +218,18 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
   {ForEachVertex(dataflow,t) {
 
       ARRAY_INDEX tid =  dataflow->getVertexId(t);
-      
+
       returnStream << "  t_" << tid << " [" << std::endl;
       returnStream << "    shape=circle," << std::endl;
-      returnStream << "    label = \" " << dataflow->getVertexName(t)
-    		  << "\nid:" << tid
+      returnStream << "    label = \"" << dataflow->getVertexName(t);
+      if (!simple) {
+    	  returnStream	  << "\nid:" << tid
     		  << "\nPhases:" << commons::toString(dataflow->getPhasesQuantity(t))
     		  << "\nNi:" << commons::toString(dataflow->getNi(t))
     		  << "\nduration:" << commons::toString(dataflow->getVertexPhaseDuration(t))
-              << "\nreentrancy:" << commons::toString(dataflow->getReentrancyFactor(t)) << "\"" << std::endl;
-      
+              << "\nreentrancy:" << commons::toString(dataflow->getReentrancyFactor(t))  ;
+      }
+      returnStream  << "\"" << std::endl;
       returnStream  << "  ];" << std::endl;
       returnStream << std::endl;
     }}
@@ -224,11 +243,19 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow ) {
       returnStream << std::endl;
       std::string bl = dataflow->getEdgeTypeStr(c) ;
       ARRAY_INDEX eid = dataflow->getEdgeId(c) ;
-      returnStream << "    label=\"" << bl
+      returnStream << "    label=\"" ;
+      if (!simple) {
+    	  returnStream	  << bl
     		  	  << "\nid:" << eid
-				  << "\npreload:"  << commons::toString(dataflow->getPreload(c)) << "\"," << std::endl;
-      returnStream << "    headlabel=\"" <<  commons::toString(dataflow->getEdgeInitOutVector(c)) << ";" <<  commons::toString(dataflow->getEdgeOutVector(c)) << "\"," << std::endl;
-      returnStream << "    taillabel=\"" <<  commons::toString(dataflow->getEdgeInitInVector(c)) << ";" <<  commons::toString(dataflow->getEdgeInVector(c)) << "\"," << std::endl;
+				  << "\npreload:"  << commons::toString(dataflow->getPreload(c)) ;
+      }
+      returnStream << "\"," << std::endl;
+      returnStream << "    headlabel=\"" ;
+      if (dataflow->getInitPhasesQuantity(edgeOut) > 0) {returnStream <<  commons::toString(dataflow->getEdgeInitOutVector(c)) << ";" ;}
+      returnStream <<  commons::toString(dataflow->getEdgeOutVector(c)) << "\"," << std::endl;
+      returnStream << "    taillabel=\"" ;
+      if (dataflow->getInitPhasesQuantity(edgeIn) > 0) {returnStream <<  commons::toString(dataflow->getEdgeInitInVector(c)) << ";" ;}
+      returnStream <<  commons::toString(dataflow->getEdgeInVector(c)) << "\"," << std::endl;
       returnStream << " ] ;" << std::endl;
     }}
   returnStream << std::endl;
