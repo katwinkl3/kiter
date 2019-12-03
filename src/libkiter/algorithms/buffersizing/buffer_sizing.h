@@ -86,4 +86,6 @@ void initSearchParameters(models::Dataflow *dataflow,
                           std::map<Edge, TOKEN_UNIT> &minStepSizes,
                           std::map<Edge,
                           std::pair<TOKEN_UNIT, TOKEN_UNIT>> &minChannelSizes);
+std::string timeToString(TIME_UNIT t);
+
 #endif /* BUFFER_SIZING_H_ */
