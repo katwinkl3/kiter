@@ -6,7 +6,7 @@
  */
 
 #define BOOST_TEST_MODULE PeriodicSchedulingTest
-#include "test_helper.h"
+#include "helpers/test_classes.h"
 
 
 #include <commons/basic_types.h>

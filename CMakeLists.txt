@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 project(Kiter)
+enable_testing()
 
 #
 #  ######### GENERATOR PART ##########
@@ -97,10 +98,11 @@ set(INCLUDE_OUTPUT_PATH    ${PROJECT_BINARY_DIR}/include/)
 #
 #  ######### SUBDIR PART ##########
 #
+SET(KITER_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/)
+SET(KITER_TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests/)
+
 SET(KITER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/libkiter)
 
-ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/src build_results/src)
-
-enable_testing()
-ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/tests build_results/tests)
+ADD_SUBDIRECTORY(${KITER_SRC_DIR} build_results/src)
+ADD_SUBDIRECTORY(${KITER_TESTS_DIR} build_results/tests)
 

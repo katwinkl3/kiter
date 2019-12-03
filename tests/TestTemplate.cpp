@@ -5,7 +5,7 @@
  */
 
 #define BOOST_TEST_MODULE TemplateTest
-#include <test_helper.h>
+#include "helpers/test_classes.h"
 
 BOOST_FIXTURE_TEST_SUITE( test_suite_name , WITH_VERBOSE)
 

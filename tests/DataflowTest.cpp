@@ -6,7 +6,7 @@
  */
 
 #define BOOST_TEST_MODULE DataflowTest
-#include "test_helper.h"
+#include "helpers/test_classes.h"
 
 #include <models/Dataflow.h>
 #include <printers/stdout.h>
@@ -165,3 +165,15 @@ BOOST_AUTO_TEST_CASE( test_remove_vertex_connected_more )
 BOOST_AUTO_TEST_SUITE_END()
 
 
+
+BOOST_FIXTURE_TEST_SUITE( test_suite_sample_dataflow , WITH_SAMPLE)
+
+BOOST_AUTO_TEST_CASE( test_sample )
+{
+
+    BOOST_REQUIRE_EQUAL( sample->getVerticesCount(), 3 );
+    BOOST_REQUIRE_EQUAL( sample->getEdgesCount(), 2 );
+
+}
+
+BOOST_AUTO_TEST_SUITE_END()

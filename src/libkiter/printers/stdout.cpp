@@ -46,7 +46,7 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
   	  auto duration = dataflow->getVertexTotalDuration(t);
   	  auto starts = periodic_scheduling[tid].second;
 
-        for (EXEC_COUNT iter = 0 ; iter < (Ni/starts.size()) ; iter++) {
+        for (EXEC_COUNT iter = 0 ; iter < (Ni/(EXEC_COUNT)starts.size()) ; iter++) {
       	  for (auto  start : starts) {
       		last_execution_end_at = std::max(last_execution_end_at, duration + (start + period * iter));
       	  }
@@ -58,7 +58,7 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
   {ForEachVertex(dataflow,t) {
       auto tid = dataflow->getVertexId(t); 
       //VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
-      auto Ni = dataflow->getNi(t);
+
 	  auto period = periodic_scheduling[tid].first;
 	  auto starts = periodic_scheduling[tid].second;
 
@@ -85,7 +85,7 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
       EXEC_COUNT first_start_index = dataflow->getInitPhasesQuantity(t);
 
       for (EXEC_COUNT iter = 0 ;  ((starts[first_start_index] + period * iter)) < last_execution_end_at ; iter++) {
-    	  for (EXEC_COUNT sidx = first_start_index; sidx < starts.size() ; sidx++) {
+    	  for (EXEC_COUNT sidx = first_start_index; sidx < (EXEC_COUNT) starts.size() ; sidx++) {
     		  auto current_phase = 1 +  sidx % dataflow->getPhasesQuantity(t);
     		  auto duration = dataflow->getVertexDuration(t,current_phase);
     		  bool fill = iter == 0 ? fill_first : fill_per;
@@ -122,7 +122,7 @@ void  printers::printGraphAsKiterScript (models::Dataflow* const  dataflow, para
 	  returnStream << "" << std::endl;
 
 	  {ForEachVertex(dataflow,t) {
-		  EXEC_COUNT phase_count = dataflow->getPhasesQuantity(t);
+		  PHASE_INDEX phase_count = dataflow->getPhasesQuantity(t);
 		  returnStream << "{" << std::endl;
 		  returnStream << "std::cout << \"generate a task ...\" << std::endl;"  << std::endl;
 		  returnStream << "auto new_vertex = new_graph->addVertex(" << dataflow->getVertexId(t) << ");" << std::endl;
@@ -132,7 +132,7 @@ void  printers::printGraphAsKiterScript (models::Dataflow* const  dataflow, para
 		  returnStream << " new_graph->setReentrancyFactor(new_vertex," << dataflow->getReentrancyFactor(t)<< "); " << std::endl;
 
 		  std::string duration_string = "";
-		  for (ARRAY_INDEX phase = 1 ; phase <= phase_count ; phase++) {
+		  for (PHASE_INDEX phase = 1 ; phase <= phase_count ; phase++) {
 			  if (phase > 1)  duration_string += ",";
 			  duration_string += commons::toString<TIME_UNIT>(dataflow->getVertexDuration(t,phase));
 		  }
@@ -166,7 +166,7 @@ void  printers::printGraphAsKiterScript (models::Dataflow* const  dataflow, para
 
 
 	      std::string in_rates = "";
-	      for (ARRAY_INDEX phase = 1 ; phase <= in_phase_count ; phase++) {
+	      for (PHASE_INDEX phase = 1 ; phase <= in_phase_count ; phase++) {
 	      			  if (phase > 1)  in_rates += ",";
 	      			in_rates += commons::toString<TOKEN_UNIT>(dataflow->getEdgeInPhase(c,phase));
 	      }
@@ -175,7 +175,7 @@ void  printers::printGraphAsKiterScript (models::Dataflow* const  dataflow, para
 
 
 	      std::string out_rates = "";
-	      for (ARRAY_INDEX phase = 1 ; phase <= out_phase_count ; phase++) {
+	      for (PHASE_INDEX phase = 1 ; phase <= out_phase_count ; phase++) {
 	      			  if (phase > 1)  out_rates += ",";
 	      			out_rates += commons::toString<TOKEN_UNIT>(dataflow->getEdgeOutPhase(c,phase));
 	      }

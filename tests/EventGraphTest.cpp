@@ -6,8 +6,7 @@
  */
 
 #define BOOST_TEST_MODULE EventGraphTest
-#include "test_helper.h"
-
+#include "helpers/test_classes.h"
 #include <models/EventGraph.h>
 
 

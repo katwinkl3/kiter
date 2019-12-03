@@ -11,7 +11,6 @@
 #include <map>
 #include <models/Dataflow.h>
 #include <models/Scheduling.h>
-#include <models/SchedulingKiterTask.h>
 
 
 typedef std::map<Vertex,EXEC_COUNT> periodicity_vector_t;
