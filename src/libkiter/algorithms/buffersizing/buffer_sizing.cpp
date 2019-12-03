@@ -148,7 +148,7 @@ std::string StorageDistribution::printInfo(models::Dataflow* const dataflow) {
     }}
   sdInfo += "\n"; // double line return to mark end of channel quantities
   sdInfo += "\tDistribution size: " + std::to_string(this->getDistributionSize()) + "\n";
-  sdInfo += "\tThroughput: " + std::to_string(this->getThroughput()) + "\n";
+  sdInfo += "\tThroughput: " + timeToString(this->getThroughput()) + "\n";
   std::cout << "test: " << this->getThroughput() << std::endl;
   
   return sdInfo;
@@ -479,4 +479,12 @@ void initSearchParameters(models::Dataflow *dataflow,
                           std::pair<TOKEN_UNIT, TOKEN_UNIT>> &minChannelSizes) {
   findMinimumStepSz(dataflow, minStepSizes);
   findMinimumChannelSz(dataflow, minChannelSizes);
+}
+
+// convert TIME_UNIT to string, accounting for really small numbers
+std::string timeToString(TIME_UNIT t)
+{
+  std::stringstream s;
+  s << std::setprecision(6) << t;
+  return s.str();
 }
