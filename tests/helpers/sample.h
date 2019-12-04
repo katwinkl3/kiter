@@ -1,15 +1,16 @@
 /*
- *  This program is a Dataflow Analysis Tool : Kiter
+ * sample.h
  *
- *
- *
- * */
+ *  Created on: Dec 3, 2019
+ *      Author: toky
+ */
+
+#ifndef TESTS_HELPERS_SAMPLE_H_
+#define TESTS_HELPERS_SAMPLE_H_
+
 
 #include <models/Dataflow.h>
-#include <algorithms/transformations.h>
-#include <algorithms/schedulings.h>
-#include <algorithms/mappings.h>
-#include <commons/SDF3Wrapper.h>
+
 
 models::Dataflow * generateSample () {
 	// Auto-generate by Kiter for Kiter
@@ -62,55 +63,5 @@ models::Dataflow * generateSample () {
 }
 
 
-inline void activate_verbose(const std::string p) {
 
-	if (commons::fromString<int>(p) < 0) {
-		std::exit(EXIT_FAILURE);
-	}
-	commons::set_verbose_mode(commons::fromString<int>((optarg)));
-}
-
-int main (int argc, char ** argv)
-{
-
-	// ** default arguments
-	std::string filename = "";
-	std::vector<std::pair<std::string,parameters_list_t>> algos;
-	parameters_list_t parameters;
-	commons::set_verbose_mode(commons::WARNING_LEVEL); // default verbose mode is ...
-
-	// **  Retreive arguments **
-	int c;
-	while ((c = getopt(argc, (char **)argv, "f:v:p:")) != -1) {
-		if (c == 'f') {
-			filename = optarg;
-		}
-		if (c == 'v') {
-			activate_verbose(optarg);
-		}
-		if (c == 'p') {
-			std::string arg = optarg;
-			if (arg.find('=',0) != arg.npos) {
-				parameters[arg.substr(0,arg.find('=',0))] = arg.substr(arg.find('=',0)+1,arg.size());
-			}
-
-		}
-	}
-
-	VERBOSE_INFO("Parameter parsing is done.");
-
-
-
-	VERBOSE_INFO("Read XML file : " << filename);
-	models::Dataflow* dataflow = filename.length() ? commons::readSDF3File(filename) : generateSample () ;
-	std::cout << "Done" << std::endl;
-
-
-
-	algorithms::mapping::moduloMapping ( dataflow, {});
-
-
-
-
-
-}
+#endif /* TESTS_HELPERS_SAMPLE_H_ */

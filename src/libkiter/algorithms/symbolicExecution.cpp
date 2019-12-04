@@ -116,7 +116,7 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 
 
 	std::map < Edge , ARRAY_INDEX > packet_ids;
-	std::map < Vertex , ARRAY_INDEX > last_packet_sent;
+	std::map < Vertex , ARRAY_INDEX > last_compute_time;
 	ARRAY_INDEX packet_count = 0;
 
 
@@ -156,13 +156,14 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 
 					ARRAY_INDEX compute_pid  = packet_count++;
 					std::vector <ARRAY_INDEX> subdeps = deps ;
-					if (last_packet_sent.find(t) != last_packet_sent.end()) {
-						subdeps.push_back(last_packet_sent[t]);
+
+					if (last_compute_time.find(t) != last_compute_time.end()) {
+						subdeps.push_back(last_compute_time[t]);
 					}
 
 					print_packet_line ( graph->getVertexId(t),  graph->getVertexId(t),  graph->getVertexTotalDuration(t),  compute_pid, subdeps ) ;
 
-					last_packet_sent[t] = compute_pid;
+					last_compute_time[t] = compute_pid;
 
 					{ForOutputEdges(graph,t,outE)	{
 						buffer_content[graph->getEdgeId(outE)] += graph->getEdgeIn(outE);
@@ -191,7 +192,6 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 							previous = pid;
 							datatotransfert -= psize;
 						}
-						last_packet_sent[t] = previous;
 					}}
 
 				}

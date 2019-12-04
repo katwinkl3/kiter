@@ -1,6 +1,6 @@
 /*
  * This program is a Dataflow Analysis Tool : Kiter
- *
+ * TODO : remove all these deps, dataflow should not be required
  *
  *
  * */
@@ -48,6 +48,7 @@ std::vector<algo_t> algorithmslist = {
 		{ "PrintXML" , "Print XML file", printers::printXML},		{ "PrintKiter" , "Generate C++ code to internally generate the graph inside Kiter.", printers::printGraphAsKiterScript} ,
 		{ "PrintInfos" , "Just print some graph informations.", printers::printInfos},
 		{ "PrintGraph" , "Print DOT file", printers::printGraph},
+		{ "PrintKPeriodicScheduling" , "Print KPeriodicScheduling", algorithms::print_kperiodic_scheduling},
 
 		// Helpers to map vertex to cores, need a way to also consider routers
 		{ "randomMapping" , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.", algorithms::mapping::randomMapping} ,
@@ -88,11 +89,13 @@ std::vector<algo_t> algorithmslist = {
 
 		// Trasnformation
 		{ "Merge" , "Merging tasks using Kperiodic scheduling and Initialization phases", algorithms::transformation::merge_tasks},
+		{ "bugfix" , "A bugfix tool that try to reduce the size of a graph while keeping anomaly between kiter and SDF3", algorithms::transformation::compare_sdf3_throughput},
+		{ "remove" , "Remove tasks with the name or the id specified", algorithms::transformation::remove_task},
 
 
 		// Recent stuff
-		{ "LP1" , "Rewriting Bodin2013 Threshold CSDF Periodic Scheduling", algorithms::scheduling::CSDF_1PeriodicScheduling_LP},
-		{ "LPN" , "Rewriting Bodin2013 Threshold CSDF Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling_LP},
+		{ "LP1" , "Rewriting Bodin2016 Threshold CSDF 1-Periodic Scheduling", algorithms::scheduling::CSDF_1PeriodicScheduling_LP},
+		{ "LPN" , "Rewriting Bodin2016 Threshold CSDF N-Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling_LP},
 		{ "EGN" , "Rewriting Bodin2013 Threshold CSDF Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling}
 
 

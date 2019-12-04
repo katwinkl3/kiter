@@ -5,8 +5,8 @@
  *      Author: toky
  */
 
-#ifndef SRC_LIBKITER_MODELS_SchedulingKiterTask_H_
-#define SRC_LIBKITER_MODELS_SchedulingKiterTask_H_
+#ifndef SchedulingKiterTask_H_
+#define SchedulingKiterTask_H_
 
 #include <models/Dataflow.h>
 #include <models/KiterTask.h>
@@ -31,4 +31,4 @@ namespace models {
 
 
 
-#endif /* SRC_LIBKITER_MODELS_SchedulingKiterTask_H_ */
+#endif /* SchedulingKiterTask_H_ */

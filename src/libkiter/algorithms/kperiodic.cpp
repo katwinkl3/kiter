@@ -126,38 +126,8 @@ void algorithms::print_kperiodic_expansion_graph    (models::Dataflow* const  da
 
 models::Scheduling period2Scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) {
 
-	scheduling_t scheduling_result;
-
-    models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
-
     TIME_UNIT omega = 1 / throughput ;
-    eg->computeStartingTimeWithOmega (omega);
-
-
-    {ForEachEvent(eg,e) {
-        models::SchedulingEvent se = eg->getEvent(e);
-        EXEC_COUNT ti = se.getTaskId();
-        Vertex v = dataflow->getVertexById(ti);
-        TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
-        scheduling_result[dataflow->getVertexId(v)].first = period;
-
-        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " " << period  );
-
-    }}
-
-    {ForEachEvent(eg,e) {
-        models::SchedulingEvent se = eg->getEvent(e);
-        EXEC_COUNT ti = se.getTaskId();
-        TIME_UNIT start = eg->getStartingTime(e);
-        Vertex v = dataflow->getVertexById(ti);
-        scheduling_result[dataflow->getVertexId(v)].second.push_back( start );
-        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " " << start  );
-
-
-    }}
-
-
-
+    scheduling_t scheduling_result = period2scheduling    (dataflow, kvector ,  throughput) ;
 	return models::Scheduling(dataflow, omega, scheduling_result);
 }
 
@@ -170,31 +140,34 @@ scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<
     models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
 
     TIME_UNIT omega = 1 / throughput ;
+    VERBOSE_INFO("Compute starts "  );
     eg->computeStartingTimeWithOmega (omega);
 
 
+    for (auto v : dataflow->vertices()) {
+    	auto tid = dataflow->getVertexId(v);
+    	auto pq = dataflow->getPhasesQuantity(v);
+    	auto ipq = dataflow->getInitPhasesQuantity(v);
+    	auto maxki = kvector[v];
 
-    {ForEachEvent(eg,e) {
-        models::SchedulingEvent se = eg->getEvent(e);
-        EXEC_COUNT ti = se.getTaskId();
-        Vertex v = dataflow->getVertexById(ti);
+    	auto first_pi = 1 - ipq;
+
         TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
         scheduling_result[dataflow->getVertexId(v)].first = period;
+        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " Period = " << period  );
 
-        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " " << period  );
+    	for (EXEC_COUNT ki = 1  ; ki <= maxki ; ki++) {
+    		for (EXEC_COUNT pi = first_pi ; pi <=pq ; pi++)  {
+    	        auto se = eg->getEventGraphVertex(tid,pi,ki);
 
-    }}
+    	        TIME_UNIT start = eg->getStartingTime(se);
+    	        scheduling_result[tid].second.push_back( start );
+    	        VERBOSE_DEBUG("  - Start ki=" << ki << " pi=" << pi << " se=" << se << ":" << start  );
 
-    {ForEachEvent(eg,e) {
-        models::SchedulingEvent se = eg->getEvent(e);
-        EXEC_COUNT ti = se.getTaskId();
-        TIME_UNIT start = eg->getStartingTime(e);
-        Vertex v = dataflow->getVertexById(ti);
-        scheduling_result[dataflow->getVertexId(v)].second.push_back( start );
-        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " " << start  );
+    		}
+    	}
+    }
 
-
-    }}
 
 
     VERBOSE_INFO("period2scheduling done"  );
@@ -288,7 +261,7 @@ kperiodic_result_t algorithms::KScheduleBufferLess(models::Dataflow *  const dat
     VERBOSE_INFO("KPeriodic EventGraph generation");
 
     //STEP 1 - Generate Event Graph
-    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,kvector, true);
+    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,kvector);
 
     VERBOSE_INFO("KPeriodic EventGraph generation Done, edges = " << eg->getConstraintsCount() << " vertex = " << eg->getEventCount());
 
@@ -328,9 +301,9 @@ kperiodic_result_t algorithms::KScheduleBufferLess(models::Dataflow *  const dat
 }
 
 
-models::EventGraph* algorithms::generateKPeriodicEventGraph(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues , bool doBufferLessEdges) {
+models::EventGraph* algorithms::generateKPeriodicEventGraph(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues ) {
 
-
+	VERBOSE_DEBUG("generateKPeriodicEventGraph Starts ");
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
     models::EventGraph * g = new models::EventGraph();
@@ -338,17 +311,19 @@ models::EventGraph* algorithms::generateKPeriodicEventGraph(models::Dataflow * c
 
     /* generate nodes */
     {ForEachVertex(dataflow,t) {
+    	const ARRAY_INDEX tid = dataflow->getVertexId(t);
+
         EXEC_COUNT init_phase_count = dataflow->getInitPhasesQuantity(t);
         EXEC_COUNT periodic_phase_count = dataflow->getPhasesQuantity(t);
 
         for (EXEC_COUNT i = 1; i <= init_phase_count ; i++ ) {
-            g->addEvent(models::SchedulingEvent(dataflow->getVertexId(t),1-i,1));
+            g->addEvent(models::SchedulingEvent(tid,1-i,1));
         }
 
 
         for (EXEC_COUNT j = 1; j <= kValues->at(t) ; j++ ) {
             for (EXEC_COUNT i = 1; i <= periodic_phase_count ; i++ ) {
-                g->addEvent(models::SchedulingEvent(dataflow->getVertexId(t),i,j));
+                g->addEvent(models::SchedulingEvent(tid,i,j));
             }
         }
     }}
@@ -366,7 +341,8 @@ models::EventGraph* algorithms::generateKPeriodicEventGraph(models::Dataflow * c
     // DEFINITION DES CONTRAINTES DE PRECEDENCES
     //******************************************************************
     {ForEachChannel(dataflow,c) {
-        generateKPeriodicConstraint(dataflow , kValues,   g ,  c, doBufferLessEdges);
+    	bool isbufferless = (dataflow->getEdgeType(c) == EDGE_TYPE::BUFFERLESS_EDGE);
+        generateKPeriodicConstraint(dataflow , kValues,   g ,  c);
     }}
 
 
@@ -527,19 +503,19 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
     EXEC_COUNT current = 0;
     for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
         current ++ ;
-        if (verbose) {std::cout << "\rdelete edges ... " << std::setw(3) << ((current* 100)  / (total))   << "%" << std::setw( 11 ) << " ";std::cout.flush();}
+
         Vertex source = dataflow->getEdgeSource(*it);
         EXEC_COUNT ki = oldkvector->at(source);
         EXEC_COUNT newki =  kvector.at(source);
         if (ki < newki) {
             ARRAY_INDEX task_id= dataflow->getVertexId(source);
-            for (EXEC_COUNT p = 1 ; p <= dataflow->getPhasesQuantity(source) ; p++) {
+            for (PHASE_INDEX p = 1 - dataflow->getInitPhasesQuantity(source) ; p <= dataflow->getPhasesQuantity(source) ; p++) {
                 for(ARRAY_INDEX k = 1 ; k <= ki ; k++) {
                     g->removeConnectedEdges(g->getEventGraphVertex(task_id,p,k));
                 }
             }
 
-            for (EXEC_COUNT p = 1 ; p <= dataflow->getPhasesQuantity(source) ; p++) {
+            for (PHASE_INDEX p = 1 - dataflow->getInitPhasesQuantity(source)  ; p <= dataflow->getPhasesQuantity(source) ; p++) {
                 g->addEventGroup(task_id,p,ki+1,newki);
             }
             if (newki > dataflow->getNi(source)) {
@@ -556,7 +532,7 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
     current = 0;
 
     for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
-        if (verbose) {std::cout << "\rreentrency edges ... " << std::setw(3) << ((current* 100)  / (total) ) << "%" << std::setw( 11 ) << " ";std::cout.flush();}
+
         current ++ ;
         Vertex t = dataflow->getEdgeSource(*it);
 
@@ -583,7 +559,7 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
 
     current = 0;
     for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end() ; it++) {
-        if (verbose) {std::cout << "\rconstraint edges ... " << std::setw(3) << ((current* 100)  / (total) )  << "% (" << std::setw( 11 ) << total << " edges)";std::cout.flush();}
+
         current ++ ;
         std::set<Edge>::iterator it_previous = it;
         if (it == cc->begin())  {
@@ -623,7 +599,7 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
         oldkvector->at(it->first) = kvector.at(it->first);
     }
 
-    if (verbose) {std::cout << "End of generation" << std::setw(30)  << "\r";std::cout.flush();}
+
 
 
     return g;
@@ -685,7 +661,7 @@ models::EventGraph*  algorithms::generateCycleOnly(models::Dataflow * const data
 
 
 
-void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues,  models::EventGraph* g , Edge c, bool doBufferLessEdges) {
+void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues,  models::EventGraph* g , Edge c) {
 
 
     VERBOSE_DEBUG("Constraint for " << dataflow->getEdgeName(c) );
@@ -719,11 +695,17 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
     TOKEN_UNIT normdapkm1 = 0;
     TOKEN_UNIT normdapk   = 0;
 
+    bool doBufferLessEdges = dataflow->getEdgeType(c) == EDGE_TYPE::BUFFERLESS_EDGE;
 
-
+    VERBOSE_EXTRA_DEBUG(" - source_init_phase_count = " << source_init_phase_count );
+    VERBOSE_EXTRA_DEBUG(" - target_init_phase_count = " << target_init_phase_count );
+    VERBOSE_EXTRA_DEBUG(" - maxki = " << maxki );
     for (EXEC_COUNT ki = 1; ki <= maxki ; ki++ ) {
+        VERBOSE_EXTRA_DEBUG("  - ki = " << ki );
     	auto first_pi = (ki == 1) ?  1 - source_init_phase_count : 1 ;
+        VERBOSE_EXTRA_DEBUG("  - first_pi = " << first_pi );
         for (EXEC_COUNT pi = first_pi; pi <= source_phase_count ; pi++ ) {
+            VERBOSE_EXTRA_DEBUG("   - pi = " << pi );
 
             TIME_UNIT  d =  dataflow->getVertexDuration(source, pi);
             TOKEN_UNIT normdamkp = 0;
@@ -732,9 +714,13 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
             models::EventGraphVertex source_event = g->getEventGraphVertex(source_id,pi,ki);
 
 
+            VERBOSE_EXTRA_DEBUG("   - maxkj = " << maxkj );
             for (EXEC_COUNT kj = 1; kj <= maxkj ; kj++ ) {
+                VERBOSE_EXTRA_DEBUG("    - kj = " << kj );
             	auto first_pj = (kj == 1) ?  1 - target_init_phase_count : 1 ;
+                VERBOSE_EXTRA_DEBUG("    - first_pj = " << first_pi );
                 for (EXEC_COUNT pj = first_pj; pj <= target_phase_count ; pj++ ) {
+                    VERBOSE_EXTRA_DEBUG("     - pj = " << pj );
 
                     const TOKEN_UNIT vakp       = dataflow->getEdgeOutPhase(c,pj) ;
                     normdamkp += vakp;
@@ -768,8 +754,8 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
 
 
                         if (doBufferLessEdges) {
-                            g->addEventConstraint(target_event ,source_event,0,-d,id);
-                            g->addEventConstraint(source_event ,target_event,0,d,id);
+                            //g->addEventConstraint(target_event ,source_event,w, d,id);
+                            g->addEventConstraint(source_event ,target_event,-w,d,id);
                         } else {
                             g->addEventConstraint(source_event ,target_event,-w,d,id);
                         }
@@ -840,7 +826,7 @@ void algorithms::generateKperiodicSelfloop(models::Dataflow * const dataflow , E
         const TIME_UNIT       w     =   -  (TIME_UNIT) (p * i) / (  (TIME_UNIT) dataflow->getNi(t)  );
 
 
-        VERBOSE_DEBUG("add task constraint :" << dataflow->getVertexName(t) << " : " <<   target_event  << " --> " <<  source_event << " : " <<  " (- " << w << " / " << dataflow->getNi(t)  << ") ," << d );
+        VERBOSE_EXTRA_DEBUG("  - add task constraint :" << dataflow->getVertexName(t) << " : " <<   target_event  << " --> " <<  source_event << " : " <<  " (- " << w << " / " << dataflow->getNi(t)  << ") ," << d );
         g->addEventConstraint(source_event ,target_event,-w,d,0);
     }
 
@@ -1349,9 +1335,16 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
 void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const dataflow, parameters_list_t  parameters  ) {
 
 
-	  bool do_buffer_less =    (parameters.find("do_buffer_less") != parameters.end() ) ;
+  bool do_buffer_less =    (parameters.find("do_buffer_less") != parameters.end() ) ;
 
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+
+    TIME_UNIT end_of_sched = 0;
+    if (parameters.find("END") != parameters.end() ) {
+      end_of_sched = commons::fromString<TIME_UNIT>(parameters["END"]);
+    }
+    
+
 
     bool verbose = false;
     if (parameters.find("PRINT") != parameters.end() ) {
@@ -1387,7 +1380,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 
     VERBOSE_INFO("KVector = " << commons::toString(kvector) );
     //STEP 1 - Generate Event Graph
-    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector,do_buffer_less);
+    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector);
 
 
     VERBOSE_INFO("KPeriodic EventGraph generation Done");
@@ -1421,9 +1414,6 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
     ////////////// SCHEDULE CALL // END
 
 
-    if (verbose) {
-        std::cout << "Iteration "<< std::fixed << std::setw( 4 ) << iteration_count <<  "      period = "  << std::fixed << std::setw( 15 ) << std::setprecision( 2 ) << 1.0/result.first  <<  "      complexity = "  << std::setw( 4 )  << (sumKi * 100) / sumNi << std::endl ;
-    }
 
     if (result.second.size() != 0) {
 
@@ -1489,14 +1479,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 
 
 
-            if (verbose) {
-                sumKi = 0;
-                {ForEachVertex(dataflow,t) {
-                    sumKi += kvector[t];
-                }}
-
-                std::cout << "Iteration "<< std::fixed << std::setw( 4 ) << iteration_count <<  "      period = "  << std::fixed << std::setw( 15 ) << std::setprecision( 2 ) << 1.0/result.first  <<  "      complexity = "  << std::setw( 4 )  << (sumKi * 100) / sumNi << std::endl ;
-            }
+         
 
         }
 
@@ -1518,9 +1501,23 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
     VERBOSE_INFO("K-periodic schedule - total_ki=" << sumKi << " total_ni=" << sumNi );
 
     TIME_UNIT res = result.first;
-    std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
-    std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
+    if (verbose) {
+        TIME_UNIT xscale = 1;
+        if (parameters.find("xscale") != parameters.end() ) {
+        	xscale = commons::fromString<TIME_UNIT>(parameters["xscale"]);
+        }
+        TIME_UNIT yscale = 1;
+        if (parameters.find("yscale") != parameters.end() ) {
+        	yscale = commons::fromString<TIME_UNIT>(parameters["yscale"]);
+        }
 
+      scheduling_t persched = period2scheduling    (dataflow,  kvector , res);
+      std::cout << printers::PeriodicScheduling2DOT    ( dataflow,persched  , end_of_sched , true, xscale , yscale  ) ;
+    } else {
+	std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
+	std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
+      }
+    
     if (VERBOSE_IS_INFO()) {
 		scheduling_t persched = period2scheduling    (dataflow,  kvector , res);
 
@@ -1528,7 +1525,8 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 					auto task = key.first;
 					auto task_vtx = dataflow->getVertexById(key.first);
 					VERBOSE_INFO(  "Task " <<  dataflow->getVertexName(task_vtx)
-							<<  " : duration=" << dataflow->getVertexTotalDuration(task_vtx)
+							<<  " : duration=" << commons::toString(dataflow->getVertexInitPhaseDuration(task_vtx))
+							<< ";" << commons::toString(dataflow->getVertexPhaseDuration(task_vtx))
 							<<  " period=" <<  persched[task].first
 							<<  " Ni=" << dataflow->getNi(task_vtx)
 							<<  " starts=[ " << commons::toString(persched[task].second) << "]");

@@ -335,7 +335,7 @@ inline 	Vertex 				addVertex			() 							{
 	Vertex nt = Vertex(boost::add_vertex(this->getG()));
 	//std::cout << "orig:" << nt << ",vtx_id:" << auto_vertex_num << "\n";
 	this->setVertexIdUnsafe(nt,auto_vertex_num++);
-
+	this->setVertexName(nt,"Vertex" + std::to_string(this->getVertexId(nt)));
 	return nt;
 }
 inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
@@ -343,6 +343,7 @@ inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
 	reset_computation();
 	Vertex nt = Vertex(boost::add_vertex(this->getG()));
 	this->setVertexId(nt,id);
+	this->setVertexName(nt,"Vertex" + std::to_string(this->getVertexId(nt)));
 	return nt;}
 
 
@@ -350,6 +351,14 @@ inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
 	inline 	void 					removeVertex		(const Vertex t) 		{
 		ASSERT_WRITABLE();
 		reset_computation();
+		while (getVertexInDegree(t)) {
+			 this->removeEdge(*this->getInputEdges(t).first);
+		}
+
+		while (getVertexOutDegree(t)) {
+			 this->removeEdge(*this->getOutputEdges(t).first);
+		}
+
 		boost::remove_vertex(t.v,this->getG());
 	}
 	inline  void					removeEdge   		(const Edge c)			{
@@ -453,8 +462,17 @@ public :
     inline  ARRAY_INDEX         getMaxEdgeId ()                  const     {return auto_edge_num; }
     inline  ARRAY_INDEX         getMaxVertexId    ()            const           {return auto_vertex_num; }
     inline  void                setVertexName   (const Vertex t,
-                                                 const std::string name)    {					ASSERT_WRITABLE();
-                                     			reset_computation();boost::put(boost::vertex_name, this->getG(), t.v, name);}
+                                                 const std::string name)    {
+    	ASSERT_WRITABLE();
+    	reset_computation();
+    	try {
+    		Vertex other = this->getVertexByName(name);
+    		VERBOSE_ASSERT(other == t , "Cannot name two vertex the same.");
+    	} catch (std::out_of_range& e) {
+
+    	}
+    	boost::put(boost::vertex_name, this->getG(), t.v, name);
+    }
     inline  const std::string   getVertexName   (const Vertex t)      const {return boost::get(get(boost::vertex_name, this->getG()), t.v);}
     inline  Vertex              getVertexByName (const std::string s) const
                                                 throw   (std::out_of_range)  {ForEachVertex(this,pVertex) {if (this->getVertexName(pVertex) == s)return pVertex;};throw std::out_of_range(TXT_TASK_NOT_FOUND + s);}
@@ -564,45 +582,71 @@ public :
     inline  void                setTokenSize      (const Edge c,
                                                    const DATA_UNIT ts)    {				ASSERT_WRITABLE();
                                        			reset_computation();boost::put(boost::edge_tokensize, this->getG(), c.e, ts);}
-    inline  EXEC_COUNT          getEdgeOutPhasesCount   (const Edge c) const   {return boost::get(get(boost::edge_outputs, this->getG()), c.e).size();}
-    inline  EXEC_COUNT          getEdgeInPhasesCount   (const Edge c) const   {return boost::get(get(boost::edge_inputs, this->getG()), c.e).size();}
+    inline  EXEC_COUNT          getEdgeOutPhasesCount   (const Edge c) const   {
+    	EXEC_COUNT tmp =  boost::get(get(boost::edge_outputs, this->getG()), c.e).size();
+    	VERBOSE_DEBUG_ASSERT(this->getPhasesQuantity(this->getEdgeTarget(c)) == tmp, "Edge output spec does ot match task spec");
+    	return tmp;
+    }
+    inline  EXEC_COUNT          getEdgeInPhasesCount   (const Edge c) const   {
+    	EXEC_COUNT tmp =  boost::get(get(boost::edge_inputs, this->getG()), c.e).size();
+    	VERBOSE_DEBUG_ASSERT(this->getPhasesQuantity(this->getEdgeSource(c)) == tmp, "Edge input spec does ot match task spec");
+    	return tmp;
+    }
 
-    inline  EXEC_COUNT          getEdgeOutInitPhasesCount   (const Edge c) const   {return boost::get(get(boost::edge_init_outputs, this->getG()), c.e).size();}
-    inline  EXEC_COUNT          getEdgeInInitPhasesCount   (const Edge c) const   {return boost::get(get(boost::edge_init_inputs, this->getG()), c.e).size();}
+    inline  EXEC_COUNT          getEdgeOutInitPhasesCount   (const Edge c) const   {
+    	EXEC_COUNT tmp = boost::get(get(boost::edge_init_outputs, this->getG()), c.e).size();
+    	VERBOSE_DEBUG_ASSERT(this->getInitPhasesQuantity(this->getEdgeTarget(c)) == tmp, "Edge output init spec does ot match task init spec");
+        return tmp;
+    }
+    inline  EXEC_COUNT          getEdgeInInitPhasesCount   (const Edge c) const   {
+    	EXEC_COUNT tmp =  boost::get(get(boost::edge_init_inputs, this->getG()), c.e).size();
+    	VERBOSE_DEBUG_ASSERT(this->getInitPhasesQuantity(this->getEdgeSource(c)) == tmp, "Edge input init spec does ot match task init spec");
+        return tmp;
+    }
 
     inline  TOKEN_UNIT          getEdgeOut    (const Edge c)  		       const   {return boost::get(get(boost::edge_total_output, this->getG()), c.e);}
 
     inline const std::vector<TOKEN_UNIT> &         getEdgeOutVector   (const Edge c) const   {
-        return boost::get(get(boost::edge_outputs, this->getG()), c.e);
+    	const std::vector<TOKEN_UNIT> &       tmp = boost::get(get(boost::edge_outputs, this->getG()), c.e);
+    	VERBOSE_DEBUG_ASSERT(this->getPhasesQuantity(this->getEdgeTarget(c)) == (EXEC_COUNT) tmp.size(), "Edge output spec does ot match task spec");
+    	return tmp;
     }
 
     inline const std::vector<TOKEN_UNIT> &          getEdgeInVector   (const Edge c)  const  {
-        return boost::get(get(boost::edge_inputs, this->getG()), c.e);
+    	const std::vector<TOKEN_UNIT> &       tmp = boost::get(get(boost::edge_inputs, this->getG()), c.e);
+    	VERBOSE_DEBUG_ASSERT(this->getPhasesQuantity(this->getEdgeSource(c)) == (EXEC_COUNT) tmp.size(), "Edge input spec does ot match task spec");
+    	return tmp;
     }
 
 
     inline const std::vector<TOKEN_UNIT> &         getEdgeInitOutVector   (const Edge c) const   {
-        return boost::get(get(boost::edge_init_outputs, this->getG()), c.e);
+    	const std::vector<TOKEN_UNIT> & tmp =  boost::get(get(boost::edge_init_outputs, this->getG()), c.e);
+    	VERBOSE_DEBUG_ASSERT(this->getInitPhasesQuantity(this->getEdgeTarget(c)) == (EXEC_COUNT) tmp.size(), "Edge output init spec does ot match task init spec");
+        return tmp;
     }
 
     inline const std::vector<TOKEN_UNIT> &          getEdgeInitInVector   (const Edge c)  const  {
-        return boost::get(get(boost::edge_init_inputs, this->getG()), c.e);
+
+    	const std::vector<TOKEN_UNIT> & tmp = boost::get(get(boost::edge_init_inputs, this->getG()), c.e);
+    	VERBOSE_DEBUG_ASSERT(this->getInitPhasesQuantity(this->getEdgeSource(c)) == (EXEC_COUNT) tmp.size(), "Edge input init spec does ot match task init spec");
+        return tmp;
+
     }
 
 
 
-    inline  TOKEN_UNIT          getEdgeOutPhase   (const Edge c, EXEC_COUNT k)  const  {
+    inline  TOKEN_UNIT          getEdgeOutPhase   (const Edge c, PHASE_INDEX k)  const  {
 
-    	if (boost::get(get(boost::edge_outputs, this->getG()), c.e).size() < k) {
-            VERBOSE_ERROR("k value ("<< k << ") is too high (output list is about "<< boost::get(get(boost::edge_outputs, this->getG()), c.e).size() <<" values ).");
-            VERBOSE_FAILURE();
-        }
 
 
     	if (k <= 0 ) {
   		  return getEdgeOutInitPhase(c, k + boost::get(get(boost::edge_init_outputs, this->getG()), c.e).size());
     	}
 
+    	if ((PHASE_INDEX)  boost::get(get(boost::edge_outputs, this->getG()), c.e).size() < k) {
+            VERBOSE_ERROR("k value ("<< k << ") is too high (output list is about "<< boost::get(get(boost::edge_outputs, this->getG()), c.e).size() <<" values ).");
+            VERBOSE_FAILURE();
+        }
 
 
         return boost::get(get(boost::edge_outputs, this->getG()), c.e).at(k-1);
@@ -612,18 +656,19 @@ public :
                                                    std::vector<TOKEN_UNIT> l)    {
     	ASSERT_WRITABLE();
     	reset_computation();
-        VERBOSE_DEBUG(" - Add outputs for " << c << " = " << l.size() << " states = " <<  commons::join(l.begin(),l.end(),std::string(",")));
+        VERBOSE_DEBUG(" - Add outputs for " << this->getEdgeName(c) << " coded " << c << " = " << l.size() << " states = " <<  commons::join(l.begin(),l.end(),std::string(",")));
     	boost::put(boost::edge_outputs, this->getG(), c.e, l);
     	TOKEN_UNIT total =std::accumulate(l.begin(),l.end(),0);
     	boost::put(boost::edge_total_output, this->getG(), c.e, total);
     	EXEC_COUNT q = this->getPhasesQuantity(this->getEdgeTarget(c));
-    	VERBOSE_DEBUG(" - EdgeTarget is " << this->getVertexName(this->getEdgeTarget(c)) << " with " << q << " states");
-    	if (q > 0) {VERBOSE_ASSERT(q == l.size(),"Error, the number of phase for the target task of edge " << c << " is " << q <<", but the number of value given is " << l.size());}
+    	VERBOSE_DEBUG("   -   Edge from " << this->getVertexName(this->getEdgeSource(c)) << " to " << this->getVertexName(this->getEdgeTarget(c)));
+    	VERBOSE_DEBUG("   - EdgeTarget is " << this->getVertexName(this->getEdgeTarget(c)) << " with " << q << " states");
+    	if (q > 0) {VERBOSE_ASSERT(q == (EXEC_COUNT) l.size(),"Error, the number of phase for the target task of edge " << c << " is " << q <<", but the number of value given is " << l.size());}
     	this->setPhasesQuantity(this->getEdgeTarget(c),l.size());
     }
 
-    inline  TOKEN_UNIT          getEdgeOutInitPhase   (const Edge c, EXEC_COUNT k)  const  {
-        if (boost::get(get(boost::edge_init_outputs, this->getG()), c.e).size() < k) {
+    inline  TOKEN_UNIT          getEdgeOutInitPhase   (const Edge c, PHASE_INDEX k)  const  {
+        if ((PHASE_INDEX)  boost::get( get(boost::edge_init_outputs, this->getG()), c.e).size() < k) {
             VERBOSE_ERROR("k value ("<< k << ") is too high (init output list is about "<< boost::get(get(boost::edge_init_outputs, this->getG()), c.e).size() <<" values ).");
             VERBOSE_FAILURE();
         }
@@ -637,23 +682,24 @@ public :
         VERBOSE_DEBUG(" - Add outputs for " << c << " = " << l.size() << " states = " <<  commons::join(l.begin(),l.end(),std::string(",")));
     	boost::put(boost::edge_init_outputs, this->getG(), c.e, l);
     	EXEC_COUNT q = this->getInitPhasesQuantity(this->getEdgeTarget(c));
-    	VERBOSE_DEBUG(" - EdgeTarget is " << this->getVertexName(this->getEdgeTarget(c)) << " with " << q << " init states");
-    	if (q > 0) {VERBOSE_ASSERT(q == l.size(),"Error, the number of init phase for the target task of edge " << c << " is " << q <<", but the number of value given is " << l.size());}
+    	VERBOSE_DEBUG(" -   Edge from " << this->getVertexName(this->getEdgeSource(c)) << " to " << this->getVertexName(this->getEdgeTarget(c)));
+    	VERBOSE_DEBUG(" -   Edge Target is " << this->getVertexName(this->getEdgeTarget(c)) << " with " << q << " init states");
+    	if (q > 0) {VERBOSE_ASSERT(q == (EXEC_COUNT) l.size(),"Error, the number of init phase for the target task of edge " << c << " is " << q <<", but the number of value given is " << l.size());}
     	this->setInitPhasesQuantity(this->getEdgeTarget(c),l.size());
     }
 
 
     inline  TOKEN_UNIT          getEdgeIn    (const Edge c)  		       const   {return boost::get(get(boost::edge_total_input, this->getG()), c.e);}
-    inline  TOKEN_UNIT          getEdgeInPhase    (const Edge c, EXEC_COUNT k)  const  {
+    inline  TOKEN_UNIT          getEdgeInPhase    (const Edge c, PHASE_INDEX k)  const  {
 
-    	if (boost::get(get(boost::edge_inputs, this->getG()), c.e).size() < k) {
-    		VERBOSE_ERROR("k value ("<< k << ") is too high (input list is about "<< boost::get(get(boost::edge_inputs, this->getG()), c.e).size() <<" values ).");
-    		VERBOSE_FAILURE();
-    	}
 
     	if (k <= 0 ) {
   		  return getEdgeInInitPhase(c, k + boost::get(get(boost::edge_init_inputs, this->getG()), c.e).size());
     	}
+       	if ((PHASE_INDEX) boost::get(get(boost::edge_inputs, this->getG()), c.e).size() < k) {
+        		VERBOSE_ERROR("k value ("<< k << ") is too high (input list is about "<< boost::get(get(boost::edge_inputs, this->getG()), c.e).size() <<" values ).");
+        		VERBOSE_FAILURE();
+        	}
 
     	return boost::get(get(boost::edge_inputs, this->getG()), c.e).at(k-1);
     }
@@ -669,13 +715,13 @@ public :
        	boost::put(boost::edge_total_input, this->getG(), c.e, total);
        	EXEC_COUNT q = this->getPhasesQuantity(this->getEdgeSource(c));
        	VERBOSE_DEBUG(" - EdgeSource is " << this->getVertexName(this->getEdgeSource(c)) << " with " << q << " states");
-       	if (q > 0) {VERBOSE_ASSERT(q == l.size(),"Error, the number of phase for the source task of edge " << c << " is " << q <<", but the number of value given is " << l.size());}
+       	if (q > 0) {VERBOSE_ASSERT(q == (EXEC_COUNT) l.size(),"Error, the number of phase for the source task of edge " << c << " is " << q <<", but the number of value given is " << l.size());}
 
        	this->setPhasesQuantity(this->getEdgeSource(c),l.size());
        }
 
-       inline  TOKEN_UNIT          getEdgeInInitPhase    (const Edge c, EXEC_COUNT k)  const  {
-              if (boost::get(get(boost::edge_init_inputs, this->getG()), c.e).size() < k) {
+       inline  TOKEN_UNIT          getEdgeInInitPhase    (const Edge c, PHASE_INDEX k)  const  {
+              if ((PHASE_INDEX) boost::get( get(boost::edge_init_inputs, this->getG()), c.e).size() < k) {
                   VERBOSE_ERROR("k value ("<< k << ") is too high (input list is about "<< boost::get(get(boost::edge_init_inputs, this->getG()), c.e).size() <<" values ).");
                   VERBOSE_FAILURE();
               }
@@ -689,7 +735,7 @@ public :
           	boost::put(boost::edge_init_inputs, this->getG(), c.e, l);
           	EXEC_COUNT q = this->getInitPhasesQuantity(this->getEdgeSource(c));
           	VERBOSE_DEBUG(" - EdgeSource is " << this->getVertexName(this->getEdgeSource(c)) << " with " << q << " init states");
-          	if (q > 0) {VERBOSE_ASSERT(q == l.size(),"Error, the number of init phase for the source task of edge " << c << " is " << q <<", but the number of value given is " << l.size());}
+          	if (q > 0) {VERBOSE_ASSERT(q == (EXEC_COUNT) l.size(),"Error, the number of init phase for the source task of edge " << c << " is " << q <<", but the number of value given is " << l.size());}
 
           	this->setInitPhasesQuantity(this->getEdgeSource(c),l.size());
           }
@@ -762,7 +808,7 @@ public :
                                                    std::vector<TIME_UNIT> l)    {
 		ASSERT_WRITABLE();
 		reset_computation();
-    	VERBOSE_ASSERT(l.size() == getPhasesQuantity(t), "Task " << getVertexName(t) <<  " - " << getVertexId(t) <<  " duration vector does not match task phase count.")
+    	VERBOSE_ASSERT((EXEC_COUNT) l.size() == getPhasesQuantity(t), "Task " << getVertexName(t) <<  " - " << getVertexId(t) <<  " duration vector does not match task phase count.")
     	boost::put(boost::vertex_phaseduration, this->getG(), t.v, l);
 
     }
@@ -771,7 +817,7 @@ public :
                                                       std::vector<TIME_UNIT> l)    {
    		ASSERT_WRITABLE();
    		reset_computation();
-       	VERBOSE_ASSERT(l.size() == getInitPhasesQuantity(t), "Task " << getVertexName(t) <<  " - " << getVertexId(t) <<  " duration vector does not match task init phase count.")
+       	VERBOSE_ASSERT((EXEC_COUNT)l.size() == getInitPhasesQuantity(t), "Task " << getVertexName(t) <<  " - " << getVertexId(t) <<  " duration vector does not match task init phase count.")
        	boost::put(boost::vertex_initphaseduration, this->getG(), t.v, l);
 
        }
@@ -786,12 +832,12 @@ public :
     TOKEN_UNIT channelGCD = getEdgeInPhase(c,1);
 
 
-    for (EXEC_COUNT k = 1 ; k <= this->getEdgeInPhasesCount(c) ; k++) {
+    for (PHASE_INDEX k = 1 ; k <= this->getEdgeInPhasesCount(c) ; k++) {
         channelGCD = boost::math::gcd(channelGCD,getEdgeInPhase(c,k));
     }
 
 
-    for (EXEC_COUNT k = 1 ; k <= this->getEdgeOutPhasesCount(c) ; k++) {
+    for (PHASE_INDEX k = 1 ; k <= this->getEdgeOutPhasesCount(c) ; k++) {
         channelGCD = boost::math::gcd(channelGCD,getEdgeOutPhase(c,k));
     }
     return channelGCD;
@@ -855,11 +901,11 @@ public :
     TOKEN_UNIT mop= this->getPreload(c);
     return normalizeUnknowValue(c,mop);
 }
-  inline  TOKEN_UNIT     getNormIn       (const Edge c, EXEC_COUNT phase)  const {
+  inline  TOKEN_UNIT     getNormIn       (const Edge c, PHASE_INDEX phase)  const {
         const TOKEN_UNIT old = this->getEdgeInPhase(c,phase);
         return normalizeValue(c,old);
     }
-  inline  TOKEN_UNIT     getNormOut       (const Edge c, EXEC_COUNT phase)  const {
+  inline  TOKEN_UNIT     getNormOut       (const Edge c, PHASE_INDEX phase)  const {
         const TOKEN_UNIT old = this->getEdgeOutPhase(c,phase);
         return normalizeValue(c,old);
     }
