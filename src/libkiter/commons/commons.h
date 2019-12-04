@@ -109,10 +109,10 @@ template<class T>
     std::string toString(const std::vector<T>& t)
 {
 	 std::stringstream s;
-		for (auto myt : t) {
-			s << commons::toString(myt) + " ";
-		}
-		return s.str();
+	 for (auto myt : t) {
+		 s << commons::toString(myt) + " ";
+	 }
+	 return s.str();
 }
 
 template<>

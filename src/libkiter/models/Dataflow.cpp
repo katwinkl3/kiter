@@ -8,7 +8,7 @@
 #include <models/Dataflow.h>
 
 template<>
-std::string commons::toString<  std::map<Vertex,EXEC_COUNT>  >(const  std::map<Vertex,EXEC_COUNT> & v)
+std::string commons::toString<std::map<Vertex,EXEC_COUNT>  >(const  std::map<Vertex,EXEC_COUNT> & v)
 {
     std::ostringstream stream;
     for (auto item : v) {

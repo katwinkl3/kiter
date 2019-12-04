@@ -38,6 +38,23 @@ std::string vectorAsStr(const std::vector<T>& t)
 		}
 		return s.str();
 }
+template<>
+std::string vectorAsStr(const std::vector<TIME_UNIT>& t)
+{
+	 std::stringstream s;
+		for (typename std::vector<TIME_UNIT>::size_type idx = 0 ; idx < t.size() ; idx++) {
+			if (idx > 0) {
+				 s << ",";
+			}
+			TIME_UNIT v = t[idx];
+			if ((std::floor(v)==std::ceil(v))) {
+				s << (unsigned long) (v) ;
+			} else {
+				s << commons::toString(v);
+			}
+		}
+		return s.str();
+}
 
 
 namespace commons {

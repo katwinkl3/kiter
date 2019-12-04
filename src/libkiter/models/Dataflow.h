@@ -832,12 +832,12 @@ public :
     TOKEN_UNIT channelGCD = getEdgeInPhase(c,1);
 
 
-    for (EXEC_COUNT k = 1 ; k <= this->getEdgeInPhasesCount(c) ; k++) {
+    for (PHASE_INDEX k = 1 ; k <= this->getEdgeInPhasesCount(c) ; k++) {
         channelGCD = boost::math::gcd(channelGCD,getEdgeInPhase(c,k));
     }
 
 
-    for (EXEC_COUNT k = 1 ; k <= this->getEdgeOutPhasesCount(c) ; k++) {
+    for (PHASE_INDEX k = 1 ; k <= this->getEdgeOutPhasesCount(c) ; k++) {
         channelGCD = boost::math::gcd(channelGCD,getEdgeOutPhase(c,k));
     }
     return channelGCD;
@@ -901,11 +901,11 @@ public :
     TOKEN_UNIT mop= this->getPreload(c);
     return normalizeUnknowValue(c,mop);
 }
-  inline  TOKEN_UNIT     getNormIn       (const Edge c, EXEC_COUNT phase)  const {
+  inline  TOKEN_UNIT     getNormIn       (const Edge c, PHASE_INDEX phase)  const {
         const TOKEN_UNIT old = this->getEdgeInPhase(c,phase);
         return normalizeValue(c,old);
     }
-  inline  TOKEN_UNIT     getNormOut       (const Edge c, EXEC_COUNT phase)  const {
+  inline  TOKEN_UNIT     getNormOut       (const Edge c, PHASE_INDEX phase)  const {
         const TOKEN_UNIT old = this->getEdgeOutPhase(c,phase);
         return normalizeValue(c,old);
     }
