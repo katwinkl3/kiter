@@ -38,6 +38,23 @@ std::string vectorAsStr(const std::vector<T>& t)
 		}
 		return s.str();
 }
+template<>
+std::string vectorAsStr(const std::vector<TIME_UNIT>& t)
+{
+	 std::stringstream s;
+		for (typename std::vector<TIME_UNIT>::size_type idx = 0 ; idx < t.size() ; idx++) {
+			if (idx > 0) {
+				 s << ",";
+			}
+			TIME_UNIT v = t[idx];
+			if ((std::floor(v)==std::ceil(v))) {
+				s << (unsigned long) (v) ;
+			} else {
+				s << commons::toString(v);
+			}
+		}
+		return s.str();
+}
 
 
 namespace commons {
@@ -65,6 +82,37 @@ std::pair<T1,T2> splitAndDefault(const std::string &s,char del,T2 d) {
 }
 
 
+TIME_UNIT runSDF3Throughput(models::Dataflow* const  dataflow, std::string SDF3_binary) {
+	static ARRAY_INDEX counter = 0;
+	std::string tmp_filename = "/tmp/tmp" + std::to_string(counter++) +  ".xml";
+	commons::writeSDF3File (tmp_filename,dataflow);
+	std::string cmd = SDF3_binary + " --graph " + tmp_filename + " --algo throughput";
+
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+
+    std::string result;
+    std::array<char, 128> buffer;
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    VERBOSE_INFO(result);
+
+    std::vector<std::string> lines = commons::split(result,'\n');
+    if (not (lines.size() == 2)) return 0;
+
+    std::string throughput_line = lines[0]; // thr(autogen) = 0.0434783
+    std::vector<std::string> thr_fields = commons::split(throughput_line,'=');
+    if (not (thr_fields.size() == 2)) return 0;
+    TIME_UNIT throughput = commons::fromString<TIME_UNIT>(thr_fields[1]);
+
+    return throughput;
+}
+
+
+
 void                        readSDF3OutputSpec      (models::Dataflow *to, const Edge c, const std::string rates) {
 
 	std::vector<std::string>  init_periodic = split (rates, INIT_PERIODIC_SEPARATOR);
@@ -80,6 +128,8 @@ void                        readSDF3OutputSpec      (models::Dataflow *to, const
 	for (unsigned int i = 1 ; i <= periodic_phases.size() ; i++) {
 		periodic_cons.push_back(commons::fromString<TOKEN_UNIT>(periodic_phases[i-1]));
 	}
+
+	VERBOSE_ASSERT(periodic_cons.size() > 0, "Edges output rates must have a periodic pattern. ");
 
 	to->setEdgeOutInitPhases(c,init_cons);
 	to->setEdgeOutPhases(c,periodic_cons);
@@ -102,6 +152,7 @@ void                        readSDF3InputSpec      (models::Dataflow *to, const 
 		periodic_prod.push_back(commons::fromString<TOKEN_UNIT>(periodic_phases[i-1]));
 	}
 
+	VERBOSE_ASSERT(periodic_prod.size() > 0, "Edges input rates must have a periodic pattern. ");
 	to->setEdgeInInitPhases(c,init_prod);
 	to->setEdgeInPhases(c,periodic_prod);
 

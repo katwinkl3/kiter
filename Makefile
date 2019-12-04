@@ -17,7 +17,7 @@ SDF3ANALYSIS_CSDF :=  timeout 180  ${SDF3_BINARY_ROOT}/sdf3analysis-csdf
 SDF3ANALYSIS_SDF := timeout 180   ${SDF3_BINARY_ROOT}/sdf3analysis-sdf
 KITER := timeout 180 ./Release/bin/kiter
 
-SOURCES=$(shell find src)
+SOURCES=$(shell find src tests)
 
 info :
 	@echo "----------------------------------------"

@@ -30,17 +30,14 @@
 // REALLY STRANGE BUGFIX : For Andrea config (old boost version in fc10)
 #include <boost/graph/detail/edge.hpp>
 #include <boost/rational.hpp>
+
+#include <commons/basic_types.h>
+
 namespace boost {struct bidirectional_tag;}
 namespace std {
 bool operator<(const boost::detail::edge_desc_impl<boost::bidirectional_tag, unsigned int>& lh, const boost::detail::edge_desc_impl<boost::bidirectional_tag, unsigned int>& rh);
 }
 
-typedef unsigned      long int  EXEC_COUNT;
-typedef               long int  TOKEN_UNIT;
-typedef               long int  DATA_UNIT;
-typedef unsigned      long int  ARRAY_INDEX;
-typedef            long double  TIME_UNIT;
-typedef            long double  DATA_BY_TIME_UNIT;
 
 typedef         boost::rational<EXEC_COUNT> EXEC_COUNT_FRACT   ;
 typedef    boost::rational<TOKEN_UNIT>      TOKEN_FRACT        ;
@@ -112,10 +109,10 @@ template<class T>
     std::string toString(const std::vector<T>& t)
 {
 	 std::stringstream s;
-		for (auto myt : t) {
-			s << commons::toString(myt) + " ";
-		}
-		return s.str();
+	 for (auto myt : t) {
+		 s << commons::toString(myt) + " ";
+	 }
+	 return s.str();
 }
 
 template<>
@@ -233,8 +230,8 @@ inline std::string ConvertRGBtoHex(int r, int g, int b) {
  */
 TIME_UNIT roundIt(TIME_UNIT val,TIME_UNIT p);
 //
-std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
-std::vector<std::string> split(const std::string &s, char delim) ;
+std::vector<std::string> &split(const std::string &s, const char delim, std::vector<std::string> &elems);
+std::vector<std::string> split(const std::string &s, const char delim) ;
 std::vector<std::string> splitSDF3List(const std::string &s);
 
 int fibo (int index);

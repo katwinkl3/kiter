@@ -188,21 +188,25 @@ void GLPSol::generateGLPKProblem() {
 
 
 	/* set rows */
-	glp_add_rows(lp, (int) this->rowsMap.size());
-	//for (vector<row>::iterator it = rows.begin(); it != rows.end() ; it ++) {
-	for(std::map<std::string,row>::iterator it = rowsMap.begin(); it != rowsMap.end() ; it++ ) {
-		glp_set_row_name(lp, it->second.indice, commons::fromString<const char*>(it->first));
-		glp_set_row_bnds(lp, it->second.indice, it->second.bound.type,  it->second.bound.up, it->second.bound.down);
+	if (this->rowsMap.size() > 0) {
+		glp_add_rows(lp, (int) this->rowsMap.size());
+		//for (vector<row>::iterator it = rows.begin(); it != rows.end() ; it ++) {
+		for(std::map<std::string,row>::iterator it = rowsMap.begin(); it != rowsMap.end() ; it++ ) {
+			glp_set_row_name(lp, it->second.indice, commons::fromString<const char*>(it->first));
+			glp_set_row_bnds(lp, it->second.indice, it->second.bound.type,  it->second.bound.up, it->second.bound.down);
+		}
 	}
 
 	/* set columns */
-	glp_add_cols(lp, (int) this->columnsMap.size());
-	for(std::map<std::string,column>::iterator it = columnsMap.begin(); it != columnsMap.end() ; it++ ) {
-		glp_set_col_name(lp, it->second.indice, commons::fromString<const char*>(it->second.name));
-		glp_set_col_bnds(lp, it->second.indice, it->second.bound.type,  it->second.bound.up, it->second.bound.down);
-		glp_set_col_kind(lp, it->second.indice, it->second.kind );
-		this->integer = this->integer || (it->second.kind != KIND_CONTINUE);
-		glp_set_obj_coef(lp, it->second.indice, it->second.coef);
+	if (this->columnsMap.size() > 0) {
+		glp_add_cols(lp, (int) this->columnsMap.size());
+		for(std::map<std::string,column>::iterator it = columnsMap.begin(); it != columnsMap.end() ; it++ ) {
+			glp_set_col_name(lp, it->second.indice, commons::fromString<const char*>(it->second.name));
+			glp_set_col_bnds(lp, it->second.indice, it->second.bound.type,  it->second.bound.up, it->second.bound.down);
+			glp_set_col_kind(lp, it->second.indice, it->second.kind );
+			this->integer = this->integer || (it->second.kind != KIND_CONTINUE);
+			glp_set_obj_coef(lp, it->second.indice, it->second.coef);
+		}
 	}
 
 	int matrice_size = this->coefs_size ;

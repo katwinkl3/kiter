@@ -54,11 +54,11 @@
 #define VERBOSE_EXTRA_DEBUG(m)   if (VERBOSE_IS_EXTRA_DEBUG())      std::cerr << BLUE_COLOR   << "[X]" << __SHOW_LEVEL << m << std::string(20,' ') << "\n" ; //PRINT_STATE();
 #define VERBOSE_DEBUG(m)   if (VERBOSE_IS_DEBUG())      std::cerr << BLUE_COLOR   << "[D]" << __SHOW_LEVEL << m << std::string(20,' ') << "\n" ; //PRINT_STATE();
 #define VERBOSE_ILP(m)     if (VERBOSE_IS_ILP())        std::cerr << PURPLE_COLOR << "[L]" << __SHOW_LEVEL << m << std::string(20,' ') << "\n" ;
-#define VERBOSE_DEBUG_ASSERT(test,mess) if (VERBOSE_IS_DEBUG())  if (!(test)) {VERBOSE_ERROR("Assertion failed : " << #test);VERBOSE_ERROR(mess);  ERROR();}
-#define VERBOSE_DEBUG_ASSERT_CONTAIN(a,b) if (VERBOSE_IS_DEBUG())  if (!(a | b)) {VERBOSE_ERROR("Assertion failed : " << #a << "(=" << a << ") ==" << #b << "(=" << b << ")"); ERROR();}
-#define VERBOSE_DEBUG_ASSERT_EQUALS(a,b) if (VERBOSE_IS_DEBUG())  if (a != b) {VERBOSE_ERROR("Assertion failed : " << #a << "(=" << a << ") ==" << #b << "(=" << b << ")"); ERROR();}
-#define VERBOSE_DEBUG_ASSERT_GreaterThan(a,b) if (VERBOSE_IS_DEBUG())   if (a <= b) {VERBOSE_ERROR("Assertion failed : " << #a << "(=" << a << ") >" << #b << "(=" << b << ")"); ERROR();}
-#define VERBOSE_DEBUG_ASSERT_GreaterEqualThan(a,b) if (VERBOSE_IS_DEBUG())  if (a < b)  {VERBOSE_ERROR("Assertion failed : " << #a << "(=" << a << ") >=" << #b << "(=" << b << ")"); ERROR();}
+#define VERBOSE_DEBUG_ASSERT(test,mess)  if (!(test)) {VERBOSE_ERROR("Assertion failed : " << #test);VERBOSE_ERROR(mess);  ERROR();}
+#define VERBOSE_DEBUG_ASSERT_CONTAIN(a,b)   if (!(a | b)) {VERBOSE_ERROR("Assertion failed : " << #a << "(=" << a << ") ==" << #b << "(=" << b << ")"); ERROR();}
+#define VERBOSE_DEBUG_ASSERT_EQUALS(a,b)   if (a != b) {VERBOSE_ERROR("Assertion failed : " << #a << "(=" << a << ") ==" << #b << "(=" << b << ")"); ERROR();}
+#define VERBOSE_DEBUG_ASSERT_GreaterThan(a,b)   if (a <= b) {VERBOSE_ERROR("Assertion failed : " << #a << "(=" << a << ") >" << #b << "(=" << b << ")"); ERROR();}
+#define VERBOSE_DEBUG_ASSERT_GreaterEqualThan(a,b)  if (a < b)  {VERBOSE_ERROR("Assertion failed : " << #a << "(=" << a << ") >=" << #b << "(=" << b << ")"); ERROR();}
 #else
 #define VERBOSE_EXTRA_DEBUG(m)   ;
 #define VERBOSE_DEBUG(m)   ;

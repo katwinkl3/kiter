@@ -118,7 +118,7 @@ scheduling_t algorithms::scheduling::bufferless_kperiodic_scheduling (models::Da
     std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
     std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 
-    models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector,do_bufferless);
+    models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
 
     TIME_UNIT omega = 1 / result.first ;
     eg->computeStartingTimeWithOmega (omega);

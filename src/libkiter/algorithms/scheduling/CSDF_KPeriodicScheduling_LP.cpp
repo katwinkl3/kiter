@@ -59,16 +59,16 @@ bool add_precedences_constraints (commons::GLPSol &g, commons::idx_t OMEGA_COL, 
 	VERBOSE_DEBUG("Buffer " << buffername << " between " << sourceStr << " and " << targetStr );
 
 
-	VERBOSE_DEBUG("  periodicity_t=" << periodicity_t
+	VERBOSE_EXTRA_DEBUG("  periodicity_t=" << periodicity_t
 		     << " periodicity_tp=" << periodicity_tp
 		     << " NoKPeriodic_i_a=" << NoKPeriodic_i_a
 		     << " NoKPeriodic_o_a=" << NoKPeriodic_o_a
 				 );
 
-	VERBOSE_DEBUG("  N_t=" << N_t
+	VERBOSE_EXTRA_DEBUG("  N_t=" << N_t
 		     << " N_tp=" << N_tp
 		    );
-	VERBOSE_DEBUG("  i_a=" << i_a
+	VERBOSE_EXTRA_DEBUG("  i_a=" << i_a
 		     << " o_a=" << o_a
 		     << " gcda=" << gcda
 		     << " stepa=" << stepa
@@ -82,7 +82,7 @@ bool add_precedences_constraints (commons::GLPSol &g, commons::idx_t OMEGA_COL, 
 	for(EXEC_COUNT phase_j = 1; phase_j <= subphi_tp ; phase_j++) {
 	for(EXEC_COUNT period_j = 1; period_j <= periodicity_tp ; period_j++) {
 
-		VERBOSE_DEBUG("    phase_i=" << phase_i << ", phase_j=" << phase_j << ", period_i=" << period_i << ", period_j=" << period_j );
+		VERBOSE_EXTRA_DEBUG("    phase_i=" << phase_i << ", phase_j=" << phase_j << ", period_i=" << period_i << ", period_j=" << period_j );
 
 
 		int saicolid = g.getColumn(START_COL_STR(sourceStr,phase_i,period_i)) ;
@@ -103,7 +103,7 @@ bool add_precedences_constraints (commons::GLPSol &g, commons::idx_t OMEGA_COL, 
 		TOKEN_UNIT out_a_kpm1 = dataflow->getEdgeOutPhase(c, (phase_j - 1) > 0 ? (phase_j - 1) : dataflow->getPhasesQuantity(target) );
 
 
-		VERBOSE_DEBUG("    in_a_k=" << in_a_k
+		VERBOSE_EXTRA_DEBUG("    in_a_k=" << in_a_k
 			     << " out_a_kp=" << out_a_kp
 			     << " out_a_kpm1=" << out_a_kpm1
 					 );
@@ -119,12 +119,12 @@ bool add_precedences_constraints (commons::GLPSol &g, commons::idx_t OMEGA_COL, 
 		TOKEN_UNIT I_a_Pre_tk_1 = I_a_tk_1 - in_a_k ; // sum of production up to k - 1
 
 
-		VERBOSE_DEBUG("    NoKPeriodic_O_a_tpkp_1=" << NoKPeriodic_O_a_tpkp_1
+		VERBOSE_EXTRA_DEBUG("    NoKPeriodic_O_a_tpkp_1=" << NoKPeriodic_O_a_tpkp_1
 			     << " NoKPeriodic_I_a_tk_1=" << NoKPeriodic_I_a_tk_1
 					 );
 
 
-		VERBOSE_DEBUG("    O_a_tpkp_1=" << O_a_tpkp_1
+		VERBOSE_EXTRA_DEBUG("    O_a_tpkp_1=" << O_a_tpkp_1
 			     << " I_a_tk_1=" << I_a_tk_1
 			     << " I_a_Pre_tk_1=" << I_a_Pre_tk_1
 					 );
@@ -137,7 +137,7 @@ bool add_precedences_constraints (commons::GLPSol &g, commons::idx_t OMEGA_COL, 
 		TOKEN_UNIT low_a_k_kp = std::max(thr_a_kp, thr_a_kpm1 + in_a_k - out_a_kp ) ;
 
 
-		VERBOSE_DEBUG("    thr_a_kp=" << thr_a_kp
+		VERBOSE_EXTRA_DEBUG("    thr_a_kp=" << thr_a_kp
 			     << " thr_a_kpm1=" << thr_a_kpm1
 			     << " low_a_k_kp=" << low_a_k_kp
 					 );
@@ -147,7 +147,7 @@ bool add_precedences_constraints (commons::GLPSol &g, commons::idx_t OMEGA_COL, 
 		TOKEN_UNIT alphamax = commons::floor( thr_a_kp  + O_a_tpkp_1 - I_a_Pre_tk_1 - Moa - 1 , gcda ) ;
 
 
-		VERBOSE_DEBUG("    Test alphamin (" << alphamin << ") <=  alphamax (" << alphamax << ")");
+		VERBOSE_EXTRA_DEBUG("    Test alphamin (" << alphamin << ") <=  alphamax (" << alphamax << ")");
 
 		if (alphamin <= alphamax) { // check if contraint exist
 
@@ -157,7 +157,7 @@ bool add_precedences_constraints (commons::GLPSol &g, commons::idx_t OMEGA_COL, 
 				TIME_UNIT omega_coef =  ((TIME_UNIT) alphamax) / ( (TIME_UNIT) N_t * (TIME_UNIT) NoKPeriodic_i_a );
 				int rowid = g.addRow(pred_row_name,commons::bound_s(commons::LOW_BOUND, (double) ltai ));
 
-				VERBOSE_DEBUG("      omega_coef =  " << omega_coef );
+				VERBOSE_EXTRA_DEBUG("      omega_coef =  " << omega_coef );
 
 				g.fastAddCoef(rowid ,OMEGA_COL    , (double) - omega_coef      );
 				if ( sajcolid != saicolid) {
@@ -251,6 +251,7 @@ models::Scheduling collect_lp_results (const commons::GLPSol &g, const models::D
 
 models::Scheduling  algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (const models::Dataflow* const dataflow, const periodicity_vector_t& kvector) {
 
+
     // STEP 0.1 - PRE
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
     VERBOSE_ASSERT(dataflow->is_repetition_vector(),"Please generate the repetition vector before using this function.");
@@ -258,6 +259,10 @@ models::Scheduling  algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (cons
     EXEC_COUNT sumKi = accumulate(kvector.begin(), kvector.end(), 0, [](int v, const periodicity_vector_t::value_type& p){return v + p.second;});
 
     VERBOSE_INFO("Start CSDF_KPeriodicScheduling_LP with SumKi=" << sumKi << " and sumNi=" << sumNi);
+
+    // We do not process empty graph.
+    if (dataflow->getVerticesCount() == 0) return models::Scheduling ();
+
     //##################################################################
     // Linear program generation
     //##################################################################
@@ -398,7 +403,7 @@ models::Scheduling  algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (cons
 	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
     //STEP 1 - Generate Event Graph
 	auto kvector = generateNPeriodicVector(dataflow);
-    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector, false);
+    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector);
 
 
     VERBOSE_INFO("KPeriodic EventGraph generation Done");
