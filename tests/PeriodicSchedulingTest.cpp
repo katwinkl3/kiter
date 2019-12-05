@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE( test_scheduling_single_task_SDF )
 	VERBOSE_ASSERT(computeRepetitionVector(g),"Cannot generate repetition vector.");
 	models::Scheduling res1 = algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (g, algorithms::scheduling::generate1PeriodicVector(g));
     BOOST_REQUIRE_EQUAL( res1.getGraphPeriod(), 0 );
-    BOOST_REQUIRE_EQUAL( res1.getGraphPeriod(), commons::runSDF3Throughput(g) );
+    BOOST_REQUIRE_EQUAL( res1.getGraphThroughput(), commons::runSDF3Throughput(g) );
 
     // Case of scheduling with Reentrancy
     // ==============================================
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE( test_scheduling_single_task_SDF )
 	VERBOSE_ASSERT(computeRepetitionVector(g),"Cannot generate repetition vector.");
 	models::Scheduling res2 = algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (g, algorithms::scheduling::generate1PeriodicVector(g));
     BOOST_REQUIRE_EQUAL( res2.getGraphPeriod(), 1 );
-    BOOST_REQUIRE_EQUAL( res2.getGraphPeriod(), commons::runSDF3Throughput(g) );
+    BOOST_REQUIRE_EQUAL( res2.getGraphThroughput(), commons::runSDF3Throughput(g) );
 
 
     delete g;
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE( test_scheduling_single_task_CSDF )
 	VERBOSE_ASSERT(computeRepetitionVector(g),"Cannot generate repetition vector.");
 	models::Scheduling res1 = algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (g, algorithms::scheduling::generate1PeriodicVector(g));
     BOOST_REQUIRE_EQUAL( res1.getGraphPeriod(), 0 );
-    //BOOST_REQUIRE_EQUAL( res1.getGraphPeriod(), commons::runSDF3Throughput(g) );
+    BOOST_REQUIRE_EQUAL( res1.getGraphThroughput(), commons::runSDF3Throughput(g) );
 
 
     // Case of scheduling with Reentrancy
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE( test_scheduling_single_task_CSDF )
 	VERBOSE_ASSERT(computeRepetitionVector(g),"Cannot generate repetition vector.");
 	models::Scheduling res2 = algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (g, algorithms::scheduling::generate1PeriodicVector(g));
     BOOST_REQUIRE_EQUAL( res2.getGraphPeriod(), 1 );
-    BOOST_REQUIRE_EQUAL( res2.getGraphPeriod(), commons::runSDF3Throughput(g) );
+    BOOST_REQUIRE_EQUAL( res2.getGraphThroughput(), commons::runSDF3Throughput(g) );
 
     delete g;
 

@@ -181,7 +181,7 @@ int main (int argc, char **argv)
 	} else {
 
 		if (parameters.find("RATIO") != parameters.end() ) {
-			FREQUENCY = algorithms::optimal_1periodic_throughput(csdf);
+			FREQUENCY = 0.0; // TODO  : Fix a scheduling technique here to get Max frequency!
 		}
 	}
 

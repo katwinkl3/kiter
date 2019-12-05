@@ -20,10 +20,10 @@ std::string add_block ( std::string name , TIME_UNIT start, TIME_UNIT duration, 
 		return returnStream.str();
 }
 
-std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  dataflow, std::map<ARRAY_INDEX,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> periodic_scheduling ,   TIME_UNIT last_execution_end_at, bool full,  double xscale , double yscale ) {
+std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  dataflow,  models::Scheduling& sched ,   TIME_UNIT last_execution_end_at, bool full,  double xscale , double yscale ) {
 
   std::ostringstream returnStream;
-
+  scheduling_t periodic_scheduling = sched.getTaskSchedule();
   static double label_node_width  =   1;
   static double label_node_height = yscale *  0.25;
 
@@ -42,6 +42,7 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
       auto tid = dataflow->getVertexId(t); 
       //VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
   	  auto Ni = dataflow->getNi(t);
+
   	  auto period = periodic_scheduling[tid].first;
   	  auto duration = dataflow->getVertexTotalDuration(t);
   	  auto starts = periodic_scheduling[tid].second;
