@@ -12,7 +12,7 @@
 #include <models/Dataflow.h>
 #include <models/EventGraph.h>
 #include <algorithms/normalization.h>
-#include <algorithms/periodic.h>
+#include <algorithms/buffersizing/periodic.h>
 #include <algorithms/repetition_vector.h>
 
 void algorithms::compute_csdf_1periodic_memory   (models::Dataflow* const  dataflow, parameters_list_t params) {

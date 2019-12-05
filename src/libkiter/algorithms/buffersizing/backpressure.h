@@ -9,12 +9,12 @@
 #define BACKPRESSURE_H_
 
 #include <commons/commons.h>
+#include <commons/basic_types.h>
 
 namespace models {
-    class EventGraph;
+class Dataflow;
 }
 namespace algorithms {
-std::map<std::pair<Vertex,EXEC_COUNT>,TIME_UNIT> back_pressure_start_timing (models::Dataflow* const  dataflow, TIME_UNIT PERIOD);
     void compute_backpressure_memory_sizing (models::Dataflow* const  dataflow, parameters_list_t);
 }
 

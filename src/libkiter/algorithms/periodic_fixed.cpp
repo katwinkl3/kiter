@@ -12,7 +12,6 @@
 #include <models/Dataflow.h>
 #include <algorithms/normalization.h>
 #include <algorithms/periodic_fixed.h>
-#include <algorithms/periodic.h>
 #include <algorithms/repetition_vector.h>
 
 

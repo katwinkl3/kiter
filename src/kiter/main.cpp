@@ -14,14 +14,14 @@
 #include <models/EventGraph.h>
 #include <models/Dataflow.h>
 #include <printers/stdout.h>
-#include <algorithms/periodic.h>
+#include <algorithms/buffersizing/periodic.h>
 #include <algorithms/periodic_fixed.h>
 #include <algorithms/kperiodic.h>
 #include <algorithms/software_noc.h>
 #include <algorithms/nperiodic.h>
 #include <algorithms/degroote.h>
 #include <algorithms/symbolicExecution.h>
-#include <algorithms/backpressure.h>
+#include <algorithms/buffersizing/backpressure.h>
 #include <algorithms/mappings.h>
 #include <algorithms/schedulings.h>
 #include <algorithms/transformations.h>
