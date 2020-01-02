@@ -238,8 +238,10 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow , bool s
 
   
   {ForEachChannel(dataflow,c){
-      ARRAY_INDEX edgeIn  = dataflow->getVertexId(dataflow->getEdgeSource(c));
-      ARRAY_INDEX edgeOut = dataflow->getVertexId(dataflow->getEdgeTarget(c));
+      Vertex edgeIn  = (dataflow->getEdgeSource(c));
+      Vertex edgeOut = (dataflow->getEdgeTarget(c));
+      ARRAY_INDEX edgeInId  = dataflow->getVertexId(dataflow->getEdgeSource(c));
+      ARRAY_INDEX edgeOutId = dataflow->getVertexId(dataflow->getEdgeTarget(c));
       returnStream << "  t_" << edgeIn << " -> t_" << edgeOut << " [";
       returnStream << std::endl;
       std::string bl = dataflow->getEdgeTypeStr(c) ;
@@ -252,10 +254,10 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow , bool s
       }
       returnStream << "\"," << std::endl;
       returnStream << "    headlabel=\"" ;
-      if (dataflow->getInitPhasesQuantity(edgeOut) > 0) {returnStream <<  commons::toString(dataflow->getEdgeInitOutVector(c)) << ";" ;}
+      if (dataflow->getInitPhasesQuantity(edgeOut) > 0) {returnStream << "(" << commons::toString(dataflow->getEdgeInitOutVector(c)) << ")"  << ";" ;}
       returnStream <<  commons::toString(dataflow->getEdgeOutVector(c)) << "\"," << std::endl;
       returnStream << "    taillabel=\"" ;
-      if (dataflow->getInitPhasesQuantity(edgeIn) > 0) {returnStream <<  commons::toString(dataflow->getEdgeInitInVector(c)) << ";" ;}
+      if (dataflow->getInitPhasesQuantity(edgeIn) > 0) {returnStream << "("  <<  commons::toString(dataflow->getEdgeInitInVector(c))  << ")" << ";" ;}
       returnStream <<  commons::toString(dataflow->getEdgeInVector(c)) << "\"," << std::endl;
       returnStream << " ] ;" << std::endl;
     }}
