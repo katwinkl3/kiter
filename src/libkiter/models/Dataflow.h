@@ -344,6 +344,7 @@ inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
 	Vertex nt = Vertex(boost::add_vertex(this->getG()));
 	this->setVertexId(nt,id);
 	this->setVertexName(nt,"Vertex" + std::to_string(this->getVertexId(nt)));
+	this->setInitPhasesQuantity(nt,0);
 	return nt;}
 
 
@@ -600,7 +601,7 @@ public :
     }
     inline  EXEC_COUNT          getEdgeInInitPhasesCount   (const Edge c) const   {
     	EXEC_COUNT tmp =  boost::get(get(boost::edge_init_inputs, this->getG()), c.e).size();
-    	VERBOSE_DEBUG_ASSERT(this->getInitPhasesQuantity(this->getEdgeSource(c)) == tmp, "Edge input init spec does ot match task init spec");
+    	VERBOSE_DEBUG_ASSERT(this->getInitPhasesQuantity(this->getEdgeSource(c)) == tmp, "Edge input init spec (" << tmp << ") does ot match task init spec (" << this->getInitPhasesQuantity(this->getEdgeSource(c)) << ")");
         return tmp;
     }
 
@@ -628,7 +629,7 @@ public :
     inline const std::vector<TOKEN_UNIT> &          getEdgeInitInVector   (const Edge c)  const  {
 
     	const std::vector<TOKEN_UNIT> & tmp = boost::get(get(boost::edge_init_inputs, this->getG()), c.e);
-    	VERBOSE_DEBUG_ASSERT(this->getInitPhasesQuantity(this->getEdgeSource(c)) == (EXEC_COUNT) tmp.size(), "Edge input init spec does ot match task init spec");
+    	VERBOSE_DEBUG_ASSERT(this->getInitPhasesQuantity(this->getEdgeSource(c)) == (EXEC_COUNT) tmp.size(), "Edge input init spec (" <<   tmp.size() << ") does not match task init spec (" << this->getInitPhasesQuantity(this->getEdgeSource(c)) << ")");
         return tmp;
 
     }
@@ -736,6 +737,10 @@ public :
           	EXEC_COUNT q = this->getInitPhasesQuantity(this->getEdgeSource(c));
           	VERBOSE_DEBUG(" - EdgeSource is " << this->getVertexName(this->getEdgeSource(c)) << " with " << q << " init states");
           	if (q > 0) {VERBOSE_ASSERT(q == (EXEC_COUNT) l.size(),"Error, the number of init phase for the source task of edge " << c << " is " << q <<", but the number of value given is " << l.size());}
+
+        	VERBOSE_DEBUG_ASSERT(
+        			this->getInitPhasesQuantity(this->getEdgeSource(c))
+					== (EXEC_COUNT) l.size(), "Edge input init spec (" <<   l.size() << ") does not match task init spec (" << this->getInitPhasesQuantity(this->getEdgeSource(c)) << ")");
 
           	this->setInitPhasesQuantity(this->getEdgeSource(c),l.size());
           }
