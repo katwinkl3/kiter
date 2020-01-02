@@ -55,6 +55,12 @@ std::string toString< std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> >(const 
 }
 
 template<>
+std::string toString< std::pair<TIME_UNIT , ARRAY_INDEX> >(const std::pair<TIME_UNIT , ARRAY_INDEX>& v)
+{
+        return "<" + commons::toString(std::get<0>(v)) +  "," +  commons::toString(std::get<1>(v)) +  "," + ">";
+}
+
+template<>
 std::string toString< std::vector<ARRAY_INDEX> >(const std::vector<ARRAY_INDEX>& v)
 {
         return commons::join(v.begin(),v.end(),std::string(","));
