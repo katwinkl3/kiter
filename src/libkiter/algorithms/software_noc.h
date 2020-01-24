@@ -1,5 +1,5 @@
 /*
- * kperiodic.h
+ * software_noc.h
  *
  *  Created on: 9 mai 2013
  *      Author: toky
@@ -8,6 +8,10 @@
 #ifndef SOFTWARE_NOC_H_
 #define SOFTWARE_NOC_H_
 typedef long int LARGE_INT;
+
+class models::Dataflow;
+
+bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::vector< ARRAY_INDEX >& mergeNodes) ;
 namespace algorithms {
 	inline LARGE_INT myabs(LARGE_INT a)
 	{

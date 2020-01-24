@@ -10,6 +10,7 @@
 #include <iostream>
 #include <printers/stdout.h>
 #include <commons/verbose.h>
+#include <commons/commons.h>
 #include <models/Dataflow.h>
 #include <models/EventGraph.h>
 #include <algorithms/normalization.h>
@@ -18,7 +19,6 @@
 #include <algorithms/kperiodic.h>
 #include <cstdlib>
 #include <stack>
-#include <boost/math/common_factor.hpp>
 #include <climits>
 #include <algorithms/schedulings.h>
 #include <set>
@@ -51,6 +51,7 @@ void print_graph (models::Dataflow * to) {
 
 	static int counter = 0;
 	counter ++ ;
+	VERBOSE_INFO("=========== Write file " << counter << "\n");
 
 	to->reset_computation();
 	// Write the input as a dot file
@@ -58,7 +59,6 @@ void print_graph (models::Dataflow * to) {
 	myfile2.open ("software_noc_" + commons::toString(counter) + ".dot");
 	myfile2 << printers::GenerateDOT(to);
 	myfile2.close();
-	VERBOSE_INFO("=========== Write file " << counter << "\n");
 	commons::writeSDF3File("software_noc_" + commons::toString(counter) + ".xml", to);
 	to->reset_computation();
 
@@ -67,37 +67,17 @@ void print_graph (models::Dataflow * to) {
 	auto out_err = system(cmd.c_str());
 	if(out_err)
 		VERBOSE_INFO ("System call returns error\n");
-/*
+
 	to->reset_computation();
 	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
-	VERBOSE_ASSERT(computeRepetitionVector(original),"inconsistent graph");
-	float ratio = -1;
-	{ForEachVertex(original,orig_v) {
-		auto orig_vid = original->getVertexId(orig_v);
-                auto to_v = to->getVertexById(orig_vid);
-                float new_ratio = (float) to->getNi(to_v) / (float)original->getNi(orig_v);
-		if(ratio != -1 && ratio != new_ratio)
-		{
-			std::cout << "NODE " << to->getVertexName(to_v) << ",ni=" <<  to->getNi(to_v) << " failed\n";
-			exit(0);
-		}
-		ratio = new_ratio;
-	}}
 
-	scheduling_t persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to) ;
 
-	TIME_UNIT throughput = 0;
-	VERBOSE_ASSERT(throughput > 0, "fix me: period is P_i * N_I");
+	auto persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to) ;
 
 	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, DO_BUFFERLESS , STOP_AT_FIRST, GET_PREVIOUS);
 	to->reset_computation();
 
-	if(throughput == 0)
-	{
-		std::cout << "throughput == 0, exiting\n";
-		exit(0);
-	}
-*/
+
 }
 
 route_t get_route_wrapper(models::Dataflow* to, Edge c, NoC* noc)
@@ -1419,6 +1399,7 @@ TOKEN_UNIT compute_local_flow (models::Dataflow* to, std::vector< ARRAY_INDEX >&
 
 bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::vector< ARRAY_INDEX >& mergeNodes) {
 
+	VERBOSE_INFO("name = " << name << " nodes" << commons::toString( mergeNodes ) );
 	// This function is not generic yet, cannot support preload
 	if (mergeNodes.size() <= 1)
 		return false;
@@ -1539,14 +1520,18 @@ bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::vector< 
 		to->setEdgeInPhases(new_edge, myin);
 		to->setEdgeOutPhases(new_edge, periodic_token_vec[vid]);
 		to->setEdgeOutInitPhases(new_edge, init_token_vec[vid]);
+		VERBOSE_ASSERT(init_token_vec[vid].size() == to->getInitPhasesQuantity(middle), "init_token_vec[vid] has the wrong size: " << init_token_vec[vid].size() << " !=" << to->getInitPhasesQuantity(middle));
 
 		new_edge = to->addEdge(middle, v2);
 		to->setEdgeType(new_edge,EDGE_TYPE::BUFFERLESS_EDGE);
 		to->setPreload(new_edge, preload_v2);
 		to->setEdgeInPhases(new_edge, periodic_token_vec[vid]);
 		to->setEdgeInInitPhases(new_edge, init_token_vec[vid]);
+		VERBOSE_ASSERT(init_token_vec[vid].size() == to->getInitPhasesQuantity(middle), "init_token_vec[vid] has the wrong size: " << init_token_vec[vid].size() << " !=" << to->getInitPhasesQuantity(middle));
+
 		to->setEdgeOutPhases(new_edge, myout);
 		to->setEdgeType(new_edge, e_v2);
+		print_graph(to);
 	}
 
 
@@ -2514,6 +2499,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 
 	removeOrphanNodes(to, vid_to_conflict_map, conflictEdges);
+	print_graph(to);
 
 	std::cout << "calling scheduling\n";
 
@@ -2533,6 +2519,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		VERBOSE_ASSERT(omega != std::numeric_limits<TIME_UNIT>::infinity(), "Infinite period, this dataflow does not schedule.");
 
 		mergeNodes = checkForConflicts(conflictEdges, to, omega, persched, dataflow, name);
+		print_graph(to);
 
 		if(mergeNodes.size() == 0)
 			break;
@@ -2540,9 +2527,11 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		std::cout << "conflict in " << name << "\n";
 		//mergeConfigNodes(to, name, mergeNodes);
 		mergeConfigNodesInit(to, name, mergeNodes);
+		print_graph(to);
 
 		std::cout << "before removeme\n";
 		removeOrphanNodes(to, vid_to_conflict_map, conflictEdges);
+		print_graph(to);
 		std::cout << "before compp\n";
 
 
@@ -2557,6 +2546,12 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	TIME_UNIT HP;
 	findHP(dataflow, to, persched, &HP, &LCM);
 	print_graph(to);
+
+
+	auto utility = noc->getLinkUtil();
+	VERBOSE_INFO ( "utility" <<  commons::toString(utility) );
+
+
 }
 
 void algorithms::dynamic_noc(models::Dataflow* const  dataflow, parameters_list_t   param_list)

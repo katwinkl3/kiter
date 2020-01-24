@@ -11,7 +11,16 @@
 #include <boost/test/included/unit_test.hpp>
 #include <commons/verbose.h>
 #include "sample.h"
-
+class WITHOUT_VERBOSE {
+	public:
+	WITHOUT_VERBOSE() {
+    	commons::set_verbose_mode(commons::INFO_LEVEL);
+    	BOOST_TEST_MESSAGE( "WITHOUT_VERBOSE Setup Done" );
+    }
+	~WITHOUT_VERBOSE()                    {
+    	BOOST_TEST_MESSAGE( "WITHOUT_VERBOSE Teardown Done" );
+    }
+};
 
 class WITH_VERBOSE {
 	public:
