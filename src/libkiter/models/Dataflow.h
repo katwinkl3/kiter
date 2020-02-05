@@ -590,7 +590,7 @@ public :
     }
     inline  EXEC_COUNT          getEdgeInPhasesCount   (const Edge c) const   {
     	EXEC_COUNT tmp =  boost::get(get(boost::edge_inputs, this->getG()), c.e).size();
-    	VERBOSE_DEBUG_ASSERT(this->getPhasesQuantity(this->getEdgeSource(c)) == tmp, "Edge input spec does ot match task spec");
+    	VERBOSE_DEBUG_ASSERT(this->getPhasesQuantity(this->getEdgeSource(c)) == tmp, "Edge input spec  (" << tmp << ") does ot match task spec (" << this->getPhasesQuantity(this->getEdgeSource(c)) << ")");
     	return tmp;
     }
 
