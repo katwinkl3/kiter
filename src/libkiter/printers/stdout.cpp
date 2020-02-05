@@ -286,7 +286,7 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow , bool s
       Vertex edgeOut = (dataflow->getEdgeTarget(c));
       ARRAY_INDEX edgeInId  = dataflow->getVertexId(dataflow->getEdgeSource(c));
       ARRAY_INDEX edgeOutId = dataflow->getVertexId(dataflow->getEdgeTarget(c));
-      returnStream << "  t_" << edgeIn << " -> t_" << edgeOut << " [";
+      returnStream << "  t_" << edgeInId << " -> t_" << edgeOutId << " [";
       returnStream << std::endl;
       std::string bl = dataflow->getEdgeTypeStr(c) ;
       ARRAY_INDEX eid = dataflow->getEdgeId(c) ;
