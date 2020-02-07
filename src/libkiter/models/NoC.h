@@ -48,6 +48,7 @@ public :
 	}
 
 	std::vector<int> findPathDijkstra(int u, int d) { return g->findPathDijkstra(u, d); }
+	std::vector<int> findLowContentionPath(int u, int d) { return g->findLowContentionPath(u, d); }
 	void generateShortestPaths() { g->generateAllShortestPaths(); }
 	std::vector< std::vector<int> > getShortestPaths(int s, int d) { return g->getShortestPaths(s, d); }
 	//std::map<int, int> getLinkUtil() { return g->getLinkUtil(); }

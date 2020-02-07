@@ -21,6 +21,7 @@ class NoCGraph
 	std::vector<int> linkUtil;
 	bool dumpPaths;
 	int MESH_SIZE;
+	int HWLIMIT;
 
 	// A recursive function used by printAllPaths() 
 	void printAllPathsUtil(int , int , bool [], int [], int &); 
@@ -30,7 +31,7 @@ class NoCGraph
 	NoCGraph(int V); // Constructor 
 
 	NoCGraph()
-	{ this->V = 1; adj = new std::list<int>[V]; dumpPaths = false; MESH_SIZE = (V/2); linkUtil.resize(V*V, 0);} 
+	{ this->V = 1; adj = new std::list<int>[V]; dumpPaths = false; MESH_SIZE = (V/2); linkUtil.resize(V*V, 0); HWLIMIT = 4;} 
 
 	std::vector< std::vector<int> > getShortestPaths(int s, int d)
 	{
@@ -41,6 +42,7 @@ class NoCGraph
 	int findPathCost(std::vector<int>& mypath);
 	void findLeastCostPath(int u, int d, bool visited[], int path[], int &path_index);
 	std::vector<int> findPathDijkstra(int u, int d);
+	std::vector<int> findLowContentionPath(int u, int d);
 	std::vector<int> getPath(int s, int d)
 	{
 		dumpPaths = true;

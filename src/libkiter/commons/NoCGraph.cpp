@@ -9,6 +9,7 @@
 #include <commons/NoCGraph.h>
 #include <climits>
 #include <algorithm>
+#include <fstream>
 
 NoCGraph::NoCGraph(int V)
 {
@@ -16,6 +17,20 @@ NoCGraph::NoCGraph(int V)
 	adj = new std::list<int>[V];
 	dumpPaths = false;
 	MESH_SIZE = (V/2);
+
+	//Read from file to set up hardware limit, default is set to FOUR
+	HWLIMIT = 4;
+
+	std::ifstream myfile ("routersize.txt");
+	if (myfile.is_open())
+	{
+		myfile >> HWLIMIT;
+		myfile.close();
+	}
+	else
+	{
+		std::cout << "Unable to open file, Setting HW Limit to FOUR\n";
+	}
 }
 
 void NoCGraph::addEdge(int u, int v)
@@ -276,6 +291,87 @@ std::vector<int> NoCGraph::findPathDijkstra(int u, int d)
 
 	return path_vec;
 }
+
+//this function obtains the least contended path between u and d. In case the hardware limit is reached in terms of slots
+//per router, we return an empty list
+std::vector<int> NoCGraph::findLowContentionPath(int u, int d)
+{
+	u += MESH_SIZE;
+	d += MESH_SIZE;
+
+	// Initialize all vertices as not visited
+	std::vector<bool> visited(V, false);
+	std::vector<int> prev(V, -1);
+	std::vector<int> cost_vec(V, INT_MAX);
+	std::vector<int> link_util(V, INT_MAX);
+
+	std::vector<int> path_vec;
+
+	if(u == d)
+		return path_vec;
+
+	// Mark the current node and store it in path[]
+	cost_vec[u] = 0;
+
+	for(int i = 0; i < V ; i++)
+	{
+		int vid = -1;
+		int max_dist = INT_MAX;
+		for(int j = 0; j < (int)cost_vec.size(); j++)
+		{
+			if(visited[j])
+			{
+				continue;
+			}
+			if(max_dist > cost_vec[j])
+			{
+				max_dist = cost_vec[j];
+				vid = j;
+			}
+		}
+
+		//std::cout << "marking " <<  vid << " visited\n";
+		if(vid < 0)
+			continue;
+
+		visited[vid] = true;
+		for(std::list<int>::iterator j = adj[vid].begin(); j != adj[vid].end(); j++)
+		{
+			int dst = *j;
+			int alt = cost_vec[vid] + 1;
+			int myutil = linkUtil[getMapIndex(vid, dst)];
+
+			if(myutil > HWLIMIT) continue;
+
+			if(visited[dst]) continue;
+
+			if((alt == cost_vec[dst] && myutil < link_util[dst]) || (alt < cost_vec[dst]))
+			{
+				cost_vec[dst] = alt;
+				prev[dst] = vid;
+				link_util[dst] = myutil;
+			}
+		}
+	}
+
+	path_vec.push_back(d);
+	for(int i = prev[d]; i != u; i = prev[i])
+	{
+		path_vec.push_back(i);
+
+		if(i == -1) //means no path was found
+		{
+			path_vec.clear();
+			return path_vec; //In the caller function, we will check for empty list
+		}
+	}
+
+	path_vec.push_back(u);
+	std::reverse(path_vec.begin(), path_vec.end());
+
+	return path_vec;
+}
+
 
 	/*
 	struct mypair_struct
