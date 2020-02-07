@@ -45,7 +45,8 @@ inline double tock() {
 std::vector<algo_t> algorithmslist = {
 
 		// Printers
-		{ "PrintXML" , "Print XML file", printers::printXML},		{ "PrintKiter" , "Generate C++ code to internally generate the graph inside Kiter.", printers::printGraphAsKiterScript} ,
+		{ "PrintXML" , "Print XML file", printers::printXML},
+		{ "PrintKiter" , "Generate C++ code to internally generate the graph inside Kiter.", printers::printGraphAsKiterScript} ,
 		{ "PrintInfos" , "Just print some graph informations.", printers::printInfos},
 		{ "PrintGraph" , "Print DOT file", printers::printGraph},
 		{ "PrintKPeriodicScheduling" , "Print KPeriodicScheduling", algorithms::print_kperiodic_scheduling},

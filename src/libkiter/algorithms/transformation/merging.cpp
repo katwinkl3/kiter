@@ -84,7 +84,7 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 			current_start_time = persched[vid].second[current_start_index % persched[vid].second.size()]  + (current_start_index / persched[vid].second.size() ) * persched[vid].first;
 		}
 
-		for (EXEC_COUNT i = 0 ; i < (ni/gcd_value) ; i++) {
+		for (EXEC_COUNT i = 0 ; i <  to->getPhasesQuantity(vi) * (ni/gcd_value) ; i++) {
 			periodic_start_times.push_back(std::make_pair(current_start_time , vid));
 			current_start_index++;
 			current_start_time = persched[vid].second[current_start_index % persched[vid].second.size()]  + (current_start_index / persched[vid].second.size() ) * persched[vid].first;
@@ -95,12 +95,16 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 	std::sort(init_start_times.begin(), init_start_times.end());
 	std::sort(periodic_start_times.begin(), periodic_start_times.end());
 
-
+	VERBOSE_INFO("init_start_times = " << commons::toString(init_start_times));
+	VERBOSE_INFO("periodic_start_times = " << commons::toString(periodic_start_times));
 
 	std::vector<TIME_UNIT> phaseDurVec(periodic_start_times.size(), 0); //Create the phase duration
 	std::vector<TIME_UNIT> InitPhaseDurVec(init_start_times.size(), 0); //Create the phase duration
 
 
+
+
+	// TODO : set durations!!!!
 
 	to->reset_computation();
 
@@ -123,7 +127,7 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 	}
 
 	for (unsigned int i = 0 ; i < periodic_start_times.size() ; i++) {
-		periodic_token_vec [periodic_start_times[i].second][i] = 1;
+		periodic_token_vec [periodic_start_times[i].second][i] = 1; // TODO : Put real timing
 	}
 
 	for (unsigned int i = 0 ; i < init_start_times.size() ; i++) {
