@@ -9,7 +9,7 @@
 #include <algorithms/repetition_vector.h>
 #include <algorithms/schedulings.h>
 #include <algorithms/mappings.h>
-#include <commons/glpsol.h>
+#include <lp/glpsol.h>
 
 
 #include <algorithms/kperiodic.h>
@@ -32,13 +32,12 @@ static inline const std::string PRED_ROW_STR (const std::string buffername, cons
 
 void algorithms::scheduling::bufferlessKPeriodicScheduling (models::Dataflow* const  dataflow, parameters_list_t param_list) {
 
-	 bool do_bufferless = (param_list.find("do_bufferless") != param_list.end());
 	 bool stop_at_first = (param_list.find("stop_at_first") != param_list.end());
 	 bool get_previous = (param_list.find("get_previous") != param_list.end());;
 	 bool do_linear = (param_list.find("do_linear") != param_list.end());;
 	 bool do_old = (param_list.find("do_old") != param_list.end());;
 
-	VERBOSE_INFO("do_bufferless=" << do_bufferless << " stop_at_first=" << stop_at_first << " get_previous=" << get_previous);
+	VERBOSE_INFO(  " stop_at_first=" << stop_at_first << " get_previous=" << get_previous);
 
 	if (do_linear) return;
 	if (do_old) {
@@ -46,12 +45,12 @@ void algorithms::scheduling::bufferlessKPeriodicScheduling (models::Dataflow* co
 		 return;
 	}
 
-	scheduling_t sched = algorithms::scheduling::bufferless_kperiodic_scheduling (dataflow,  do_bufferless,  stop_at_first,  get_previous) ;
+	scheduling_t sched = algorithms::scheduling::bufferless_kperiodic_scheduling (dataflow,  stop_at_first,  get_previous) ;
 
 }
 
 
-scheduling_t algorithms::scheduling::bufferless_kperiodic_scheduling (models::Dataflow* const  dataflow, bool do_bufferless, bool stop_at_first, bool get_previous) {
+scheduling_t algorithms::scheduling::bufferless_kperiodic_scheduling (models::Dataflow* const  dataflow, bool stop_at_first, bool get_previous) {
 
     EXEC_COUNT iteration_count = 0;
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
@@ -246,7 +245,7 @@ scheduling_t algorithms::scheduling::bufferless_scheduling (models::Dataflow* co
 		const TOKEN_UNIT  mop      =  commons::floor(dataflow->getPreload(c),dataflow->getFineGCD(c));
 
 		// TODO : I am not sure about this part,
-        const TOKEN_UNIT  gcdk      = boost::math::gcd( kvector[source]  * (Zi), kvector[target] * (Zj));
+        const TOKEN_UNIT  gcdk      = boost::integer::gcd( kvector[source]  * (Zi), kvector[target] * (Zj));
 
 		TOKEN_UNIT wai    = 0;  /* wai data write at start ai  */
 		TOKEN_UNIT cwai   = 0;  /* cwai cumul data write at start ai   */
@@ -530,8 +529,8 @@ void sdf_bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vert
         const TOKEN_UNIT  in_b        = dataflow->getEdgeIn(c);
         const TOKEN_UNIT  ou_b        = dataflow->getEdgeOut(c);
 
-        const TOKEN_UNIT  gcdb      = boost::math::gcd((in_b),(ou_b));
-        const TOKEN_UNIT  gcdk      = boost::math::gcd( kvector[source]  * (in_b), kvector[target] * (ou_b));
+        const TOKEN_UNIT  gcdb      = boost::integer::gcd((in_b),(ou_b));
+        const TOKEN_UNIT  gcdk      = boost::integer::gcd( kvector[source]  * (in_b), kvector[target] * (ou_b));
 
         const TOKEN_UNIT  mop      =  commons::floor(dataflow->getPreload(c),gcdb);
 

@@ -14,7 +14,7 @@
 #include <algorithms/nperiodic.h>
 #include <algorithms/kperiodic.h>
 #include <algorithms/repetition_vector.h>
-#include <commons/glpsol.h>
+#include <lp/glpsol.h>
 
 
 
@@ -86,7 +86,7 @@ models::EventGraph* algorithms::generateNPeriodicEventGraph               (model
 
 
 
-				for(unsigned long k = 1; k <= Ni ; k++) {
+				for(EXEC_COUNT k = 1; k <= Ni ; k++) {
 
 					long int tmpres = (long int) (std::floor( (double)((double) mop +(double)  wp * ((double) k-1.0)) / (double) vp)) + 1;
 					long int bk =  (tmpres % (Nj));
@@ -140,7 +140,7 @@ models::EventGraph* algorithms::generateNPeriodicEventGraph               (model
 
 
 		if (wp <= vp ) {
-			for(unsigned long k = 1; k <= Ni ; k++) {
+			for(EXEC_COUNT k = 1; k <= Ni ; k++) {
 
 					long int tmpres = (long int) (std::floor( (double)((double) mop +(double)  wp * ((double) k-1.0)) / (double) vp)) + 1;
 					long int bk =  (tmpres % (Nj));
@@ -160,7 +160,7 @@ models::EventGraph* algorithms::generateNPeriodicEventGraph               (model
 
 			}
 		} else {
-			for(unsigned long k = 1; k <= Nj ; k++) {
+			for(EXEC_COUNT k = 1; k <= Nj ; k++) {
 				long int tmpres = (long int) std::ceil((double) (((double)  k * (double)  vp) - (double)  mop) / (double) wp );
 				long int ck = 0;
 				while ((tmpres - ck * (long int) Ni) <= 0) {
@@ -283,12 +283,14 @@ void algorithms::KPeriodic_memory   (models::Dataflow* const  dataflow,  std::ma
 
     VERBOSE_INFO("Getting period ...");
 
-    TIME_UNIT FREQUENCY = 1.0 / dataflow->getPeriod();
 
     // STEP 0 - CSDF Graph should be normalized
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
     // STEP 1 - Compute normalized period
-    TIME_UNIT PERIOD = dataflow->getPeriod()  ;
+    TIME_UNIT PERIOD = 0 ;
+	if (params.find("PERIOD")!= params.end() ) PERIOD =  commons::fromString<TIME_UNIT>(params["PERIOD"]);
+	VERBOSE_ASSERT (PERIOD > 0, "The PERIOD must be defined");
+    TIME_UNIT FREQUENCY = 1.0 / PERIOD;
 
 
     VERBOSE_INFO("Generate Graph ...");
@@ -334,8 +336,8 @@ void algorithms::KPeriodic_memory   (models::Dataflow* const  dataflow,  std::ma
         const TOKEN_UNIT  in_b        = dataflow->getEdgeIn(c);
         const TOKEN_UNIT  ou_b        = dataflow->getEdgeOut(c);
 
-        const TOKEN_UNIT  gcdb      = boost::math::gcd((in_b),(ou_b));
-        const TOKEN_UNIT  gcdk      = boost::math::gcd( kvector[source]  * (in_b), kvector[target] * (ou_b));
+        const TOKEN_UNIT  gcdb      = boost::integer::gcd((in_b),(ou_b));
+        const TOKEN_UNIT  gcdk      = boost::integer::gcd( kvector[source]  * (in_b), kvector[target] * (ou_b));
 
         const TOKEN_UNIT  mop      =  commons::floor(dataflow->getPreload(c),gcdb);
 
@@ -517,7 +519,7 @@ void algorithms::KPeriodic_memory   (models::Dataflow* const  dataflow,  std::ma
 
             const TOKEN_UNIT  in_b        = dataflow->getEdgeIn(c);
             const TOKEN_UNIT  ou_b        = dataflow->getEdgeOut(c);
-            const TOKEN_UNIT  gcdk      = boost::math::gcd( kvector[source]  * (in_b), kvector[target] * (ou_b));
+            const TOKEN_UNIT  gcdk      = boost::integer::gcd( kvector[source]  * (in_b), kvector[target] * (ou_b));
 
 
             TOKEN_UNIT feedbackmopmax =  commons::ceil(g.getValue(feedback_mo_name),1);

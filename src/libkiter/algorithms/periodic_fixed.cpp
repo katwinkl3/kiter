@@ -8,7 +8,7 @@
 #include <cmath>
 #include <vector>
 #include <commons/verbose.h>
-#include <commons/glpsol.h>
+#include <lp/glpsol.h>
 #include <models/Dataflow.h>
 #include <algorithms/normalization.h>
 #include <algorithms/periodic_fixed.h>
@@ -16,8 +16,8 @@
 
 
 
-    void algorithms::checkOffsets (models::Dataflow * const dataflow,std::map<Vertex,std::vector<TIME_UNIT> > & offsets) {
-        TIME_UNIT OMEGA = dataflow->getPeriod();
+    void algorithms::checkOffsets (models::Dataflow * const dataflow,TIME_UNIT OMEGA, std::map<Vertex,std::vector<TIME_UNIT> > & offsets) {
+
               VERBOSE_ASSERT(OMEGA > 0 , "unsuable period.");
 
         {ForEachVertex(dataflow,pTask) {
@@ -52,29 +52,42 @@
        generateBurstOffsets(dataflow,offsets);
 
        VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-       checkOffsets(dataflow,offsets);
+       TIME_UNIT PERIOD = 0 ;
+      	if (params.find("PERIOD")!= params.end() ) PERIOD =  commons::fromString<TIME_UNIT>(params["PERIOD"]);
+      	VERBOSE_ASSERT (PERIOD > 0, "The PERIOD must be defined");
+         checkOffsets(dataflow,PERIOD,offsets);
        compute_periodic_fixed_memory(dataflow, offsets,params);
    }
    void algorithms::compute_average_memory                                   (models::Dataflow* const  dataflow, parameters_list_t params) {
        std::map<Vertex,std::vector<TIME_UNIT> > offsets;
-       generateAverageOffsets(dataflow,offsets);
-       checkOffsets(dataflow,offsets);
+       TIME_UNIT PERIOD = 0 ;
+      	if (params.find("PERIOD")!= params.end() ) PERIOD =  commons::fromString<TIME_UNIT>(params["PERIOD"]);
+      	VERBOSE_ASSERT (PERIOD > 0, "The PERIOD must be defined");
+         generateAverageOffsets(dataflow,PERIOD,offsets);
+       checkOffsets(dataflow,PERIOD,offsets);
        compute_periodic_fixed_memory(dataflow, offsets,params);
    }
 
    void algorithms::compute_minmax_memory                                   (models::Dataflow* const  dataflow, parameters_list_t params) {
        std::map<Vertex,std::vector<TIME_UNIT> > offsets;
        VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-       generateMinMaxOffsets(dataflow,offsets);
-       checkOffsets(dataflow,offsets);
+       TIME_UNIT PERIOD = 0 ;
+      	if (params.find("PERIOD")!= params.end() ) PERIOD =  commons::fromString<TIME_UNIT>(params["PERIOD"]);
+      	VERBOSE_ASSERT (PERIOD > 0, "The PERIOD must be defined");
+         generateMinMaxOffsets(dataflow,PERIOD,offsets);
+       checkOffsets(dataflow,PERIOD,offsets);
        VERBOSE_INFO("Begin main linear program");
        compute_periodic_fixed_memory(dataflow, offsets,params);
    }
 
    void algorithms::compute_wiggers_memory                                   (models::Dataflow* const  dataflow, parameters_list_t params) {
        std::map<Vertex,std::vector<TIME_UNIT> > offsets;
-       generateWiggersOffsets(dataflow,offsets);
-       checkOffsets(dataflow,offsets);
+       TIME_UNIT PERIOD = 0 ;
+      	if (params.find("PERIOD")!= params.end() ) PERIOD =  commons::fromString<TIME_UNIT>(params["PERIOD"]);
+      	VERBOSE_ASSERT (PERIOD > 0, "The PERIOD must be defined");
+
+       generateWiggersOffsets(dataflow,PERIOD,offsets);
+       checkOffsets(dataflow,PERIOD,offsets);
        compute_periodic_fixed_memory(dataflow, offsets,params);
    }
 
@@ -100,8 +113,8 @@
     }
 
 
-   bool algorithms::generateAverageOffsets(models::Dataflow * dataflow,std::map<Vertex,std::vector<TIME_UNIT> > & res) {
-       TIME_UNIT OMEGA = dataflow->getPeriod();
+   bool algorithms::generateAverageOffsets(models::Dataflow * dataflow, TIME_UNIT OMEGA, std::map<Vertex,std::vector<TIME_UNIT> > & res) {
+
        VERBOSE_ASSERT(OMEGA > 0 , "unsuable period.");
        res.clear();
 
@@ -135,7 +148,7 @@
    }
 
 
-   bool algorithms::generateWiggersOffsets(models::Dataflow * dataflow, std::map<Vertex,std::vector<TIME_UNIT> > & res) {
+   bool algorithms::generateWiggersOffsets(models::Dataflow * dataflow, TIME_UNIT PERIOD,  std::map<Vertex,std::vector<TIME_UNIT> > & res) {
 
        //recuperer les transition
        res.clear();
@@ -143,8 +156,6 @@
 
        VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 
-       // STEP 1 - Compute normalized period
-       TIME_UNIT PERIOD = dataflow->getPeriod()  ;
 
 
        // STEP 0 - Need the repetition vector
@@ -320,7 +331,7 @@
        return true;
    }
 
-   bool algorithms::generateMinMaxOffsets(models::Dataflow * dataflow, std::map<Vertex,std::vector<TIME_UNIT> > & res) {
+   bool algorithms::generateMinMaxOffsets(models::Dataflow * dataflow, TIME_UNIT OMEGA,  std::map<Vertex,std::vector<TIME_UNIT> > & res) {
 
        //recuperer les transition
        res.clear();
@@ -330,7 +341,7 @@
        {ForEachVertex(dataflow,pTask) {
            res.insert(std::pair<Vertex ,  std::vector<TIME_UNIT> > (pTask, std::vector<TIME_UNIT>()));
            // Solve MinMax for this task
-           minmaxwork = minmaxwork && ctnewMinMax(dataflow,pTask,res.at(pTask));
+           minmaxwork = minmaxwork && ctnewMinMax(dataflow,OMEGA, pTask,res.at(pTask));
 
        }}
        return minmaxwork;
@@ -338,12 +349,11 @@
 
 
 
-   bool algorithms::ctnewMinMax(models::Dataflow * dataflow,Vertex t, std::vector<TIME_UNIT>& res) {
+   bool algorithms::ctnewMinMax(models::Dataflow * dataflow, TIME_UNIT OMEGA, Vertex t, std::vector<TIME_UNIT>& res) {
 
        VERBOSE_INFO("generateMinMaxOffsets : Begin");
        /********************************************** PREPARE RES**************************************************/
        res.clear();
-       TIME_UNIT OMEGA = dataflow->getPeriod();
        /**************************************** DONT'COMPUTE SDF TASK **********************************************/
 
        if (dataflow->getPhasesQuantity(t) <= 1) { // Ct(1) = 0
@@ -605,12 +615,14 @@ void algorithms::compute_periodic_fixed_memory   (models::Dataflow* const  dataf
 	if (params.find("INTEGERSOLVING")!= params.end() ) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
 
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
-    TIME_UNIT FREQUENCY = 1.0 / dataflow->getPeriod();
 
     // STEP 0 - CSDF Graph should be normalized
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
     // STEP 1 - Compute normalized period
-    TIME_UNIT PERIOD = dataflow->getPeriod()  ;
+    TIME_UNIT PERIOD = 0 ;
+	if (params.find("PERIOD")!= params.end() ) PERIOD =  commons::fromString<TIME_UNIT>(params["PERIOD"]);
+	VERBOSE_ASSERT (PERIOD > 0, "The PERIOD must be defined");
+    TIME_UNIT FREQUENCY = 1.0 / PERIOD;
 
     //##################################################################
     // Linear program generation
@@ -653,7 +665,7 @@ void algorithms::compute_periodic_fixed_memory   (models::Dataflow* const  dataf
 
           const TOKEN_UNIT  mop      =  commons::floor(dataflow->getPreload(c),dataflow->getFineGCD(c));
 
-          const TOKEN_UNIT  gcdz      = boost::math::gcd((Zi),(Zj));
+          const TOKEN_UNIT  gcdz      = boost::integer::gcd((Zi),(Zj));
 
           VERBOSE_DEBUG("Mu_i = " << mu_i);
           VERBOSE_DEBUG("Mu_j = " << mu_j);
@@ -819,7 +831,7 @@ void algorithms::compute_periodic_fixed_memory   (models::Dataflow* const  dataf
               const TOKEN_UNIT  Zi        = dataflow->getEdgeIn(c);
               const TOKEN_UNIT  Zj        = dataflow->getEdgeOut(c);
 
-              const TOKEN_UNIT  gcdz      = boost::math::gcd((Zi),(Zj));
+              const TOKEN_UNIT  gcdz      = boost::integer::gcd((Zi),(Zj));
 
 
               TOKEN_UNIT wai    = 0;  /* wai data write at start ai  */

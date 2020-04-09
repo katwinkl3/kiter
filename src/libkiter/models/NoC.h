@@ -11,7 +11,7 @@
 #include <map>
 #include <vector>
 #include <commons/verbose.h>
-#include <commons/NoCGraph.h>
+#include <models/NoCGraph.h>
 
 typedef unsigned long  bank_id_t;
 typedef          long  node_id_t;

@@ -6,8 +6,6 @@
  */
 
 
-
-#include <boost/math/common_factor_rt.hpp>  // for boost::math::gcd, lcm
 #include <algorithms/repetition_vector.h>
 #include <models/Dataflow.h>
 
@@ -95,7 +93,7 @@ bool calcRepetitionVector(models::Dataflow *from,std::map<Vertex,EXEC_COUNT_FRAC
 
     // Find lowest common multiple (lcm) of all denominators
     {ForEachVertex(from,v) {
-    	l = boost::math::lcm(l,fractions[v].denominator());
+    	l = boost::integer::lcm(l,fractions[v].denominator());
     }}
 
     // Zero vector?
@@ -115,7 +113,7 @@ bool calcRepetitionVector(models::Dataflow *from,std::map<Vertex,EXEC_COUNT_FRAC
     EXEC_COUNT g = repetitionVector.begin()->second;
 
     {ForEachVertex(from,v) {
-    	g = boost::math::gcd(g, repetitionVector[v]);
+    	g = boost::integer::gcd(g, repetitionVector[v]);
     }}
 
     VERBOSE_ASSERT(g > 0, TXT_NEVER_HAPPEND);
@@ -133,7 +131,7 @@ bool calcRepetitionVector(models::Dataflow *from,std::map<Vertex,EXEC_COUNT_FRAC
     // Workaround for repetition vector issues
     EXEC_COUNT subrate = ratePeriod;
     {ForEachVertex(from,v) {
-    	subrate =  boost::math::gcd(subrate, repetitionVector[v] / from->getPhasesQuantity(v));
+    	subrate =  boost::integer::gcd(subrate, repetitionVector[v] / from->getPhasesQuantity(v));
     }}
     VERBOSE_INFO("SubRate = " << subrate);
 
@@ -169,8 +167,8 @@ bool computeRepetitionVector(models::Dataflow *from) {
     // Compute period of repetition for rate vectors (dangerous way ...)
 
     {ForEachEdge(from,c) {
-    	ratePeriod = boost::math::lcm(ratePeriod,from->getEdgeInPhasesCount(c));
-    	ratePeriod = boost::math::lcm(ratePeriod,from->getEdgeOutPhasesCount(c));
+    	ratePeriod = boost::integer::lcm(ratePeriod,from->getEdgeInPhasesCount(c));
+    	ratePeriod = boost::integer::lcm(ratePeriod,from->getEdgeOutPhasesCount(c));
     }}
     VERBOSE_ASSERT(ratePeriod > 0 , TXT_NEVER_HAPPEND);
     VERBOSE_INFO("Rate Period = " << ratePeriod);

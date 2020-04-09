@@ -218,10 +218,10 @@ enum BacktrackTechnique {
 
     };
 
-    void setDefaultParams   (GLPParameters&);
-    void resetDefaultParams ();
-    GLPParameters     getDefaultParams   ()     ;
-    extern GLPParameters default_glpsol_parameters;
+    //void setDefaultParams   (GLPParameters&);
+    //void resetDefaultParams ();
+    //GLPParameters     getDefaultParams   ()     ;
+    //extern GLPParameters default_glpsol_parameters;
 class  GLPSol {
 public :
 
@@ -291,7 +291,7 @@ public :
                 double          getRoundedValue      (const string c) const ;
                 bool            isInteger            () const;
     			double			getIntegerValue		 (const string c) const;
-                bool            solve               (GLPParameters& params = default_glpsol_parameters);
+                bool            solve               (const GLPParameters& params = GLPParameters());
                 bool            solveWithCoin       ();
                 bool            solveWithCplex      ();
                 bool            solveWithGurobi     ();

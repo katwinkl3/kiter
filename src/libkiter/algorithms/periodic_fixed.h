@@ -15,12 +15,12 @@ namespace models {
 
 namespace algorithms {
 
-    bool ctnewMinMax(models::Dataflow * dataflow,Vertex t, std::vector<TIME_UNIT>& res) ;
-    void checkOffsets (models::Dataflow * const dataflow,std::map<Vertex,std::vector<TIME_UNIT> > & offsets) ;
+    bool ctnewMinMax(models::Dataflow * dataflow,  TIME_UNIT OMEGA, Vertex t, std::vector<TIME_UNIT>& res) ;
+    void checkOffsets (models::Dataflow * const dataflow, TIME_UNIT OMEGA, std::map<Vertex,std::vector<TIME_UNIT> > & offsets) ;
     bool generateBurstOffsets(models::Dataflow * const dataflow,std::map<Vertex,std::vector<TIME_UNIT> > & res);
-    bool generateAverageOffsets(models::Dataflow * const dataflow,std::map<Vertex,std::vector<TIME_UNIT> > & res);
-    bool generateMinMaxOffsets(models::Dataflow * const dataflow,std::map<Vertex,std::vector<TIME_UNIT> > & res);
-    bool generateWiggersOffsets(models::Dataflow * const dataflow,std::map<Vertex,std::vector<TIME_UNIT> > & res);
+    bool generateAverageOffsets(models::Dataflow * const dataflow,TIME_UNIT OMEGA, std::map<Vertex,std::vector<TIME_UNIT> > & res);
+    bool generateMinMaxOffsets(models::Dataflow * const dataflow,TIME_UNIT OMEGA, std::map<Vertex,std::vector<TIME_UNIT> > & res);
+    bool generateWiggersOffsets(models::Dataflow * const dataflow,TIME_UNIT OMEGA, std::map<Vertex,std::vector<TIME_UNIT> > & res);
 
     void compute_burst_memory                                   (models::Dataflow* const  dataflow, parameters_list_t params);
     void compute_average_memory                                 (models::Dataflow* const  dataflow, parameters_list_t params);

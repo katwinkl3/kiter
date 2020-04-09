@@ -9,7 +9,7 @@
 #define SOFTWARE_NOC_H_
 typedef long int LARGE_INT;
 
-class models::Dataflow;
+#include <models/Dataflow.h>
 
 bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::vector< ARRAY_INDEX >& mergeNodes) ;
 namespace algorithms {

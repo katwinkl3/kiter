@@ -24,7 +24,7 @@
 #include <vector>
 #include <cstdlib>
 #include <boost/functional/hash.hpp>
-#include <boost/math/common_factor.hpp>
+#include <boost/integer/common_factor_ct.hpp>
 //#define CHECK_BOOST_BIMAP (BOOST_VERSION >= 103800)
 #define CHECK_BOOST_BIMAP false
 // REALLY STRANGE BUGFIX : For Andrea config (old boost version in fc10)

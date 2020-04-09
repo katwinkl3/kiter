@@ -24,7 +24,6 @@
 #include <commons/verbose.h>
 #include <models/NoC.h>
 
-
 #define TXT_NEW_EDGE_ERROR "NEW_EDGE_ERROR"
 #define TXT_TASK_NOT_FOUND "TASK_NOT_FOUND"
 #define TXT_CHANNEL_NOT_FOUND "CHANNEL_NOT_FOUND"
@@ -274,8 +273,8 @@ public:
 	inline  Edge                    getFirstEdge        ()                  const   {return it2Edge(boost::edges(this->getG()).first);}
 	inline  Vertex					getEdgeSource		(const Edge c)		const	{return Vertex(boost::source(c.e, this->getG()));}
 	inline  Vertex					getEdgeTarget		(const Edge c)		const	{return Vertex(boost::target(c.e, this->getG()));}
-	inline  unsigned int 			getVerticesCount 	()					const	{return (unsigned int) boost::num_vertices(this->getG());}
-	inline  unsigned int 			getEdgesCount		()					const	{return (unsigned int) boost::num_edges(this->getG());}
+	inline  ARRAY_INDEX			    getVerticesCount 	()					const	{return (unsigned int) boost::num_vertices(this->getG());}
+	inline  ARRAY_INDEX  			getEdgesCount		()					const	{return (unsigned int) boost::num_edges(this->getG());}
 	inline  unsigned int			getVertexDegree		(const Vertex t)	const	{return (unsigned int) boost::degree(t.v,this->getG());}
 	inline  unsigned int			getVertexInDegree	(const Vertex t)	const	{return (unsigned int) boost::in_degree(t.v,this->getG());}
 	inline  unsigned int			getVertexOutDegree	(const Vertex t)	const	{return (unsigned int) boost::out_degree(t.v,this->getG());}
@@ -348,7 +347,6 @@ inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
 	return nt;}
 
 
-
 	inline 	void 					removeVertex		(const Vertex t) 		{
 		ASSERT_WRITABLE();
 		reset_computation();
@@ -396,11 +394,12 @@ public :
 	inline 	ARRAY_INDEX 					getEdgeId			(const Edge c)		const	{return boost::get(get(boost::edge_index, this->getG()), c.e);}
 
 
-	inline	Vertex					getVertexById		(const ARRAY_INDEX id) const
-												throw 	(std::out_of_range)		{ForEachVertex(this,pVertex){ if (this->getVertexId(pVertex) == id) return pVertex;};throw std::out_of_range(TXT_TASK_NOT_FOUND);}
+	inline	Vertex					getVertexById		(const ARRAY_INDEX id) const	{
+		ForEachVertex(this,pVertex){ if (this->getVertexId(pVertex) == id) return pVertex;};
+		throw std::out_of_range(TXT_TASK_NOT_FOUND);
+	}
 
-	inline	Edge					getEdgeById			(const ARRAY_INDEX id) const
-												throw 	(std::out_of_range)		{ForEachEdge(this,pEdge) 	{ if (this->getEdgeId(pEdge) == id) return pEdge;};throw std::out_of_range(TXT_CHANNEL_NOT_FOUND);}
+	inline	Edge					getEdgeById			(const ARRAY_INDEX id) const	{ForEachEdge(this,pEdge) 	{ if (this->getEdgeId(pEdge) == id) return pEdge;};throw std::out_of_range(TXT_CHANNEL_NOT_FOUND);}
 
 
 	inline  void 				setVertexId		(const Vertex t,
@@ -452,8 +451,6 @@ public:
     inline  void                setName    (const std::string name)    {					ASSERT_WRITABLE();
 	reset_computation();this->graph_name = name;}
     inline  const std::string   getName    ()                      const     {return this->graph_name;}
-    inline  void                setPeriod    (TIME_UNIT p)    {this->normalized_period = p;}
-    inline  TIME_UNIT           getPeriod    ()         const                  {return this->normalized_period;}
     inline  void                setId      (ARRAY_INDEX id)           {					ASSERT_WRITABLE();
 	reset_computation();this->graph_id = id;}
     inline  ARRAY_INDEX         getId      ()             const             {return this->graph_id;}
@@ -475,16 +472,14 @@ public :
     	boost::put(boost::vertex_name, this->getG(), t.v, name);
     }
     inline  const std::string   getVertexName   (const Vertex t)      const {return boost::get(get(boost::vertex_name, this->getG()), t.v);}
-    inline  Vertex              getVertexByName (const std::string s) const
-                                                throw   (std::out_of_range)  {ForEachVertex(this,pVertex) {if (this->getVertexName(pVertex) == s)return pVertex;};throw std::out_of_range(TXT_TASK_NOT_FOUND + s);}
+    inline  Vertex              getVertexByName (const std::string s) const {ForEachVertex(this,pVertex) {if (this->getVertexName(pVertex) == s)return pVertex;};throw std::out_of_range(TXT_TASK_NOT_FOUND + s);}
 
     inline 	const std::string 	getEdgeName	    (const Edge c)		const	{
     		std::string s = boost::get(get(boost::edge_name, this->getG()), c.e);
     		return s;
     }
 
-    inline  Edge                getEdgeByName   (const std::string s) const
-    throw   (std::out_of_range) {
+    inline  Edge                getEdgeByName   (const std::string s) const {
     	{ForEachEdge(this,pEdge)     {
     		if (this->getEdgeName(pEdge) == s) return pEdge;
     	}};
@@ -838,12 +833,12 @@ public :
 
 
     for (PHASE_INDEX k = 1 ; k <= this->getEdgeInPhasesCount(c) ; k++) {
-        channelGCD = boost::math::gcd(channelGCD,getEdgeInPhase(c,k));
+        channelGCD = boost::integer::gcd(channelGCD,getEdgeInPhase(c,k));
     }
 
 
     for (PHASE_INDEX k = 1 ; k <= this->getEdgeOutPhasesCount(c) ; k++) {
-        channelGCD = boost::math::gcd(channelGCD,getEdgeOutPhase(c,k));
+        channelGCD = boost::integer::gcd(channelGCD,getEdgeOutPhase(c,k));
     }
     return channelGCD;
 

@@ -508,7 +508,7 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
         if (ki < newki) {
             ARRAY_INDEX task_id= dataflow->getVertexId(source);
             for (PHASE_INDEX p = 1 - dataflow->getInitPhasesQuantity(source) ; p <= dataflow->getPhasesQuantity(source) ; p++) {
-                for(ARRAY_INDEX k = 1 ; k <= ki ; k++) {
+                for(EXEC_COUNT k = 1 ; k <= ki ; k++) {
                     g->removeConnectedEdges(g->getEventGraphVertex(task_id,p,k));
                 }
             }
@@ -687,7 +687,7 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
     const TOKEN_UNIT  Wc        =  dataflow->getEdgeIn(c) * maxki;
     const TOKEN_UNIT  Rc        =  dataflow->getEdgeOut(c) * maxkj;
 
-    const TOKEN_UNIT  gcdz       = boost::math::gcd((Wc),(Rc));
+    const TOKEN_UNIT  gcdz       = boost::integer::gcd((Wc),(Rc));
     const TOKEN_UNIT  stepa      = dataflow->getFineGCD(c);
 
     TOKEN_UNIT normdapkm1 = 0;
@@ -858,7 +858,7 @@ bool algorithms::updateVectorWithLocalNi(models::Dataflow *  const dataflow ,std
     EXEC_COUNT gcdNi = 0;
     for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
         Vertex source = dataflow->getEdgeSource(*it);
-        gcdNi = boost::math::gcd(gcdNi,dataflow->getNi(source)  / dataflow->getPhasesQuantity(source) );
+        gcdNi = boost::integer::gcd(gcdNi,dataflow->getNi(source)  / dataflow->getPhasesQuantity(source) );
     }
 
     VERBOSE_INFO("      updateVectorWithLocalNi -  gcdNi = " << commons::toString(gcdNi) );
@@ -870,7 +870,7 @@ bool algorithms::updateVectorWithLocalNi(models::Dataflow *  const dataflow ,std
         EXEC_COUNT Ni =  dataflow->getNi(source) / dataflow->getPhasesQuantity(source);
         EXEC_COUNT Nj =  dataflow->getNi(target) / dataflow->getPhasesQuantity(target);
 
-        EXEC_COUNT newki = boost::math::lcm( kvector->at(source),  Ni / gcdNi);
+        EXEC_COUNT newki = boost::integer::lcm( kvector->at(source),  Ni / gcdNi);
 
         if (newki != kvector->at(source) ) changed = true;
 

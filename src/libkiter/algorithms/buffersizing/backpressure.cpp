@@ -7,19 +7,21 @@
 
 #include <vector>
 #include <commons/verbose.h>
-#include <commons/glpsol.h>
+#include <lp/glpsol.h>
 #include <models/Dataflow.h>
 #include <algorithms/normalization.h>
 #include <algorithms/buffersizing/backpressure.h>
 #include <algorithms/repetition_vector.h>
 
-void algorithms::compute_backpressure_memory_sizing (models::Dataflow* const  dataflow, parameters_list_t ) {
+void algorithms::compute_backpressure_memory_sizing (models::Dataflow* const  dataflow, parameters_list_t params) {
 
 
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 
     // STEP 1 - Compute normalized period
-    TIME_UNIT PERIOD = dataflow->getPeriod()  ;
+    TIME_UNIT PERIOD = 0 ;
+	if (params.find("PERIOD")!= params.end() ) PERIOD =  commons::fromString<TIME_UNIT>(params["PERIOD"]);
+	VERBOSE_ASSERT (PERIOD > 0, "The PERIOD must be defined");
 
 
 	// STEP 0 - Need the repetition vector
@@ -288,7 +290,7 @@ void algorithms::compute_backpressure_memory_sizing (models::Dataflow* const  da
 	// Solving
 	//******************************************************************
 
-	commons::GLPParameters ilp_params = commons::getDefaultParams();
+	commons::GLPParameters ilp_params;
 
 	ilp_params.general_doScale = true;
 	ilp_params.linear_doAdvBasis = true;

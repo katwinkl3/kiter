@@ -85,8 +85,8 @@ private:
 
 	    TOKEN_UNIT mop     =  commons::floor(dataflow->getNormMop(c), 1);
 
-	    const TOKEN_UNIT  gcdz       = boost::math::gcd(Zi,Zj);
-	    const TOKEN_UNIT  gcdk       = boost::math::gcd(maxki*Zi,maxkj*Zj);
+	    const TOKEN_UNIT  gcdz       = boost::integer::gcd(Zi,Zj);
+	    const TOKEN_UNIT  gcdk       = boost::integer::gcd(maxki*Zi,maxkj*Zj);
 
 
 

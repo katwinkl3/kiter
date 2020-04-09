@@ -11,7 +11,7 @@
 
 #include <algorithms/kperiodic.h>
 #include <models/EventGraph.h>
-#include <commons/glpsol.h>
+#include <lp/glpsol.h>
 
 
 static inline const std::string OMEGA_COL_STR ()  {
@@ -47,7 +47,7 @@ bool add_precedences_constraints (commons::GLPSol &g, commons::idx_t OMEGA_COL, 
 	const TOKEN_UNIT  NoKPeriodic_o_a   =  dataflow->getEdgeOut(c);
 	const TOKEN_UNIT  i_a        = (TOKEN_UNIT) periodicity_t  * dataflow->getEdgeIn(c);
 	const TOKEN_UNIT  o_a        = (TOKEN_UNIT) periodicity_tp  * dataflow->getEdgeOut(c);
-	const TOKEN_UNIT  gcda       = boost::math::gcd(i_a, o_a);
+	const TOKEN_UNIT  gcda       = boost::integer::gcd(i_a, o_a);
 	const TOKEN_UNIT  stepa      = dataflow->getFineGCD(c);
 	const TOKEN_UNIT  Moa        = commons::floor(dataflow->getPreload(c), stepa);
 

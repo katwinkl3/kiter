@@ -14,7 +14,6 @@
 #define TXT_NO_IMPLEMENTATION "FIXME"
 #define TXT_NEVER_HAPPEND     "Internal error"
 
-#include <csignal> // get ABRT !
 
 #ifdef __RELEASE_MODE__
 #define __RELEASE__ "R"

@@ -8,33 +8,36 @@
 #include <cmath>
 #include <vector>
 #include <commons/verbose.h>
-#include <commons/glpsol.h>
+#include <lp/glpsol.h>
 #include <models/Dataflow.h>
 #include <models/EventGraph.h>
 #include <algorithms/normalization.h>
 #include <algorithms/buffersizing/periodic.h>
 #include <algorithms/repetition_vector.h>
 
+
+
 void algorithms::compute_csdf_1periodic_memory   (models::Dataflow* const  dataflow, parameters_list_t params) {
-
-
-	commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
     VERBOSE_INFO("Please note you can specify the INTEGERSOLVING and ILPGENERATIONONLY parameters.");
 
-	if (params.find("INTEGERSOLVING")!= params.end() ) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
+    TIME_UNIT PERIOD = 0 ;
+	if (params.find("PERIOD")!= params.end() ) PERIOD =  commons::fromString<TIME_UNIT>(params["PERIOD"]);
+	TOKEN_UNIT size = periodic_memory_sizing_csdf( dataflow,  PERIOD,  params.find("INTEGERSOLVING")!= params.end() ,  params.find("ILPGENERATIONONLY")!= params.end() );
+
+	 VERBOSE_INFO("Size is " << size);
+}
+
+TOKEN_UNIT algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  dataflow, TIME_UNIT PERIOD, bool INTEGERSOLVING, bool ILPGENERATIONONLY) {
+
+	commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
+	if (INTEGERSOLVING) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
 
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
-
-	TIME_UNIT FREQUENCY = 1.0 / dataflow->getPeriod();
-
-	// STEP 0 - CSDF Graph should be normalized
-	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-	// STEP 1 - Compute normalized period
-	TIME_UNIT PERIOD = dataflow->getPeriod()  ;
-
 	VERBOSE_ASSERT (PERIOD > 0, "The period must be defined");
 	VERBOSE_ASSERT (PERIOD != std::numeric_limits<TIME_UNIT>::infinity(), "The period must be defined");
+	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
+	TIME_UNIT FREQUENCY = 1.0 / PERIOD;
 
 	//##################################################################
 	// Linear program generation
@@ -79,7 +82,7 @@ void algorithms::compute_csdf_1periodic_memory   (models::Dataflow* const  dataf
 
 		const TOKEN_UNIT  mop      =  commons::floor(dataflow->getPreload(c),dataflow->getFineGCD(c));
 
-		const TOKEN_UNIT  gcdz      = boost::math::gcd((Zi),(Zj));
+		const TOKEN_UNIT  gcdz      = boost::integer::gcd((Zi),(Zj));
 
 		VERBOSE_DEBUG("Mu_i = " << mu_i);
 		VERBOSE_DEBUG("Mu_j = " << mu_j);
@@ -249,9 +252,9 @@ void algorithms::compute_csdf_1periodic_memory   (models::Dataflow* const  dataf
 	// ilp_params.linear_method = commons::DUAL_LINEAR_METHOD;
 	//
 	// bool sol = g.solve(ilp_params);
-	if (params.find("ILPGENERATIONONLY")!= params.end() )  {
+	if (ILPGENERATIONONLY)  {
 		g.writeMPSProblem();
-		return;
+		return 0;
 	}
 	bool sol = g.solveWith();
 
@@ -281,7 +284,7 @@ void algorithms::compute_csdf_1periodic_memory   (models::Dataflow* const  dataf
 			const TOKEN_UNIT  Zi        = dataflow->getEdgeIn(c);
 			const TOKEN_UNIT  Zj        = dataflow->getEdgeOut(c);
 
-			const TOKEN_UNIT  gcdz      = boost::math::gcd((Zi),(Zj));
+			const TOKEN_UNIT  gcdz      = boost::integer::gcd((Zi),(Zj));
 
 
 			TOKEN_UNIT wai    = 0;  /* wai data write at start ai  */
@@ -354,10 +357,11 @@ void algorithms::compute_csdf_1periodic_memory   (models::Dataflow* const  dataf
 		std::cout << "Total buffer size : " << total_buffer_size
 				<< " + 2 * " << dataflow->getVerticesCount() << " = "
 				<< total_buffer_size + 2 * dataflow->getVerticesCount() << std::endl ;
+		return total_buffer_size;
 	} else {
 		VERBOSE_ERROR("No feasible solution");
+		return 0;
 	}
-	return;
 
 
 }

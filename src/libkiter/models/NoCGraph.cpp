@@ -6,13 +6,13 @@
  */
 
 
-#include <commons/NoCGraph.h>
+#include <models/NoCGraph.h>
 #include <climits>
 #include <algorithm>
 #include <fstream>
 
-NoCGraph::NoCGraph(int V)
-{
+NoCGraph::NoCGraph(int V) {
+	this->const_length = 0;
 	this->V = V;
 	adj = new std::list<int>[V];
 	dumpPaths = false;
@@ -20,17 +20,6 @@ NoCGraph::NoCGraph(int V)
 
 	//Read from file to set up hardware limit, default is set to FOUR
 	HWLIMIT = 4;
-
-	std::ifstream myfile ("routersize.txt");
-	if (myfile.is_open())
-	{
-		myfile >> HWLIMIT;
-		myfile.close();
-	}
-	else
-	{
-		std::cout << "Unable to open file, Setting HW Limit to FOUR\n";
-	}
 }
 
 void NoCGraph::addEdge(int u, int v)

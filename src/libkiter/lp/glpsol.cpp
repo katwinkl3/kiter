@@ -9,7 +9,7 @@
 //#define __COINLIB__
 //#define __GUROBILIB__
 
-#include "verbose.h"
+#include <commons/verbose.h>
 #include "glpsol.h"
 #include <algorithm>
 #ifdef __COINLIB__
@@ -34,11 +34,6 @@
 
 namespace commons {
 
-static unsigned int  GLPSolCounter = 0;
-GLPParameters default_glpsol_parameters = GLPParameters();
-void              resetDefaultParams  ()                  {default_glpsol_parameters = GLPParameters();}
-void              setDefaultParams   (GLPParameters& p)   {default_glpsol_parameters = p;}
-GLPParameters     getDefaultParams   ()                   { return default_glpsol_parameters;}
 
 GLPSol::GLPSol (const string s,const Objectif obj) : problemName               (s),
 		objectif                  (obj),
@@ -48,7 +43,7 @@ GLPSol::GLPSol (const string s,const Objectif obj) : problemName               (
 
 	// FIX : schedule open more than one lpsolver
 	//VERBOSE_ASSERT(GLPSolCounter == 0,TXT_NEVER_HAPPEND);
-	GLPSolCounter++;
+	//GLPSolCounter++;
 
 	lp = glp_create_prob();
 	glp_set_prob_name(lp,commons::fromString<const char*>(problemName));
@@ -64,7 +59,7 @@ GLPSol::GLPSol (const string s,const Objectif obj) : problemName               (
 
 GLPSol::~GLPSol	() {
 	if (lp)	glp_delete_prob(lp);
-	GLPSolCounter--;
+	//GLPSolCounter--;
 }
 int GLPSol::hook_printer(void * const , const char * const m) {
 	std::string mess = m;
@@ -240,7 +235,7 @@ void GLPSol::generateGLPKProblem() {
 
 }
 
-bool GLPSol::solve(GLPParameters& params) {
+bool GLPSol::solve(const GLPParameters& params) {
 
 
 	VERBOSE_ILP("Linear solving : Generation.");
@@ -440,7 +435,12 @@ bool            GLPSol::solveWithGurobi      () {
 
 	VERBOSE_ILP("Gurobi: Read");
 
-	static GRBEnv *env = new GRBEnv();
+	static GRBEnv *env;
+	try {
+		env = new GRBEnv();
+	} catch (GRBException& error) {
+		VERBOSE_ERROR("new GRBEnv() failed: " << error.getMessage());
+	}
 	GRBVar *vars = 0;
 	if (not VERBOSE_IS_ILP())  env->set(GRB_IntParam_OutputFlag, 0);
     GRBModel model = GRBModel(*env, mpsname);

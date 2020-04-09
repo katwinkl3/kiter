@@ -14,6 +14,7 @@
 #include <models/EventGraph.h>
 #include <models/Dataflow.h>
 #include <printers/stdout.h>
+#include <algorithms/dse/periodic.h>
 #include <algorithms/buffersizing/periodic.h>
 #include <algorithms/buffersizing/backpressure.h>
 #include <algorithms/periodic_fixed.h>
@@ -96,7 +97,10 @@ std::vector<algo_t> algorithmslist = {
 		// Recent stuff
 		{ "LP1" , "Rewriting Bodin2016 Threshold CSDF 1-Periodic Scheduling", algorithms::scheduling::CSDF_1PeriodicScheduling_LP},
 		{ "LPN" , "Rewriting Bodin2016 Threshold CSDF N-Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling_LP},
-		{ "EGN" , "Rewriting Bodin2013 Threshold CSDF Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling}
+		{ "EGN" , "Rewriting Bodin2013 Threshold CSDF Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling},
+
+		//	Add DSE
+		{ "PeriodicDSE" , "Bodin2013 Periodic DSE", algorithms::compute_csdf_dse_periodic}
 
 
 };
@@ -171,27 +175,6 @@ int main (int argc, char **argv)
 		VERBOSE_INFO("Additionnal parameter found: '" << it->first << "' = '" << it->second << "'");
 	}
 
-	// Step 3 - Compute maximum periodic throughput
-
-	TIME_UNIT FREQUENCY = 0;
-
-	if (parameters.find("FREQUENCY") != parameters.end() ) {
-		VERBOSE_ASSERT(parameters.find("FREQUENCY") != parameters.end() , "FREQUENCY is not set, need one." );
-		FREQUENCY = commons::fromString<TIME_UNIT>(parameters["FREQUENCY"]);
-		VERBOSE_ASSERT(FREQUENCY > 0,"Need a postive FREQUENCY, '"<< parameters["FREQUENCY"] << "' is not .");
-	} else {
-
-		if (parameters.find("RATIO") != parameters.end() ) {
-			FREQUENCY = 0.0; // TODO  : Fix a scheduling technique here to get Max frequency!
-		}
-	}
-
-	if (parameters.find("RATIO") != parameters.end() ) {
-		FREQUENCY = FREQUENCY * commons::fromString<TIME_UNIT>(parameters["RATIO"]);
-	}
-
-	csdf->setPeriod(1.0 / FREQUENCY );
-	VERBOSE_INFO("PERIOD =" << csdf->getPeriod());
 
 
 
