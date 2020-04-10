@@ -354,9 +354,7 @@ TOKEN_UNIT algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  d
 		}}
 
 		VERBOSE_INFO("Loopback buffers : " << dataflow->getVerticesCount());
-		std::cout << "Total buffer size : " << total_buffer_size
-				<< " + 2 * " << dataflow->getVerticesCount() << " = "
-				<< total_buffer_size + 2 * dataflow->getVerticesCount() << std::endl ;
+
 		return total_buffer_size;
 	} else {
 		VERBOSE_ERROR("No feasible solution");

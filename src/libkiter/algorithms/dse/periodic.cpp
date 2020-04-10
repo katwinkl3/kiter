@@ -74,11 +74,19 @@ void algorithms::compute_csdf_dse_periodic   (models::Dataflow* const  dataflow,
 
     }
 
+    std::map<TOKEN_UNIT,TIME_UNIT> pareto;
     for (auto item : space) {
     	TIME_UNIT F =  item.first ;
     	if (!F) continue;
     	TIME_UNIT P = 1 / F;
     	TOKEN_UNIT S = item.second;
-    	VERBOSE_INFO("With Period of " << P << " Size is " << S);
+    	if (not pareto.count(S)) {pareto[S] = P;}
+    	if (pareto[S] > P) {pareto[S] = P;}
+
+    }
+    for (auto item : pareto) {
+    	TIME_UNIT P =item.second;
+    	TOKEN_UNIT S = item.first;
+    	std::cout << P << "\t" << S << std::endl ;
     }
 }
