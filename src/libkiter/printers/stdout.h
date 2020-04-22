@@ -16,12 +16,14 @@
 
 
 namespace printers {
-std::string GenerateDOT       (models::Dataflow* const  dataflow  , bool simple = true);
+std::string GenerateGraphDOT       (models::Dataflow* const  dataflow  , bool simple = true);
+std::string GenerateNoCDOT       (models::Dataflow* const  dataflow  , bool simple = true);
 std::string PeriodicScheduling2DOT    (models::Dataflow* const  dataflow, models::Scheduling& periodic_scheduling,   TIME_UNIT last_execution_end_at,  bool full , double xscale , double yscale );
-void printGraph         (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
+void printGraph              (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
+void printMapping            (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
 void printGraphAsKiterScript (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
-void printInfos         (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
-void printXML         (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
+void printInfos              (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
+void printXML                (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
 }
 
 #endif /* STDOUT_H_ */

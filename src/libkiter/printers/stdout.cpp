@@ -240,13 +240,121 @@ void  printers::printGraphAsKiterScript (models::Dataflow* const  dataflow, para
 
 }
 
-std::string printers::GenerateDOT    (models::Dataflow* const  dataflow , bool simple) {
+
+
+std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , bool simple) {
+
+	double max_penwidth = 4.0;
+
+  VERBOSE_DEBUG("Start NoC DOT generation");
+  const NoC & noc = dataflow->getNoC();
+
+
+  std::ostringstream returnStream;
+
+  returnStream << "// Auto-generate by Kiter" << std::endl;
+  returnStream << "//   use this dot file with neato for an optimal visu\n" << std::endl;
+  returnStream << "digraph G {\n" << std::endl;
+
+  //returnStream <<  "  graph [label=\"" << "Auto-generate by the Kiter"<< "\",overlap=scale,splines=true]\n";
+  //returnStream << "   edge [labelangle=15,labeldistance=1,len=1.5,fontsize=8,labelsize=4,color=grey]" << std::endl;
+
+  returnStream << std::endl;
+
+
+  for (const NetworkNode node : noc.getNodes()) {
+	  std::string label = commons::toString(node.id);
+	  double x = node.x;
+	  double y = node.y;
+	  if (node.type == NetworkNodeType::Core) {
+		  returnStream << node.id << "[label=\"Core\\n" << label << "\", fontsize=\"10\", shape=\"box\",  fixedsize=\"shape\", width=0.5, height=0.5, pos=\"" << x << "," << y << "!\", pin=TRUE, notranslate=TRUE];" << std::endl;
+	  } else if (node.type == NetworkNodeType::Router) {
+		  returnStream << node.id << "[label=\"" << label << "\", fontsize=\"5\", shape=\"box\",  fixedsize=\"shape\", width=0.2, height=0.2, pos=\"" << x << "," << y << "!\", pin=TRUE, notranslate=TRUE];" << std::endl;
+	  }
+  }
+
+
+
+  for (const Vertex v : dataflow->vertices()) {
+	  ARRAY_INDEX task_id = dataflow->getVertexId(v);
+	  node_id_t core_id = dataflow->getMapping(v);
+	  VERBOSE_DEBUG("task_id=" << task_id << " core_id = " <<  core_id);
+	  const NetworkNode& core = dataflow->getNoC().getNode(core_id);
+	  double x = core.x;
+	  double y = core.y;
+	  returnStream <<  "task_" << task_id << "[label=\"Task\\n" << task_id << "\", style=\"filled\", color=\"red\", fontsize=\"10\", shape=\"circle\", pos=\"" << x << "," << y << "!\", fixedsize=\"shape\", width=0.5, height=0.5];" << std::endl;
+  }
+
+
+  std::map<edge_id_t,std::vector<Edge>> link_usage;
+  std::map<Edge,std::string> edge_color;
+  std::vector<std::string> available_colors = {"#ACFF54","#41E869","#53FFEE","#4191E8","#4191E8","#634BFA", "#FAF93C",
+		                                       "#DB42FF","#E83154","#FF7843","#E8A131","#FADC39", "#8736FF"
+};
+
+  for (const NetworkEdge e : noc.getEdges()) {
+	  link_usage[e.id];
+      //returnStream << e.src << "->" << e.dst << std::endl;
+  }
+
+
+
+  {ForEachChannel(dataflow,c){
+	  edge_color[c] = available_colors[edge_color.size() % available_colors.size()];
+	  ARRAY_INDEX edge_id = dataflow->getEdgeId(c);
+	  Vertex source_vtx   = dataflow->getEdgeSource(c);
+	  Vertex target_vtx   = dataflow->getEdgeTarget(c);
+	  const std::vector<edge_id_t>& route = dataflow->getRoute(c);
+	  VERBOSE_DEBUG("edge_id=" << edge_id << "from tasks " <<  dataflow->getVertexId(source_vtx) << " and " <<   dataflow->getVertexId(target_vtx)  << " route = " <<  route);
+
+	  for (edge_id_t e : route) {
+		  const NetworkEdge& nedge = dataflow->getNoC().getEdge(e);
+		  VERBOSE_DEBUG("  - edge_id_t=" << e << " connects " <<  nedge.src << "->" << nedge.dst);
+	      //returnStream << nedge.src << "->" << nedge.dst<< "[style = \"bold\", color=\"red\", splines=\"false\" ];" << std::endl;
+
+		  link_usage[nedge.id].push_back(c);
+	  }
+  }}
+
+  std::vector<Edge>::size_type max_cnt = 0;
+  for (const NetworkEdge e : noc.getEdges()) {
+	  max_cnt = std::max(max_cnt , link_usage[e.id].size());
+  }
+
+  for (const NetworkEdge e : noc.getEdges()) {
+	  int cnt = link_usage[e.id].size();
+	  if (cnt == 0) {
+		  returnStream << e.src << "->" << e.dst << std::endl;
+	  } else {
+		  std::string color = "";
+		  for (Edge c : link_usage[e.id]) {
+			  if (color != "") color += "::";
+			  color += edge_color[c];
+		  }
+		  double pw = 1;
+	      returnStream << e.src << "->" << e.dst<< "[style = \"bold\", color=\"" << color << "\", splines=\"false\"  , penwidth=" << pw << " ];" << std::endl;
+	  }
+  }
+
+
+  returnStream <<  "}" << std::endl;
+
+  returnStream << std::endl;
+
+  return returnStream.str();
+
+}
+
+
+
+
+std::string printers::GenerateGraphDOT    (models::Dataflow* const  dataflow , bool simple) {
 
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
   std::ostringstream returnStream;
   
-  VERBOSE_DEBUG("Start DOT generation");
+  VERBOSE_DEBUG("Start Graph DOT generation");
 
   
   returnStream << "// Auto-generate by Kiter" << std::endl;
@@ -314,17 +422,28 @@ std::string printers::GenerateDOT    (models::Dataflow* const  dataflow , bool s
 }
 
 
+void printers::printMapping    (models::Dataflow* const  dataflow, parameters_list_t ) {
+
+  std::cout << printers::GenerateNoCDOT    ( dataflow ) ;
+
+}
+
 void printers::printGraph    (models::Dataflow* const  dataflow, parameters_list_t ) {
 
-  std::cout << printers::GenerateDOT    ( dataflow ) ;
+  std::cout << printers::GenerateGraphDOT    ( dataflow ) ;
 
 }
 void printers::printXML    (models::Dataflow* const  dataflow, parameters_list_t params ) {
 
 	static const std::string filename_argument = "filename";
-	VERBOSE_ASSERT (params.find(filename_argument) != params.end() , "Please provide a filename using -pfilename=X.");
-	std::string filename = params[filename_argument];
-	commons::writeSDF3File(filename, dataflow );
+
+	if (params.find(filename_argument) != params.end() ) {
+		std::string filename = params[filename_argument];
+		commons::writeSDF3File(filename, dataflow );
+	} else {
+		 std::cout << commons::generateSDF3XML(dataflow) << std::endl;
+	}
+
 }
 
 

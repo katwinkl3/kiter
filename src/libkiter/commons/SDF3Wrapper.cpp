@@ -745,10 +745,16 @@ void writeChannel (xmlTextWriterPtr writer, const models::Dataflow* dataflow, co
 }
 
 
-void writeSDF3File         (std::string filename, const models::Dataflow* dataflow)  {
+std::string  generateSDF3XML         (const models::Dataflow* dataflow)  {
 
+	xmlBufferPtr buf = xmlBufferCreate();
+	if (buf == NULL) {
+		VERBOSE_ERROR("xmlBufferCreate: Error creating the xml buffer");
+		return "";
+	}
 
-	xmlTextWriterPtr writer = xmlNewTextWriterFilename(filename.c_str(), 0);
+	xmlTextWriterPtr writer = xmlNewTextWriterMemory(buf,0);
+	// xmlTextWriterPtr writer = xmlNewTextWriterFilename(filename.c_str(), 0);
 	xmlTextWriterStartDocument(writer, NULL, "UTF-8", NULL);
 	xmlTextWriterSetIndent(writer,1); xmlTextWriterStartElement(writer, (const xmlChar*) "sdf3");
 
@@ -860,9 +866,19 @@ void writeSDF3File         (std::string filename, const models::Dataflow* datafl
 
 	xmlTextWriterEndDocument(writer);
 	xmlFreeTextWriter(writer);
-
+	std::string res = (const char*)buf->content;
+    xmlBufferFree(buf);
+    return res;
 }
 
+
+void writeSDF3File         (std::string filename, const models::Dataflow* dataflow)  {
+	std::ofstream mfile;
+	mfile.open (filename);
+	mfile << generateSDF3XML(dataflow);
+	mfile.close();
+
+}
 
 } // end of namespace commons
 

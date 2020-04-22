@@ -18,7 +18,7 @@ namespace algorithms {
 		if (a < 0)
 			return -1*a;
 		return a;
-	} 
+	}
 	void software_noc (models::Dataflow* const dataflow, parameters_list_t);
 	void software_noc_bufferless (models::Dataflow* const dataflow, parameters_list_t);
 	void dynamic_noc (models::Dataflow* const dataflow, parameters_list_t);

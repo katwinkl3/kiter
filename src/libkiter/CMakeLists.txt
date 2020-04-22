@@ -60,13 +60,14 @@ SET(LIBKITER_FLAGS "-Wconversion -Wfloat-equal  ${CMAKE_CXX_FLAGS_DEBUG} ")
 
 ADD_LIBRARY			   (kiter_commons SHARED  ${commons_sources})
 ADD_LIBRARY			   (kiter_models SHARED  ${models_sources})
-TARGET_LINK_LIBRARIES  (kiter_models kiter_commons )
-TARGET_LINK_LIBRARIES  (kiter_commons ${LIBXML2_LIBRARIES}  )
+TARGET_LINK_LIBRARIES              (kiter_models PUBLIC kiter_commons )
+TARGET_LINK_LIBRARIES              (kiter_commons PUBLIC ${LIBXML2_LIBRARIES}  )
 
 ADD_LIBRARY			   (kiter_lp STATIC  ${lp_sources})
 TARGET_LINK_LIBRARIES  (kiter_lp   ${GLPK_LIBRARIES}  )
 
-if(GUROBI_FOUND)
+
+if(GUROBI_FOUND AND FALSE)
     message(STATUS "GUROBI FOUND")
     target_include_directories(kiter_lp PRIVATE ${GUROBI_INCLUDE_DIRS})
     TARGET_LINK_LIBRARIES(kiter_lp ${GUROBI_LIBRARIES} )
@@ -74,8 +75,14 @@ if(GUROBI_FOUND)
 endif(GUROBI_FOUND)
 
 
-ADD_LIBRARY			   (kiter_printers SHARED  ${printers_sources})
 ADD_LIBRARY			   (kiter_algorithms SHARED  ${algorithms_sources})
+TARGET_LINK_LIBRARIES  (kiter_algorithms PUBLIC kiter_commons kiter_models kiter_lp )
+
+
+ADD_LIBRARY			   (kiter_printers SHARED  ${printers_sources})
+TARGET_LINK_LIBRARIES  (kiter_printers PUBLIC kiter_commons kiter_algorithms)
+
+
 file(WRITE null.cpp "")
 ADD_LIBRARY			   (libkiter STATIC   null.cpp )
 TARGET_LINK_LIBRARIES  (libkiter  

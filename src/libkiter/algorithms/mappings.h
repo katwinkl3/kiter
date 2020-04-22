@@ -15,8 +15,9 @@ namespace models {
 }
 namespace algorithms {
 	namespace mapping {
-	void randomMapping (models::Dataflow* const  dataflow, parameters_list_t params);
-	void moduloMapping (models::Dataflow* const  dataflow, parameters_list_t params);
+		void randomMapping (models::Dataflow* const  dataflow, parameters_list_t params);
+		void moduloMapping (models::Dataflow* const  dataflow, parameters_list_t params);
+		void BufferlessNoCMapAndRoute (models::Dataflow* const  dataflow, parameters_list_t params);
 	}
 }
 

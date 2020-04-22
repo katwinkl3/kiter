@@ -30,6 +30,8 @@ class NoCGraph
 	public: 
 	NoCGraph(int V); // Constructor 
 
+	int size () const {return MESH_SIZE;}
+	int getMeshSize  () const {return size();}
 	NoCGraph()
 	{ this->V = 1; adj = new std::list<int>[V]; dumpPaths = false; MESH_SIZE = (V/2); linkUtil.resize(V*V, 0); HWLIMIT = 4;} 
 
@@ -77,8 +79,8 @@ class NoCGraph
         void setLinkUtil(std::vector<int> u) { linkUtil = u; }
 
 	void generateAllShortestPaths();
-	int getMapIndex(int x, int y) {return (x*V + y);}
-	void getMapIndexPair(int index, int* x, int* y) { (*y) = index%V; (*x) = index/V; }
+	int getMapIndex(int x, int y) const {return (x*V + y);}
+	std::pair<int,int> getMapIndexPair(int index) {  return {index/V, index%V}; }
 	int getPathLength(int src, int dst)
 	{
 		if(src == dst)

@@ -15,6 +15,7 @@
 #include <models/Dataflow.h>
 #include <printers/stdout.h>
 #include <algorithms/dse/periodic.h>
+#include <algorithms/tools/LTEGenerator.h>
 #include <algorithms/buffersizing/periodic.h>
 #include <algorithms/buffersizing/backpressure.h>
 #include <algorithms/periodic_fixed.h>
@@ -27,6 +28,11 @@
 #include <algorithms/schedulings.h>
 #include <algorithms/transformations.h>
 
+struct generator_t {
+	std::string name;
+	std::string desc;
+	models::Dataflow* (*fun)(parameters_list_t);
+};
 struct algo_t {
 	std::string name;
 	std::string desc;
@@ -42,19 +48,23 @@ inline double tock() {
 }
 //!< List of algorithms
 
+std::vector<generator_t> generatorslist = {
+		{ "genLTESDF" , "generate LTE SDF.", algorithms::generate_lte_sdf}
+};
 
 std::vector<algo_t> algorithmslist = {
-
 		// Printers
 		{ "PrintXML" , "Print XML file", printers::printXML},
 		{ "PrintKiter" , "Generate C++ code to internally generate the graph inside Kiter.", printers::printGraphAsKiterScript} ,
 		{ "PrintInfos" , "Just print some graph informations.", printers::printInfos},
 		{ "PrintGraph" , "Print DOT file", printers::printGraph},
 		{ "PrintKPeriodicScheduling" , "Print KPeriodicScheduling", algorithms::print_kperiodic_scheduling},
+		{ "PrintMapping" , "Print DOT file", printers::printMapping},
 
 		// Helpers to map vertex to cores, need a way to also consider routers
 		{ "randomMapping" , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.", algorithms::mapping::randomMapping} ,
 		{ "moduloMapping" , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.", algorithms::mapping::moduloMapping} ,
+		{ "BufferlessNoCMapAndRoute" , "Mapping and Routing combined.", algorithms::mapping::BufferlessNoCMapAndRoute} ,
 
 		// Throughput techniques
 		{ "SDFKPeriodic" , "Build an Exansion graph given a set of value K (1 by default), and compute its MCRP.", algorithms::scheduling::SDFKPeriodicScheduling} ,
@@ -83,9 +93,9 @@ std::vector<algo_t> algorithmslist = {
 
 		// Various
 		{ "SymbolicExecution" , "Execute task in ASAP fashion and print out the scheduling.", algorithms::symbolic_execution},
-		{ "genLTESDF" , "generate LTE SDF.", algorithms::generate_lte_sdf},
 		{ "SoftwareControlledNoCBufferless" , "Perform Bufferless NoC scheduling after deciding task mapping and routing.", algorithms::software_noc_bufferless},
-		{ "dynamicNoC" , "Perform ideal dynamic NoC routing after deciding task mapping and routing.", algorithms::dynamic_noc},
+		//{ "BufferlessNoCScheduling" , "Perform Bufferless NoC scheduling after deciding task mapping and routing.", algorithms::software_noc_bufferless},
+		//{ "dynamicNoC" , "Perform ideal dynamic NoC routing after deciding task mapping and routing.", algorithms::dynamic_noc},
 		{ "SymbolicExecutionWP" , "Execute task in ASAP fashion and print out the scheduling.", algorithms::symbolic_execution_with_packets},
 
 		// Trasnformation
@@ -122,18 +132,24 @@ int main (int argc, char **argv)
 	// ** default arguments
 	std::string filename = "";
 	std::vector<std::pair<std::string,parameters_list_t>> algos;
+	std::vector<std::pair<std::string,parameters_list_t>> generators;
 	parameters_list_t parameters;
 	commons::set_verbose_mode(commons::WARNING_LEVEL); // default verbose mode is ...
 
 	// ** Retreive arguments **
 	int c;
-	while ((c = getopt(argc, (char **)argv, "f:a:v:p:")) != -1) {
+	while ((c = getopt(argc, (char **)argv, "f:g:a:v:p:h")) != -1) {
 		if (c == 'f') {
 			filename = optarg;
 		}
 		if (c == 'a') {
 			VERBOSE_INFO("Store algo " << optarg);
 			algos.push_back(std::pair<std::string,parameters_list_t>(optarg,parameters));
+			parameters.clear();
+		}
+		if (c == 'g') {
+			VERBOSE_INFO("Store generator " << optarg);
+			generators.push_back(std::pair<std::string,parameters_list_t>(optarg,parameters));
 			parameters.clear();
 		}
 		if (c == 'v') {
@@ -146,6 +162,9 @@ int main (int argc, char **argv)
 			}
 
 		}
+		if (c == 'h') {
+			VERBOSE_INFO("-f FILENAME or -g GENERATOR, then -a ALGORITHM.");
+		}
 	}
 
 	VERBOSE_INFO("Parameter parsing is done: " << algos.size() << " algo identified.");
@@ -157,15 +176,53 @@ int main (int argc, char **argv)
 	 *
 	 * */
 
+	models::Dataflow* csdf = nullptr;
 
-	// Step 1 = Load XML file
 
-	VERBOSE_INFO("Read XML file : " << filename);
-	models::Dataflow* csdf = commons::readSDF3File(filename);
+	// Step 1 = Load XML file if any
+	if (filename != "") {
+		VERBOSE_INFO("Read XML file : " << filename);
+		csdf = commons::readSDF3File(filename);
+	}
+
+	if (generators.size() > 1) {
+		VERBOSE_ERROR("Unsupported case, only one generator can be used.");
+	}
+
+	if (csdf and (generators.size() > 0)) {
+		VERBOSE_ERROR("Unsupported case, cannot used file (-f) and generator (-g) at the same time.");
+	}
 
 	if (!csdf) {
-		VERBOSE_ERROR("Error with XML file.");
-		std::cerr << " No input file or enable to read it, please us -f FILENAME." << std::endl;
+		bool nothing = true;
+		for ( std::vector<std::pair<std::string,parameters_list_t>>::iterator it = generators.begin() ; it != generators.end() ; it++ ) {
+			auto gen = (*it);
+		for ( std::vector<generator_t>::iterator lit = generatorslist.begin() ; lit != generatorslist.end() ; lit++ ) {
+			if (gen.first == lit->name) {
+				VERBOSE_INFO ("Run " << lit->name);
+				tock();
+				gen.second.insert(parameters.begin(),parameters.end());
+				csdf = lit->fun(gen.second);
+				double duration = tock();
+				VERBOSE_INFO (lit->name << " duration=" << duration);
+				nothing = false;
+			}
+		}
+		}
+		if (nothing) {
+			std::cerr << " Unsupported generator (-g NAME) or no filename (-f FILENAME), list of supported generator is " << std::endl;
+			for ( std::vector<generator_t>::iterator lit = generatorslist.begin() ; lit != generatorslist.end() ; lit++ ) {
+				std::cerr << " - " << lit->name << " : " << lit->desc << std::endl;
+			}
+			exit(1);
+		}
+
+	}
+
+
+	if (!csdf) {
+		VERBOSE_ERROR("Error with XML file or Generator.");
+		std::cerr << " No input file or enable to read it, please us -f FILENAME or -g GENERATOR." << std::endl;
 		exit(1);
 	}
 

@@ -25,7 +25,7 @@ models::EventGraph* generateKPeriodicEventGraph(models::Dataflow * const dataflo
 
 std::string print_schedule (models::EventGraph* eg, models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT res ) ;
 
-scheduling_t generateKperiodicSchedule    (models::Dataflow* const dataflow , bool verbose) ;
+scheduling_t generateKperiodicSchedule    (models::Dataflow* const dataflow) ;
     void print_kperiodic_scheduling         (models::Dataflow* const  dataflow, parameters_list_t);
     void print_kperiodic_expansion_graph    (models::Dataflow* const  dataflow, parameters_list_t);
   void generateKperiodicSelfloop(models::Dataflow * const dataflow , EXEC_COUNT ki, models::EventGraph* g  , Vertex t  );
@@ -35,7 +35,7 @@ scheduling_t generateKperiodicSchedule    (models::Dataflow* const dataflow , bo
   void fastGenerateKPeriodicConstraint(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues,  models::EventGraph* g, Edge c) ;
   void newGenerateKPeriodicConstraint(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues,  models::EventGraph* g, Edge c) ;
 
-  models::EventGraph*  updateEventGraph( models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kvector, std::set<Edge>* cc, models::EventGraph* g, bool verbose) ;
+  models::EventGraph*  updateEventGraph( models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kvector, std::set<Edge>* cc, models::EventGraph* g) ;
 
 models::EventGraph* generateKPeriodicEventGraphWithNormalize  (models::Dataflow *  const,  std::map<Vertex,EXEC_COUNT> * kvector, bool noRe  );
 

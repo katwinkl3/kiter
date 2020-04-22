@@ -26,6 +26,7 @@ models::Scheduling  period2Scheduling    (models::Dataflow* const  dataflow,  pe
 namespace algorithms {
 
 
+void BufferlessNoCScheduling(models::Dataflow* const  dataflow, parameters_list_t   param_list);
 
 	namespace scheduling {
 		void KPeriodic_taskNoCbufferless(models::Dataflow*, parameters_list_t param_list);

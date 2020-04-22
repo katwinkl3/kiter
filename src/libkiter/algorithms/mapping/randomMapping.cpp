@@ -15,7 +15,7 @@ void algorithms::mapping::randomMapping (models::Dataflow* const  dataflow, para
 		if (params.find(dataflow->getVertexName(t)) != params.end()) {
 			dataflow->setMapping(t, commons::fromString<node_id_t> (params[dataflow->getVertexName(t)]));
 		} else {
-			node_id_t random_id = std::rand() % dataflow->getNoC()->size();
+			node_id_t random_id = dataflow->getNoC().size() + std::rand() % dataflow->getNoC().size();
 			dataflow->setMapping(t, random_id);
 		}
 	}

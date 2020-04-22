@@ -57,6 +57,7 @@ namespace boost
 	enum edge_preload_t       { edge_preload          };
 	enum edge_tokensize_t       { edge_tokensize      };
 	enum edge_type_t       { edge_type      };
+	enum edge_route_t       { edge_route      };
 	enum graph_filename_t    { graph_filename         };
 
 	BOOST_INSTALL_PROPERTY(vertex,   phasecount  );
@@ -79,6 +80,7 @@ namespace boost
 	BOOST_INSTALL_PROPERTY(edge,   output_port_name );
 	BOOST_INSTALL_PROPERTY(edge,   preload );
 	BOOST_INSTALL_PROPERTY(edge,   tokensize );
+	BOOST_INSTALL_PROPERTY(edge,   route );
 	BOOST_INSTALL_PROPERTY(edge,   type );
 	BOOST_INSTALL_PROPERTY(graph,filename );
 }
@@ -110,7 +112,8 @@ typedef boost::property < boost::edge_name_t, std::string,                      
 		boost::property < boost::edge_alpha_t,TOKEN_FRACT   ,                                // NORMALIZATION : ALPHA
 		boost::property < boost::edge_tokensize_t,TOKEN_UNIT   ,                                // token size
 		boost::property < boost::edge_type_t,EDGE_TYPE   ,                                // edge type
-		boost::property < boost::edge_index_t, ARRAY_INDEX > > > > > > > > > > > > > >  edgeProperties;           // buffer id
+		boost::property < boost::edge_route_t,std::vector<edge_id_t>   ,                                // edge route
+		boost::property < boost::edge_index_t, ARRAY_INDEX > > > > > > > > > > > > > > >  edgeProperties;           // buffer id
 
 
 typedef boost::property < boost::graph_name_t, std::string,                                   // Graph name
@@ -289,11 +292,12 @@ protected:
 public :
 	Dataflow		(unsigned int nVertex = 0)		: readonly(false), normalizationisdone(false), repetitionvectorisdone(false),
 	g(nVertex), graph_name("noname"), graph_id(0) ,  auto_vertex_num (1) , auto_edge_num (1) ,
-	normalized_period(0), noc (4,4,1) {
+	normalized_period(0), noc (4,4) {
 		VERBOSE_ASSERT(nVertex == 0,TXT_NO_IMPLEMENTATION);
 	}
 
-	const NoC* getNoC() { return &this->noc;};
+	const NoC& getNoC() const { return this->noc;};
+	void       setNoC(NoC& noc) { this->noc = noc; };
 
 	void set_read_only() {readonly = true;}
 	void set_normalize() {normalizationisdone = true;}
@@ -531,13 +535,20 @@ public :
     	}
     }
 
+    inline void                 setRoute (const Edge c, const std::vector<edge_id_t> route)    {
+   		ASSERT_WRITABLE();
+   		reset_computation();
+   		boost::put(boost::edge_route, this->getG(), c.e, route);
+       }
+    inline const std::vector<edge_id_t> &           getRoute (const Edge c )   const      {return boost::get(get(boost::edge_route, this->getG()), c.e);}
 
     inline void                 setMapping (const Vertex t,
                                            const node_id_t core_id)    {
 		ASSERT_WRITABLE();
 		reset_computation();
-		boost::put(boost::vertex_mapping, this->getG(), t.v, core_id);}
-        inline node_id_t           getMapping (const Vertex t )   const      {return boost::get(get(boost::vertex_mapping, this->getG()), t.v);}
+		boost::put(boost::vertex_mapping, this->getG(), t.v, core_id);
+    }
+    inline node_id_t           getMapping (const Vertex t )   const      {return boost::get(get(boost::vertex_mapping, this->getG()), t.v);}
 
 
     inline void                 setZi (const Vertex t,

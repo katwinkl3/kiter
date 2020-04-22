@@ -339,7 +339,6 @@ models::EventGraph* algorithms::generateKPeriodicEventGraph(models::Dataflow * c
     // DEFINITION DES CONTRAINTES DE PRECEDENCES
     //******************************************************************
     {ForEachChannel(dataflow,c) {
-    	bool isbufferless = (dataflow->getEdgeType(c) == EDGE_TYPE::BUFFERLESS_EDGE);
         generateKPeriodicConstraint(dataflow , kValues,   g ,  c);
     }}
 
@@ -461,7 +460,7 @@ bool algorithms::updateVectorWithFineNi( models::Dataflow * const dataflow , std
 
 
 
-models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * oldkvector, std::set<Edge>* cc, models::EventGraph* g, bool verbose = false) {
+models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * oldkvector, std::set<Edge>* cc, models::EventGraph* g) {
 
 
 
@@ -497,7 +496,6 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
     VERBOSE_INFO("Update event graph - Step 1 - Delete edges and add task");
     // STEP 1
     //remove all connected edges
-    EXEC_COUNT total = cc->size();
     EXEC_COUNT current = 0;
     for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
         current ++ ;
@@ -1149,7 +1147,7 @@ void algorithms::compute_KperiodicSlow_throughput    (models::Dataflow* const da
 
 //std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> 
 
-scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const dataflow , bool verbose) {
+scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const dataflow) {
 
 	//std::map<Vertex,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>>
 	scheduling_t scheduling_result;
@@ -1236,7 +1234,7 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
             VERBOSE_INFO("KPeriodic EventGraph generation");
 
             //STEP 1 - Generate Event Graph and update vector
-            if (!updateEventGraph( dataflow ,  &kvector, &(result.second), eg, verbose)) break ;
+            if (!updateEventGraph( dataflow ,  &kvector, &(result.second), eg)) break ;
 
             VERBOSE_INFO("KPeriodic EventGraph generation Done");
 
@@ -1330,25 +1328,13 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
 }
 
 
-void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const dataflow, parameters_list_t  parameters  ) {
+void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const dataflow, parameters_list_t    ) {
 
 
-  bool do_buffer_less =    (parameters.find("do_buffer_less") != parameters.end() ) ;
 
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
-    TIME_UNIT end_of_sched = 0;
-    if (parameters.find("END") != parameters.end() ) {
-      end_of_sched = commons::fromString<TIME_UNIT>(parameters["END"]);
-    }
-    
 
-
-    bool verbose = false;
-    if (parameters.find("PRINT") != parameters.end() ) {
-        verbose = true;
-    }
-    VERBOSE_INFO("Please note you can use the PRINT parameter");
 
     EXEC_COUNT sumNi = 0;
     EXEC_COUNT sumKi = dataflow->getVerticesCount();
@@ -1432,7 +1418,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
             VERBOSE_INFO("KPeriodic EventGraph generation");
 
             //STEP 1 - Generate Event Graph and update vector
-            if (!updateEventGraph( dataflow ,  &kvector, &(result.second), eg, verbose)) break ;
+            if (!updateEventGraph( dataflow ,  &kvector, &(result.second), eg)) break ;
 
             VERBOSE_INFO("KVector = " << commons::toString(kvector) );
             VERBOSE_INFO("KPeriodic EventGraph generation Done");

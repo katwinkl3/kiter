@@ -109,7 +109,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
             VERBOSE_INFO("KPeriodic EventGraph generation");
 
             //STEP 1 - Generate Event Graph and update vector
-            if (!algorithms::updateEventGraph( dataflow ,  &kvector, &(result.second), eg, false)) break ;
+            if (!algorithms::updateEventGraph( dataflow ,  &kvector, &(result.second), eg)) break ;
 
             VERBOSE_INFO("KVector = " << commons::toString(kvector) );
             VERBOSE_INFO("KPeriodic EventGraph generation Done");
