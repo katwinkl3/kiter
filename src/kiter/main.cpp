@@ -9,6 +9,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <stdlib.h>
+#include <commons/KiterRegistry.h>
 #include <commons/verbose.h>
 #include <commons/SDF3Wrapper.h>
 #include <models/EventGraph.h>
@@ -28,16 +29,7 @@
 #include <algorithms/schedulings.h>
 #include <algorithms/transformations.h>
 
-struct generator_t {
-	std::string name;
-	std::string desc;
-	models::Dataflow* (*fun)(parameters_list_t);
-};
-struct algo_t {
-	std::string name;
-	std::string desc;
-	void (*fun)(models::Dataflow*, parameters_list_t);
-};
+
 inline double tock() {
 	static struct timespec last;
 	struct timespec clockData;
@@ -48,72 +40,8 @@ inline double tock() {
 }
 //!< List of algorithms
 
-std::vector<generator_t> generatorslist = {
-		{ "genLTESDF" , "generate LTE SDF.", algorithms::generate_lte_sdf}
-};
-
-std::vector<algo_t> algorithmslist = {
-		// Printers
-		{ "PrintXML" , "Print XML file", printers::printXML},
-		{ "PrintKiter" , "Generate C++ code to internally generate the graph inside Kiter.", printers::printGraphAsKiterScript} ,
-		{ "PrintInfos" , "Just print some graph informations.", printers::printInfos},
-		{ "PrintGraph" , "Print DOT file", printers::printGraph},
-		{ "PrintKPeriodicScheduling" , "Print KPeriodicScheduling", algorithms::print_kperiodic_scheduling},
-		{ "PrintMapping" , "Print DOT file", printers::printMapping},
-
-		// Helpers to map vertex to cores, need a way to also consider routers
-		{ "randomMapping" , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.", algorithms::mapping::randomMapping} ,
-		{ "moduloMapping" , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.", algorithms::mapping::moduloMapping} ,
-		{ "BufferlessNoCMapAndRoute" , "Mapping and Routing combined.", algorithms::mapping::BufferlessNoCMapAndRoute} ,
-
-		// Throughput techniques
-		{ "SDFKPeriodic" , "Build an Exansion graph given a set of value K (1 by default), and compute its MCRP.", algorithms::scheduling::SDFKPeriodicScheduling} ,
-		{ "BufferlessKPeriodicScheduling" , "Run Bufferless Kperiodic", algorithms::scheduling::bufferlessKPeriodicScheduling} ,
-		{ "1PeriodicThroughput" , "Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.", algorithms::compute_1Kperiodic_throughput} ,
-		{ "2PeriodicThroughput" , "Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.", algorithms::compute_2Kperiodic_throughput} ,
-		{ "NKPeriodicThroughput" , "Optimal Throughput evaluation of CSDF by using N-periodic method.", algorithms::compute_NKperiodic_throughput} ,
-		{ "NPeriodicThroughput" , "Optimal Throughput evaluation of SDF by using Munier1993 method.", algorithms::compute_NPeriodic_throughput} ,
-		{ "NCleanPeriodicThroughput" , "Optimal Throughput evaluation of SDF by using Munier1993 method combined with deGroote2012 reduction.", algorithms::compute_NCleanPeriodic_throughput} ,
-		{ "KPeriodicThroughput" , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method 2.", algorithms::compute_Kperiodic_throughput} ,
-		{ "deGrooteThroughput" , "Throughput analysis from deGroote2012 paper except event graph reduction.", algorithms::compute_deGroote_throughput},
-		{ "deGrooteCleanThroughput" , "Throughput analysis from deGroote2012 paper.", algorithms::compute_deGrooteClean_throughput},
 
 
-
-		//Buffer sizing techniques
-		{ "PeriodicSizing" , "Minimal Buffer size estimation by periodic scheduling method.", algorithms::compute_csdf_1periodic_memory} ,
-		{ "BurstSizing" , "Minimal Buffer size estimation by periodic scheduling with BURST policy.", algorithms::compute_burst_memory} ,
-		{ "AverageSizing" , "Minimal Buffer size estimation by periodic scheduling with AVERAGE policy.", algorithms::compute_average_memory} ,
-		{ "MinMaxSizing" , "Minimal Buffer size estimation by periodic scheduling with MINMAX policy.", algorithms::compute_minmax_memory} ,
-		{ "WiggersSizing" , "Minimal Buffer size estimation by periodic scheduling with Wiggers policy.", algorithms::compute_wiggers_memory} ,
-		{ "1PeriodicSizing" , "Minimal Buffer size estimation by periodic scheduling method.", algorithms::compute_1Periodic_memory} ,
-		{ "NPeriodicSizing" , "Optimal Sizing evaluation of SDF by using N-Periodic method.", algorithms::compute_NPeriodic_memory} ,
-		{ "KPeriodicSizing" , "Optimal Sizing evaluation of SDF by using K-Periodic method.", algorithms::compute_KPeriodic_memory} ,
-		{ "BackPressureSizing" , "Buffer sizing method from Wiggers et al DAC 2007 paper.", algorithms::compute_backpressure_memory_sizing},
-
-		// Various
-		{ "SymbolicExecution" , "Execute task in ASAP fashion and print out the scheduling.", algorithms::symbolic_execution},
-		{ "SoftwareControlledNoCBufferless" , "Perform Bufferless NoC scheduling after deciding task mapping and routing.", algorithms::software_noc_bufferless},
-		//{ "BufferlessNoCScheduling" , "Perform Bufferless NoC scheduling after deciding task mapping and routing.", algorithms::software_noc_bufferless},
-		//{ "dynamicNoC" , "Perform ideal dynamic NoC routing after deciding task mapping and routing.", algorithms::dynamic_noc},
-		{ "SymbolicExecutionWP" , "Execute task in ASAP fashion and print out the scheduling.", algorithms::symbolic_execution_with_packets},
-
-		// Trasnformation
-		{ "Merge" , "Merging tasks using Kperiodic scheduling and Initialization phases", algorithms::transformation::merge_tasks},
-		{ "bugfix" , "A bugfix tool that try to reduce the size of a graph while keeping anomaly between kiter and SDF3", algorithms::transformation::compare_sdf3_throughput},
-		{ "remove" , "Remove tasks with the name or the id specified", algorithms::transformation::remove_task},
-
-
-		// Recent stuff
-		{ "LP1" , "Rewriting Bodin2016 Threshold CSDF 1-Periodic Scheduling", algorithms::scheduling::CSDF_1PeriodicScheduling_LP},
-		{ "LPN" , "Rewriting Bodin2016 Threshold CSDF N-Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling_LP},
-		{ "EGN" , "Rewriting Bodin2013 Threshold CSDF Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling},
-
-		//	Add DSE
-		{ "PeriodicDSE" , "Bodin2013 Periodic DSE", algorithms::compute_csdf_dse_periodic}
-
-
-};
 
 
 
@@ -194,29 +122,22 @@ int main (int argc, char **argv)
 	}
 
 	if (!csdf) {
-		bool nothing = true;
 		for ( std::vector<std::pair<std::string,parameters_list_t>>::iterator it = generators.begin() ; it != generators.end() ; it++ ) {
-			auto gen = (*it);
-		for ( std::vector<generator_t>::iterator lit = generatorslist.begin() ; lit != generatorslist.end() ; lit++ ) {
-			if (gen.first == lit->name) {
-				VERBOSE_INFO ("Run " << lit->name);
+			std::string name = (*it).first;
+			const generator_t* generator = KiterRegistry<generator_t>::get(name);
+			if (generator)  {
+				VERBOSE_INFO ("Run " << generator->name);
 				tock();
-				gen.second.insert(parameters.begin(),parameters.end());
-				csdf = lit->fun(gen.second);
+				csdf = generator->fun(it->second);
 				double duration = tock();
-				VERBOSE_INFO (lit->name << " duration=" << duration);
-				nothing = false;
+				VERBOSE_INFO (generator->name << " duration=" << duration);
+			} else {
+				std::cerr << " Unsupported generator (-g NAME) or no filename (-f FILENAME), list of supported generator is " << std::endl;
+				KiterRegistry<generator_t>::print();
+				exit(1);
 			}
-		}
-		}
-		if (nothing) {
-			std::cerr << " Unsupported generator (-g NAME) or no filename (-f FILENAME), list of supported generator is " << std::endl;
-			for ( std::vector<generator_t>::iterator lit = generatorslist.begin() ; lit != generatorslist.end() ; lit++ ) {
-				std::cerr << " - " << lit->name << " : " << lit->desc << std::endl;
-			}
-			exit(1);
-		}
 
+		}
 	}
 
 
@@ -236,28 +157,24 @@ int main (int argc, char **argv)
 
 
 	// Step 4 = Apply selected algorithm
-	bool nothing = true;
 	for ( std::vector<std::pair<std::string,parameters_list_t>>::iterator it = algos.begin() ; it != algos.end() ; it++ ) {
-		for ( std::vector<algo_t>::iterator lit = algorithmslist.begin() ; lit != algorithmslist.end() ; lit++ ) {
-			if ((*it).first == lit->name) {
-				VERBOSE_INFO ("Run " << lit->name);
-				tock();
-				(*it).second.insert(parameters.begin(),parameters.end());
-				lit->fun(csdf,(*it).second);
-				double duration = tock();
-				VERBOSE_INFO (lit->name << " duration=" << duration);
-				nothing = false;
-			}
+		std::string name = (*it).first;
+		const transformation_t* transformation = KiterRegistry<transformation_t>::get(name);
+		if (!transformation) {
+			std::cerr << " Unsupported algorithm (-a " << name << "), list of supported algorithms is " << std::endl;
+			KiterRegistry<transformation_t>::print();
+			exit(1);
+		} else {
+			VERBOSE_INFO ("Run " << transformation->name);
+			tock();
+			(*it).second.insert(parameters.begin(),parameters.end());
+			transformation->fun(csdf,(*it).second);
+			double duration = tock();
+			VERBOSE_INFO (transformation->name << " duration=" << duration);
 		}
 	}
 
-	if (nothing) {
-		std::cerr << " Unsupported algorithm (-a NAME), list of supported algorithms is " << std::endl;
-		for ( std::vector<algo_t>::iterator lit = algorithmslist.begin() ; lit != algorithmslist.end() ; lit++ ) {
-			std::cerr << " - " << lit->name << " : " << lit->desc << std::endl;
-		}
-		exit(1);
-	}
+
 
 	exit(0);
 

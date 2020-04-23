@@ -9,6 +9,7 @@
 #define KPERIODIC_H_
 
 #include <algorithms/schedulings.h>
+#include <commons/KiterRegistry.h>
 
 namespace models {
 	class Dataflow;
@@ -69,5 +70,19 @@ void                compute_Kperiodic_throughput              (models::Dataflow 
     void print_NKperiodic_eventgraph                                (models::Dataflow *  const , parameters_list_t);
     EXEC_COUNT test_Kperiodic_throughput    (models::Dataflow* const dataflow, parameters_list_t) ;
 }
+ADD_TRANSFORMATION(KPeriodicThroughput,
+		transformation_t({ "KPeriodicThroughput" , "Optimal Throughput evaluation of CSDF by K-Periodic scheduling method 2.", algorithms::compute_Kperiodic_throughput}));
+
+ADD_TRANSFORMATION(UnPeriodicThroughput,
+		transformation_t({ "1PeriodicThroughput" , "Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.", algorithms::compute_1Kperiodic_throughput}));
+ADD_TRANSFORMATION(DeuxPeriodicThroughput,
+				transformation_t({ "2PeriodicThroughput" , "Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.", algorithms::compute_2Kperiodic_throughput}));
+ADD_TRANSFORMATION(NKPeriodicThroughput,
+		transformation_t({ "NKPeriodicThroughput" , "Optimal Throughput evaluation of CSDF by using N-periodic method.", algorithms::compute_NKperiodic_throughput}));
+
+
+ADD_TRANSFORMATION(PrintKPeriodicScheduling,
+		transformation_t({ "PrintKPeriodicScheduling" , "Print KPeriodicScheduling", algorithms::print_kperiodic_scheduling})
+);
 
 #endif /* KPERIODIC_H_ */

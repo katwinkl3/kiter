@@ -10,6 +10,7 @@
 
 #include <commons/commons.h>
 #include <commons/basic_types.h>
+#include <commons/KiterRegistry.h>
 
 namespace models {
 class Dataflow;
@@ -17,6 +18,8 @@ class Dataflow;
 namespace algorithms {
     void compute_backpressure_memory_sizing (models::Dataflow* const  dataflow, parameters_list_t);
 }
+ADD_TRANSFORMATION(BackPressureSizing,
+		transformation_t({ "BackPressureSizing" , "Buffer sizing method from Wiggers et al DAC 2007 paper.", algorithms::compute_backpressure_memory_sizing}));
 
 
 #endif /* BACKPRESSURE_H_ */

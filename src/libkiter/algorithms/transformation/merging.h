@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <commons/commons.h>
+#include <commons/KiterRegistry.h>
 
 
 // ./Debug/bin/kiter  -f ./sdf3mem/example.xml  -a Merge -ptasks=a,b -pname=new
@@ -28,4 +29,6 @@ namespace algorithms {
 	}
 }
 
+ADD_TRANSFORMATION(Merge,
+		transformation_t({ "Merge" , "Merging tasks using Kperiodic scheduling and Initialization phases", algorithms::transformation::merge_tasks}));
 #endif /* SRC_LIBKITER_ALGORITHMS_TRANSFORMATION_MERGING_H_ */

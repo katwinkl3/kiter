@@ -8,7 +8,7 @@
 #ifndef SRC_LIBKITER_ALGORITHMS_TRANSFORMATIONS_H_
 #define SRC_LIBKITER_ALGORITHMS_TRANSFORMATIONS_H_
 
-
+#include <commons/KiterRegistry.h>
 
 namespace models {
 	class Dataflow;
@@ -30,5 +30,10 @@ namespace algorithms {
 
 	}
 }
+ADD_TRANSFORMATION(remove,
+		transformation_t({"remove" , "Remove tasks with the name or the id specified", algorithms::transformation::remove_task}));
+ADD_TRANSFORMATION(bugfix,
+		transformation_t({"bugfix" , "A bugfix tool that try to reduce the size of a graph while keeping anomaly between kiter and SDF3", algorithms::transformation::compare_sdf3_throughput}));
+
 
 #endif /* SRC_LIBKITER_ALGORITHMS_TRANSFORMATIONS_H_ */

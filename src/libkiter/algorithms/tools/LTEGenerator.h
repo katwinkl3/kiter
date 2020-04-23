@@ -9,6 +9,7 @@
 #define SRC_LIBKITER_ALGORITHMS_TOOLS_LTEGENERATOR_H_
 
 #include <commons/commons.h>
+#include <commons/KiterRegistry.h>
 
 
 namespace models {
@@ -33,6 +34,11 @@ static inline const phase_info getPhaseStruct(int t, TIME_UNIT e, int p, const s
 namespace algorithms {
 	models::Dataflow*  generate_lte_sdf(parameters_list_t   param_list);
 }
+
+ADD_GENERATOR(genLTESDF,
+		generator_t(
+				{ "genLTESDF" , "generate LTE SDF.", algorithms::generate_lte_sdf})
+);
 
 
 

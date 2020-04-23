@@ -9,6 +9,7 @@
 #define SRC_LIBKITER_ALGORITHMS_SCHEDULINGS_H_
 
 #include <map>
+#include <commons/KiterRegistry.h>
 #include <models/Dataflow.h>
 #include <models/Scheduling.h>
 
@@ -48,6 +49,23 @@ void BufferlessNoCScheduling(models::Dataflow* const  dataflow, parameters_list_
 
 	}
 }
+// Recent stuff
+ADD_TRANSFORMATION(LP1,
+transformation_t({ "LP1" , "Rewriting Bodin2016 Threshold CSDF 1-Periodic Scheduling", algorithms::scheduling::CSDF_1PeriodicScheduling_LP}));
+ADD_TRANSFORMATION(LPN,
+transformation_t({ "LPN" , "Rewriting Bodin2016 Threshold CSDF N-Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling_LP}));
+ADD_TRANSFORMATION(EGN,
+transformation_t({ "EGN" , "Rewriting Bodin2013 Threshold CSDF Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling}));
+ADD_TRANSFORMATION(BufferlessKPeriodicScheduling,
+		transformation_t({ "BufferlessKPeriodicScheduling" , "Run Bufferless Kperiodic", algorithms::scheduling::bufferlessKPeriodicScheduling} )
+	);
+
+// Throughput techniques
+ADD_TRANSFORMATION(SDFKPeriodic,
+		transformation_t({ "SDFKPeriodic" , "Build an Exansion graph given a set of value K (1 by default), and compute its MCRP.", algorithms::scheduling::SDFKPeriodicScheduling}));
+
+
+
 
 
 

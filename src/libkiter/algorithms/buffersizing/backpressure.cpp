@@ -10,8 +10,8 @@
 #include <lp/glpsol.h>
 #include <models/Dataflow.h>
 #include <algorithms/normalization.h>
-#include <algorithms/buffersizing/backpressure.h>
 #include <algorithms/repetition_vector.h>
+#include <algorithms/buffersizing/backpressure.h>
 
 void algorithms::compute_backpressure_memory_sizing (models::Dataflow* const  dataflow, parameters_list_t params) {
 

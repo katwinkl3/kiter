@@ -20,14 +20,14 @@ KITER := timeout 180 ./Release/bin/kiter
 SOURCES=$(shell find src tests)
 
 info :
-	@echo "----------------------------------------"
+	@echo "-------------------------------------------"
 	@echo SDF3_ROOT is [${SDF3_ROOT}]
 	@echo SDF3_BINARY_ROOT is [${SDF3_BINARY_ROOT}]
-	@echo "----------------------------------------"
-	@echo "make build"
-	@echo "make travis_test"
-	@echo "make sdf3_build"
-	@echo "----------------------------------------"
+	@echo "-------------------------------------------"
+	@echo "make build: Compile Kiter"
+	@echo "make travis_test: Run Kiter test"
+	@echo "make sdf3_build: Download and Compile SDF3"
+	@echo "-------------------------------------------"
 
 all : build
 	@echo "###########"" ENTER IN $@ : $^  #####################"

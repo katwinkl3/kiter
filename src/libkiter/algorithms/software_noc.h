@@ -10,6 +10,7 @@
 typedef long int LARGE_INT;
 
 #include <models/Dataflow.h>
+#include <commons/KiterRegistry.h>
 
 bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::vector< ARRAY_INDEX >& mergeNodes) ;
 namespace algorithms {
@@ -27,4 +28,12 @@ namespace algorithms {
 	bool isConflictPresent(LARGE_INT HP, TIME_UNIT si, LARGE_INT ni, TIME_UNIT sj, LARGE_INT nj);
 	void generate_lte_sdf(models::Dataflow* const dataflow, parameters_list_t param_list);
 }
+
+ADD_TRANSFORMATION(SoftwareControlledNoCBufferless,
+		transformation_t({"SoftwareControlledNoCBufferless" , "Perform Bufferless NoC scheduling after deciding task mapping and routing.", algorithms::software_noc_bufferless})
+);
+
+
+
+
 #endif // SOFTWARE_NOC_H_

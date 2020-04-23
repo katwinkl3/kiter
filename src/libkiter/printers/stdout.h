@@ -9,6 +9,7 @@
 #define STDOUT_H_
 
 
+#include <commons/KiterRegistry.h>
 #include <commons/commons.h>
 #include <string>
 #include <models/Dataflow.h>
@@ -26,4 +27,21 @@ void printInfos              (models::Dataflow* const  dataflow, parameters_list
 void printXML                (models::Dataflow* const  dataflow, parameters_list_t = std::map<std::string,std::string>());
 }
 
+ADD_TRANSFORMATION(PrintXML,
+		transformation_t({ "PrintXML" , "Print XML file", printers::printXML})
+);
+
+
+ADD_TRANSFORMATION(PrintKiter,
+		transformation_t({ "PrintKiter" , "Generate C++ code to internally generate the graph inside Kiter.", printers::printGraphAsKiterScript} )
+);
+ADD_TRANSFORMATION(PrintInfos,
+		transformation_t({ "PrintInfos" , "Just print some graph informations.", printers::printInfos})
+);
+ADD_TRANSFORMATION(PrintGraph,
+		transformation_t({ "PrintGraph" , "Print DOT file", printers::printGraph})
+);
+ADD_TRANSFORMATION(PrintMapping,
+		transformation_t({ "PrintMapping" , "Print DOT file", printers::printMapping})
+);
 #endif /* STDOUT_H_ */

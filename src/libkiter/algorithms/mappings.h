@@ -9,6 +9,7 @@
 #define _MAPPINGS_H_
 
 #include <commons/commons.h>
+#include <commons/KiterRegistry.h>
 
 namespace models {
 	class Dataflow;
@@ -20,5 +21,14 @@ namespace algorithms {
 		void BufferlessNoCMapAndRoute (models::Dataflow* const  dataflow, parameters_list_t params);
 	}
 }
-
+// Helpers to map vertex to cores, need a way to also consider routers
+ADD_TRANSFORMATION(randomMapping,
+		transformation_t({ "randomMapping" , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.", algorithms::mapping::randomMapping} )
+);
+ADD_TRANSFORMATION(moduloMapping,
+		transformation_t({ "moduloMapping" , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.", algorithms::mapping::moduloMapping} )
+);
+ADD_TRANSFORMATION(BufferlessNoCMapAndRoute,
+		transformation_t({ "BufferlessNoCMapAndRoute" , "Mapping and Routing combined.", algorithms::mapping::BufferlessNoCMapAndRoute} )
+);
 #endif

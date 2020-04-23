@@ -45,7 +45,6 @@ typedef    boost::rational<DATA_UNIT>       DATA_FRACT         ;
 
 
 
-typedef std::map<std::string,std::string> parameters_list_t;
 
 
 namespace commons
