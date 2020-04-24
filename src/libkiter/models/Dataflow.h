@@ -339,6 +339,8 @@ inline 	Vertex 				addVertex			() 							{
 	//std::cout << "orig:" << nt << ",vtx_id:" << auto_vertex_num << "\n";
 	this->setVertexIdUnsafe(nt,auto_vertex_num++);
 	this->setVertexName(nt,"Vertex" + std::to_string(this->getVertexId(nt)));
+	this->setInitPhasesQuantity(nt,0);
+	this->setMapping(nt,-1);
 	return nt;
 }
 inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
@@ -348,7 +350,9 @@ inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
 	this->setVertexId(nt,id);
 	this->setVertexName(nt,"Vertex" + std::to_string(this->getVertexId(nt)));
 	this->setInitPhasesQuantity(nt,0);
-	return nt;}
+	this->setMapping(nt,-1);
+	return nt;
+}
 
 
 	inline 	void 					removeVertex		(const Vertex t) 		{

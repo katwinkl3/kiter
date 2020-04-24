@@ -15,11 +15,15 @@ namespace models {
 	class Dataflow;
 }
 namespace algorithms {
+
 	namespace mapping {
 		void randomMapping (models::Dataflow* const  dataflow, parameters_list_t params);
 		void moduloMapping (models::Dataflow* const  dataflow, parameters_list_t params);
 		void BufferlessNoCMapAndRoute (models::Dataflow* const  dataflow, parameters_list_t params);
 	}
+
+	void ModelNoCConflictFreeCommunication(models::Dataflow* const  dataflow, parameters_list_t   param_list);
+
 }
 // Helpers to map vertex to cores, need a way to also consider routers
 ADD_TRANSFORMATION(randomMapping,
@@ -31,4 +35,9 @@ ADD_TRANSFORMATION(moduloMapping,
 ADD_TRANSFORMATION(BufferlessNoCMapAndRoute,
 		transformation_t({ "BufferlessNoCMapAndRoute" , "Mapping and Routing combined.", algorithms::mapping::BufferlessNoCMapAndRoute} )
 );
+ADD_TRANSFORMATION(ModelNoCConflictFreeCommunication,
+		transformation_t({ "ModelNoCConflictFreeCommunication" , "Given a graph with Mapping, can add fictive task to model network", algorithms::ModelNoCConflictFreeCommunication} )
+);
+
+
 #endif

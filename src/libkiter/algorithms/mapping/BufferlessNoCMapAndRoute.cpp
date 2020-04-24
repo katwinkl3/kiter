@@ -39,7 +39,7 @@
 #include <algorithms/mapping/bufferless_utils/GraphMapper.h>
 
 
-	NoCGraph * createNoCGraph (const NoC * noc) {
+	static NoCGraph * createNoCGraph (const NoC * noc) {
 
 		NoCGraph* g = new NoCGraph(noc->size()*2);
 		for (auto edge : noc->getEdges()) {
@@ -48,7 +48,7 @@
 		return g;
 	}
 
-std::vector<ARRAY_INDEX> generate_task_order(const models::Dataflow* const  from) {
+	static std::vector<ARRAY_INDEX> generate_task_order(const models::Dataflow* const  from) {
 
 	// TODO : this function only works for SDF Graph not CSDF
 
@@ -113,7 +113,7 @@ std::vector<ARRAY_INDEX> generate_task_order(const models::Dataflow* const  from
 
 
 
-void updateNetworkOnChipModel (models::Dataflow* const  dataflow) {
+	static void updateNetworkOnChipModel (models::Dataflow* const  dataflow) {
 
 	// #### Generate NoC
 	int mesh_row = (int)ceil(sqrt((double) dataflow->getVerticesCount()));
@@ -144,7 +144,7 @@ void DFSUtil_PgmOrder(Vertex v, std::vector<bool>& visited, models::Dataflow* to
 
 
 //Remove the cyclic edges
-Vertex removeCycleEdges(models::Dataflow* to, const std::vector<ARRAY_INDEX>& prog_order, const std::vector< std::vector<unsigned int> > &cyclen_per_vtxid) {
+static Vertex removeCycleEdges(models::Dataflow* to, const std::vector<ARRAY_INDEX>& prog_order, const std::vector< std::vector<unsigned int> > &cyclen_per_vtxid) {
 	int origV = to->getVerticesCount();
 	std::vector<bool> visited(origV, false);
 	std::vector<ARRAY_INDEX> removeEdgeId;
@@ -192,7 +192,7 @@ Vertex removeCycleEdges(models::Dataflow* to, const std::vector<ARRAY_INDEX>& pr
 }
 
 //Process the graph for DFS, etc. in this function
-std::map<int, route_t> graphProcessing(const models::Dataflow* const dataflow,  NoCGraph * noc) {
+static std::map<int, route_t> graphProcessing(const models::Dataflow* const dataflow,  NoCGraph * noc) {
 
 	VERBOSE_INFO("Starting graphProcessing.");
 
@@ -279,7 +279,7 @@ std::map<int, route_t> graphProcessing(const models::Dataflow* const dataflow,  
 
 }
 
-std::map<int, Edge> generateEdgesMap(models::Dataflow* dataflow, NoCGraph* noc) {
+static std::map<int, Edge> generateEdgesMap(models::Dataflow* dataflow, NoCGraph* noc) {
 	std::map<int, Edge> edge_list;
 	{ForEachEdge(dataflow,e) {
 		auto v1 = dataflow->getEdgeSource(e);
@@ -370,6 +370,10 @@ void algorithms::mapping::BufferlessNoCMapAndRoute (models::Dataflow* const data
 		routing[e_dataflow] = route_item.second;
 
 	}
+
+
+	auto utility = noc->getLinkUtil();
+	VERBOSE_INFO ( "utility " <<  commons::toString(utility) );
 
 
 	for (auto mapping_item : mapping) {

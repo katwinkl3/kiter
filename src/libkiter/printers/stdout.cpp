@@ -240,17 +240,23 @@ void  printers::printGraphAsKiterScript (models::Dataflow* const  dataflow, para
 
 }
 
+struct TaskSprite {
+	  ARRAY_INDEX id = 0;
+	  double x = 0,y = 0;
+	  bool small  = false;
+	  TaskSprite(ARRAY_INDEX id, double x, double y, bool small) : id (id) ,  x (x) ,  y (y) ,  small (small) {}
+};
 
-
-std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , bool simple) {
-
-	double max_penwidth = 4.0;
+std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , bool connect_tasks, bool color_routes) {
 
   VERBOSE_DEBUG("Start NoC DOT generation");
   const NoC & noc = dataflow->getNoC();
 
 
   std::ostringstream returnStream;
+
+
+  // ******* HEADER
 
   returnStream << "// Auto-generate by Kiter" << std::endl;
   returnStream << "//   use this dot file with neato for an optimal visu\n" << std::endl;
@@ -261,6 +267,10 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 
   returnStream << std::endl;
 
+
+
+
+  // ******* NoC Devices
 
   for (const NetworkNode node : noc.getNodes()) {
 	  std::string label = commons::toString(node.id);
@@ -275,22 +285,16 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 
 
 
-  for (const Vertex v : dataflow->vertices()) {
-	  ARRAY_INDEX task_id = dataflow->getVertexId(v);
-	  node_id_t core_id = dataflow->getMapping(v);
-	  VERBOSE_DEBUG("task_id=" << task_id << " core_id = " <<  core_id);
-	  const NetworkNode& core = dataflow->getNoC().getNode(core_id);
-	  double x = core.x;
-	  double y = core.y;
-	  returnStream <<  "task_" << task_id << "[label=\"Task\\n" << task_id << "\", style=\"filled\", color=\"red\", fontsize=\"10\", shape=\"circle\", pos=\"" << x << "," << y << "!\", fixedsize=\"shape\", width=0.5, height=0.5];" << std::endl;
-  }
-
-
   std::map<edge_id_t,std::vector<Edge>> link_usage;
   std::map<Edge,std::string> edge_color;
   std::vector<std::string> available_colors = {"#ACFF54","#41E869","#53FFEE","#4191E8","#4191E8","#634BFA", "#FAF93C",
 		                                       "#DB42FF","#E83154","#FF7843","#E8A131","#FADC39", "#8736FF"
 };
+
+
+
+  // ******* Build link_usage
+
 
   for (const NetworkEdge e : noc.getEdges()) {
 	  link_usage[e.id];
@@ -305,36 +309,184 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 	  Vertex source_vtx   = dataflow->getEdgeSource(c);
 	  Vertex target_vtx   = dataflow->getEdgeTarget(c);
 	  const std::vector<edge_id_t>& route = dataflow->getRoute(c);
-	  VERBOSE_DEBUG("edge_id=" << edge_id << "from tasks " <<  dataflow->getVertexId(source_vtx) << " and " <<   dataflow->getVertexId(target_vtx)  << " route = " <<  route);
+	  VERBOSE_DEBUG("edge_id=" << edge_id << " from tasks " <<  dataflow->getVertexId(source_vtx) << " and " <<   dataflow->getVertexId(target_vtx)  << " route = " <<  route);
 
 	  for (edge_id_t e : route) {
 		  const NetworkEdge& nedge = dataflow->getNoC().getEdge(e);
 		  VERBOSE_DEBUG("  - edge_id_t=" << e << " connects " <<  nedge.src << "->" << nedge.dst);
 	      //returnStream << nedge.src << "->" << nedge.dst<< "[style = \"bold\", color=\"red\", splines=\"false\" ];" << std::endl;
-
 		  link_usage[nedge.id].push_back(c);
 	  }
   }}
+
 
   std::vector<Edge>::size_type max_cnt = 0;
   for (const NetworkEdge e : noc.getEdges()) {
 	  max_cnt = std::max(max_cnt , link_usage[e.id].size());
   }
 
+
+  // ******* Print link_usage
+
   for (const NetworkEdge e : noc.getEdges()) {
-	  int cnt = link_usage[e.id].size();
-	  if (cnt == 0) {
-		  returnStream << e.src << "->" << e.dst << std::endl;
+	  auto cnt = link_usage[e.id].size();
+	  if (cnt == 0 or !color_routes) {
+		  returnStream << e.src << "->" << e.dst << "[arrowsize=0.5]"<< std::endl;
 	  } else {
 		  std::string color = "";
 		  for (Edge c : link_usage[e.id]) {
 			  if (color != "") color += "::";
 			  color += edge_color[c];
 		  }
-		  double pw = 1;
-	      returnStream << e.src << "->" << e.dst<< "[style = \"bold\", color=\"" << color << "\", splines=\"false\"  , penwidth=" << pw << " ];" << std::endl;
+	      returnStream << e.src << " -> " << e.dst<< "[style = \"bold\", color=\"" << color << "\", splines=\"false\"  , penwidth=2 , arrowsize=0.5 ];" << std::endl;
 	  }
   }
+
+
+
+
+  // ******* Generate taskSprites
+
+
+
+  std::vector<TaskSprite> taskSprites;
+
+  for (const Vertex v : dataflow->vertices()) {
+	  ARRAY_INDEX task_id = dataflow->getVertexId(v);
+	  node_id_t node_id = dataflow->getMapping(v);
+	  VERBOSE_DEBUG("task_id=" << task_id << " core_id = " <<  node_id);
+	  if (node_id >= 0) {
+		  const NetworkNode& core = dataflow->getNoC().getNode(node_id);
+		  double x = core.x;
+		  double y = core.y;
+		  taskSprites.push_back(TaskSprite(task_id,x,y,(core.type != NetworkNodeType::Core)));
+	  } else {
+		  double x = 0;
+		  double y = 0;
+		  {ForInputEdges(dataflow,v,inc) {
+
+			  Vertex vtx   = dataflow->getEdgeSource(inc);
+			  node_id_t in_core_id = dataflow->getMapping(vtx);
+			  if (in_core_id >= 0) {
+				  const NetworkNode& core = dataflow->getNoC().getNode(in_core_id);
+				  x += core.x;
+				  y += core.y;
+			  }
+
+		  }}
+
+		  {ForOutputEdges(dataflow,v,outc) {
+
+			  Vertex outvtx   = dataflow->getEdgeTarget(outc);
+			  node_id_t out_core_id = dataflow->getMapping(outvtx);
+			  if (out_core_id >= 0) {
+				  const NetworkNode& outcore = dataflow->getNoC().getNode(out_core_id);
+				  x += outcore.x;
+				  y += outcore.y;
+			  }
+
+		  }}
+
+		  x /= dataflow->getVertexDegree(v);
+		  y /= dataflow->getVertexDegree(v);
+		  taskSprites.push_back(TaskSprite(task_id,x,y,true));
+
+		  //returnStream <<  "task_" << task_id << "[label=\"Task\\n" << task_id << "\", style=\"filled\", color=\"red\", fontsize=\"2\", shape=\"circle\", pos=\"" << x << "," << y << "!\", fixedsize=\"shape\", width=0.1, height=0.1];" << std::endl;
+
+		 // returnStream <<  "task_" << task_id << "[label=\"Task\\n" << task_id << "\", style=\"filled\", color=\"red\", fontsize=\"2\", shape=\"circle\", fixedsize=\"shape\", width=0.1, height=0.1];" << std::endl;
+
+	  }
+  }
+
+  // ******* spread overlapping sprites
+  // ** Naive algorithm, we don't need a jumbo cargo to carry two cheese.
+
+  std::map<std::pair<int,int>, std::vector<TaskSprite> > closed_sprites;
+
+  for (const TaskSprite ts : taskSprites) {
+
+	  long x = std::round(ts.x * 100);
+	  long y = std::round(ts.y * 100);
+
+	  closed_sprites[{x,y}].push_back(ts);
+
+  }
+
+  std::vector<TaskSprite> updatedSprites;
+
+  for (auto item : closed_sprites) {
+	  if (item.second.size() > 1) {
+		  VERBOSE_DEBUG("We need to spread " << item.second.size() << " tasks");
+	  }
+
+	  if (item.second.size() == 1) {
+		  VERBOSE_DEBUG("I edit this one to zero");
+		  updatedSprites.push_back(item.second[0]);
+	  } else if (item.second.size() == 2) {
+		  item.second[0].x += 0.05;
+		  item.second[0].y -= 0.05;
+		  item.second[1].x -= 0.05;
+		  item.second[1].y += 0.05;
+		  updatedSprites.push_back(item.second[0]);
+		  updatedSprites.push_back(item.second[1]);
+	  } else if (item.second.size() == 3) {
+		  item.second[0].x += 0.00;
+		  item.second[0].y -= 0.08;
+		  item.second[1].x -= 0.08;
+		  item.second[1].y += 0.02;
+		  item.second[2].x += 0.045;
+		  item.second[2].y += 0.045;
+		  updatedSprites.push_back(item.second[0]);
+		  updatedSprites.push_back(item.second[1]);
+		  updatedSprites.push_back(item.second[2]);
+	  } else if (item.second.size() == 4) {
+		  item.second[0].x += 0.06;
+		  item.second[0].y -= 0.06;
+		  item.second[1].x -= 0.06;
+		  item.second[1].y += 0.06;
+		  item.second[2].x += 0.06;
+		  item.second[2].y += 0.06;
+		  item.second[3].x -= 0.06;
+		  item.second[3].y -= 0.06;
+		  updatedSprites.push_back(item.second[0]);
+		  updatedSprites.push_back(item.second[1]);
+		  updatedSprites.push_back(item.second[2]);
+		  updatedSprites.push_back(item.second[3]);
+	  }
+  }
+
+
+
+
+
+  // ******* output taskSprites
+  {
+	  for (auto ts : updatedSprites) {
+
+	   if (ts.small) {
+		   returnStream <<  "task_" << ts.id << "[label=\"Task\\n" << ts.id << "\", style=\"filled\", color=\"red\", fontsize=\"2\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.1, height=0.1];" << std::endl;
+	   } else {
+		   returnStream <<  "task_" << ts.id << "[label=\"Task\\n" << ts.id << "\", style=\"filled\", color=\"red\", fontsize=\"9\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.4, height=0.4];" << std::endl;
+	   }
+	 }
+   }
+
+
+  // ******* connect tasks
+
+  {ForEachChannel(dataflow,c){
+
+	  if (connect_tasks) {
+
+		  Vertex source_vtx   = dataflow->getEdgeSource(c);
+		  Vertex target_vtx   = dataflow->getEdgeTarget(c);
+
+		  ARRAY_INDEX source_task_id = dataflow->getVertexId(source_vtx);
+		  ARRAY_INDEX target_task_id = dataflow->getVertexId(target_vtx);
+
+		  returnStream <<   "task_" << source_task_id << " -> "  <<   "task_" << target_task_id << "[ color=\"red\", splines=\"false\"  , penwidth=0.8 , arrowsize=0.3 ];" << std::endl;
+	  }
+  }}
 
 
   returnStream <<  "}" << std::endl;
@@ -422,15 +574,49 @@ std::string printers::GenerateGraphDOT    (models::Dataflow* const  dataflow , b
 }
 
 
-void printers::printMapping    (models::Dataflow* const  dataflow, parameters_list_t ) {
+void printers::printMapping    (models::Dataflow* const  dataflow, parameters_list_t params ) {
 
-  std::cout << printers::GenerateNoCDOT    ( dataflow ) ;
+	bool color_routes  = false;
+	bool connect_tasks = false;
+	if (params.find("color_routes") != params.end() ) {
+		color_routes = (params["color_routes"] != "0");
+	}
+	if (params.find("connect_tasks") != params.end() ) {
+		connect_tasks = (params["connect_tasks"] != "0");
+	}
+
+	std::string data = printers::GenerateNoCDOT    ( dataflow , connect_tasks, color_routes) ;
+
+
+	static const std::string filename_argument = "filename";
+	if (params.find(filename_argument) != params.end() ) {
+		std::string filename = params[filename_argument];
+		std::ofstream mfile;
+		mfile.open (filename);
+		mfile << data << std::endl;
+		mfile.close();
+	} else {
+		 std::cout << data << std::endl;
+	}
+
 
 }
 
-void printers::printGraph    (models::Dataflow* const  dataflow, parameters_list_t ) {
+void printers::printGraph    (models::Dataflow* const  dataflow, parameters_list_t params ) {
 
-  std::cout << printers::GenerateGraphDOT    ( dataflow ) ;
+	static const std::string filename_argument = "filename";
+	std::string data = printers::GenerateGraphDOT    ( dataflow ) ;
+
+	if (params.find(filename_argument) != params.end() ) {
+		std::string filename = params[filename_argument];
+		std::ofstream mfile;
+		mfile.open (filename);
+		mfile << data << std::endl;
+		mfile.close();
+	} else {
+		 std::cout << data << std::endl;
+	}
+
 
 }
 void printers::printXML    (models::Dataflow* const  dataflow, parameters_list_t params ) {
