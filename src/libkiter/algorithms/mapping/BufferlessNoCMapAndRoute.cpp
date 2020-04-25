@@ -360,7 +360,6 @@ void algorithms::mapping::BufferlessNoCMapAndRoute (models::Dataflow* const data
 
 		for (auto edge : route_item.second) {
 
-					VERBOSE_INFO ("    - " << edge <<" links " << noc->getMapIndexPair(edge).first << " to " << noc->getMapIndexPair(edge).second  );
 					const NetworkEdge& nedge = dataflow->getNoC().getEdge(noc->getMapIndexPair(edge).first, noc->getMapIndexPair(edge).second);
 					VERBOSE_ASSERT(nedge.id == edge, "Inconsistent mapping between Original NoC and replicate.");
 
@@ -385,6 +384,8 @@ void algorithms::mapping::BufferlessNoCMapAndRoute (models::Dataflow* const data
 		dataflow->setRoute(routing_item.first,routing_item.second);
 		VERBOSE_DEBUG("Routing of buffer " << dataflow->getEdgeName(routing_item.first) << " to " << commons::toString(routing_item.second));
 	}
+
+
 
 	VERBOSE_DEBUG("End of BufferlessNoCMapAndRoute.");
 

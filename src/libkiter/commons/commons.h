@@ -81,20 +81,13 @@ const char *fromString<const char*>(const std::string& str);
 
 
 template <class T>
-bool findInVector( std::vector<T> vect,  T v) {
-    for (typename std::vector<T>::iterator it = vect.begin() ; it != vect.end() ; it++) {
-        if (*it == v) return true;
+bool findInVector(const std::vector<T>& vect,  T v) {
+    for (T ov : vect) {
+        if (ov == v) return true;
     }
     return false;
 }
 
-template <class T>
-bool findInVector( std::vector<T> * vect,  T v) {
-    for (typename std::vector<T>::iterator it = vect->begin() ; it != vect->end() ; it++) {
-        if (*it == v) return true;
-    }
-    return false;
-}
 
 template<class T>
     std::string toString(const T& t)
@@ -121,6 +114,8 @@ template<>
 std::string toString< std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> >(const std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX>& v);
 
 
+template<>
+std::string toString< std::pair<unsigned long , unsigned long> >(const std::pair<unsigned long , unsigned long>& v);
 template<>
 std::string toString< std::pair<TIME_UNIT , ARRAY_INDEX> >(const std::pair<TIME_UNIT , ARRAY_INDEX>& v);
 

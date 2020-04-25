@@ -64,12 +64,15 @@ private :
 public:
 	const std::vector<NetworkEdge>& getEdges() const {return this->_vedges;};
 	const std::vector<NetworkNode>& getNodes() const {return this->_vnodes;};
+	const bool         hasNode(node_id_t id) const {return this->_mnodes.count(id) > 0;};
+
 	const NetworkNode& getNode(node_id_t id) const {
 		VERBOSE_ASSERT(this->_mnodes.count(id), "Impossible to find node " << id << " inside the NoC.");
 		return this->_mnodes.at(id);
 	};
 
 	const NetworkEdge& getEdge(edge_id_t e) const {return this->_mid2edges.at(e);};
+	const bool         hasEdge(edge_id_t e) const {return this->_mid2edges.count(e)  > 0;};
 	const NetworkEdge& getEdge(node_id_t src,node_id_t dst) const {
 		const std::pair<node_id_t,node_id_t> pair = {src,dst};
 		VERBOSE_ASSERT(this->_medges.count(pair), "Impossible to find edge from " << src  << " to " << dst  << " inside the NoC.");

@@ -16,7 +16,7 @@
 #include <algorithms/kperiodic.h>
 #include <algorithms/repetition_vector.h>
 
-
+#define VERBOSE_KPERIODIC_DEBUG(msg) {VERBOSE_CUSTOM_DEBUG("keperiodic",msg);}
 
 bool algorithms::sameset(models::Dataflow* const dataflow, std::set<Edge> *cc1 , std::set<Edge>* cc2) {
 
@@ -152,7 +152,7 @@ scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<
 
         TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
         scheduling_result[dataflow->getVertexId(v)].first = period;
-        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " Period = " << period  );
+        VERBOSE_KPERIODIC_DEBUG("Task " << dataflow->getVertexName(v) << " Period = " << period  );
 
     	for (EXEC_COUNT ki = 1  ; ki <= maxki ; ki++) {
     		for (EXEC_COUNT pi = first_pi ; pi <=pq ; pi++)  {
@@ -160,7 +160,7 @@ scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<
 
     	        TIME_UNIT start = eg->getStartingTime(se);
     	        scheduling_result[tid].second.push_back( start );
-    	        VERBOSE_DEBUG("  - Start ki=" << ki << " pi=" << pi << " se=" << se << ":" << start  );
+    	        VERBOSE_KPERIODIC_DEBUG("  - Start ki=" << ki << " pi=" << pi << " se=" << se << ":" << start  );
 
     		}
     	}
@@ -217,15 +217,15 @@ kperiodic_result_t algorithms::KSchedule(models::Dataflow *  const dataflow ,std
     std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res.second);
 
     //STEP 3 - convert CC(eg) => CC(graph)
-    VERBOSE_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
+    VERBOSE_KPERIODIC_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
     for (std::vector<models::EventGraphEdge>::iterator it = critical_circuit->begin() ; it != critical_circuit->end() ; it++ ) {
-        VERBOSE_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
+        VERBOSE_KPERIODIC_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
         ARRAY_INDEX channel_id = eg->getChannelId(*it);
         try {
             Edge        channel    = dataflow->getEdgeById(channel_id);
             result.second.insert(channel);
         } catch(...) {
-            VERBOSE_DEBUG("      is loopback");
+            VERBOSE_KPERIODIC_DEBUG("      is loopback");
         }
     }
 
@@ -269,15 +269,15 @@ kperiodic_result_t algorithms::KScheduleBufferLess(models::Dataflow *  const dat
     std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res.second);
 
     //STEP 3 - convert CC(eg) => CC(graph)
-    VERBOSE_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
+    VERBOSE_KPERIODIC_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
     for (std::vector<models::EventGraphEdge>::iterator it = critical_circuit->begin() ; it != critical_circuit->end() ; it++ ) {
-        VERBOSE_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
+        VERBOSE_KPERIODIC_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
         ARRAY_INDEX channel_id = eg->getChannelId(*it);
         try {
             Edge        channel    = dataflow->getEdgeById(channel_id);
             result.second.insert(channel);
         } catch(...) {
-            VERBOSE_DEBUG("      is loopback");
+            VERBOSE_KPERIODIC_DEBUG("      is loopback");
         }
     }
 
@@ -301,7 +301,7 @@ kperiodic_result_t algorithms::KScheduleBufferLess(models::Dataflow *  const dat
 
 models::EventGraph* algorithms::generateKPeriodicEventGraph(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues ) {
 
-	VERBOSE_DEBUG("generateKPeriodicEventGraph Starts ");
+	VERBOSE_KPERIODIC_DEBUG("generateKPeriodicEventGraph Starts ");
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
     models::EventGraph * g = new models::EventGraph();
@@ -541,7 +541,7 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
 
 
 
-        VERBOSE_DEBUG("generate reentrancy loops for task " <<  t << " with newki=" << newki);
+        VERBOSE_KPERIODIC_DEBUG("generate reentrancy loops for task " <<  t << " with newki=" << newki);
         EXEC_COUNT start_count = kvector.at(t);
         generateKperiodicSelfloop(dataflow,start_count,g,t);
 
@@ -622,7 +622,7 @@ models::EventGraph*  algorithms::generateCycleOnly(models::Dataflow * const data
         Vertex pTask = dataflow->getEdgeSource(*it);
         EXEC_COUNT start_count = kValues->at(pTask);
         {ForEachPhase(dataflow,pTask,p) {
-            VERBOSE_DEBUG("generate " << start_count << " node for task " << dataflow->getVertexId(pTask) << " phase " << p);
+            VERBOSE_KPERIODIC_DEBUG("generate " << start_count << " node for task " << dataflow->getVertexId(pTask) << " phase " << p);
             g->addEventGroup(dataflow->getVertexId(pTask),p,start_count);
         }}
 
@@ -660,7 +660,7 @@ models::EventGraph*  algorithms::generateCycleOnly(models::Dataflow * const data
 void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues,  models::EventGraph* g , Edge c) {
 
 
-    VERBOSE_DEBUG("Constraint for " << dataflow->getEdgeName(c) );
+    VERBOSE_KPERIODIC_DEBUG("Constraint for " << dataflow->getEdgeName(c) );
 
     ARRAY_INDEX id = dataflow->getEdgeId(c);
 
@@ -693,15 +693,15 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
 
     bool doBufferLessEdges = dataflow->getEdgeType(c) == EDGE_TYPE::BUFFERLESS_EDGE;
 
-    VERBOSE_EXTRA_DEBUG(" - source_init_phase_count = " << source_init_phase_count );
-    VERBOSE_EXTRA_DEBUG(" - target_init_phase_count = " << target_init_phase_count );
-    VERBOSE_EXTRA_DEBUG(" - maxki = " << maxki );
+    VERBOSE_KPERIODIC_DEBUG(" - source_init_phase_count = " << source_init_phase_count );
+    VERBOSE_KPERIODIC_DEBUG(" - target_init_phase_count = " << target_init_phase_count );
+    VERBOSE_KPERIODIC_DEBUG(" - maxki = " << maxki );
     for (EXEC_COUNT ki = 1; ki <= maxki ; ki++ ) {
-        VERBOSE_EXTRA_DEBUG("  - ki = " << ki );
+        VERBOSE_KPERIODIC_DEBUG("  - ki = " << ki );
     	auto first_pi = (ki == 1) ?  1 - source_init_phase_count : 1 ;
-        VERBOSE_EXTRA_DEBUG("  - first_pi = " << first_pi );
+        VERBOSE_KPERIODIC_DEBUG("  - first_pi = " << first_pi );
         for (EXEC_COUNT pi = first_pi; pi <= source_phase_count ; pi++ ) {
-            VERBOSE_EXTRA_DEBUG("   - pi = " << pi );
+            VERBOSE_KPERIODIC_DEBUG("   - pi = " << pi );
 
             TIME_UNIT  d =  dataflow->getVertexDuration(source, pi);
             TOKEN_UNIT normdamkp = 0;
@@ -710,13 +710,13 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
             models::EventGraphVertex source_event = g->getEventGraphVertex(source_id,pi,ki);
 
 
-            VERBOSE_EXTRA_DEBUG("   - maxkj = " << maxkj );
+            VERBOSE_KPERIODIC_DEBUG("   - maxkj = " << maxkj );
             for (EXEC_COUNT kj = 1; kj <= maxkj ; kj++ ) {
-                VERBOSE_EXTRA_DEBUG("    - kj = " << kj );
+                VERBOSE_KPERIODIC_DEBUG("    - kj = " << kj );
             	auto first_pj = (kj == 1) ?  1 - target_init_phase_count : 1 ;
-                VERBOSE_EXTRA_DEBUG("    - first_pj = " << first_pi );
+                VERBOSE_KPERIODIC_DEBUG("    - first_pj = " << first_pi );
                 for (EXEC_COUNT pj = first_pj; pj <= target_phase_count ; pj++ ) {
-                    VERBOSE_EXTRA_DEBUG("     - pj = " << pj );
+                    VERBOSE_KPERIODIC_DEBUG("     - pj = " << pj );
 
                     const TOKEN_UNIT vakp       = dataflow->getEdgeOutPhase(c,pj) ;
                     normdamkp += vakp;
@@ -738,15 +738,15 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
 #endif
 
                     models::EventGraphVertex target_event = g->getEventGraphVertex(target_id,pj,kj);
-                    VERBOSE_EXTRA_DEBUG("  stepa=" << stepa);
-                    VERBOSE_EXTRA_DEBUG("  ki=" << ki<<" kj=" << kj << " (" <<  source_event  << "," << target_event  << ")");
-                    VERBOSE_EXTRA_DEBUG("  alphamin=" << alphamin <<"   alphamax=" << alphamax );
+                    VERBOSE_KPERIODIC_DEBUG("  stepa=" << stepa);
+                    VERBOSE_KPERIODIC_DEBUG("  ki=" << ki<<" kj=" << kj << " (" <<  source_event  << "," << target_event  << ")");
+                    VERBOSE_KPERIODIC_DEBUG("  alphamin=" << alphamin <<"   alphamax=" << alphamax );
                     if (alphamin <= alphamax) {
 
 
                         TIME_UNIT w = ((TIME_UNIT) alphamax * source_phase_count * maxki ) / ( (TIME_UNIT) Wc  * (TIME_UNIT) dataflow->getNi(source) );
-                        VERBOSE_EXTRA_DEBUG("   w = (" << alphamax << " * " << dataflow->getPhasesQuantity(source) * maxki << ") / (" << Wc << " * " << dataflow->getNi(source) / maxki << ")");
-                        VERBOSE_EXTRA_DEBUG("   d = (" << d << ")");
+                        VERBOSE_KPERIODIC_DEBUG("   w = (" << alphamax << " * " << dataflow->getPhasesQuantity(source) * maxki << ") / (" << Wc << " * " << dataflow->getNi(source) / maxki << ")");
+                        VERBOSE_KPERIODIC_DEBUG("   d = (" << d << ")");
 
 
                         if (doBufferLessEdges) {
@@ -770,7 +770,7 @@ void algorithms::generateKperiodicSelfloop(models::Dataflow * const dataflow , E
 
     const TIME_UNIT timefactor = (dataflow->getReentrancyFactor(t) <= 0)?0:1;
 
-    VERBOSE_DEBUG("generate reentrancy loops for task " <<  dataflow->getVertexId(t) << " with ki=" << ki);
+    VERBOSE_KPERIODIC_DEBUG("generate reentrancy loops for task " <<  dataflow->getVertexId(t) << " with ki=" << ki);
 
 
     EXEC_COUNT pq = dataflow->getPhasesQuantity(t);
@@ -822,7 +822,7 @@ void algorithms::generateKperiodicSelfloop(models::Dataflow * const dataflow , E
         const TIME_UNIT       w     =   -  (TIME_UNIT) (p * i) / (  (TIME_UNIT) dataflow->getNi(t)  );
 
 
-        VERBOSE_EXTRA_DEBUG("  - add task constraint :" << dataflow->getVertexName(t) << " : " <<   target_event  << " --> " <<  source_event << " : " <<  " (- " << w << " / " << dataflow->getNi(t)  << ") ," << d );
+        VERBOSE_KPERIODIC_DEBUG("  - add task constraint :" << dataflow->getVertexName(t) << " : " <<   target_event  << " --> " <<  source_event << " : " <<  " (- " << w << " / " << dataflow->getNi(t)  << ") ," << d );
         g->addEventConstraint(source_event ,target_event,-w,d,0);
     }
 
@@ -990,15 +990,15 @@ std::map<Vertex,EXEC_COUNT> algorithms::get_Kvector(models::Dataflow *  const da
     std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res.second);
 
     //STEP 3 - convert CC(eg) => CC(graph)
-    VERBOSE_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
+    VERBOSE_KPERIODIC_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
     for (std::vector<models::EventGraphEdge>::iterator it = critical_circuit->begin() ; it != critical_circuit->end() ; it++ ) {
-        VERBOSE_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
+        VERBOSE_KPERIODIC_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
         ARRAY_INDEX channel_id = eg->getChannelId(*it);
         try {
             Edge        channel    = dataflow->getEdgeById(channel_id);
             result.second.insert(channel);
         } catch(...) {
-            VERBOSE_DEBUG("      is loopback");
+            VERBOSE_KPERIODIC_DEBUG("      is loopback");
         }
     }
 
@@ -1036,15 +1036,15 @@ std::map<Vertex,EXEC_COUNT> algorithms::get_Kvector(models::Dataflow *  const da
             std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res_bis.second);
 
             //STEP 3 - convert CC(eg) => CC(graph)
-            VERBOSE_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
+            VERBOSE_KPERIODIC_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
             for (std::vector<models::EventGraphEdge>::iterator it = critical_circuit->begin() ; it != critical_circuit->end() ; it++ ) {
-                VERBOSE_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
+                VERBOSE_KPERIODIC_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
                 ARRAY_INDEX channel_id = eg->getChannelId(*it);
                 try {
                     Edge        channel    = dataflow->getEdgeById(channel_id);
                     resultprime.second.insert(channel);
                 } catch(...) {
-                    VERBOSE_DEBUG("      is loopback");
+                    VERBOSE_KPERIODIC_DEBUG("      is loopback");
                 }
             }
 
@@ -1065,7 +1065,7 @@ std::map<Vertex,EXEC_COUNT> algorithms::get_Kvector(models::Dataflow *  const da
             }
             result = resultprime;
             VERBOSE_INFO("Current K-periodic throughput (" << result.first <<  ") is not enough.");
-            VERBOSE_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+            VERBOSE_KPERIODIC_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
         }
 
     }
@@ -1193,15 +1193,15 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
     std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res.second);
 
     //STEP 3 - convert CC(eg) => CC(graph)
-    VERBOSE_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
+    VERBOSE_KPERIODIC_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
     for (std::vector<models::EventGraphEdge>::iterator it = critical_circuit->begin() ; it != critical_circuit->end() ; it++ ) {
-        VERBOSE_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
+        VERBOSE_KPERIODIC_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
         ARRAY_INDEX channel_id = eg->getChannelId(*it);
         try {
             Edge        channel    = dataflow->getEdgeById(channel_id);
             result.second.insert(channel);
         } catch(...) {
-            VERBOSE_DEBUG("      is loopback");
+            VERBOSE_KPERIODIC_DEBUG("      is loopback");
         }
     }
 
@@ -1244,15 +1244,15 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
             std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res_bis.second);
 
             //STEP 3 - convert CC(eg) => CC(graph)
-            VERBOSE_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
+            VERBOSE_KPERIODIC_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
             for (std::vector<models::EventGraphEdge>::iterator it = critical_circuit->begin() ; it != critical_circuit->end() ; it++ ) {
-                VERBOSE_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
+                VERBOSE_KPERIODIC_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
                 ARRAY_INDEX channel_id = eg->getChannelId(*it);
                 try {
                     Edge        channel    = dataflow->getEdgeById(channel_id);
                     resultprime.second.insert(channel);
                 } catch(...) {
-                    VERBOSE_DEBUG("      is loopback");
+                    VERBOSE_KPERIODIC_DEBUG("      is loopback");
                 }
             }
 
@@ -1273,7 +1273,7 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
             }
             result = resultprime;
             VERBOSE_INFO("Current K-periodic throughput (" << result.first <<  ") is not enough.");
-            VERBOSE_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+            VERBOSE_KPERIODIC_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
 
 
 
@@ -1376,15 +1376,15 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
     std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res.second);
 
     //STEP 3 - convert CC(eg) => CC(graph)
-    VERBOSE_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
+    VERBOSE_KPERIODIC_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
     for (std::vector<models::EventGraphEdge>::iterator it = critical_circuit->begin() ; it != critical_circuit->end() ; it++ ) {
-        VERBOSE_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
+        VERBOSE_KPERIODIC_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
         ARRAY_INDEX channel_id = eg->getChannelId(*it);
         try {
             Edge        channel    = dataflow->getEdgeById(channel_id);
             result.second.insert(channel);
         } catch(...) {
-            VERBOSE_DEBUG("      is loopback");
+            VERBOSE_KPERIODIC_DEBUG("      is loopback");
         }
     }
 
@@ -1430,15 +1430,15 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
             std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res_bis.second);
 
             //STEP 3 - convert CC(eg) => CC(graph)
-            VERBOSE_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
+            VERBOSE_KPERIODIC_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
             for (std::vector<models::EventGraphEdge>::iterator it = critical_circuit->begin() ; it != critical_circuit->end() ; it++ ) {
-                VERBOSE_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
+                VERBOSE_KPERIODIC_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
                 ARRAY_INDEX channel_id = eg->getChannelId(*it);
                 try {
                     Edge        channel    = dataflow->getEdgeById(channel_id);
                     resultprime.second.insert(channel);
                 } catch(...) {
-                    VERBOSE_DEBUG("      is loopback");
+                    VERBOSE_KPERIODIC_DEBUG("      is loopback");
                 }
             }
 
@@ -1459,7 +1459,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
             }
             result = resultprime;
             VERBOSE_INFO("Current K-periodic throughput (" << result.first <<  ") is not enough.");
-            VERBOSE_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+            VERBOSE_KPERIODIC_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
 
 
 

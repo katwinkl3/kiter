@@ -355,7 +355,7 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 	  ARRAY_INDEX task_id = dataflow->getVertexId(v);
 	  node_id_t node_id = dataflow->getMapping(v);
 	  VERBOSE_DEBUG("task_id=" << task_id << " core_id = " <<  node_id);
-	  if (node_id >= 0) {
+	  if (node_id >= 0 and dataflow->getNoC().hasNode(node_id) ) {
 		  const NetworkNode& core = dataflow->getNoC().getNode(node_id);
 		  double x = core.x;
 		  double y = core.y;

@@ -34,6 +34,7 @@
 #define TXT_NEW_EDGE_ERROR "NEW_EDGE_ERROR"
 
 
+#define VERBOSE_EVENTGRAPH_DEBUG(msg) {VERBOSE_CUSTOM_DEBUG("EventGraph",msg);}
 /**
  * This struct is the holy graal ...
  * ... otherwise boost use an epsilon of 0.005.
@@ -367,19 +368,19 @@ public :
 
     	VERBOSE_ASSERT (omega < std::numeric_limits<TIME_UNIT>::infinity(), "Cannot compute starting time with infinite period.");
 
-        VERBOSE_DEBUG("computeStartingTime omega = " << omega);
+        VERBOSE_EVENTGRAPH_DEBUG("computeStartingTime omega = " << omega);
 
-        VERBOSE_DEBUG("computeStartingTime setFlow");
+        VERBOSE_EVENTGRAPH_DEBUG("computeStartingTime setFlow");
         {ForEachConstraint(this,e)   {
             auto flow = ( this->getDuration(e)  - omega * this->getWeight(e));
-            VERBOSE_EXTRA_DEBUG(" Edge " << e << ":" << this->getConstraint(e).toString() << " Flow = " << flow);
+            VERBOSE_EVENTGRAPH_DEBUG(" Edge " << e << ":" << this->getConstraint(e).toString() << " Flow = " << flow);
             this->setFlow(e, flow );
         }}
         // gets the weight property
         //boost::property_map<BoostEventGraph, boost::edge_flow_t>::type weight_pmap = get(boost::edge_flow_t(), g);
         //boost::property_map<BoostEventGraph, boost::vertex_discover_time_t>::type distance_pmap = get(boost::vertex_discover_time_t(), g);
 
-        VERBOSE_DEBUG("computeStartingTime initStartingTime");
+        VERBOSE_EVENTGRAPH_DEBUG("computeStartingTime initStartingTime");
         bool first = true;
         //TIME_UNIT defaultmin = - std::numeric_limits<TIME_UNIT>::infinity();
         TIME_UNIT defaultmin = 0;
@@ -391,36 +392,36 @@ public :
                 startingtime = 0;
             }
             this->setStartingTime(e,startingtime);
-            VERBOSE_EXTRA_DEBUG(" Event " << e << ":" << this->getEvent(e).toString() << " Start = " << startingtime);
+            VERBOSE_EVENTGRAPH_DEBUG(" Event " << e << ":" << this->getEvent(e).toString() << " Start = " << startingtime);
         }}
 
-        VERBOSE_DEBUG("computeStartingTime getStartingTime with " <<  this->getEventCount() << " eventCount");
+        VERBOSE_EVENTGRAPH_DEBUG("computeStartingTime getStartingTime with " <<  this->getEventCount() << " eventCount");
         for (EXEC_COUNT i = 0 ; i < this->getEventCount() ; i ++ ) {
         	bool updated = false;
             {ForEachEvent(this,event1)   {
-                VERBOSE_EXTRA_DEBUG("Look for " << event1 << " outputs");
+                VERBOSE_EVENTGRAPH_DEBUG("Look for " << event1 << " outputs");
             	{ForEachOutputs(this,event1,constraint){
                     models::EventGraphVertex event2 =this->getTarget(constraint);
                     auto previous_start1 = this->getStartingTime(event1);
                     auto previous_start2 = this->getStartingTime(event2);
-                    VERBOSE_EXTRA_DEBUG("  test " << event2 << " Start from " << previous_start2 << " to " << this->getFlow(constraint) << "+" <<  previous_start1);
+                    VERBOSE_EVENTGRAPH_DEBUG("  test " << event2 << " Start from " << previous_start2 << " to " << this->getFlow(constraint) << "+" <<  previous_start1);
 
                     if (this->getStartingTime(event2) - this->getStartingTime(event1) < this->getFlow(constraint)) {
                         this->setStartingTime(event2, this->getFlow(constraint) + this->getStartingTime(event1));
-                        VERBOSE_EXTRA_DEBUG("   Update " << event2 << " Start from " << previous_start2 << " to " << this->getFlow(constraint) << "+" <<  previous_start1);
+                        VERBOSE_EVENTGRAPH_DEBUG("   Update " << event2 << " Start from " << previous_start2 << " to " << this->getFlow(constraint) << "+" <<  previous_start1);
 
                         updated = true;
                     }
                 }}
             }}
             if (!updated) {
-            	VERBOSE_EXTRA_DEBUG("  No nore updates.");
+            	VERBOSE_EVENTGRAPH_DEBUG("  No nore updates.");
             	break;
             }
         }
 
 
-        VERBOSE_DEBUG("computeStartingTime min_time ");
+        VERBOSE_EVENTGRAPH_DEBUG("computeStartingTime min_time ");
 
         TIME_UNIT min_time = (std::numeric_limits<TIME_UNIT>::max)();
 
@@ -429,16 +430,16 @@ public :
             min_time = std::min (min_time , this->getStartingTime(e));
         }}
 
-        VERBOSE_DEBUG(" min_time = " << min_time);
+        VERBOSE_EVENTGRAPH_DEBUG(" min_time = " << min_time);
 
         {ForEachEvent(this,e)   {
         	auto old_start = this->getStartingTime(e);
         	auto new_start = old_start  - min_time ;
-            VERBOSE_EXTRA_DEBUG("  Event " << e << ":"<< this->getEvent(e).toString() << " Adjusted Start from " << old_start << " to " << new_start );
+            VERBOSE_EVENTGRAPH_DEBUG("  Event " << e << ":"<< this->getEvent(e).toString() << " Adjusted Start from " << old_start << " to " << new_start );
             this->setStartingTime(e , new_start);
         }}
 
-        VERBOSE_DEBUG("End of compute starts.");
+        VERBOSE_EVENTGRAPH_DEBUG("End of compute starts.");
         return true;
 
     }
@@ -465,7 +466,7 @@ public :
         {
             cr.first  += ew1[*itr];
             cr.second += ew2[*itr];
-            VERBOSE_DEBUG( "   (" << vim[boost::source(*itr, this->getG())] << "," <<
+            VERBOSE_EVENTGRAPH_DEBUG( "   (" << vim[boost::source(*itr, this->getG())] << "," <<
                     vim[boost::target(*itr, this->getG())] << ") ");
         }
         if (std::abs(cr.first / cr.second - max_cr) > TIME_UNIT_LIMITS::epsilon()) {VERBOSE_ERROR("Huge bug in MaxCRP solving function.");}
@@ -490,7 +491,7 @@ public :
         {
             cr.first  += ew1[*itr];
             cr.second += ew2[*itr];
-            VERBOSE_DEBUG( "   (" << vim[boost::source(*itr, this->getG())] << "," <<
+            VERBOSE_EVENTGRAPH_DEBUG( "   (" << vim[boost::source(*itr, this->getG())] << "," <<
                     vim[boost::target(*itr, this->getG())] << ") ");
         }
         if (std::abs(cr.first / cr.second - max_cr) > TIME_UNIT_LIMITS::epsilon()) {VERBOSE_ERROR("Huge bug in MinCRP solving function.");}
@@ -515,7 +516,7 @@ public :
         {
             cr.first  += ew1[*itr];
             cr.second += ew2[*itr];
-            VERBOSE_DEBUG( "   " << vim[boost::source(*itr, this->getG())] << " -> " <<
+            VERBOSE_EVENTGRAPH_DEBUG( "   " << vim[boost::source(*itr, this->getG())] << " -> " <<
                     vim[boost::target(*itr, this->getG())] << " : (" << ew1[*itr] << "," << ew2[*itr] << ")");
         }
         if (std::abs(cr.first / cr.second - max_cr) > TIME_UNIT_LIMITS::epsilon()) {VERBOSE_ERROR("Huge bug in MinCRP solving function.");}

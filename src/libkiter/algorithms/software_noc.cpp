@@ -42,41 +42,52 @@ struct node{
 
 //typedef std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEtype;
 //typedef std::map< unsigned int, std::vector< mypair > > conflictEtype;
-typedef std::unordered_map< unsigned int, std::vector<ARRAY_INDEX> > conflictEtype;
-typedef std::unordered_map< std::string, std::vector< ARRAY_INDEX > > conflictConfigs;
+typedef std::map< unsigned int, std::vector<ARRAY_INDEX> > conflictEtype;
+typedef std::map< std::string, std::vector< ARRAY_INDEX > > conflictConfigs;
 //typedef std::unordered_map< std::string, std::vector< mytuple > > conflictConfigs;
-typedef std::unordered_map< ARRAY_INDEX, unsigned int> vid_to_nocEid;
+typedef std::map< ARRAY_INDEX, unsigned int> vid_to_nocEid;
 
-void print_graph (models::Dataflow * to, std::string suffix = "none") {
+static void print_graph (models::Dataflow * to, std::string suffix = "none") {
 
 	static int counter = 0;
 	counter ++ ;
 	VERBOSE_INFO("=========== Write file " << counter << "\n");
-	std::string filename = "software_noc_"+ commons::toString(counter) + "_" + suffix ;
+
+	std::string sfilename = "software_noc_"+ commons::toString(counter) + "_" + suffix + "";
+
+	{
+
+		std::string filename = sfilename + "_graph";
+		std::ofstream myfile;
+		myfile.open (filename  + ".dot");
+		myfile << printers::GenerateGraphDOT(to);
+		myfile.close();
+
+		std::string cmd = "dot " + filename + ".dot -Kneato -T pdf -o " + filename + ".pdf";
+		auto out_err = system(cmd.c_str());
+		if(out_err)
+			VERBOSE_INFO ("System call returns error\n");
+
+	}
+	if (false)
+	{
+
+		std::string filename = sfilename + "_noc";
+		std::ofstream myfile;
+		myfile.open (filename  + ".dot");
+		myfile << printers::GenerateNoCDOT(to);
+		myfile.close();
+
+		std::string cmd = "dot " + filename + ".dot -Kneato -T pdf -o " + filename + ".pdf";
+		auto out_err = system(cmd.c_str());
+		if(out_err) {
+			VERBOSE_INFO ("System call returns error\n");
+		}
+
+	}
+
+	commons::writeSDF3File(sfilename+ ".xml", to);
 	to->reset_computation();
-	// Write the input as a dot file
-	std::ofstream myfile2;
-	myfile2.open (filename  + ".dot");
-	myfile2 << printers::GenerateGraphDOT(to);
-	myfile2.close();
-	commons::writeSDF3File(filename+ ".xml", to);
-	to->reset_computation();
-
-
-	std::string cmd = "dot " + filename + ".dot -T pdf -o " + filename + ".pdf";
-	auto out_err = system(cmd.c_str());
-	if(out_err)
-		VERBOSE_INFO ("System call returns error\n");
-
-	to->reset_computation();
-	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
-
-
-	auto persched = algorithms::scheduling::CSDF_KPeriodicScheduling(to) ;
-
-	//scheduling_t persched = algorithms::scheduling::bufferless_kperiodic_scheduling (to, DO_BUFFERLESS , STOP_AT_FIRST, GET_PREVIOUS);
-	to->reset_computation();
-
 
 }
 
@@ -1133,7 +1144,6 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 	d->removeEdge(c); //we delete the edge
 
 
-	std::string key_str = "";
 
 	int list_idx = 0;
 	//std::cout << "flow:" << source << "->" << target << ":";
@@ -1161,12 +1171,7 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 		d->setReentrancyFactor(middle,1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
 
 
-		//keep track of the
-		if(addConfigNode && key_str != "")
-		{
-			//get<2>(configs[key_str][configs[key_str].size()-1]) = d->getVertexId(middle);
-			key_str = "";
-		}
+
 
 		// we create a new edge between source and middle,
 		auto e1 = d->addEdge(source_vtx, middle);
@@ -1202,7 +1207,6 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 			configs[config_key.str()].push_back(d->getVertexId(vtx));
 
 
-			key_str = config_key.str();
 
 
 			d->setVertexName(vtx,config_name.str());
@@ -1530,7 +1534,7 @@ TOKEN_UNIT compute_local_flow (models::Dataflow* to, std::vector< ARRAY_INDEX >&
 }
 
 
-bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::vector< ARRAY_INDEX >& mergeNodes) {
+static bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::vector< ARRAY_INDEX >& mergeNodes) {
 
 	VERBOSE_INFO("name = " << name << " nodes: " << commons::toString( mergeNodes ) );
 	// This function is not generic yet, cannot support preload
@@ -1613,7 +1617,7 @@ bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::vector< 
 	VERBOSE_INFO("Create router" );
 	//3. Create the BIG router
 	auto middle = to->addVertex();
-	to->setVertexName(middle, name);
+	to->setVertexName(middle,  name);
 	to->setInitPhasesQuantity(middle, init_start_times.size()); // number of state for the actor, only one in SDF
 	to->setPhasesQuantity(middle, periodic_start_times.size()); // number of state for the actor, only one in SDF
 	to->setVertexDuration(middle, phaseDurVec); // is specify for every state , only one for SDF.
@@ -2276,6 +2280,20 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		addPathNode(to, e, it.second, conflictEdges, configs, vid_to_conflict_map, true);
 	}
 
+	VERBOSE_INFO ("configs = ");
+
+	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++) {
+
+		VERBOSE_INFO ("  - " << (*it).first << ":"  << (*it).second);
+	}
+
+	VERBOSE_INFO ("conflictEdges = ");
+	for(auto item :  conflictEdges) {
+
+		VERBOSE_INFO ("  - " << item.first << ":"  << item.second);
+	}
+
+
 
 
 	// ###### At this pint, we have a SDFG with artefacts for network.
@@ -2348,6 +2366,9 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	// ############################################
 
 	//print_graph(to);
+
+
+
 
 	VERBOSE_INFO ("Call mergeConfigNodes");
 	int idx = 0;

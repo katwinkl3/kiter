@@ -12,7 +12,6 @@ typedef long int LARGE_INT;
 #include <models/Dataflow.h>
 #include <commons/KiterRegistry.h>
 
-bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::vector< ARRAY_INDEX >& mergeNodes) ;
 namespace algorithms {
 	inline LARGE_INT myabs(LARGE_INT a)
 	{
@@ -20,7 +19,6 @@ namespace algorithms {
 			return -1*a;
 		return a;
 	}
-	void software_noc (models::Dataflow* const dataflow, parameters_list_t);
 	void software_noc_bufferless (models::Dataflow* const dataflow, parameters_list_t);
 	void dynamic_noc (models::Dataflow* const dataflow, parameters_list_t);
 	//Find co-efficients a and b such that ax + by = gcd(x, y)

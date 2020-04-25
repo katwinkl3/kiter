@@ -22,7 +22,7 @@ namespace algorithms {
 		void BufferlessNoCMapAndRoute (models::Dataflow* const  dataflow, parameters_list_t params);
 	}
 
-	void ModelNoCConflictFreeCommunication(models::Dataflow* const  dataflow, parameters_list_t   param_list);
+	void ModelNoCConflictFreeCommunication(models::Dataflow* const  dataflow, parameters_list_t   param_list = parameters_list_t());
 
 }
 // Helpers to map vertex to cores, need a way to also consider routers

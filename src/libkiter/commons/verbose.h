@@ -51,6 +51,7 @@
 
 #ifndef __RELEASE_MODE__
 #define VERBOSE_EXTRA_DEBUG(m)   if (VERBOSE_IS_EXTRA_DEBUG())      std::cerr << BLUE_COLOR   << "[X]" << __SHOW_LEVEL << m << std::string(20,' ') << "\n" ; //PRINT_STATE();
+#define VERBOSE_CUSTOM_DEBUG(code,m) if (commons::VERBOSE_CUSTOM_MODES.count(code)) {VERBOSE_DEBUG(m);}
 #define VERBOSE_DEBUG(m)   if (VERBOSE_IS_DEBUG())      std::cerr << BLUE_COLOR   << "[D]" << __SHOW_LEVEL << m << std::string(20,' ') << "\n" ; //PRINT_STATE();
 #define VERBOSE_ILP(m)     if (VERBOSE_IS_ILP())        std::cerr << PURPLE_COLOR << "[L]" << __SHOW_LEVEL << m << std::string(20,' ') << "\n" ;
 #define VERBOSE_DEBUG_ASSERT(test,mess)  if (!(test)) {VERBOSE_ERROR("Assertion failed : " << #test);VERBOSE_ERROR(mess);  ERROR();}
@@ -60,6 +61,7 @@
 #define VERBOSE_DEBUG_ASSERT_GreaterEqualThan(a,b)  if (a < b)  {VERBOSE_ERROR("Assertion failed : " << #a << "(=" << a << ") >=" << #b << "(=" << b << ")"); ERROR();}
 #else
 #define VERBOSE_EXTRA_DEBUG(m)   ;
+#define VERBOSE_CUSTOM(m)   ;
 #define VERBOSE_DEBUG(m)   ;
 #define VERBOSE_ILP(m)     ;
 #define VERBOSE_DEBUG_ASSERT(test,mess)      ;
@@ -99,6 +101,11 @@ namespace commons
 extern int VERBOSE_MODE;
 extern bool VERBOSE_COLOR;
 extern bool VERBOSE_GUESS;
+
+#ifndef __RELEASE_MODE__
+extern std::set<std::string> VERBOSE_CUSTOM_MODES;
+#endif
+
 const int  MIN_LEVEL     =   0;
 const int  MAX_LEVEL     =  10;
 

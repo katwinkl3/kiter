@@ -66,6 +66,12 @@ ADD_TRANSFORMATION(BufferlessKPeriodicScheduling,
 ADD_TRANSFORMATION(SDFKPeriodic,
 		transformation_t({ "SDFKPeriodic" , "Build an Exansion graph given a set of value K (1 by default), and compute its MCRP.", algorithms::scheduling::SDFKPeriodicScheduling}));
 
+// Throughput techniques
+ADD_TRANSFORMATION(BufferlessNoCScheduling,
+		transformation_t({ "BufferlessNoCScheduling" , "BufferlessNoCScheduling, WIP", algorithms::BufferlessNoCScheduling}));
+
+
+
 
 
 

@@ -25,7 +25,7 @@ namespace models {
                    if (vindex->find(w) == vindex->end()) {
                        StrongConnect(g,w,index,vindex,lowlink,S);
                        lowlink->at(v) = std::min( lowlink->at(v), lowlink->at(w));
-                   } else if (commons::findInVector(S,w)) {
+                   } else if (commons::findInVector(*S,w)) {
                        lowlink->at(v) = std::min( lowlink->at(v), vindex->at(w));
                    }
                }}

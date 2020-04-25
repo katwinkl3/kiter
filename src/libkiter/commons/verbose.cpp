@@ -12,6 +12,7 @@ namespace commons {
     int VERBOSE_MODE    = MIN_LEVEL;
     bool VERBOSE_GUESS  = true;
     bool VERBOSE_COLOR  = true;
+    std::set<std::string> VERBOSE_CUSTOM_MODES;
 void myterminate(int)
 {
     print_trace("",0);

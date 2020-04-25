@@ -62,7 +62,7 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 	for (auto e : list) {
 		// we create a new vertex "middle"
 		auto middle = d->addVertex();
-		//d->setMapping(middle,e);
+		d->setMapping(middle,e); // This artifical task is mapped to a NetworkEdge
 		new_vertices.push_back(middle);
 
 		////PLLLEASE DONT CHANGE THE "mid-" value in the name"
@@ -115,7 +115,9 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 
 
 			auto vtx = d->addVertex();
-			d->setMapping(vtx,d->getNoC().getEdge(e).dst);
+			d->setMapping(vtx,d->getNoC().getEdge(e).dst); // This artifical task is mapped to a NetworkNode
+
+
 			mytuple tuple_temp;
 			//get<0>(tuple_temp) = d->getVertexId(vtx);
 			//get<1>(tuple_temp) = d->getVertexId(middle);
@@ -152,7 +154,7 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 	return new_vertices;
 }
 
-void algorithms::ModelNoCConflictFreeCommunication(models::Dataflow* const  dataflow, parameters_list_t   param_list) {
+void algorithms::ModelNoCConflictFreeCommunication(models::Dataflow* const  dataflow, parameters_list_t   param_list ) {
 
 	conflictEtype conflictEdges; //stores details of flows that share noc edges
 	conflictConfigs configs; //stores the details of the router configs that are shared

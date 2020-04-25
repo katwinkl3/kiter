@@ -28,6 +28,9 @@
 #define TXT_TASK_NOT_FOUND "TASK_NOT_FOUND"
 #define TXT_CHANNEL_NOT_FOUND "CHANNEL_NOT_FOUND"
 
+
+#define VERBOSE_DATAFLOW_DEBUG(msg) {VERBOSE_CUSTOM_DEBUG("Dataflow",msg);}
+
 /* Dataflow defintion */
 
 enum EDGE_TYPE {NORMAL_EDGE, BUFFERLESS_EDGE, CONFIG_EDGE};
@@ -667,13 +670,13 @@ public :
                                                    std::vector<TOKEN_UNIT> l)    {
     	ASSERT_WRITABLE();
     	reset_computation();
-        VERBOSE_DEBUG(" - Add outputs for " << this->getEdgeName(c) << " coded " << c << " = " << l.size() << " states = " <<  commons::join(l.begin(),l.end(),std::string(",")));
+        VERBOSE_DATAFLOW_DEBUG(" - Add outputs for " << this->getEdgeName(c) << " coded " << c << " = " << l.size() << " states = " <<  commons::join(l.begin(),l.end(),std::string(",")));
     	boost::put(boost::edge_outputs, this->getG(), c.e, l);
     	TOKEN_UNIT total =std::accumulate(l.begin(),l.end(),0);
     	boost::put(boost::edge_total_output, this->getG(), c.e, total);
     	EXEC_COUNT q = this->getPhasesQuantity(this->getEdgeTarget(c));
-    	VERBOSE_DEBUG("   -   Edge from " << this->getVertexName(this->getEdgeSource(c)) << " to " << this->getVertexName(this->getEdgeTarget(c)));
-    	VERBOSE_DEBUG("   - EdgeTarget is " << this->getVertexName(this->getEdgeTarget(c)) << " with " << q << " states");
+    	VERBOSE_DATAFLOW_DEBUG("   -   Edge from " << this->getVertexName(this->getEdgeSource(c)) << " to " << this->getVertexName(this->getEdgeTarget(c)));
+    	VERBOSE_DATAFLOW_DEBUG("   - EdgeTarget is " << this->getVertexName(this->getEdgeTarget(c)) << " with " << q << " states");
     	if (q > 0) {VERBOSE_ASSERT(q == (EXEC_COUNT) l.size(),"Error, the number of phase for the target task of edge " << c << " is " << q <<", but the number of value given is " << l.size());}
     	this->setPhasesQuantity(this->getEdgeTarget(c),l.size());
     }
@@ -690,11 +693,11 @@ public :
                                                    std::vector<TOKEN_UNIT> l)    {
     	ASSERT_WRITABLE();
     	reset_computation();
-        VERBOSE_DEBUG(" - Add outputs for " << c << " = " << l.size() << " states = " <<  commons::join(l.begin(),l.end(),std::string(",")));
+        VERBOSE_DATAFLOW_DEBUG(" - Add outputs for " << c << " = " << l.size() << " states = " <<  commons::join(l.begin(),l.end(),std::string(",")));
     	boost::put(boost::edge_init_outputs, this->getG(), c.e, l);
     	EXEC_COUNT q = this->getInitPhasesQuantity(this->getEdgeTarget(c));
-    	VERBOSE_DEBUG(" -   Edge from " << this->getVertexName(this->getEdgeSource(c)) << " to " << this->getVertexName(this->getEdgeTarget(c)));
-    	VERBOSE_DEBUG(" -   Edge Target is " << this->getVertexName(this->getEdgeTarget(c)) << " with " << q << " init states");
+    	VERBOSE_DATAFLOW_DEBUG(" -   Edge from " << this->getVertexName(this->getEdgeSource(c)) << " to " << this->getVertexName(this->getEdgeTarget(c)));
+    	VERBOSE_DATAFLOW_DEBUG(" -   Edge Target is " << this->getVertexName(this->getEdgeTarget(c)) << " with " << q << " init states");
     	if (q > 0) {VERBOSE_ASSERT(q == (EXEC_COUNT) l.size(),"Error, the number of init phase for the target task of edge " << c << " is " << q <<", but the number of value given is " << l.size());}
     	this->setInitPhasesQuantity(this->getEdgeTarget(c),l.size());
     }
@@ -720,12 +723,12 @@ public :
                                                       std::vector<TOKEN_UNIT> l)    {
        	ASSERT_WRITABLE();
        	reset_computation();
-           VERBOSE_DEBUG(" - Add inputs for " << c << " = " << l.size() << " states = " <<  commons::join(l.begin(),l.end(),std::string(",")));
+           VERBOSE_DATAFLOW_DEBUG(" - Add inputs for " << c << " = " << l.size() << " states = " <<  commons::join(l.begin(),l.end(),std::string(",")));
        	boost::put(boost::edge_inputs, this->getG(), c.e, l);
        	TOKEN_UNIT total =std::accumulate(l.begin(),l.end(),0);
        	boost::put(boost::edge_total_input, this->getG(), c.e, total);
        	EXEC_COUNT q = this->getPhasesQuantity(this->getEdgeSource(c));
-       	VERBOSE_DEBUG(" - EdgeSource is " << this->getVertexName(this->getEdgeSource(c)) << " with " << q << " states");
+       	VERBOSE_DATAFLOW_DEBUG(" - EdgeSource is " << this->getVertexName(this->getEdgeSource(c)) << " with " << q << " states");
        	if (q > 0) {VERBOSE_ASSERT(q == (EXEC_COUNT) l.size(),"Error, the number of phase for the source task of edge " << c << " is " << q <<", but the number of value given is " << l.size());}
 
        	this->setPhasesQuantity(this->getEdgeSource(c),l.size());
@@ -742,10 +745,10 @@ public :
                                                          std::vector<TOKEN_UNIT> l)    {
           	ASSERT_WRITABLE();
           	reset_computation();
-              VERBOSE_DEBUG(" - Add inputs for " << c << " = " << l.size() << " states = " <<  commons::join(l.begin(),l.end(),std::string(",")));
+              VERBOSE_DATAFLOW_DEBUG(" - Add inputs for " << c << " = " << l.size() << " states = " <<  commons::join(l.begin(),l.end(),std::string(",")));
           	boost::put(boost::edge_init_inputs, this->getG(), c.e, l);
           	EXEC_COUNT q = this->getInitPhasesQuantity(this->getEdgeSource(c));
-          	VERBOSE_DEBUG(" - EdgeSource is " << this->getVertexName(this->getEdgeSource(c)) << " with " << q << " init states");
+          	VERBOSE_DATAFLOW_DEBUG(" - EdgeSource is " << this->getVertexName(this->getEdgeSource(c)) << " with " << q << " init states");
           	if (q > 0) {VERBOSE_ASSERT(q == (EXEC_COUNT) l.size(),"Error, the number of init phase for the source task of edge " << c << " is " << q <<", but the number of value given is " << l.size());}
 
         	VERBOSE_DEBUG_ASSERT(
