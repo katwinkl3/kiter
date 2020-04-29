@@ -20,7 +20,7 @@ std::string add_block ( std::string name , TIME_UNIT start, TIME_UNIT duration, 
 		return returnStream.str();
 }
 
-std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  dataflow,  models::Scheduling& sched ,   TIME_UNIT last_execution_end_at, bool full,  double xscale , double yscale ) {
+std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  dataflow,  models::Scheduling& sched ,   TIME_UNIT last_execution_end_at, bool ,  double xscale , double yscale ) {
 
   std::ostringstream returnStream;
   scheduling_t periodic_scheduling = sched.getTaskSchedule();
@@ -309,7 +309,7 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 	  Vertex source_vtx   = dataflow->getEdgeSource(c);
 	  Vertex target_vtx   = dataflow->getEdgeTarget(c);
 	  const std::vector<edge_id_t>& route = dataflow->getRoute(c);
-	  VERBOSE_DEBUG("edge_id=" << edge_id << " from tasks " <<  dataflow->getVertexId(source_vtx) << " and " <<   dataflow->getVertexId(target_vtx)  << " route = " <<  route);
+	  VERBOSE_DEBUG("edge_id=" << edge_id << " from tasks " <<  dataflow->getVertexId(source_vtx) << " and " <<   dataflow->getVertexId(target_vtx)  << " route = " <<  commons::toString(route));
 
 	  for (edge_id_t e : route) {
 		  const NetworkEdge& nedge = dataflow->getNoC().getEdge(e);
@@ -405,8 +405,8 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 
   for (const TaskSprite ts : taskSprites) {
 
-	  long x = std::round(ts.x * 100);
-	  long y = std::round(ts.y * 100);
+	  long x = (long) std::round(ts.x * 100);
+	  long y = (long) std::round(ts.y * 100);
 
 	  closed_sprites[{x,y}].push_back(ts);
 
@@ -636,32 +636,93 @@ void printers::printXML    (models::Dataflow* const  dataflow, parameters_list_t
 void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list_t ) {
 
 	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-		std::cout << "Graph name             = " <<  dataflow->getName() << std::endl;
-		std::cout << "Task count             = " <<  dataflow->getVerticesCount() << std::endl;
-		std::cout << "Channels total         = " <<  dataflow->getEdgesCount() << std::endl;
 
+	EXEC_COUNT total = 0;
+	{ForEachTask(dataflow,t) {
+		total += dataflow->getNi(t) ;
+	}}
 
-		EXEC_COUNT total = 0;
+	std::cout << "App name       = " <<  dataflow->getAppName() << std::endl;
+	std::cout << "Graph name     = " <<  dataflow->getGraphName() << std::endl;
+	std::cout << "Graph type     = " <<  dataflow->getGraphType() << std::endl;
+	std::cout << "Task count     = " <<  dataflow->getVerticesCount() << std::endl;
+	std::cout << "Channels total = " <<  dataflow->getEdgesCount() << std::endl;
+	std::cout << "Complexity     = " <<  total << std::endl;
+	std::cout << "                 " << std::endl;
+
+	size_t max_str = 0 ;
+	{ForEachTask(dataflow,t) {
+		max_str = std::max(max_str , dataflow->getVertexName(t).length());
+	}}
+
+	{ForEachChannel(dataflow,c) {
+		max_str = std::max(max_str , dataflow->getEdgeName(c).length());
+	}}
+
+	int name_len = (int) max_str + 4;
+
+	if (dataflow->getVerticesCount()) {
+		std::cout << "TASKS" << std::endl;
+		std::cout << std::setw(name_len) << "VertexName"
+				<< " ("
+				<< std::setw(8) << "VertexId"
+				<< ")"
+				<< std::setw(16) << "TotalDuration"
+				<< std::setw(20)<< "RepetitionFactor"
+				<< std::setw(16)<< "PhaseQuantity"
+				<< std::setw(15)<< "Mapping"
+				<< std::endl;
+
 		{ForEachTask(dataflow,t) {
-			total += dataflow->getNi(t) ;
+			std::cout << std::setw(name_len) << dataflow->getVertexName(t)
+                      << " ("
+                      << std::setw(8) << dataflow->getVertexId(t)
+                      << ")"
+                      << std::setw(16) << dataflow->getVertexTotalDuration(t)
+                      << std::setw(20)<< dataflow->getNi(t)
+                      << std::setw(16)<< dataflow->getPhasesQuantity(t)
+                      << std::setw(15)<< dataflow->getMapping(t)
+                      << std::endl;
+
+
 		}}
-        std::cout << "Complexity         = " <<  total << std::endl;
+
+	} else {
+		std::cout << "NO TASKS" << std::endl;
+	}
+
+	std::cout << "                 " << std::endl;
+
+	if (dataflow->getEdgesCount()) {
+		std::cout << "CHANNELS" << std::endl;
+
+		std::cout <<  std::setw(name_len) << "ChannelName"
+				<< " ("
+				<< std::setw(10) << "ChannelId"
+				<< ")"
+				<< std::setw(10) << "TotalIn"
+				<< std::setw(10) << "TotalOut"
+				<< std::setw(15) << "InitialMarking"
+				<< std::setw(20) << "Route"
+				<< std::endl;
+
+		{ForEachChannel(dataflow,c) {
+			std::cout << std::setw(name_len) << dataflow->getEdgeName(c)
+                      << " ("
+					  << std::setw(10) << dataflow->getEdgeId(c)
+					  << ")"
+					  << std::setw(10) << dataflow->getEdgeIn(c)
+					  << std::setw(10) << dataflow->getEdgeOut(c)
+					  << std::setw(15) << dataflow->getPreload(c)
+					  << std::setw(20) << commons::toString(dataflow->getRoute(c))
+					  << std::endl;
 
 
-		std::cout << "== Tasks ==" << std::endl;
+		}}
+	} else {
 
-              {ForEachTask(dataflow,t) {
-
-                  std::cout << "  - "
-                		  << std::setw(20) << dataflow->getVertexName(t) << "(" << dataflow->getVertexId(t) << ")"
-                          << " T= " << std::fixed << std::setw(20) << dataflow->getVertexTotalDuration(t)
-                		  << " N=" << std::setw(5)<< dataflow->getNi(t)
-                		  << " P=" << std::setw(5)<< dataflow->getPhasesQuantity(t)
-						  << " Mapping=" << std::setw(5)<< dataflow->getMapping(t)
-                		  << std::endl;
-
-              }}
-
+		std::cout << "NO CHANNELS" << std::endl;
+	}
 }
 
 

@@ -298,7 +298,7 @@ void algorithms::KPeriodic_memory   (models::Dataflow* const  dataflow,  std::ma
     //##################################################################
     // Linear program generation
     //##################################################################
-    const std::string problemName =  "NPeriodicSizing_" + dataflow->getName() + "_" + commons::toString(FREQUENCY) + "_" + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "INT" : "");
+    const std::string problemName =  "NPeriodicSizing_" + dataflow->getGraphName() + "_" + commons::toString(FREQUENCY) + "_" + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "INT" : "");
     commons::GLPSol g = commons::GLPSol(problemName,commons::MIN_OBJ);
 
     // Starting times

@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <models/Dataflow.h>
+#include <models/NoCGraph.h>
 
 namespace algorithms {
 

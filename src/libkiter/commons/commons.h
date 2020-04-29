@@ -98,6 +98,12 @@ template<class T>
 }
 
 template<class T>
+    std::string toString(const std::pair<T,T>& v)
+{
+	return "<" + commons::toString(std::get<0>(v)) +  "," +  commons::toString(std::get<1>(v)) +  "," + ">";
+}
+
+template<class T>
     std::string toString(const std::vector<T>& t)
 {
 	 std::stringstream s;

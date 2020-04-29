@@ -145,20 +145,20 @@ void DFSUtil_PgmOrder(Vertex v, std::vector<bool>& visited, models::Dataflow* to
 
 //Remove the cyclic edges
 static Vertex removeCycleEdges(models::Dataflow* to, const std::vector<ARRAY_INDEX>& prog_order, const std::vector< std::vector<unsigned int> > &cyclen_per_vtxid) {
-	int origV = to->getVerticesCount();
+	ARRAY_INDEX origV = to->getVerticesCount();
 	std::vector<bool> visited(origV, false);
 	std::vector<ARRAY_INDEX> removeEdgeId;
 	std::vector<ARRAY_INDEX> vertexId;
 
 
-	for(int i = 0; i < (int)prog_order.size(); i++)
+	for(ARRAY_INDEX i = 0; i < prog_order.size(); i++)
 	{
 		auto vid = prog_order[i];
 		Vertex v = to->getVertexById(vid);
 		if(!visited[vid])
 			DFSUtil_PgmOrder(v, visited, to, removeEdgeId,cyclen_per_vtxid);
 	}
-	for(int i = 0; i < (int)removeEdgeId.size(); i++)
+	for(ARRAY_INDEX i = 0; i < removeEdgeId.size(); i++)
 	{
 		auto e = to->getEdgeById( removeEdgeId[i] );
 		auto src = to->getEdgeSource(e);
@@ -329,7 +329,8 @@ void algorithms::mapping::BufferlessNoCMapAndRoute (models::Dataflow* const data
 
 
 	for (auto route_item : routes ) {
-		VERBOSE_INFO ("Edge " << to->getEdgeName(edge_list[route_item.first])  << ", Route " << route_item.second);
+		Edge e = edge_list[route_item.first];
+		VERBOSE_INFO ("Edge " << to->getEdgeName(e) << "(" << to->getVertexName(to->getEdgeSource(e)) << " to " << to->getVertexName(to->getEdgeTarget(e))<< ")"   << ", Route " << commons::toString(route_item.second));
 		for (auto edge : route_item.second) {
 
 			VERBOSE_INFO ("    - " << edge <<" links " << noc->getMapIndexPair(edge).first << " to " << noc->getMapIndexPair(edge).second  );

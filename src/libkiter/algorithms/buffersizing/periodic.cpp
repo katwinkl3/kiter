@@ -42,7 +42,7 @@ TOKEN_UNIT algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  d
 	//##################################################################
 	// Linear program generation
 	//##################################################################
-	const std::string problemName =  "PeriodicSizing_" + dataflow->getName() + "_" + commons::toString(FREQUENCY) + "_" + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "INT" : "");
+	const std::string problemName =  "PeriodicSizing_" + dataflow->getGraphName() + "_" + commons::toString(FREQUENCY) + "_" + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "INT" : "");
 	commons::GLPSol g = commons::GLPSol(problemName,commons::MIN_OBJ);
 
 

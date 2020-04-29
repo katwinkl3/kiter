@@ -8,13 +8,14 @@
 #include <map>
 #include <vector>
 #include <cmath>
-//using namespace std; 
+#include <models/NoC.h>
+
 
 // A directed graph using adjacency list representation 
 class NoCGraph 
 { 
 	int V; // No. of vertices in graph 
-	std::list<int> *adj; // Pointer to an array containing adjacency lists 
+	std::vector<std::list<int>> adj; // Pointer to an array containing adjacency lists
 	std::map<int, std::vector< std::vector<int> > > paths;
 	std::vector<int> returnPath;
 	//std::map<int, int> linkUtil;
@@ -32,8 +33,7 @@ class NoCGraph
 
 	int size () const {return MESH_SIZE;}
 	int getMeshSize  () const {return size();}
-	NoCGraph()
-	{ this->V = 1; adj = new std::list<int>[V]; dumpPaths = false; MESH_SIZE = (V/2); linkUtil.resize(V*V, 0); HWLIMIT = 4;} 
+	//virtual NoCGraph()  = 0;
 
 	std::vector< std::vector<int> > getShortestPaths(int s, int d)
 	{
@@ -79,8 +79,8 @@ class NoCGraph
         void setLinkUtil(std::vector<int> u) { linkUtil = u; }
 
 	void generateAllShortestPaths();
-	int getMapIndex(int x, int y) const {return (x*V + y);}
-	std::pair<int,int> getMapIndexPair(int index) {  return {index/V, index%V}; }
+	int getMapIndex(int x, int y) const {return V + (x*V + y);}
+	std::pair<int,int> getMapIndexPair(int index) {  return {(index - V)/V, (index - V)%V}; }
 	int getPathLength(int src, int dst)
 	{
 		if(src == dst)

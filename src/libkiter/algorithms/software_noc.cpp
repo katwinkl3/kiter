@@ -6,6 +6,7 @@
  */
 
 #include <models/NoC.h>
+#include <models/NoCGraph.h>
 #include <vector>
 #include <iostream>
 #include <printers/stdout.h>
@@ -48,6 +49,8 @@ typedef std::map< std::string, std::vector< ARRAY_INDEX > > conflictConfigs;
 typedef std::map< ARRAY_INDEX, unsigned int> vid_to_nocEid;
 
 static void print_graph (models::Dataflow * to, std::string suffix = "none") {
+
+	if (not VERBOSE_IS_DEBUG()) return;
 
 	static int counter = 0;
 	counter ++ ;
@@ -418,7 +421,7 @@ void printSCCs(models::Dataflow* to, Vertex start)
 	// Create a reversed graph
 	auto transp = getTranspose(to);
 	// Mark all the vertices as not visited (For second DFS)
-	for(int i = 0; i <= V; i++)
+	for(ARRAY_INDEX i = 0; i <= V; i++)
 		visited[i] = false;
 
 	// Now process all vertices in order defined by Stack
@@ -448,7 +451,7 @@ void printSCCs(models::Dataflow* to, Vertex start)
 		}
 	}
 
-	for(int i = 0; i <= V; i++)
+	for(ARRAY_INDEX i = 0; i <= V; i++)
 	{
 		std::vector<unsigned int> temp;
 		cyclen_per_vtxid.push_back(temp);
@@ -1112,7 +1115,7 @@ void taskAndNoCMapping(const models::Dataflow* input, models::Dataflow* to, Vert
 */
 	VERBOSE_INFO ( "srjkvr-mapping " << commons::toString(core_mapping) ) ;
 	std::cout << "SRJKVR";
-	for(int i = 1; i < core_mapping.size()-1; i++)
+	for(ARRAY_INDEX i = 1; i < core_mapping.size()-1; i++)
 		std::cout << "," << core_mapping[i];
 	std::cout << "\n";
 }
@@ -1238,7 +1241,7 @@ std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, confl
 
 //Remove the cyclic edges
 Vertex removeCycleEdges(models::Dataflow* to, std::vector<ARRAY_INDEX>& prog_order) {
-	int origV = to->getVerticesCount();
+	auto origV = to->getVerticesCount();
 	std::vector<bool> visited(origV, false);
 	std::vector<ARRAY_INDEX> removeEdgeId;
 	std::vector<ARRAY_INDEX> vertexId;
@@ -1318,8 +1321,8 @@ std::map<int, route_t> graphProcessing(const models::Dataflow* dataflow, NoCGrap
 	if(!myflag)
 		to->addEdge(start, top);
 
-	int V = to->getVerticesCount();
-	for(int i = 0; i < V+1; i++)
+	ARRAY_INDEX V = to->getVerticesCount();
+	for(ARRAY_INDEX i = 0; i < V+1; i++)
 	{
 		std::set<unsigned int> temp;
 		cycid_per_vtxid.push_back(temp);
@@ -2263,7 +2266,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 
 
 	for (auto route_item : routes ) {
-		VERBOSE_INFO ("Edge " << to->getEdgeName(edge_list[route_item.first])  << ", Route " << route_item.second);
+		VERBOSE_INFO ("Edge " << to->getEdgeName(edge_list[route_item.first])  << ", Route " << commons::toString(route_item.second));
 		for (auto edge : route_item.second) {
 
 			VERBOSE_INFO ("    - " << edge );
@@ -2271,6 +2274,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	}
 	std::cout << "done route\n";
 	//printTasks(to);
+
 
 
 
@@ -2283,12 +2287,28 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	VERBOSE_INFO ("configs = ");
 
 	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++) {
+		std::vector<std::string> parts = commons::split((*it).first,'_');
+		edge_id_t src = commons::fromString<edge_id_t>(parts[0]);
+		edge_id_t dst = commons::fromString<edge_id_t>(parts[1]);
+		std::vector<ARRAY_INDEX> vertex_ids = (*it).second ;
+		VERBOSE_ASSERT(to->getNoC().getEdge(src).dst == to->getNoC().getEdge(dst).src, "NoC Graph doesnt match NoC");
+		VERBOSE_INFO ("  - " << src << "::" << dst << " : "  << commons::toString((*it).second) << " = " );
 
-		VERBOSE_INFO ("  - " << (*it).first << ":"  << (*it).second);
+		for (auto id : vertex_ids) {
+			Vertex router_node = to->getVertexById(id);
+			VERBOSE_INFO ("        x " << to->getVertexName(router_node) << "(" << id << ")");
+		}
+
 	}
 
 	VERBOSE_INFO ("conflictEdges = ");
 	for(auto item :  conflictEdges) {
+
+		VERBOSE_INFO ("  - " << item.first << ":"  << commons::toString(item.second));
+	}
+
+	VERBOSE_INFO ("vid_to_conflict_map = ");
+	for(auto item :  vid_to_conflict_map) {
 
 		VERBOSE_INFO ("  - " << item.first << ":"  << item.second);
 	}
@@ -2373,7 +2393,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	VERBOSE_INFO ("Call mergeConfigNodes");
 	int idx = 0;
 	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++) {
-		std::cout << "Working on merge " << idx++ << " over " << configs.size() << "\n";
+		std::cout << "Working on merge " << idx++ << " over " << configs.size() << "("  << it->first << ":" <<  commons::toString(it->second) << ")" <<  "\n";
 		mergeConfigNodesInit(to, it->first, it->second);
 		print_graph(to,"mergeConfigNodesInit");
 	}
@@ -2457,6 +2477,27 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	auto utility = noc->getLinkUtil();
 	VERBOSE_INFO ( "utility" <<  commons::toString(utility) );
 
+	for (std::pair<ARRAY_INDEX,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> item : persched) {
+		ARRAY_INDEX tid = item.first;
+		Vertex v = to->getVertexById(item.first);
+		std::string  tname = to->getVertexName(v);
+			TIME_UNIT period = item.second.first;
+			std::vector<TIME_UNIT> &starts = item.second.second;
+			std::string line = "";
+
+			for (TIME_UNIT time = 0 ; time < 50 ; time ++) {
+				bool execute = false;
+				for (ARRAY_INDEX sidx = 0 ; sidx < starts.size() ; sidx++) {
+					TIME_UNIT s = starts[sidx];
+					TIME_UNIT duration = to->getVertexDuration(v, 1 + (sidx % to->getPhasesQuantity(v))); // TODO : unsupported init phases
+					TIME_UNIT normalize = (time > s) ? (time - s) - ((time - s) / period) : (time - s);
+					bool execute_here = ((0  <= normalize ) and (normalize < duration ));
+					execute = execute or execute_here;
+				}
+				line += execute ? "#" : " ";
+			}
+			VERBOSE_INFO("Task " << std::setw(5) << tid << " | " << line );
+		}
 
 }
 

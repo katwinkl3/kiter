@@ -267,7 +267,7 @@ models::Scheduling  algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (cons
     // Linear program generation
     //##################################################################
 
-        const std::string problemName =  "CSDF_KPeriodicScheduling_LP_" + dataflow->getName();
+        const std::string problemName =  "CSDF_KPeriodicScheduling_LP_" + dataflow->getGraphName();
         commons::GLPSol g = commons::GLPSol(problemName,commons::MIN_OBJ);
 
         // Hyper Period

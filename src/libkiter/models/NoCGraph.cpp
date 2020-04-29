@@ -14,7 +14,7 @@
 NoCGraph::NoCGraph(int V) {
 	this->const_length = 0;
 	this->V = V;
-	adj = new std::list<int>[V];
+	adj.resize(V);
 	dumpPaths = false;
 	MESH_SIZE = (V/2);
 
@@ -126,11 +126,10 @@ void NoCGraph::printAllPathsUtil(int u, int d, bool visited[], int path[], int &
 			return;
 		}
 		// Recur for all the vertices adjacent to current vertex
-		std::list<int>::iterator i;
-		for (i = adj[u].begin(); i != adj[u].end(); ++i)
-			if (!visited[*i])
+		for (auto i : adj[u])
+			if (!visited[i])
 			{
-				printAllPathsUtil(*i, d, visited, path, path_index);
+				printAllPathsUtil(i, d, visited, path, path_index);
 			}
 	}
 	// Remove current vertex from path[] and mark it as unvisited
@@ -202,10 +201,9 @@ void NoCGraph::findLeastCostPath(int u, int d, bool visited[], int path[], int &
 			return;
 		}
 		// Recur for all the vertices adjacent to current vertex
-		std::list<int>::iterator i;
-		for (i = adj[u].begin(); i != adj[u].end(); ++i)
-			if (!visited[*i])
-				findLeastCostPath(*i, d, visited, path, path_index);
+		for (auto i : adj[u])
+			if (!visited[i])
+				findLeastCostPath(i, d, visited, path, path_index);
 	}
 	// Remove current vertex from path[] and mark it as unvisited
 	path_index--;
@@ -255,9 +253,9 @@ std::vector<int> NoCGraph::findPathDijkstra(int u, int d)
 			continue;
 
 		visited[vid] = true;
-		for(std::list<int>::iterator j = adj[vid].begin(); j != adj[vid].end(); j++)
+		for (auto j : adj[vid])
 		{
-			int dst = *j;
+			auto dst = j;
 			if(visited[dst]) continue;
 
 			int alt = cost_vec[vid] + 1;
@@ -324,9 +322,9 @@ std::vector<int> NoCGraph::findLowContentionPath(int u, int d)
 			continue;
 
 		visited[vid] = true;
-		for(std::list<int>::iterator j = adj[vid].begin(); j != adj[vid].end(); j++)
+		for (auto j : adj[vid])
 		{
-			int dst = *j;
+			auto dst = j;
 			int alt = cost_vec[vid] + 1;
 			int myutil = linkUtil[getMapIndex(vid, dst)];
 

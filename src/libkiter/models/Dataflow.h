@@ -33,8 +33,10 @@
 
 /* Dataflow defintion */
 
-enum EDGE_TYPE {NORMAL_EDGE, BUFFERLESS_EDGE, CONFIG_EDGE};
-enum VERTEX_TYPE {NORMAL_VERTEX, PERIODIC_VERTEX};
+enum EDGE_TYPE   {NORMAL_EDGE, BUFFERLESS_EDGE};
+//enum VERTEX_TYPE {NORMAL_VERTEX, PERIODIC_VERTEX};
+
+typedef  std::string VERTEX_TYPE;
 
 namespace boost
 {
@@ -266,6 +268,8 @@ private :
 	bool          repetitionvectorisdone;
 	BoostDataflow g;
     std::string   graph_name;
+    std::string   graph_type;
+    std::string   app_name;
     ARRAY_INDEX   graph_id;
     std::string   filename;
 	ARRAY_INDEX   auto_vertex_num;
@@ -294,7 +298,7 @@ protected:
 
 public :
 	Dataflow		(unsigned int nVertex = 0)		: readonly(false), normalizationisdone(false), repetitionvectorisdone(false),
-	g(nVertex), graph_name("noname"), graph_id(0) ,  auto_vertex_num (1) , auto_edge_num (1) ,
+	g(nVertex), graph_name(""),graph_type(""),app_name(""), graph_id(0) ,  auto_vertex_num (1) , auto_edge_num (1) ,
 	normalized_period(0), noc (4,4) {
 		VERBOSE_ASSERT(nVertex == 0,TXT_NO_IMPLEMENTATION);
 	}
@@ -459,9 +463,15 @@ public :
     void setFilename (std::string f) {filename = f;}
     std::string getFilename () const { return filename;}
 public:
-    inline  void                setName    (const std::string name)    {					ASSERT_WRITABLE();
+    inline  void                setGraphName    (const std::string name)    {					ASSERT_WRITABLE();
 	reset_computation();this->graph_name = name;}
-    inline  const std::string   getName    ()                      const     {return this->graph_name;}
+    inline  void                setAppName    (const std::string name)    {					ASSERT_WRITABLE();
+	reset_computation();this->app_name = name;}
+    inline  void                setGraphType    (const std::string name)    {					ASSERT_WRITABLE();
+	reset_computation();this->graph_type = name;}
+    inline  const std::string   getGraphName    ()                      const     {return this->graph_name;}
+    inline  const std::string   getGraphType   ()                      const     {return this->graph_type;}
+    inline  const std::string   getAppName    ()                      const     {return this->app_name;}
     inline  void                setId      (ARRAY_INDEX id)           {					ASSERT_WRITABLE();
 	reset_computation();this->graph_id = id;}
     inline  ARRAY_INDEX         getId      ()             const             {return this->graph_id;}
@@ -521,7 +531,6 @@ public :
     	switch (et) {
     		case NORMAL_EDGE : return "NORMAL_EDGE";
     		case  BUFFERLESS_EDGE : return "BUFFERLESS_EDGE";
-    		case CONFIG_EDGE : return "CONFIG_EDGE";
     		default : return "UNKNOWN";
     	}
     }
@@ -531,23 +540,19 @@ public :
                                            const VERTEX_TYPE t)    {
 		ASSERT_WRITABLE();
 		reset_computation();
-		boost::put(boost::vertex_type, this->getG(), v.v, t);}
-    inline VERTEX_TYPE           getVertexType (const Vertex v )    const     {return boost::get(get(boost::vertex_type, this->getG()), v.v);}
-    inline std::string           getVertexTypeStr (const Vertex v )    const     {
-    	VERTEX_TYPE vt = this->getVertexType(v);
-    	switch (vt) {
-    		case NORMAL_VERTEX : return "NORMAL_VERTEX";
-    		case  PERIODIC_VERTEX : return "PERIODIC_VERTEX";
-    		default : return "UNKNOWN";
-    	}
+		boost::put(boost::vertex_type, this->getG(), v.v, t);
+    }
+    inline VERTEX_TYPE           getVertexType (const Vertex v )    const     {
+    	return boost::get(get(boost::vertex_type, this->getG()), v.v);
     }
 
-    inline void                 setRoute (const Edge c, const std::vector<edge_id_t> route)    {
+
+    inline void                 setRoute (const Edge c, const route_t & route)    {
    		ASSERT_WRITABLE();
    		reset_computation();
    		boost::put(boost::edge_route, this->getG(), c.e, route);
        }
-    inline const std::vector<edge_id_t> &           getRoute (const Edge c )   const      {return boost::get(get(boost::edge_route, this->getG()), c.e);}
+    inline const route_t &           getRoute (const Edge c )   const      {return boost::get(get(boost::edge_route, this->getG()), c.e);}
 
     inline void                 setMapping (const Vertex t,
                                            const node_id_t core_id)    {

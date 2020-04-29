@@ -25,6 +25,44 @@
 #endif
 #endif
 
+
+namespace commons
+{
+
+extern int VERBOSE_MODE;
+extern bool VERBOSE_COLOR;
+extern bool VERBOSE_GUESS;
+
+#ifndef __RELEASE_MODE__
+extern std::set<std::string> VERBOSE_CUSTOM_MODES;
+#endif
+
+const int  MIN_LEVEL     =   0;
+const int  MAX_LEVEL     =  10;
+
+const int  ERROR_LEVEL         =   1;
+const int  WARNING_LEVEL       =   2;
+const int  PB_LEVEL 	       =   3;
+const int  INFO_LEVEL          =   4;
+const int  ILP_LEVEL           =   7;
+const int  DEBUG_LEVEL         =   8;
+const int  EXTRA_DEBUG_LEVEL   =  10;
+
+  void print_trace( const char *file, int line);
+  inline void set_verbose_mode(const int m){
+    VERBOSE_MODE = m;
+}
+
+  inline int  is_info_verbose () 			{ return VERBOSE_MODE >= INFO_LEVEL; }
+  inline int  get_verbose_mode() 			{ return VERBOSE_MODE; }
+  inline void set_verbose_color(const bool v){VERBOSE_COLOR = v;}
+  inline void set_verbose_guess(const bool v){VERBOSE_GUESS = v;}
+
+void myterminate(int);
+
+} //end of commons namespace
+
+
  // \033 remplace \e !!!
 #define PURPLE_COLOR (commons::VERBOSE_COLOR?"\033[1;35m":"")
 #define RED_COLOR    (commons::VERBOSE_COLOR?"\033[1;31m":"")
@@ -41,13 +79,14 @@
 #define EXIT_ON_FAILURE()  {int* toto = NULL; *toto = 1;} exit(EXIT_FAILURE)
 
 #endif
-#define VERBOSE_IS_EXTRA_DEBUG()   (commons::VERBOSE_MODE >= commons::EXTRA_DEBUG_LEVEL)
-#define VERBOSE_IS_DEBUG()   (commons::VERBOSE_MODE >= commons::DEBUG_LEVEL)
-#define VERBOSE_IS_INFO()    (commons::VERBOSE_MODE >= commons::INFO_LEVEL)
-#define VERBOSE_IS_ERROR()   (commons::VERBOSE_MODE >= commons::ERROR_LEVEL)
-#define VERBOSE_IS_WARNING() (commons::VERBOSE_MODE >= commons::WARNING_LEVEL)
-#define VERBOSE_IS_PB()    (commons::VERBOSE_MODE >= commons::PB_LEVEL)
-#define VERBOSE_IS_ILP()    (commons::VERBOSE_MODE >= commons::ILP_LEVEL)
+
+static inline bool  VERBOSE_IS_EXTRA_DEBUG()  { return (commons::VERBOSE_MODE >= commons::EXTRA_DEBUG_LEVEL) ;}
+static inline bool  VERBOSE_IS_DEBUG()        { return (commons::VERBOSE_MODE >= commons::DEBUG_LEVEL)       ;}
+static inline bool  VERBOSE_IS_INFO()         { return (commons::VERBOSE_MODE >= commons::INFO_LEVEL)        ;}
+static inline bool  VERBOSE_IS_ERROR()        { return (commons::VERBOSE_MODE >= commons::ERROR_LEVEL)       ;}
+static inline bool  VERBOSE_IS_WARNING()      { return (commons::VERBOSE_MODE >= commons::WARNING_LEVEL)     ;}
+static inline bool  VERBOSE_IS_PB()           { return (commons::VERBOSE_MODE >= commons::PB_LEVEL)          ;}
+static inline bool  VERBOSE_IS_ILP()          { return (commons::VERBOSE_MODE >= commons::ILP_LEVEL)         ;}
 
 #ifndef __RELEASE_MODE__
 #define VERBOSE_EXTRA_DEBUG(m)   if (VERBOSE_IS_EXTRA_DEBUG())      std::cerr << BLUE_COLOR   << "[X]" << __SHOW_LEVEL << m << std::string(20,' ') << "\n" ; //PRINT_STATE();
@@ -95,41 +134,6 @@
 
 
 
-namespace commons
-{
-
-extern int VERBOSE_MODE;
-extern bool VERBOSE_COLOR;
-extern bool VERBOSE_GUESS;
-
-#ifndef __RELEASE_MODE__
-extern std::set<std::string> VERBOSE_CUSTOM_MODES;
-#endif
-
-const int  MIN_LEVEL     =   0;
-const int  MAX_LEVEL     =  10;
-
-const int  ERROR_LEVEL         =   1;
-const int  WARNING_LEVEL       =   2;
-const int  PB_LEVEL 	       =   3;
-const int  INFO_LEVEL          =   4;
-const int  ILP_LEVEL           =   7;
-const int  DEBUG_LEVEL         =   8;
-const int  EXTRA_DEBUG_LEVEL   =  10;
-
-  void print_trace( const char *file, int line);
-  inline void set_verbose_mode(const int m){
-    VERBOSE_MODE = m;
-}
-
-  inline int  is_info_verbose () 			{ return VERBOSE_MODE >= INFO_LEVEL; }
-  inline int  get_verbose_mode() 			{ return VERBOSE_MODE; }
-  inline void set_verbose_color(const bool v){VERBOSE_COLOR = v;}
-  inline void set_verbose_guess(const bool v){VERBOSE_GUESS = v;}
-
-void myterminate(int);
-
-} //end of commons namespace
 
 
 

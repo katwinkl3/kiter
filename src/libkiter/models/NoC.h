@@ -11,21 +11,26 @@
 #include <map>
 #include <vector>
 #include <commons/verbose.h>
-#include <models/NoCGraph.h>
 
-	typedef unsigned long          bank_id_t;
-	typedef          long          node_id_t;
-	typedef unsigned long          edge_id_t;
+typedef unsigned long          bank_id_t;
+typedef          long          noc_id_t;
+typedef noc_id_t               node_id_t;
+typedef noc_id_t               edge_id_t;
 	typedef std::vector<edge_id_t> route_t;
-	inline std::ostream& operator<< (std::ostream &out,const route_t& r)		{bool first = true; for (edge_id_t e : r) { if (!first) {out << "->";}  out << e ; first = false;} return out;}
+	//inline std::ostream& operator<< (std::ostream &out,const route_t& r)		{bool first = true; for (edge_id_t e : r) { if (!first) {out << "->";}  out << e ; first = false;} return out;}
 	enum NetworkNodeType { Core, Router, Unknown };
 
-	struct NetworkNode {
-		node_id_t id;
+	struct NetworkComponent {
+		noc_id_t id;
+		NetworkComponent (noc_id_t id) : id(id) {};
+
+	};
+	struct NetworkNode : public NetworkComponent {
+		//node_id_t id;
 		NetworkNodeType type;
 		double       x;
 		double       y;
-		NetworkNode (node_id_t id, NetworkNodeType type, double x , double y)  :  id(id),	 type(type), x(x),	 y (y) {};
+		NetworkNode (node_id_t id, NetworkNodeType type, double x , double y)  :  NetworkComponent(id),	 type(type), x(x),	 y (y) {};
 	};
 	inline std::ostream& operator<< (std::ostream &out,const NetworkNode& n) {
 		if (n.type == NetworkNodeType::Router) {
@@ -38,13 +43,13 @@
 		return out;
 	}
 
-	struct NetworkEdge {
-		edge_id_t id;
+	struct NetworkEdge : public NetworkComponent{
+		//edge_id_t id;
 		node_id_t src;
 		node_id_t dst;
 		NetworkEdge(edge_id_t id,
-				node_id_t src,
-				node_id_t dst) :  id(id),	 src(src),	 dst (dst) {};
+				noc_id_t src,
+				noc_id_t dst) :  NetworkComponent(id),	 src(src),	 dst (dst) {};
 	};
 	inline std::ostream& operator<< (std::ostream &out,const NetworkEdge& e) { out << "NetworkEdge(" << e.id << ", src=" << e.src  << ", dest=" << e.dst << ")"; return out;}
 
@@ -64,15 +69,15 @@ private :
 public:
 	const std::vector<NetworkEdge>& getEdges() const {return this->_vedges;};
 	const std::vector<NetworkNode>& getNodes() const {return this->_vnodes;};
-	const bool         hasNode(node_id_t id) const {return this->_mnodes.count(id) > 0;};
+	      bool           hasNode(node_id_t id) const {return (this->_mnodes.count(id) > 0);};
+	      bool           hasEdge(edge_id_t id)  const {return (this->_mid2edges.count(id) > 0);};
 
-	const NetworkNode& getNode(node_id_t id) const {
+	const NetworkNode&   getNode(node_id_t id) const {
 		VERBOSE_ASSERT(this->_mnodes.count(id), "Impossible to find node " << id << " inside the NoC.");
 		return this->_mnodes.at(id);
 	};
 
 	const NetworkEdge& getEdge(edge_id_t e) const {return this->_mid2edges.at(e);};
-	const bool         hasEdge(edge_id_t e) const {return this->_mid2edges.count(e)  > 0;};
 	const NetworkEdge& getEdge(node_id_t src,node_id_t dst) const {
 		const std::pair<node_id_t,node_id_t> pair = {src,dst};
 		VERBOSE_ASSERT(this->_medges.count(pair), "Impossible to find edge from " << src  << " to " << dst  << " inside the NoC.");

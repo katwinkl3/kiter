@@ -165,7 +165,7 @@ scheduling_t algorithms::scheduling::bufferless_scheduling (models::Dataflow* co
     // Linear program generation
     //##################################################################
 
-    const std::string problemName =  "BUFFERLESS_KPERIODIC_THROUGHPUT_" + dataflow->getName() + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "_INT" : "");
+    const std::string problemName =  "BUFFERLESS_KPERIODIC_THROUGHPUT_" + dataflow->getGraphName() + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "_INT" : "");
     commons::GLPSol g = commons::GLPSol(problemName,commons::MIN_OBJ);
 
     // Hyper Period
@@ -417,7 +417,7 @@ void sdf_bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vert
     //##################################################################
     // Linear program generation
     //##################################################################
-    const std::string problemName =  "SDF_BUFFERLESS_KPERIODIC_THROUGHPUT_" + dataflow->getName() + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "_INT" : "");
+    const std::string problemName =  "SDF_BUFFERLESS_KPERIODIC_THROUGHPUT_" + dataflow->getGraphName() + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "_INT" : "");
     commons::GLPSol g = commons::GLPSol(problemName,commons::MIN_OBJ);
 
     // Hyper Period

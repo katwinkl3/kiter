@@ -6,6 +6,7 @@
 
 #include <printers/stdout.h>
 #include <algorithms/schedulings.h>
+#include <algorithms/repetition_vector.h>
 
 #define BOOST_TEST_MODULE TemplateTest
 #include "helpers/test_classes.h"
@@ -22,7 +23,7 @@ BOOST_AUTO_TEST_CASE( DOT_graph_printers )
 
 BOOST_AUTO_TEST_CASE( DOT_scheduling_printers )
 {
-
+	VERBOSE_ASSERT(computeRepetitionVector(sample), "computeRepetitionVector failed");
 	models::Scheduling res1 = algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (sample, algorithms::scheduling::generate1PeriodicVector(sample));
 	std::string dot_string1 = printers::PeriodicScheduling2DOT    (sample, res1,  100, false, 10, 10);
 

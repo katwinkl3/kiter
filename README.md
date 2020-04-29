@@ -142,3 +142,12 @@ analysis time: 1.608ms
  ```
 
 
+## TODOs
+
+Add type for actors in XML and Dataflow
+Save input and output port names for reetrancy ?
+If MOP = 0 , don't print initial Token in XML
+For duration specify a processor type
+print a channel properties XML even if empty
+In the print mapping, if task are on the same mapping, spread then X,Y slightly
+

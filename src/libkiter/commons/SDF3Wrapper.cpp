@@ -88,6 +88,8 @@ TIME_UNIT runSDF3Throughput(models::Dataflow* const  dataflow, std::string SDF3_
 	commons::writeSDF3File (tmp_filename,dataflow);
 	std::string cmd = SDF3_binary + " --graph " + tmp_filename + " --algo throughput";
 
+	VERBOSE_INFO (" Running SDF3: " << cmd);
+
     std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
     if (!pipe) {
         throw std::runtime_error("popen() failed!");
@@ -518,7 +520,7 @@ models::Dataflow* wrapSDF3Dataflow (xmlDocPtr doc) {
 	for (xmlAttrPtr cur_attr = AG->properties; cur_attr; cur_attr = cur_attr->next) {
 		if (strcmp((const char*)cur_attr->name,"name") == 0) {
 
-			to->setName((const char*)cur_attr->children->content);
+			to->setAppName((const char*)cur_attr->children->content);
 		}
 	}
 
@@ -539,6 +541,15 @@ models::Dataflow* wrapSDF3Dataflow (xmlDocPtr doc) {
 	if (csdfproperties == NULL) { FAILED("Document XML invalide, csdfproperties not found");}
 
 
+	for (xmlAttrPtr cur_attr = csdf->properties; cur_attr; cur_attr = cur_attr->next) {
+		if (strcmp((const char*)cur_attr->name,"name") == 0) {
+			to->setGraphName((const char*)cur_attr->children->content);
+		}
+		if (strcmp((const char*)cur_attr->name,"type") == 0) {
+			to->setGraphType((const char*)cur_attr->children->content);
+		}
+	}
+
 	// Generate Vertex list with names and zero reentrancy
 	//--------------------------------------------------------------------------------
 
@@ -546,12 +557,18 @@ models::Dataflow* wrapSDF3Dataflow (xmlDocPtr doc) {
 		if (cur_node->type == XML_ELEMENT_NODE) {
 
 			if (std::string((const char*)cur_node->name) == std::string("actor")) {
+
 				Vertex newVertex = to->addVertex();
+				to->setReentrancyFactor(newVertex,0); // par defaut une tâche SDF3 est reetrante à l'infini
+
 				for (xmlAttrPtr cur_attr = cur_node->properties; cur_attr; cur_attr = cur_attr->next) {
 					if (strcmp((const char*)cur_attr->name,"name") == 0) {
 
 						to->setVertexName(newVertex,(const char*)cur_attr->children->content);
-						to->setReentrancyFactor(newVertex,0); // par defaut une tâche SDF3 est reetrante à l'infini
+					}
+					if (strcmp((const char*)cur_attr->name,"type") == 0) {
+
+						to->setVertexType(newVertex,(const char*)cur_attr->children->content);
 					}
 				}
 			}
@@ -711,16 +728,19 @@ void writeLoopbackPorts (xmlTextWriterPtr writer, const models::Dataflow* datafl
 	const std::vector<TOKEN_UNIT> init_rates        =    std::vector<TOKEN_UNIT> (dataflow->getInitPhasesQuantity(t),1) ;
 	std::string rates = vectorAsStr(periodic_rates);
 	if (init_rates.size()) rates = vectorAsStr(init_rates) + INIT_PERIODIC_SEPARATOR +   rates ;
-	xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
-	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) out_port.c_str());
-	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "in");
-	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) rates.c_str());
-	xmlTextWriterEndElement(writer);
+
 	xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) in_port.c_str());
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "out");
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) rates.c_str());
 	xmlTextWriterEndElement(writer);
+
+	xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) out_port.c_str());
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "in");
+	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"rate", (const xmlChar*) rates.c_str());
+	xmlTextWriterEndElement(writer);
+
 }
 
 void writeChannel (xmlTextWriterPtr writer, const models::Dataflow* dataflow, const Edge e) {
@@ -739,7 +759,9 @@ void writeChannel (xmlTextWriterPtr writer, const models::Dataflow* dataflow, co
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"dstActor", (const xmlChar*) edge_dstActor.c_str());
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"dstPort", (const xmlChar*) edge_dstPort.c_str());
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"size", (const xmlChar*) commons::toString(edge_size).c_str());
-	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"initialTokens", (const xmlChar*)  commons::toString(edge_initialTokens).c_str());
+	if (edge_initialTokens) {
+		xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"initialTokens", (const xmlChar*)  commons::toString(edge_initialTokens).c_str());
+	}
 
 	xmlTextWriterEndElement(writer);
 }
@@ -765,18 +787,24 @@ std::string  generateSDF3XML         (const models::Dataflow* dataflow)  {
 	{
 		xmlTextWriterSetIndent(writer,2); xmlTextWriterStartElement(writer,(const xmlChar*) "applicationGraph");
 
-		const std::string graph_name = dataflow->getName();
-		xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) graph_name.c_str());
+		const std::string app_name = dataflow->getAppName();
+		const std::string graph_name = dataflow->getGraphName();
+		const std::string graph_type = dataflow->getGraphType();
+		xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) app_name.c_str());
+
 		{
 			xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "csdf");
 			xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) graph_name.c_str());
-			xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) graph_name.c_str());
+			xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) graph_type.c_str());
+
 			{
 				for (Vertex t : dataflow->vertices()) {
 					const std::string vertex_name = dataflow->getVertexName(t);
+					const std::string vertex_type = dataflow->getVertexType(t);
 					xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "actor");
 					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) vertex_name.c_str());
-					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "a");
+					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) vertex_type.c_str());
+
 
 
 					for (auto it : dataflow->in_edges(t)) {
@@ -856,6 +884,13 @@ std::string  generateSDF3XML         (const models::Dataflow* dataflow)  {
 								xmlTextWriterEndElement(writer);
 							}
 							xmlTextWriterEndElement(writer);
+				}
+				for (auto it : dataflow->edges()) {
+					Edge e = *it;
+					std::string channel_name = dataflow->getEdgeName(e);
+					xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "channelProperties");
+					xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"channel", (const xmlChar*) channel_name.c_str());
+					xmlTextWriterEndElement(writer);
 				}
 			}
 			xmlTextWriterEndElement(writer);

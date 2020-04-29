@@ -124,28 +124,30 @@ void algorithms::print_kperiodic_expansion_graph    (models::Dataflow* const  da
 
 models::Scheduling period2Scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) {
 
-    TIME_UNIT omega = 1 / throughput ;
+    TIME_UNIT omega = 1.0 / throughput ;
     scheduling_t scheduling_result = period2scheduling    (dataflow, kvector ,  throughput) ;
 	return models::Scheduling(dataflow, omega, scheduling_result);
 }
 
 scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) {
 
-    VERBOSE_INFO("period2scheduling throughput = " << throughput  );
+    VERBOSE_INFO("period2scheduling throughput = " << std::scientific << std::setprecision( 9 )  << throughput  );
 
 	scheduling_t scheduling_result;
 
+    VERBOSE_INFO("Build EventGraph"  );
     models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
 
-    TIME_UNIT omega = 1 / throughput ;
+
     VERBOSE_INFO("Compute starts "  );
+    TIME_UNIT omega = 1 / throughput ;
     eg->computeStartingTimeWithOmega (omega);
 
-
+    VERBOSE_INFO("Retrieve starts "  );
     for (auto v : dataflow->vertices()) {
-    	auto tid = dataflow->getVertexId(v);
-    	auto pq = dataflow->getPhasesQuantity(v);
-    	auto ipq = dataflow->getInitPhasesQuantity(v);
+    	ARRAY_INDEX tid = dataflow->getVertexId(v);
+    	EXEC_COUNT pq = dataflow->getPhasesQuantity(v);
+    	EXEC_COUNT ipq = dataflow->getInitPhasesQuantity(v);
     	auto maxki = kvector[v];
 
     	auto first_pi = 1 - ipq;

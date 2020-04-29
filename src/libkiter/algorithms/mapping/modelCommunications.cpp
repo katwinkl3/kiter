@@ -7,9 +7,11 @@
 
 
 #include <models/Dataflow.h>
+#include <models/Scheduling.h>
 #include <commons/commons.h>
 #include <unordered_map>
 #include <algorithms/mappings.h>
+#include <algorithms/schedulings.h>
 
 
 static TIME_UNIT NULL_DURATION = 0;
@@ -19,10 +21,10 @@ typedef std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> mytuple;
 
 //typedef std::map< unsigned int, std::vector< std::pair<Vertex, Vertex> > > conflictEtype;
 //typedef std::map< unsigned int, std::vector< mypair > > conflictEtype;
-typedef std::unordered_map< unsigned int, std::vector<ARRAY_INDEX> > conflictEtype;
-typedef std::unordered_map< std::string, std::vector< ARRAY_INDEX > > conflictConfigs;
+typedef std::map< unsigned int, std::vector<ARRAY_INDEX> > conflictEtype;
+typedef std::map< std::string, std::vector< ARRAY_INDEX > > conflictConfigs;
 //typedef std::unordered_map< std::string, std::vector< mytuple > > conflictConfigs;
-typedef std::unordered_map< ARRAY_INDEX, unsigned int> vid_to_nocEid;
+typedef std::map< ARRAY_INDEX, unsigned int> vid_to_nocEid;
 
 //remove the current edge between nodes
 //add intermediate nodes based on the path between them
@@ -87,7 +89,7 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 		}
 
 		// we create a new edge between source and middle,
-		auto e1 = d->addEdge(source_vtx, middle);
+		Edge e1 = d->addEdge(source_vtx, middle);
 		if (list_idx == 0)
 		d->setRoute(e1,list);
 
@@ -154,6 +156,65 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 	return new_vertices;
 }
 
+
+static std::map <std::pair<edge_id_t,edge_id_t>, std::vector <ARRAY_INDEX> > build_router_xbar_usage (const models::Dataflow* const  dataflow) {
+	std::map <std::pair<edge_id_t,edge_id_t>, std::vector <ARRAY_INDEX> > router_xbar_usage;
+
+	std::map <edge_id_t, std::vector <ARRAY_INDEX> > links_usage;
+	std::map <node_id_t, std::vector <ARRAY_INDEX> > router_usage;
+	for (auto v : dataflow->vertices()) {
+				ARRAY_INDEX tid = dataflow->getVertexId(v);
+				auto current_mapping =  (dataflow->getMapping(v));
+				VERBOSE_ASSERT(current_mapping >= 0, "UNSUPPORTED CASE, EVERY TASK NEED TO BE MAPPED");
+				VERBOSE_ASSERT(dataflow->getNoC().hasEdge(current_mapping) xor dataflow->getNoC().hasNode(current_mapping), "UNSUPPORTED CASE, NOC NODE AND NOC EDGE WITH SIMILAR ID : " << current_mapping);
+
+				VERBOSE_INFO("Process task " << tid << " - " << dataflow->getVertexName(v) << " mapped to " << current_mapping);
+
+				if (dataflow->getNoC().hasEdge(current_mapping)) {
+					VERBOSE_INFO("  - Is a NoC Edge: add to links_usage");
+					links_usage[current_mapping].push_back(tid);
+				} else if (dataflow->getNoC().hasNode(current_mapping)) {
+					VERBOSE_INFO("  - Is a NoC Node: add to router_usage and router_xbar_usage");
+					if (dataflow->getNoC().getNode(current_mapping).type == NetworkNodeType::Router) {
+						router_usage[current_mapping].push_back(tid);
+
+						VERBOSE_ASSERT(dataflow->getVertexInDegree(v) == 1, "The NoC has not been modelled has expected, every NoCRouter-task should have one input NoCEdge Task. The task " << dataflow->getVertexName(v) << " has " << dataflow->getVertexInDegree(v));
+						VERBOSE_ASSERT(dataflow->getVertexOutDegree(v) == 1, "The NoC has not been modelled has expected, every NoCRouter-task should have one output NoCEdge Task. The task " << dataflow->getVertexName(v) << " has " << dataflow->getVertexOutDegree(v));
+
+						Vertex inputEdgeTask = dataflow->getEdgeSource(*(dataflow->getInputEdges(v).first));
+						Vertex outputEdgeTask = dataflow->getEdgeTarget(*(dataflow->getOutputEdges(v).first));
+
+						edge_id_t input_edge = dataflow->getMapping(inputEdgeTask);
+						edge_id_t output_edge = dataflow->getMapping(outputEdgeTask);
+
+						VERBOSE_ASSERT(dataflow->getNoC().hasEdge(dataflow->getMapping(inputEdgeTask)), "The NoC has bot been modelled has expected, every  NoCEdge Task should be properly mapped");
+						VERBOSE_ASSERT(dataflow->getNoC().hasEdge(dataflow->getMapping(outputEdgeTask)), "The NoC has bot been modelled has expected, every  NoCEdge Task should be properly mapped");
+
+						router_xbar_usage[std::pair<edge_id_t,edge_id_t> (input_edge, output_edge) ].push_back(tid);
+
+					}else {
+						VERBOSE_INFO("!! SKIP because node is not a ROUTER ");
+					}
+				} else {
+					VERBOSE_INFO("!! SKIP because not found in the NoC ");
+				}
+			}
+
+			return (router_xbar_usage);
+}
+
+void FindConflicts(models::Dataflow* const  dataflow, parameters_list_t   param_list ) {
+
+	VERBOSE_INFO("Step 1 - Run the schedule to see overlapping");
+	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling(dataflow);
+
+	VERBOSE_INFO("Step 2 - Identify task that we care about");
+	std::map <std::pair<edge_id_t,edge_id_t>, std::vector <ARRAY_INDEX> > router_xbar_usage = build_router_xbar_usage (dataflow);
+
+	VERBOSE_INFO("Step 3 - For every router we identify clusters of conflicts and report them");
+
+
+}
 void algorithms::ModelNoCConflictFreeCommunication(models::Dataflow* const  dataflow, parameters_list_t   param_list ) {
 
 	conflictEtype conflictEdges; //stores details of flows that share noc edges
@@ -170,6 +231,36 @@ void algorithms::ModelNoCConflictFreeCommunication(models::Dataflow* const  data
 		auto route = dataflow->getRoute(c);
 		VERBOSE_INFO("replace edge " << dataflow->getEdgeName(c) << "by a sequence");
 		addPathNode(dataflow, c, route, conflictEdges, configs, vid_to_conflict_map, true);
+	}
+
+
+	VERBOSE_INFO ("configs = ");
+
+	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++) {
+		std::vector<std::string> parts = commons::split((*it).first,'_');
+		edge_id_t src = commons::fromString<edge_id_t>(parts[0]);
+		edge_id_t dst = commons::fromString<edge_id_t>(parts[1]);
+		std::vector<ARRAY_INDEX> vertex_ids = (*it).second ;
+		VERBOSE_ASSERT(dataflow->getNoC().getEdge(src).dst == dataflow->getNoC().getEdge(dst).src, "NoC Graph doesnt match NoC");
+		VERBOSE_INFO ("  - " << src << "::" << dst << " : "  << commons::toString((*it).second) << " = " );
+
+		for (auto id : vertex_ids) {
+			Vertex router_node = dataflow->getVertexById(id);
+			VERBOSE_INFO ("        x " << dataflow->getVertexName(router_node) << "(" << id << ")");
+		}
+
+	}
+
+	VERBOSE_INFO ("conflictEdges = ");
+	for(auto item :  conflictEdges) {
+
+		VERBOSE_INFO ("  - " << item.first << ":"  << commons::toString(item.second));
+	}
+
+	VERBOSE_INFO ("vid_to_conflict_map = ");
+	for(auto item :  vid_to_conflict_map) {
+
+		VERBOSE_INFO ("  - " << item.first << ":"  << item.second);
 	}
 
 

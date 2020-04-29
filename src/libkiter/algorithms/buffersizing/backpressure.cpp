@@ -256,7 +256,7 @@ void algorithms::compute_backpressure_memory_sizing (models::Dataflow* const  da
 
 	// Init GLPK
 	//******************************************************************
-	commons::GLPSol solver = commons::GLPSol("BackPressure_" + dataflow->getName(),commons::MIN_OBJ);
+	commons::GLPSol solver = commons::GLPSol("BackPressure_" + dataflow->getGraphName(),commons::MIN_OBJ);
 
 	// Starting times
 	//******************************************************************
