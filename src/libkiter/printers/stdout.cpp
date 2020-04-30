@@ -457,9 +457,20 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 		  updatedSprites.push_back(item.second[1]);
 		  updatedSprites.push_back(item.second[2]);
 		  updatedSprites.push_back(item.second[3]);
+	  } else if (item.second.size() > 4) {
+		  for (size_t idx = 0 ; idx < item.second.size(); idx++) {
+			  auto s = item.second[idx];
+
+			  s.x -= 0.06;
+			  s.y -= 0.06;
+
+			  s.x += 0.12 * ((double)idx / (double)item.second.size());
+			  s.y += 0.12 * ((double)idx / (double)item.second.size());
+
+			  updatedSprites.push_back(s);
+		  }
 	  }
   }
-
 
 
 
@@ -519,7 +530,7 @@ std::string printers::GenerateGraphDOT    (models::Dataflow* const  dataflow , b
   returnStream << "digraph G {\n" << std::endl;
   
   returnStream <<  "  graph [label=\"" << "Auto-generate by the Kiter"
-	       << "\",overlap=scale,splines=true]\n";
+	       << "\",splines=false]\n";
   returnStream << "  edge [labelangle=15,labeldistance=1,len=1.5,fontsize=8,labelsize=4,color=grey]" << std::endl;
 
   returnStream << std::endl;
@@ -529,9 +540,7 @@ std::string printers::GenerateGraphDOT    (models::Dataflow* const  dataflow , b
 
       ARRAY_INDEX tid =  dataflow->getVertexId(t);
 
-      returnStream << "  t_" << tid << " [" << std::endl;
-      returnStream << "    shape=circle," << std::endl;
-      returnStream << "    label = \"" << dataflow->getVertexName(t);
+      returnStream << "  t_" << tid << " ["  << "shape=circle,  fixedsize=\"shape\", fontsize=\"2\"," << "label = \"" << dataflow->getVertexName(t);
       if (!simple) {
     	  returnStream	  << "\nid:" << tid
     		  << "\nPhases:" << commons::toString(dataflow->getPhasesQuantity(t))
@@ -539,9 +548,7 @@ std::string printers::GenerateGraphDOT    (models::Dataflow* const  dataflow , b
     		  << "\nduration:" << commons::toString(dataflow->getVertexPhaseDuration(t))
               << "\nreentrancy:" << commons::toString(dataflow->getReentrancyFactor(t))  ;
       }
-      returnStream  << "\"" << std::endl;
-      returnStream  << "  ];" << std::endl;
-      returnStream << std::endl;
+      returnStream  << "\" ];" << std::endl;
     }}
 
 
@@ -552,22 +559,21 @@ std::string printers::GenerateGraphDOT    (models::Dataflow* const  dataflow , b
       ARRAY_INDEX edgeInId  = dataflow->getVertexId(dataflow->getEdgeSource(c));
       ARRAY_INDEX edgeOutId = dataflow->getVertexId(dataflow->getEdgeTarget(c));
       returnStream << "  t_" << edgeInId << " -> t_" << edgeOutId << " [";
-      returnStream << std::endl;
       std::string bl = dataflow->getEdgeTypeStr(c) ;
       ARRAY_INDEX eid = dataflow->getEdgeId(c) ;
-      returnStream << "    label=\"" ;
+      returnStream << " label=\"" ;
       if (!simple) {
     	  returnStream	  << bl
     		  	  << "\nid:" << eid
 				  << "\npreload:"  << commons::toString(dataflow->getPreload(c)) ;
       }
-      returnStream << "\"," << std::endl;
-      returnStream << "    headlabel=\"" ;
+      returnStream << "\"," ;
+      returnStream << " headlabel=\"" ;
       if (dataflow->getInitPhasesQuantity(edgeOut) > 0) {returnStream << "(" << commons::toString(dataflow->getEdgeInitOutVector(c)) << ")"  << ";" ;}
-      returnStream <<  commons::toString(dataflow->getEdgeOutVector(c)) << "\"," << std::endl;
-      returnStream << "    taillabel=\"" ;
+      returnStream <<  commons::toString(dataflow->getEdgeOutVector(c)) << "\"," ;
+      returnStream << " taillabel=\"" ;
       if (dataflow->getInitPhasesQuantity(edgeIn) > 0) {returnStream << "("  <<  commons::toString(dataflow->getEdgeInitInVector(c))  << ")" << ";" ;}
-      returnStream <<  commons::toString(dataflow->getEdgeInVector(c)) << "\"," << std::endl;
+      returnStream <<  commons::toString(dataflow->getEdgeInVector(c)) << "\"," ;
       returnStream << " ] ;" << std::endl;
     }}
   returnStream << std::endl;

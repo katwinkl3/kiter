@@ -11,9 +11,9 @@
 #include <lp/glpsol.h>
 #include <models/Dataflow.h>
 #include <algorithms/normalization.h>
-#include <algorithms/periodic_fixed.h>
 #include <algorithms/repetition_vector.h>
 
+#include "periodic_fixed.h"
 
 
     void algorithms::checkOffsets (models::Dataflow * const dataflow,TIME_UNIT OMEGA, std::map<Vertex,std::vector<TIME_UNIT> > & offsets) {

@@ -8,7 +8,7 @@
 
 #include <algorithms/repetition_vector.h>
 #include <algorithms/schedulings.h>
-#include <algorithms/throughput/kperiodic.h>
+//#include <algorithms/throughput/kperiodic.h>
 
 #include <models/EventGraph.h>
 #include <lp/glpsol.h>
@@ -350,30 +350,6 @@ models::Scheduling  algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (cons
 
 
 
- const periodicity_vector_t algorithms::scheduling::generateNPeriodicVector(const models::Dataflow* dataflow) {
-
-	VERBOSE_ASSERT(dataflow->is_repetition_vector(),"Need repetition vector.");
-	periodicity_vector_t kvector;
-	for (Vertex v : dataflow->vertices()){
-	        kvector[v] = dataflow->getNi(v);
-	}
-	return kvector;
-}
-
-
- const periodicity_vector_t algorithms::scheduling::generate1PeriodicVector(const models::Dataflow* dataflow) {
-	 return algorithms::scheduling::generateKPeriodicVector(dataflow, 1);
-}
-
-
- const periodicity_vector_t algorithms::scheduling::generateKPeriodicVector(const models::Dataflow* dataflow, int k) {
-
-	periodicity_vector_t kvector;
-	for (Vertex v : dataflow->vertices()){
-	        kvector[v] = k;
-	}
-	return kvector;
-}
 
  void algorithms::scheduling::CSDF_1PeriodicScheduling_LP (models::Dataflow*  dataflow, parameters_list_t )  {
 
@@ -398,22 +374,4 @@ models::Scheduling  algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (cons
 }
 
 
- void algorithms::scheduling::CSDF_NPeriodicScheduling (models::Dataflow*  dataflow, parameters_list_t )  {
-
-	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-    //STEP 1 - Generate Event Graph
-	auto kvector = generateNPeriodicVector(dataflow);
-    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector);
-
-
-    VERBOSE_INFO("KPeriodic EventGraph generation Done");
-
-    //STEP 2 - resolve the MCRP on this Event Graph
-    std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
-    TIME_UNIT omega = 1/howard_res.first;
-
-    std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
-    std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
-
-}
 

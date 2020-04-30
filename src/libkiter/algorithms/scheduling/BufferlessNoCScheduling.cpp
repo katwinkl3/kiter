@@ -68,6 +68,11 @@ static void print_graph (models::Dataflow * to, std::string suffix = "none") {
 		myfile << printers::GenerateGraphDOT(to);
 		myfile.close();
 
+		std::string cmd = "dot " + filename + ".dot -Gdpi=300 -T png -o " + filename + ".png";
+		auto out_err = system(cmd.c_str());
+		if(out_err) {
+			VERBOSE_INFO ("System call returns error\n");
+		}
 
 	}
 
@@ -203,7 +208,7 @@ void algorithms::BufferlessNoCScheduling(models::Dataflow* const  _dataflow, par
 			}
 			to->reset_computation();
 			VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
-			models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, scheduling::generate1PeriodicVector(to));
+			models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, scheduling::generateNPeriodicVector(to));
 			algorithms::transformation::mergeCSDFFromSchedule(to,new_name,bag,&scheduling_res);
 
 
@@ -221,7 +226,7 @@ void algorithms::BufferlessNoCScheduling(models::Dataflow* const  _dataflow, par
 
 	VERBOSE_INFO("Step 3 - Check scheduling");
     VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
-	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, scheduling::generate1PeriodicVector(to));
+	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, scheduling::generateNPeriodicVector(to));
 
 
 	for (std::pair<ARRAY_INDEX,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> item : scheduling_res.getTaskSchedule()) {

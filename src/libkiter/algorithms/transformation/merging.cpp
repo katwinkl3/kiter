@@ -75,7 +75,7 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 	for (auto vid : mergeNodes) {
 		Vertex vi     = to->getVertexById(vid);
 		EXEC_COUNT ni = to->getNi(vi);
-		VERBOSE_INFO("For task " << vid << " period is " << persched[vid].first << " and starts " << commons::toString(persched[vid].second));
+		VERBOSE_INFO("For task " << vid << " period is " << std::fixed  << std::setprecision(2) << persched[vid].first << " and starts " << commons::toString(persched[vid].second));
 		ARRAY_INDEX current_start_index = 0;
 		TIME_UNIT current_start_time = persched[vid].second[0];
 
