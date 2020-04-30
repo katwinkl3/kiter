@@ -77,17 +77,17 @@
 			}
 			VERBOSE_INFO( "dim=" << XSIZE << "X" << YSIZE << ",edges=" << _vedges.size() << ",medges=" << _medges.size() );
 
-			VERBOSE_INFO("Start auto-check of NoC model");
+			VERBOSE_DEBUG("Start auto-check of NoC model");
 
 			std::set<noc_id_t> ids;
 
 			for (auto e : this->getEdges()) {
-				VERBOSE_INFO("Edge " << e);
+				VERBOSE_DEBUG("Edge " << e);
 				VERBOSE_ASSERT(ids.count(e.id) == 0, "Two NoC elements must not share the same id!");
 				ids.insert(e.id);
 			}
 			for (auto n : this->getNodes()) {
-				VERBOSE_INFO("Node " << n);
+				VERBOSE_DEBUG("Node " << n);
 				VERBOSE_ASSERT(ids.count(n.id) == 0, "Two NoC elements must not share the same id!");
 				ids.insert(n.id);
 			}

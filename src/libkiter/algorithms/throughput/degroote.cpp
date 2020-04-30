@@ -6,14 +6,15 @@
  */
 
 
+
 #include <vector>
 #include <commons/verbose.h>
 #include <models/Dataflow.h>
 #include <models/EventGraph.h>
 #include <algorithms/normalization.h>
-#include <algorithms/degroote.h>
 #include <algorithms/repetition_vector.h>
 
+#include "degroote.h"
 
 models::EventGraph*     algorithms::generate_LCG   		                  (models::Dataflow* const  dataflow) {
 

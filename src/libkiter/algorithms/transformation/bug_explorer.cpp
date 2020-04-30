@@ -48,7 +48,7 @@ void algorithms::transformation::remove_task (models::Dataflow* const  dataflow,
 
 	if (params.find("taskname") != params.end()) {
 		VERBOSE_INFO("taskname = " << params["taskname"]);
-		auto names = commons::split(params["taskname"], ',');
+		auto names = commons::split<std::string>(params["taskname"], ',');
 		for (auto name : names) {
 			auto t = dataflow->getVertexByName(name);
 			VERBOSE_INFO("removeVertex " << dataflow->getVertexName(t));
@@ -58,7 +58,7 @@ void algorithms::transformation::remove_task (models::Dataflow* const  dataflow,
 
 	if (params.find("taskid") != params.end()) {
 		VERBOSE_INFO("taskid = " << params["taskid"]);
-		auto ids = commons::split(params["taskid"], ',');
+		auto ids = commons::split<std::string>(params["taskid"], ',');
 		for (auto id : ids) {
 			ARRAY_INDEX  task_id = commons::fromString<ARRAY_INDEX>(id);
 			auto t = dataflow->getVertexById(task_id);

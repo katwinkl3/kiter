@@ -6,11 +6,11 @@
  */
 
 #include "periodic.h"
-#include <algorithms/kperiodic.h>
 #include <map>
 #include <queue>
 #include <commons/commons.h>
 #include <algorithms/buffersizing/periodic.h>
+#include <algorithms/throughput/kperiodic.h>
 
 void algorithms::compute_csdf_dse_periodic   (models::Dataflow* const  dataflow, parameters_list_t params) {
 

@@ -8,8 +8,8 @@
 
 #include <algorithms/repetition_vector.h>
 #include <algorithms/schedulings.h>
+#include <algorithms/throughput/kperiodic.h>
 
-#include <algorithms/kperiodic.h>
 #include <models/EventGraph.h>
 #include <lp/glpsol.h>
 

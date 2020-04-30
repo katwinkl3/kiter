@@ -12,22 +12,6 @@
 #include <commons/KiterRegistry.h>
 #include <commons/verbose.h>
 #include <commons/SDF3Wrapper.h>
-#include <models/EventGraph.h>
-#include <models/Dataflow.h>
-#include <printers/stdout.h>
-#include <algorithms/dse/periodic.h>
-#include <algorithms/tools/LTEGenerator.h>
-#include <algorithms/buffersizing/periodic.h>
-#include <algorithms/buffersizing/backpressure.h>
-#include <algorithms/periodic_fixed.h>
-#include <algorithms/kperiodic.h>
-#include <algorithms/software_noc.h>
-#include <algorithms/nperiodic.h>
-#include <algorithms/degroote.h>
-#include <algorithms/symbolicExecution.h>
-#include <algorithms/mappings.h>
-#include <algorithms/schedulings.h>
-#include <algorithms/transformations.h>
 
 
 inline double tock() {
@@ -95,7 +79,7 @@ int main (int argc, char **argv)
 		}
 	}
 
-	VERBOSE_INFO("Parameter parsing is done: " << algos.size() << " algo identified.");
+	VERBOSE_DEBUG("Parameter parsing is done: " << algos.size() << " algo identified.");
 
 	/*
 	 * Here, we gathered two important values :
@@ -150,7 +134,7 @@ int main (int argc, char **argv)
 
 	// Step 2 = Check parameters
 	for ( parameters_list_t::iterator it = parameters.begin() ; it != parameters.end() ; it++ ) {
-		VERBOSE_INFO("Additionnal parameter found: '" << it->first << "' = '" << it->second << "'");
+		VERBOSE_DEBUG("Additionnal parameter found: '" << it->first << "' = '" << it->second << "'");
 	}
 
 

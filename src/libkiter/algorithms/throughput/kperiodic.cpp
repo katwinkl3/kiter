@@ -13,10 +13,10 @@
 #include <models/Dataflow.h>
 #include <models/EventGraph.h>
 #include <algorithms/normalization.h>
-#include <algorithms/kperiodic.h>
 #include <algorithms/repetition_vector.h>
 
-#define VERBOSE_KPERIODIC_DEBUG(msg) {VERBOSE_CUSTOM_DEBUG("keperiodic",msg);}
+#include "kperiodic.h"
+
 
 bool algorithms::sameset(models::Dataflow* const dataflow, std::set<Edge> *cc1 , std::set<Edge>* cc2) {
 
@@ -125,13 +125,14 @@ void algorithms::print_kperiodic_expansion_graph    (models::Dataflow* const  da
 models::Scheduling period2Scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) {
 
     TIME_UNIT omega = 1.0 / throughput ;
+    VERBOSE_INFO("models::Scheduling period2Scheduling   omega = " << std::scientific << std::setprecision( 9 )  << omega  );
     scheduling_t scheduling_result = period2scheduling    (dataflow, kvector ,  throughput) ;
 	return models::Scheduling(dataflow, omega, scheduling_result);
 }
 
 scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) {
 
-    VERBOSE_INFO("period2scheduling throughput = " << std::scientific << std::setprecision( 9 )  << throughput  );
+    VERBOSE_INFO("scheduling_t period2scheduling  throughput = " << std::scientific << std::setprecision( 9 )  << throughput  );
 
 	scheduling_t scheduling_result;
 
@@ -152,9 +153,9 @@ scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<
 
     	auto first_pi = 1 - ipq;
 
-        TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
+        TIME_UNIT period = (kvector[v] *  dataflow->getPhasesQuantity(v) * omega) / dataflow->getNi(v);
         scheduling_result[dataflow->getVertexId(v)].first = period;
-        VERBOSE_KPERIODIC_DEBUG("Task " << dataflow->getVertexName(v) << " Period = " << period  );
+        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << "(" <<kvector[v] << "*" << dataflow->getPhasesQuantity(v) << "*" << omega<< ") / " << dataflow->getNi(v) << " Period = " << period  );
 
     	for (EXEC_COUNT ki = 1  ; ki <= maxki ; ki++) {
     		for (EXEC_COUNT pi = first_pi ; pi <=pq ; pi++)  {
@@ -752,7 +753,6 @@ void algorithms::generateKPeriodicConstraint(models::Dataflow * const dataflow ,
 
 
                         if (doBufferLessEdges) {
-                            //g->addEventConstraint(target_event ,source_event,w, d,id);
                             g->addEventConstraint(source_event ,target_event,-w,d,id);
                         } else {
                             g->addEventConstraint(source_event ,target_event,-w,d,id);

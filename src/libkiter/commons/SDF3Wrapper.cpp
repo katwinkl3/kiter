@@ -65,7 +65,7 @@ template <typename T1,typename T2>
 std::pair<T1,T2> splitAndDefault(const std::string &s,char del,T2 d) {
 	std::vector<std::string> sub;
 	std::pair<T1,T2>  res;
-	sub = split (s, del);
+	sub = commons::split <std::string> (s, del);
 
 	switch (sub.size()) {
 	case 0  :   VERBOSE_FAILURE(); break;
@@ -102,11 +102,11 @@ TIME_UNIT runSDF3Throughput(models::Dataflow* const  dataflow, std::string SDF3_
     }
     VERBOSE_INFO(result);
 
-    std::vector<std::string> lines = commons::split(result,'\n');
+    std::vector<std::string> lines = commons::split<std::string>(result,'\n');
     if (not (lines.size() == 2)) return 0;
 
     std::string throughput_line = lines[0]; // thr(autogen) = 0.0434783
-    std::vector<std::string> thr_fields = commons::split(throughput_line,'=');
+    std::vector<std::string> thr_fields = commons::split<std::string>(throughput_line,'=');
     if (not (thr_fields.size() == 2)) return 0;
     TIME_UNIT throughput = commons::fromString<TIME_UNIT>(thr_fields[1]);
 
@@ -117,9 +117,9 @@ TIME_UNIT runSDF3Throughput(models::Dataflow* const  dataflow, std::string SDF3_
 
 void                        readSDF3OutputSpec      (models::Dataflow *to, const Edge c, const std::string rates) {
 
-	std::vector<std::string>  init_periodic = split (rates, INIT_PERIODIC_SEPARATOR);
-	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? split (init_periodic[0], ',') : std::vector<std::string>() ;
-	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? split (init_periodic[0], ',') : split (init_periodic[1], ',') ;
+	std::vector<std::string>  init_periodic = split<std::string> (rates, INIT_PERIODIC_SEPARATOR);
+	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? commons::split<std::string> (init_periodic[0], ',') : std::vector<std::string>() ;
+	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? commons::split<std::string> (init_periodic[0], ',') : commons::split<std::string> (init_periodic[1], ',') ;
 	std::vector<TOKEN_UNIT>   init_cons;
 	std::vector<TOKEN_UNIT>   periodic_cons;
 
@@ -140,9 +140,9 @@ void                        readSDF3OutputSpec      (models::Dataflow *to, const
 
 void                        readSDF3InputSpec      (models::Dataflow *to, const Edge c, const std::string rates) {
 
-	std::vector<std::string>  init_periodic = split (rates, INIT_PERIODIC_SEPARATOR);
-	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? split (init_periodic[0], ',') : std::vector<std::string>() ;
-	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? split (init_periodic[0], ',') : split (init_periodic[1], ',') ;
+	std::vector<std::string>  init_periodic = split<std::string> (rates, INIT_PERIODIC_SEPARATOR);
+	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? split<std::string> (init_periodic[0], ',') : std::vector<std::string>() ;
+	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? split<std::string> (init_periodic[0], ',') : split<std::string> (init_periodic[1], ',') ;
 	std::vector<TOKEN_UNIT>   init_prod;
 	std::vector<TOKEN_UNIT>   periodic_prod;
 
@@ -273,7 +273,7 @@ void readSDF3VertexTimings (models::Dataflow *to,xmlNodePtr taskNode) {
 		}
 	}
 
-	std::vector<std::string>  init_periodic = split (timings, INIT_PERIODIC_SEPARATOR);
+	std::vector<std::string>  init_periodic = split<std::string> (timings, INIT_PERIODIC_SEPARATOR);
 	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? splitSDF3List (init_periodic[0]) : std::vector<std::string>() ;
 	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? splitSDF3List (init_periodic[0]) : splitSDF3List (init_periodic[1]) ;
 
@@ -341,7 +341,7 @@ void readSDF3VertexReentrancy (models::Dataflow *to,xmlNodePtr taskNode) {
 }
 
 bool onlyOneRate(std::string rates) {
-	std::vector<std::string>  init_periodic = split (rates, INIT_PERIODIC_SEPARATOR);
+	std::vector<std::string>  init_periodic = split <std::string> (rates, INIT_PERIODIC_SEPARATOR);
 	if (init_periodic.size() > 1) {
 		for (auto x : init_periodic) {
 			if (not onlyOneRate(x)) {return false;}

@@ -23,7 +23,7 @@
 #include <algorithms/normalization.h>
 #include <algorithms/software_noc.h>
 #include <algorithms/repetition_vector.h>
-#include <algorithms/kperiodic.h>
+#include <algorithms/throughput/kperiodic.h>
 #include <cstdlib>
 #include <stack>
 #include <climits>

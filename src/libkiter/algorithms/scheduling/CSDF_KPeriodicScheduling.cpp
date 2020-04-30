@@ -9,7 +9,7 @@
 #include <algorithms/repetition_vector.h>
 #include <algorithms/schedulings.h>
 
-#include <algorithms/kperiodic.h>
+#include <algorithms/throughput/kperiodic.h>
 #include <models/EventGraph.h>
 #include <commons/SDF3Wrapper.h>
 

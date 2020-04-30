@@ -80,7 +80,7 @@ const char *fromString<const char*>(const std::string& str);
 
 
 
-template <class T>
+template <typename T>
 bool findInVector(const std::vector<T>& vect,  T v) {
     for (T ov : vect) {
         if (ov == v) return true;
@@ -88,8 +88,7 @@ bool findInVector(const std::vector<T>& vect,  T v) {
     return false;
 }
 
-
-template<class T>
+template<typename T>
     std::string toString(const T& t)
 {
      std::ostringstream stream;
@@ -97,21 +96,31 @@ template<class T>
      return stream.str();
 }
 
-template<class T>
-    std::string toString(const std::pair<T,T>& v)
+template<typename T, typename Q>
+    std::string toString(const std::pair<T,Q>& v)
 {
-	return "<" + commons::toString(std::get<0>(v)) +  "," +  commons::toString(std::get<1>(v)) +  "," + ">";
+	return "<" + commons::toString<T>(std::get<0>(v)) +  "," +  commons::toString<Q>(std::get<1>(v))  + ">";
 }
 
-template<class T>
+template<typename T>
     std::string toString(const std::vector<T>& t)
 {
+
 	 std::stringstream s;
+	 s << "{";
+	 bool first = true;
 	 for (auto myt : t) {
-		 s << commons::toString(myt) + " ";
+		 if (!first) s << ",";
+		 s << commons::toString(myt);
+		 first = false;
 	 }
+	 s << "}";
 	 return s.str();
 }
+
+
+template<>
+    std::string toString(const std::set<long unsigned int, std::less<long unsigned int>, std::allocator<long unsigned int> >& t) ;
 
 template<>
 std::string toString< std::vector < std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> > >(const std::vector < std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> >& v);
@@ -124,6 +133,7 @@ template<>
 std::string toString< std::pair<unsigned long , unsigned long> >(const std::pair<unsigned long , unsigned long>& v);
 template<>
 std::string toString< std::pair<TIME_UNIT , ARRAY_INDEX> >(const std::pair<TIME_UNIT , ARRAY_INDEX>& v);
+
 
 template<>
 std::string toString< std::vector<int> >(const std::vector<int>& v);
@@ -151,10 +161,10 @@ Str join(It begin, const It end, const Str &sep)
   ostringstream_type result;
 
   if(begin!=end)
-    result << *begin++;
+    result << commons::toString(*begin++);
   while(begin!=end) {
     result << sep;
-    result << *begin++;
+    result << commons::toString(*begin++);
   }
   return result.str();
 }
@@ -234,8 +244,17 @@ inline std::string ConvertRGBtoHex(int r, int g, int b) {
  */
 TIME_UNIT roundIt(TIME_UNIT val,TIME_UNIT p);
 //
-std::vector<std::string> &split(const std::string &s, const char delim, std::vector<std::string> &elems);
-std::vector<std::string> split(const std::string &s, const char delim) ;
+
+template<typename T>
+ std::vector<T> split(const std::string &s, const char &delim) {
+	 std::vector<T> elems;
+	 std::stringstream ss(s);
+	 std::string item;
+	 while(std::getline(ss, item, delim)) {
+		 elems.push_back(commons::fromString<T>(item));
+	 }
+	 return elems;
+ }
 std::vector<std::string> splitSDF3List(const std::string &s);
 
 int fibo (int index);

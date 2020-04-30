@@ -24,15 +24,19 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
 
   std::ostringstream returnStream;
   scheduling_t periodic_scheduling = sched.getTaskSchedule();
-  static double label_node_width  =   1;
-  static double label_node_height = yscale *  0.25;
+  static double label_node_width  =   0.5;
+  static double label_node_height = yscale *  0.10;
 
-  static double node_height = yscale * 0.25;
+  static double node_height = yscale * 0.05;
   static double pixel_start =  (-(72/2) - 1);
   static double line_width =  0.1;
+  static double fontsize = 4;
 
   returnStream << "// Auto-generate by Kiter" << std::endl;
   returnStream << "//   use this dot file with -Knop only!\n" << std::endl;
+  returnStream << "//   node_height = " << node_height << " \n" << std::endl;
+  returnStream << "//   fontsize = " << fontsize << " \n" << std::endl;
+  returnStream << "//   fontsize = " << fontsize << " \n" << std::endl;
   returnStream << "digraph {\n" << std::endl;
   returnStream << "graph [sep = \"0\", nodesep = \"0\"];" << std::endl;
 
@@ -63,9 +67,9 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
 	  auto period = periodic_scheduling[tid].first;
 	  auto starts = periodic_scheduling[tid].second;
 
-	  double current_task_y_pos = yscale * -20 * idx ;
+	  double current_task_y_pos = yscale * -(fontsize + 1) * idx ;
 
-      returnStream << "\""<< dataflow->getVertexName(t) << "\"" << " [label=\"" <<  dataflow->getVertexName(t) << "\\r\", margin=\"0,0\", width=\"" << label_node_width << "\", height=\"" << label_node_height << "\", fixedsize=true, pos=\"" << pixel_start << ","<< current_task_y_pos << "\",shape=plaintext]" << std::endl;
+      returnStream << "\""<< dataflow->getVertexName(t) << "\"" << " [label=\"" <<  dataflow->getVertexName(t) << "\\r\",fontsize=\"" << fontsize << "\", margin=\"0,0\", width=\"" << label_node_width << "\", height=\"" << label_node_height << "\", fixedsize=true, pos=\"" << pixel_start << ","<< current_task_y_pos << "\",shape=plaintext]" << std::endl;
 
       EXEC_COUNT execution_index = 0;
 
@@ -89,6 +93,7 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
     	  for (EXEC_COUNT sidx = first_start_index; sidx < (EXEC_COUNT) starts.size() ; sidx++) {
     		  auto current_phase = 1 +  sidx % dataflow->getPhasesQuantity(t);
     		  auto duration = dataflow->getVertexDuration(t,current_phase);
+
     		  bool fill = iter == 0 ? fill_first : fill_per;
         	  TIME_UNIT start = starts[sidx];
     		  returnStream << add_block ( dataflow->getVertexName(t) + std::to_string(execution_index++),

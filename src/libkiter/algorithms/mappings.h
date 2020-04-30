@@ -14,7 +14,12 @@
 namespace models {
 	class Dataflow;
 }
+
+typedef std::map <node_id_t, std::vector < std::tuple<edge_id_t,edge_id_t,ARRAY_INDEX> > > router_xbar_usage_t;
+
 namespace algorithms {
+
+
 
 	namespace mapping {
 		void randomMapping (models::Dataflow* const  dataflow, parameters_list_t params);
@@ -23,6 +28,8 @@ namespace algorithms {
 	}
 
 	void ModelNoCConflictFreeCommunication(models::Dataflow* const  dataflow, parameters_list_t   param_list = parameters_list_t());
+
+	void FindConflicts(models::Dataflow* const  dataflow, parameters_list_t   param_list = parameters_list_t());
 
 }
 // Helpers to map vertex to cores, need a way to also consider routers
@@ -37,6 +44,9 @@ ADD_TRANSFORMATION(BufferlessNoCMapAndRoute,
 );
 ADD_TRANSFORMATION(ModelNoCConflictFreeCommunication,
 		transformation_t({ "ModelNoCConflictFreeCommunication" , "Given a graph with Mapping, can add fictive task to model network", algorithms::ModelNoCConflictFreeCommunication} )
+);
+ADD_TRANSFORMATION(FindConflicts,
+		transformation_t({ "FindConflicts" , "Given a graph with Mapping, this functio list the resources conflicts.", algorithms::FindConflicts} )
 );
 
 

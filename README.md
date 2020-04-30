@@ -45,7 +45,7 @@ Maximum period     is 210266745.000000
 KPeriodicThroughput duration=0.000546
 ```
 
-The throughput is computed using the same method as SDF3-ANALYSIS Version "27 September 2010".
+The throughput value should be interpreted similarly to SDF3-ANALYSIS output Version "27 September 2010".
 
 ## Prepare SDF3 with Docker
 

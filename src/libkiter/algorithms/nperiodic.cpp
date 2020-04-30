@@ -12,7 +12,7 @@
 #include <models/EventGraph.h>
 #include <algorithms/normalization.h>
 #include <algorithms/nperiodic.h>
-#include <algorithms/kperiodic.h>
+#include <algorithms/throughput/kperiodic.h>
 #include <algorithms/repetition_vector.h>
 #include <lp/glpsol.h>
 

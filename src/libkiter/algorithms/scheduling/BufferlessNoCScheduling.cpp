@@ -17,8 +17,10 @@
 #include <algorithms/normalization.h>
 #include <algorithms/software_noc.h>
 #include <algorithms/repetition_vector.h>
-#include <algorithms/kperiodic.h>
+#include <algorithms/throughput/kperiodic.h>
 #include <algorithms/mappings.h>
+#include <algorithms/transformation/merging.h>
+#include <algorithms/schedulings.h>
 #include <cstdlib>
 #include <stack>
 #include <climits>
@@ -28,8 +30,8 @@
 #include <tuple>
 #include <commons/SDF3Wrapper.h>
 #include <unordered_map>
+#include <commons/GroupList.h>
 
-static TIME_UNIT NULL_DURATION = 0;
 
 typedef std::pair<ARRAY_INDEX, ARRAY_INDEX>  mypair;
 typedef std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> mytuple;
@@ -41,8 +43,6 @@ static void print_graph (models::Dataflow * to, std::string suffix = "none") {
 	VERBOSE_INFO("=========== Write file " << counter << "\n");
 
 	std::string sfilename = "bufferless_noc_schedule_"+ commons::toString(counter) + "_" + suffix + "";
-
-
 
 	{
 
@@ -57,6 +57,17 @@ static void print_graph (models::Dataflow * to, std::string suffix = "none") {
 		if(out_err) {
 			VERBOSE_INFO ("System call returns error\n");
 		}
+
+	}
+
+	{
+
+		std::string filename = sfilename + "_gaph";
+		std::ofstream myfile;
+		myfile.open (filename  + ".dot");
+		myfile << printers::GenerateGraphDOT(to);
+		myfile.close();
+
 
 	}
 
@@ -84,106 +95,153 @@ static LARGE_INT gcdExtended(LARGE_INT x, LARGE_INT y, LARGE_INT *a, LARGE_INT *
 }
 
 
+static router_xbar_usage_t build_router_xbar_usage (const models::Dataflow* const  dataflow) {
+
+	router_xbar_usage_t router_xbar_usage;
+
+	for (auto v : dataflow->vertices()) {
+				ARRAY_INDEX tid = dataflow->getVertexId(v);
+				auto current_mapping =  (dataflow->getMapping(v));
+				VERBOSE_ASSERT(current_mapping >= 0, "UNSUPPORTED CASE, EVERY TASK NEED TO BE MAPPED");
+				VERBOSE_ASSERT(dataflow->getNoC().hasEdge(current_mapping) xor dataflow->getNoC().hasNode(current_mapping), "UNSUPPORTED CASE, NOC NODE AND NOC EDGE WITH SIMILAR ID : " << current_mapping);
+
+				VERBOSE_DEBUG("Process task " << tid << " - " << dataflow->getVertexName(v) << " mapped to " << current_mapping);
+
+				if (dataflow->getNoC().hasEdge(current_mapping)) {
+					VERBOSE_DEBUG("  - Is a NoC Edge: add to links_usage");
+				} else if (dataflow->getNoC().hasNode(current_mapping)) {
+					VERBOSE_DEBUG("  - Is a NoC Node: add to router_usage and router_xbar_usage");
+					if (dataflow->getNoC().getNode(current_mapping).type == NetworkNodeType::Router) {
+
+						VERBOSE_ASSERT(dataflow->getVertexInDegree(v) == 1, "The NoC has not been modelled has expected, every NoCRouter-task should have one input NoCEdge Task. The task " << dataflow->getVertexName(v) << " has " << dataflow->getVertexInDegree(v));
+						VERBOSE_ASSERT(dataflow->getVertexOutDegree(v) == 1, "The NoC has not been modelled has expected, every NoCRouter-task should have one output NoCEdge Task. The task " << dataflow->getVertexName(v) << " has " << dataflow->getVertexOutDegree(v));
+
+						Vertex inputEdgeTask = dataflow->getEdgeSource(*(dataflow->getInputEdges(v).first));
+						Vertex outputEdgeTask = dataflow->getEdgeTarget(*(dataflow->getOutputEdges(v).first));
+
+						edge_id_t input_edge = dataflow->getMapping(inputEdgeTask);
+						edge_id_t output_edge = dataflow->getMapping(outputEdgeTask);
+
+						VERBOSE_ASSERT(dataflow->getNoC().hasEdge(dataflow->getMapping(inputEdgeTask)), "The NoC has bot been modelled has expected, every  NoCEdge Task should be properly mapped");
+						VERBOSE_ASSERT(dataflow->getNoC().hasEdge(dataflow->getMapping(outputEdgeTask)), "The NoC has bot been modelled has expected, every  NoCEdge Task should be properly mapped");
+
+						router_xbar_usage[current_mapping].push_back( std::tuple<edge_id_t,edge_id_t,ARRAY_INDEX> (input_edge, output_edge, tid) );
+
+					}else {
+						VERBOSE_DEBUG("!! SKIP because node is not a ROUTER ");
+					}
+				} else {
+					VERBOSE_DEBUG("!! SKIP because not found in the NoC ");
+				}
+			}
+
+			return (router_xbar_usage);
+}
+
+
+static std::vector<std::vector<ARRAY_INDEX>> get_overlaps (models::Dataflow* const  dataflow) {
+
+	router_xbar_usage_t router_xbar_usage = build_router_xbar_usage (dataflow);
+
+	std::vector<std::vector<ARRAY_INDEX>> res ;
+
+	for (auto item : router_xbar_usage) {
+
+			const node_id_t router_id       =  item.first;
+
+			GroupList<edge_id_t, ARRAY_INDEX> g;
+
+			for (auto subitem : item.second) {
+				const edge_id_t in_noc_edge_id  =  std::get<0>(subitem);
+				const edge_id_t out_noc_edge_id =  std::get<1>(subitem);
+				const ARRAY_INDEX vertex_id     =  std::get<2>(subitem);
+				VERBOSE_ASSERT(dataflow->getNoC().getEdge(in_noc_edge_id).dst  == router_id, "The router_xbar_usage is incorrect.");
+				VERBOSE_ASSERT(dataflow->getNoC().getEdge(out_noc_edge_id).src == router_id, "The router_xbar_usage is incorrect.");
+				g.add(in_noc_edge_id, out_noc_edge_id, vertex_id);
+			}
+
+			for (auto bag : g.getall()) {
+				res.push_back(std::vector<ARRAY_INDEX>());
+
+				for (auto e : bag) {
+					res.back().push_back(e);
+				}
+			}
+
+		}
+
+	return res;
+
+}
+
+
 //print_graph(to, original_df);
-void algorithms::BufferlessNoCScheduling(models::Dataflow* const  _dataflow, parameters_list_t   ) {
+void algorithms::BufferlessNoCScheduling(models::Dataflow* const  _dataflow, parameters_list_t params  ) {
 
 
 	models::Dataflow* to = new models::Dataflow(*_dataflow);
 
-	print_graph(to, "start");
+	print_graph(to, "begin");
 
-	/// Store a list of origina l actors id.
-	std::vector <ARRAY_INDEX> original_vertex_ids;
-	for (auto v : to->vertices()) {
-		original_vertex_ids.push_back(to->getVertexId(v));
-	}
-
-
-	VERBOSE_INFO ("Task mapping = ");
-	for (auto v : to->vertices()) {
-		VERBOSE_INFO ("  - " << to->getVertexId(v) << " mapped to "  << to->getMapping(v));
-	}
-
-
+	VERBOSE_INFO("Step 1 - ModelNoCConflictFreeCommunication");
 	algorithms::ModelNoCConflictFreeCommunication(to) ;
 
+	print_graph(to, "ModelNoCConflictFreeCommunication");
 
-	print_graph(to, "modeledNoC");
+	VERBOSE_INFO("Step 2 - Identify task that we care about");
+	std::vector<std::vector<ARRAY_INDEX>> bags = get_overlaps(to);
 
-	/// Store a list of origina l actors id.
-	std::map <edge_id_t, std::vector <ARRAY_INDEX> > links_usage;
-	std::map <node_id_t, std::vector <ARRAY_INDEX> > router_usage;
-	std::map <std::pair<edge_id_t,edge_id_t>, std::vector <ARRAY_INDEX> > router_xbar_usage;
+	for (auto bag : bags) {
+		if (bag.size() > 1) {
+			VERBOSE_INFO("Possible conflicts with bag " << commons::toString(bag));
+			std::string new_name = commons::join<std::string,std::vector<ARRAY_INDEX>::const_iterator>(bag.begin(), bag.end(), "_");
 
-	for (auto v : to->vertices()) {
-		ARRAY_INDEX tid = to->getVertexId(v);
-		auto current_mapping =  (to->getMapping(v));
-		VERBOSE_ASSERT(current_mapping >= 0, "UNSUPPORTED CASE, EVERY TASK NEED TO BE MAPPED");
-		VERBOSE_ASSERT(to->getNoC().hasEdge(current_mapping) xor to->getNoC().hasNode(current_mapping), "UNSUPPORTED CASE, NOC NODE AND NOC EDGE WITH SIMILAR ID : " << current_mapping);
+			edge_id_t old_mapping = to->getMapping( to->getVertexById( bag[0] ) );
 
-		VERBOSE_INFO("Process task " << tid << " - " << to->getVertexName(v) << " mapped to " << current_mapping);
-
-		if (to->getNoC().hasEdge(current_mapping)) {
-			VERBOSE_INFO("  - Is a NoC Edge: add to links_usage");
-			links_usage[current_mapping].push_back(tid);
-		} else if (to->getNoC().hasNode(current_mapping)) {
-			VERBOSE_INFO("  - Is a NoC Node: add to router_usage and router_xbar_usage");
-			if (to->getNoC().getNode(current_mapping).type == NetworkNodeType::Router) {
-				router_usage[current_mapping].push_back(tid);
-
-				VERBOSE_ASSERT(to->getVertexInDegree(v) == 1, "The NoC has bot been modelled has expected, every NoCRouter-task should have one input NoCEdge Task. The task " << to->getVertexName(v) << " has " << to->getVertexInDegree(v));
-				VERBOSE_ASSERT(to->getVertexOutDegree(v) == 1, "The NoC has bot been modelled has expected, every NoCRouter-task should have one output NoCEdge Task. The task " << to->getVertexName(v) << " has " << to->getVertexOutDegree(v));
-
-				Vertex inputEdgeTask = to->getEdgeSource(*(to->getInputEdges(v).first));
-				Vertex outputEdgeTask = to->getEdgeTarget(*(to->getOutputEdges(v).first));
-
-				edge_id_t input_edge = to->getMapping(inputEdgeTask);
-				edge_id_t output_edge = to->getMapping(outputEdgeTask);
-
-				VERBOSE_ASSERT(to->getNoC().hasEdge(to->getMapping(inputEdgeTask)), "The NoC has bot been modelled has expected, every  NoCEdge Task should be properly mapped");
-				VERBOSE_ASSERT(to->getNoC().hasEdge(to->getMapping(outputEdgeTask)), "The NoC has bot been modelled has expected, every  NoCEdge Task should be properly mapped");
-
-				router_xbar_usage[std::pair<edge_id_t,edge_id_t> (input_edge, output_edge) ].push_back(tid);
-
-			}else {
-				VERBOSE_INFO("!! SKIP because node is not a ROUTER ");
+			for (auto e : bag) {
+				VERBOSE_ASSERT(old_mapping == to->getMapping( to->getVertexById( e ) ) , "Should not try to merge task from different mapping.");
 			}
-		} else {
-			VERBOSE_INFO("!! SKIP because not found in the NoC ");
+			to->reset_computation();
+			VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
+			models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, scheduling::generate1PeriodicVector(to));
+			algorithms::transformation::mergeCSDFFromSchedule(to,new_name,bag,&scheduling_res);
+
+
+			Vertex new_task = to->getVertexByName(new_name);
+			to->setMapping(new_task,old_mapping);
+
+			print_graph(to, "mergeCSDFFromKperiodicSchedule_" + new_name);
 		}
 	}
 
-	VERBOSE_INFO ("Router_usage = ");
-	for (auto item : router_usage) {
 
-		VERBOSE_INFO ("  - " << item.first << ":"  << commons::toString(item.second));
-	}
-	VERBOSE_INFO ("Router_Xbar usage = ");
-	for (auto item : router_xbar_usage) {
-		edge_id_t src =  item.first.first ;
-		edge_id_t dst =  item.first.second ;
-		std::vector<ARRAY_INDEX> vertex_ids = item.second ;
-		VERBOSE_ASSERT(to->getNoC().getEdge(src).dst == to->getNoC().getEdge(dst).src, "NoC Graph doesnt match NoC");
-		VERBOSE_INFO ("  - " << src << "::" << dst << " : "  << commons::toString(item.second) << " = " );
-
-		for (auto id : vertex_ids) {
-			Vertex router_node = to->getVertexById(id);
-			VERBOSE_INFO ("        x " << to->getVertexName(router_node) << "(" << id << ")");
-		}
-
-	}
+	print_graph(to, "end");
 
 
-	VERBOSE_INFO ("links_usage = ");
-	for (auto item : links_usage) {
 
-		VERBOSE_INFO ("  - " << item.first << ":"  << commons::toString(item.second));
+	VERBOSE_INFO("Step 3 - Check scheduling");
+    VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
+	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, scheduling::generate1PeriodicVector(to));
+
+
+	for (std::pair<ARRAY_INDEX,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> item : scheduling_res.getTaskSchedule()) {
+		ARRAY_INDEX tid = item.first;
+		Vertex v = to->getVertexById(item.first);
+		std::string  tname = to->getVertexName(v);
+		TIME_UNIT period = item.second.first;
+		std::vector<TIME_UNIT> &starts = item.second.second;
+
+		VERBOSE_INFO("Task " << std::setw(4) << tid << " | "
+				             << std::setw(15) << tname << " | "
+							 << std::setprecision(2) << std::setw(7)  << commons::toString(to->getVertexPhaseDuration(v)) << " | "
+							 << std::setprecision(2) << std::setw(4)  << period<< " | "
+							 << std::setw(7) << commons::toString(starts) );
 	}
 
 
-
-
-
+	if (params.count("PRINT")) {
+		std::cout << printers::PeriodicScheduling2DOT(to, scheduling_res ,   60, true ,  1 , 1);
+	}
 }
 
 

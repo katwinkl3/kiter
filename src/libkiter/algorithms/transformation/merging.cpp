@@ -11,7 +11,8 @@
 #include <algorithms/repetition_vector.h>
 #include <algorithms/transformation/merging.h>
 #include <algorithms/schedulings.h>
-
+#include <string>
+#include <algorithm>
 
 //Function to remove the edges and obtain phase vector values
 //v1 -> cfg -> v2
@@ -161,6 +162,12 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 	}
 
 
+	for(ARRAY_INDEX vid :mergeNodes)
+	{
+		Vertex cfgVtx = to->getVertexById(vid);
+		to->removeVertex(cfgVtx);
+	}
+
 	return true;
 
 
@@ -187,17 +194,9 @@ void algorithms::transformation::merge_tasks    (models::Dataflow* const dataflo
 
    // Prepare parameters
 	  std::string new_name = parameters["name"];
-	  auto task_names = commons::split(parameters["tasks"], ',');
-
-	  std::vector< ARRAY_INDEX > task_to_merge;
-
-	  for (auto name : task_names) {
-		  const Vertex v = dataflow->getVertexByName(name);
-		  const ARRAY_INDEX vid = dataflow->getVertexId(v);
-		  task_to_merge.push_back(vid);
-	  }
+	  std::vector<ARRAY_INDEX> task_ids = commons::split<ARRAY_INDEX>(parameters["tasks"], ',');
 
 
-	  VERBOSE_ASSERT(mergeCSDFFromKperiodicSchedule(dataflow,new_name, task_to_merge), "mergeCSDFFromKperiodicSchedule return error.");
+	  VERBOSE_ASSERT(mergeCSDFFromKperiodicSchedule(dataflow,new_name, task_ids), "mergeCSDFFromKperiodicSchedule return error.");
 
 }

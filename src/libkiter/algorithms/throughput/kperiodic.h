@@ -11,6 +11,10 @@
 #include <algorithms/schedulings.h>
 #include <commons/KiterRegistry.h>
 
+
+#define VERBOSE_KPERIODIC_DEBUG(msg) {VERBOSE_CUSTOM_DEBUG("keperiodic",msg);}
+
+
 namespace models {
 	class Dataflow;
 	class EventGraph;

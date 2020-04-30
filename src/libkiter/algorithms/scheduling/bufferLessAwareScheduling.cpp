@@ -12,7 +12,7 @@
 #include <lp/glpsol.h>
 
 
-#include <algorithms/kperiodic.h>
+#include <algorithms/throughput/kperiodic.h>
 #include <models/EventGraph.h>
 
 static inline const std::string OMEGA_COL_STR ()  {

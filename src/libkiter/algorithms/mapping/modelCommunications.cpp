@@ -9,6 +9,7 @@
 #include <models/Dataflow.h>
 #include <models/Scheduling.h>
 #include <commons/commons.h>
+#include <commons/GroupList.h>
 #include <unordered_map>
 #include <algorithms/mappings.h>
 #include <algorithms/schedulings.h>
@@ -157,26 +158,23 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 }
 
 
-static std::map <std::pair<edge_id_t,edge_id_t>, std::vector <ARRAY_INDEX> > build_router_xbar_usage (const models::Dataflow* const  dataflow) {
-	std::map <std::pair<edge_id_t,edge_id_t>, std::vector <ARRAY_INDEX> > router_xbar_usage;
+static router_xbar_usage_t build_router_xbar_usage (const models::Dataflow* const  dataflow) {
 
-	std::map <edge_id_t, std::vector <ARRAY_INDEX> > links_usage;
-	std::map <node_id_t, std::vector <ARRAY_INDEX> > router_usage;
+	router_xbar_usage_t router_xbar_usage;
+
 	for (auto v : dataflow->vertices()) {
 				ARRAY_INDEX tid = dataflow->getVertexId(v);
 				auto current_mapping =  (dataflow->getMapping(v));
 				VERBOSE_ASSERT(current_mapping >= 0, "UNSUPPORTED CASE, EVERY TASK NEED TO BE MAPPED");
 				VERBOSE_ASSERT(dataflow->getNoC().hasEdge(current_mapping) xor dataflow->getNoC().hasNode(current_mapping), "UNSUPPORTED CASE, NOC NODE AND NOC EDGE WITH SIMILAR ID : " << current_mapping);
 
-				VERBOSE_INFO("Process task " << tid << " - " << dataflow->getVertexName(v) << " mapped to " << current_mapping);
+				VERBOSE_DEBUG("Process task " << tid << " - " << dataflow->getVertexName(v) << " mapped to " << current_mapping);
 
 				if (dataflow->getNoC().hasEdge(current_mapping)) {
-					VERBOSE_INFO("  - Is a NoC Edge: add to links_usage");
-					links_usage[current_mapping].push_back(tid);
+					VERBOSE_DEBUG("  - Is a NoC Edge: add to links_usage");
 				} else if (dataflow->getNoC().hasNode(current_mapping)) {
-					VERBOSE_INFO("  - Is a NoC Node: add to router_usage and router_xbar_usage");
+					VERBOSE_DEBUG("  - Is a NoC Node: add to router_usage and router_xbar_usage");
 					if (dataflow->getNoC().getNode(current_mapping).type == NetworkNodeType::Router) {
-						router_usage[current_mapping].push_back(tid);
 
 						VERBOSE_ASSERT(dataflow->getVertexInDegree(v) == 1, "The NoC has not been modelled has expected, every NoCRouter-task should have one input NoCEdge Task. The task " << dataflow->getVertexName(v) << " has " << dataflow->getVertexInDegree(v));
 						VERBOSE_ASSERT(dataflow->getVertexOutDegree(v) == 1, "The NoC has not been modelled has expected, every NoCRouter-task should have one output NoCEdge Task. The task " << dataflow->getVertexName(v) << " has " << dataflow->getVertexOutDegree(v));
@@ -190,28 +188,70 @@ static std::map <std::pair<edge_id_t,edge_id_t>, std::vector <ARRAY_INDEX> > bui
 						VERBOSE_ASSERT(dataflow->getNoC().hasEdge(dataflow->getMapping(inputEdgeTask)), "The NoC has bot been modelled has expected, every  NoCEdge Task should be properly mapped");
 						VERBOSE_ASSERT(dataflow->getNoC().hasEdge(dataflow->getMapping(outputEdgeTask)), "The NoC has bot been modelled has expected, every  NoCEdge Task should be properly mapped");
 
-						router_xbar_usage[std::pair<edge_id_t,edge_id_t> (input_edge, output_edge) ].push_back(tid);
+						router_xbar_usage[current_mapping].push_back( std::tuple<edge_id_t,edge_id_t,ARRAY_INDEX> (input_edge, output_edge, tid) );
 
 					}else {
-						VERBOSE_INFO("!! SKIP because node is not a ROUTER ");
+						VERBOSE_DEBUG("!! SKIP because node is not a ROUTER ");
 					}
 				} else {
-					VERBOSE_INFO("!! SKIP because not found in the NoC ");
+					VERBOSE_DEBUG("!! SKIP because not found in the NoC ");
 				}
 			}
 
 			return (router_xbar_usage);
 }
 
-void FindConflicts(models::Dataflow* const  dataflow, parameters_list_t   param_list ) {
+static std::vector<std::set<ARRAY_INDEX>> get_overlaps (models::Dataflow* const  dataflow) {
+
+	router_xbar_usage_t router_xbar_usage = build_router_xbar_usage (dataflow);
+
+	std::vector<std::set<ARRAY_INDEX>> res ;
+
+	for (auto item : router_xbar_usage) {
+
+			const node_id_t router_id       =  item.first;
+
+			GroupList<edge_id_t, ARRAY_INDEX> g;
+
+			for (auto subitem : item.second) {
+				const edge_id_t in_noc_edge_id  =  std::get<0>(subitem);
+				const edge_id_t out_noc_edge_id =  std::get<1>(subitem);
+				const ARRAY_INDEX vertex_id     =  std::get<2>(subitem);
+				VERBOSE_ASSERT(dataflow->getNoC().getEdge(in_noc_edge_id).dst  == router_id, "The router_xbar_usage is incorrect.");
+				VERBOSE_ASSERT(dataflow->getNoC().getEdge(out_noc_edge_id).src == router_id, "The router_xbar_usage is incorrect.");
+				g.add(in_noc_edge_id, out_noc_edge_id, vertex_id);
+			}
+
+			for (auto bag : g.getall()) {
+				res.push_back(bag);
+			}
+
+		}
+
+	return res;
+
+}
+
+void algorithms::FindConflicts(models::Dataflow* const  dataflow, parameters_list_t    ) {
 
 	VERBOSE_INFO("Step 1 - Run the schedule to see overlapping");
-	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling(dataflow);
+		models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling(dataflow);
 
-	VERBOSE_INFO("Step 2 - Identify task that we care about");
-	std::map <std::pair<edge_id_t,edge_id_t>, std::vector <ARRAY_INDEX> > router_xbar_usage = build_router_xbar_usage (dataflow);
 
-	VERBOSE_INFO("Step 3 - For every router we identify clusters of conflicts and report them");
+		VERBOSE_INFO("Step 2 - Identify task that we care about");
+		std::vector<std::set<ARRAY_INDEX>> bags = get_overlaps(dataflow);
+		for (auto bag : bags) {
+			if (bag.size() > 1) {
+				VERBOSE_INFO("Possible conflicts with bag " << commons::toString(bag));
+				for (auto tid : bag) {
+					VERBOSE_INFO("  Task " << tid << " scheduled " << commons::toString(scheduling_res.getTaskSchedule().at(tid)));
+
+				}
+			}
+		}
+
+
+
 
 
 }
@@ -237,7 +277,7 @@ void algorithms::ModelNoCConflictFreeCommunication(models::Dataflow* const  data
 	VERBOSE_INFO ("configs = ");
 
 	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++) {
-		std::vector<std::string> parts = commons::split((*it).first,'_');
+		std::vector<std::string> parts = commons::split<std::string>((*it).first,'_');
 		edge_id_t src = commons::fromString<edge_id_t>(parts[0]);
 		edge_id_t dst = commons::fromString<edge_id_t>(parts[1]);
 		std::vector<ARRAY_INDEX> vertex_ids = (*it).second ;

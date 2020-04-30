@@ -17,7 +17,7 @@
 #include <algorithms/normalization.h>
 #include <algorithms/software_noc.h>
 #include <algorithms/repetition_vector.h>
-#include <algorithms/kperiodic.h>
+#include <algorithms/throughput/kperiodic.h>
 #include <cstdlib>
 #include <stack>
 #include <climits>
@@ -2287,7 +2287,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	VERBOSE_INFO ("configs = ");
 
 	for(conflictConfigs::iterator it = configs.begin(); it != configs.end(); it++) {
-		std::vector<std::string> parts = commons::split((*it).first,'_');
+		std::vector<std::string> parts = commons::split<std::string>((*it).first,'_');
 		edge_id_t src = commons::fromString<edge_id_t>(parts[0]);
 		edge_id_t dst = commons::fromString<edge_id_t>(parts[1]);
 		std::vector<ARRAY_INDEX> vertex_ids = (*it).second ;
