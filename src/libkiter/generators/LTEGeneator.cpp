@@ -9,7 +9,7 @@
 #include <models/Dataflow.h>
 #include <commons/SDF3Wrapper.h>
 
-models::Dataflow*  algorithms::generate_lte_sdf(parameters_list_t   param_list) {
+models::Dataflow*  generators::generate_lte_sdf(parameters_list_t   param_list) {
 
 
 	double yscale = 1;

@@ -31,13 +31,13 @@ static inline const phase_info getPhaseStruct(int t, TIME_UNIT e, int p, const s
 }
 
 
-namespace algorithms {
+namespace generators {
 	models::Dataflow*  generate_lte_sdf(parameters_list_t   param_list);
 }
 
 ADD_GENERATOR(genLTESDF,
 		generator_t(
-				{ "genLTESDF" , "generate LTE SDF.", algorithms::generate_lte_sdf})
+				{ "genLTESDF" , "generate LTE SDF.", generators::generate_lte_sdf})
 );
 
 
