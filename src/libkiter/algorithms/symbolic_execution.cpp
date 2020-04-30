@@ -7,7 +7,7 @@
 
 #include <models/Dataflow.h>
 #include <models/EventGraph.h>
-#include <algorithms/symbolicExecution.h>
+#include <algorithms/symbolic_execution.h>
 #include <algorithms/repetition_vector.h>
 #include <algorithms/nperiodic.h>
 
@@ -207,7 +207,8 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 
 }
 
-void algorithms::symbolic_execution(models::Dataflow* const  from, parameters_list_t ) {
+bool algorithms::symbolic_execution(models::Dataflow* const  from) {
+
 	// Need RV.
 	VERBOSE_ASSERT(computeRepetitionVector(from),"inconsistent graph");
 
@@ -267,7 +268,13 @@ void algorithms::symbolic_execution(models::Dataflow* const  from, parameters_li
 
     VERBOSE_INFO("End of symbolic execution.");
 
+    return total == 0;
+}
+void algorithms::symbolic_execution(models::Dataflow* const  from, parameters_list_t ) {
 
+	bool res = algorithms::symbolic_execution(from);
+
+	VERBOSE_ASSERT(res, "Symbolic execution failed.");
 }
 
 

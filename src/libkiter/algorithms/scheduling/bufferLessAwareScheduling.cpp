@@ -389,7 +389,7 @@ scheduling_t algorithms::scheduling::bufferless_scheduling (models::Dataflow* co
 }
 
 
-void sdf_bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector, std::vector<std::vector <Vertex> > task_sequences) {
+void algorithms::scheduling::sdf_bufferless_scheduling (models::Dataflow* const  dataflow, std::map<Vertex,EXEC_COUNT> &  kvector, std::vector<std::vector <Vertex> > task_sequences) {
 
 
 	  {ForEachVertex(dataflow,t) {

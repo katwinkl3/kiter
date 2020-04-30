@@ -34,9 +34,13 @@ FILE(GLOB_RECURSE models_h   models/*.h )
 FILE(GLOB_RECURSE printers_cpp printers/*.cpp)
 FILE(GLOB_RECURSE printers_h   printers/*.h )
 
+FILE(GLOB_RECURSE generators_cpp generators/*.cpp)
+FILE(GLOB_RECURSE generators_h   generators/*.h )
+
 FILE(GLOB_RECURSE algorithms_cpp algorithms/*.cpp algorithms/*/*.cpp)
 FILE(GLOB_RECURSE algorithms_h   algorithms/*.h )
 
+SET(generators_sources      ${generators_cpp}   ${generators_h})
 SET(commons_sources      ${commons_cpp}   ${commons_h})
 SET(models_sources      ${models_cpp}   ${models_h})
 SET(printers_sources      ${printers_cpp}   ${printers_h})
@@ -58,13 +62,15 @@ SET(LIBKITER_FLAGS "-Wconversion -Wfloat-equal  ${CMAKE_CXX_FLAGS_DEBUG} ")
 
 #          ######### API         ##########
 
-ADD_LIBRARY			   (kiter_commons SHARED  ${commons_sources})
-ADD_LIBRARY			   (kiter_models SHARED  ${models_sources})
+ADD_LIBRARY			               (kiter_commons SHARED  ${commons_sources})
+TARGET_LINK_LIBRARIES              (kiter_commons PUBLIC ${LIBXML2_LIBRARIES})
+
+ADD_LIBRARY			               (kiter_models SHARED  ${models_sources})
 TARGET_LINK_LIBRARIES              (kiter_models PUBLIC kiter_commons )
-TARGET_LINK_LIBRARIES              (kiter_commons PUBLIC ${LIBXML2_LIBRARIES}  )
+
 
 ADD_LIBRARY			   (kiter_lp STATIC  ${lp_sources})
-TARGET_LINK_LIBRARIES  (kiter_lp   ${GLPK_LIBRARIES}  )
+TARGET_LINK_LIBRARIES  (kiter_lp         ${GLPK_LIBRARIES})
 
 
 if(GUROBI_FOUND AND FALSE)
@@ -76,8 +82,11 @@ endif(GUROBI_FOUND)
 
 
 ADD_LIBRARY			   (kiter_algorithms SHARED  ${algorithms_sources})
-TARGET_LINK_LIBRARIES  (kiter_algorithms PUBLIC kiter_commons kiter_models kiter_lp )
+TARGET_LINK_LIBRARIES  (kiter_algorithms PUBLIC kiter_commons kiter_models kiter_lp)
 
+
+ADD_LIBRARY			   (kiter_generators SHARED  ${generators_sources})
+TARGET_LINK_LIBRARIES  (kiter_generators PUBLIC kiter_commons kiter_algorithms)
 
 ADD_LIBRARY			   (kiter_printers SHARED  ${printers_sources})
 TARGET_LINK_LIBRARIES  (kiter_printers PUBLIC kiter_commons kiter_algorithms)
@@ -89,6 +98,7 @@ TARGET_LINK_LIBRARIES  (libkiter
 				kiter_algorithms 
 				kiter_commons 
 				kiter_lp 
+				kiter_generators 
 				kiter_models 
 				kiter_printers)
 set_property(TARGET libkiter PROPERTY FRAMEWORK ON)

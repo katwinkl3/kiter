@@ -12,7 +12,7 @@
 
 
 
-bool calcFractionsConnectedActors(models::Dataflow *from, std::map<Vertex,EXEC_COUNT_FRACT> &fractions, Vertex a, TOKEN_UNIT ratePeriod) {
+bool calcFractionsConnectedActors(const models::Dataflow *from, std::map<Vertex,EXEC_COUNT_FRACT> &fractions, Vertex a, TOKEN_UNIT ratePeriod) {
 
     EXEC_COUNT_FRACT fractionA = fractions[a];
 

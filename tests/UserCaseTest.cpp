@@ -15,11 +15,19 @@
 
 BOOST_FIXTURE_TEST_SUITE( use_case_test , WITH_VERBOSE)
 
-BOOST_AUTO_TEST_CASE( echo_buffered_kperiodic_scheduling )
+BOOST_AUTO_TEST_CASE( generate_echo )
 {
 	models::Dataflow* echo =  generateEchoBuffered () ;
-	models::Scheduling res = algorithms::scheduling::CSDF_KPeriodicScheduling    (echo);
-    //BOOST_REQUIRE_EQUAL( res.getGraphPeriod(), commons::runSDF3Throughput(echo) );
+	// models::Scheduling res = algorithms::scheduling::CSDF_KPeriodicScheduling    (echo);
+	delete echo;
+}
+
+BOOST_AUTO_TEST_CASE( one_periodic_schedule_echo )
+{
+	models::Dataflow* echo =  generateEchoBuffered () ;
+	//models::Scheduling res = algorithms::scheduling::CSDF_KPeriodicScheduling    (echo);
+	delete echo;
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()
