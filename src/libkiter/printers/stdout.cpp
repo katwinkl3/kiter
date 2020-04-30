@@ -646,19 +646,25 @@ void printers::printXML    (models::Dataflow* const  dataflow, parameters_list_t
 
 void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list_t ) {
 
-	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+	bool consistent = computeRepetitionVector(dataflow);
 
-	EXEC_COUNT total = 0;
-	{ForEachTask(dataflow,t) {
-		total += dataflow->getNi(t) ;
-	}}
+
 
 	std::cout << "App name       = " <<  dataflow->getAppName() << std::endl;
 	std::cout << "Graph name     = " <<  dataflow->getGraphName() << std::endl;
 	std::cout << "Graph type     = " <<  dataflow->getGraphType() << std::endl;
 	std::cout << "Task count     = " <<  dataflow->getVerticesCount() << std::endl;
 	std::cout << "Channels total = " <<  dataflow->getEdgesCount() << std::endl;
-	std::cout << "Complexity     = " <<  total << std::endl;
+
+	if (consistent) {
+		EXEC_COUNT total = 0;
+		{ForEachTask(dataflow,t) {
+			total += dataflow->getNi(t) ;
+		}}
+		std::cout << "Complexity     = " <<  total << std::endl;
+	} else {
+		std::cout << "This dataflow graph is not consistent!" << std::endl;
+	}
 	std::cout << "                 " << std::endl;
 
 	size_t max_str = 0 ;
@@ -678,6 +684,8 @@ void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list
 				<< " ("
 				<< std::setw(8) << "VertexId"
 				<< ")"
+				<< std::setw(9) << "InEdges"
+				<< std::setw(9) << "OutEdges"
 				<< std::setw(16) << "TotalDuration"
 				<< std::setw(20)<< "RepetitionFactor"
 				<< std::setw(16)<< "PhaseQuantity"
@@ -689,8 +697,10 @@ void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list
                       << " ("
                       << std::setw(8) << dataflow->getVertexId(t)
                       << ")"
+					  << std::setw(9) << dataflow->getVertexInDegree(t)
+					  << std::setw(9) << dataflow->getVertexOutDegree(t)
                       << std::setw(16) << dataflow->getVertexTotalDuration(t)
-                      << std::setw(20)<< dataflow->getNi(t)
+                      << std::setw(20)<< (consistent ? commons::toString(dataflow->getNi(t)) : "N/A")
                       << std::setw(16)<< dataflow->getPhasesQuantity(t)
                       << std::setw(15)<< dataflow->getMapping(t)
                       << std::endl;
@@ -711,6 +721,8 @@ void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list
 				<< " ("
 				<< std::setw(10) << "ChannelId"
 				<< ")"
+				<< std::setw(10) << "Source"
+				<< std::setw(10) << "Target"
 				<< std::setw(10) << "TotalIn"
 				<< std::setw(10) << "TotalOut"
 				<< std::setw(15) << "InitialMarking"
@@ -722,6 +734,8 @@ void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list
                       << " ("
 					  << std::setw(10) << dataflow->getEdgeId(c)
 					  << ")"
+					  << std::setw(10) << dataflow->getVertexId(dataflow->getEdgeSource(c))
+					  << std::setw(10) <<dataflow->getVertexId(dataflow->getEdgeTarget(c))
 					  << std::setw(10) << dataflow->getEdgeIn(c)
 					  << std::setw(10) << dataflow->getEdgeOut(c)
 					  << std::setw(15) << dataflow->getPreload(c)
@@ -734,6 +748,7 @@ void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list
 
 		std::cout << "NO CHANNELS" << std::endl;
 	}
+	dataflow->reset_computation();
 }
 
 

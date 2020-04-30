@@ -100,6 +100,7 @@ static inline bool  VERBOSE_IS_ILP()          { return (commons::VERBOSE_MODE >=
 #define VERBOSE_DEBUG_ASSERT_GreaterEqualThan(a,b)  if (a < b)  {VERBOSE_ERROR("Assertion failed : " << #a << "(=" << a << ") >=" << #b << "(=" << b << ")"); ERROR();}
 #else
 #define VERBOSE_EXTRA_DEBUG(m)   ;
+#define VERBOSE_CUSTOM_DEBUG(code,m)   ;
 #define VERBOSE_CUSTOM(m)   ;
 #define VERBOSE_DEBUG(m)   ;
 #define VERBOSE_ILP(m)     ;

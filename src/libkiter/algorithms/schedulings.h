@@ -17,9 +17,13 @@
 typedef std::map<Vertex,EXEC_COUNT> periodicity_vector_t;
 
 
+struct kperiodic_result_t {
+	TIME_UNIT      throughput;
+	std::set<Edge> critical_edges;
+};
 
 scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  periodicity_vector_t & kvector , TIME_UNIT throughput) ;
-models::Scheduling  period2Scheduling    (models::Dataflow* const  dataflow,  periodicity_vector_t & kvector , TIME_UNIT throughput) ;
+models::Scheduling  period2Scheduling    (models::Dataflow* const  dataflow,  periodicity_vector_t & kvector , kperiodic_result_t &) ;
 
 namespace algorithms {
 

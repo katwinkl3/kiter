@@ -62,22 +62,22 @@ scheduling_t algorithms::scheduling::bufferless_kperiodic_scheduling (models::Da
     }}
 
     VERBOSE_INFO("Start with a 1-periodic schedule");
-    std::pair<TIME_UNIT, std::set<Edge> > result = algorithms::KScheduleBufferLess(dataflow,&kvector);
+    kperiodic_result_t result = algorithms::KScheduleBufferLess(dataflow,&kvector);
 
-    if ((result.second.size() != 0) and ((!stop_at_first) or (result.first > 0))) {
+    if ((result.critical_edges.size() != 0) and ((!stop_at_first) or (result.throughput > 0))) {
 
         VERBOSE_INFO("1-periodic throughput is not enough");
-        VERBOSE_INFO("   Th = " << result.first);
-        VERBOSE_INFO("   Critical circuit is " << algorithms::cc2string(dataflow,&(result.second)) <<  "");
+        VERBOSE_INFO("   Th = " << result.throughput);
+        VERBOSE_INFO("   Critical circuit is " << algorithms::cc2string(dataflow,&(result.critical_edges)) <<  "");
 
         while (true) {
             iteration_count++;
             std::map<Vertex,EXEC_COUNT> previous_kvector = kvector;
-            updateVectorWithLocalNi(dataflow,&kvector,&(result.second));
-            std::pair<TIME_UNIT, std::set<Edge> > resultprime = KScheduleBufferLess(dataflow,&kvector);
-            if (algorithms::sameset(dataflow,&(resultprime.second),&(result.second)) or (stop_at_first and result.first > 0))  {
+            updateVectorWithLocalNi(dataflow,&kvector,&(result.critical_edges));
+            kperiodic_result_t resultprime = KScheduleBufferLess(dataflow,&kvector);
+            if (algorithms::sameset(dataflow,&(resultprime.critical_edges),&(result.critical_edges)) or (stop_at_first and result.throughput > 0))  {
                 VERBOSE_INFO("End criteria verified.");
-                if ((result.first < resultprime.first) and !get_previous) {
+                if ((result.throughput < resultprime.throughput) and !get_previous) {
                 	result = resultprime;
                 } else if (get_previous) {
                 	kvector = previous_kvector;
@@ -87,18 +87,18 @@ scheduling_t algorithms::scheduling::bufferless_kperiodic_scheduling (models::Da
             result = resultprime;
             VERBOSE_INFO("Current K-periodic throughput is not enough");
             VERBOSE_INFO("   K  = " << commons::toString(kvector));
-            VERBOSE_INFO("   Th = " << result.first);
-            VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+            VERBOSE_INFO("   Th = " << result.throughput);
+            VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
         }
 
     } else {
         VERBOSE_INFO("End criteria verified.");
-        VERBOSE_INFO(" - Size of critical circuit was: " << result.second.size());
-        VERBOSE_INFO(" - Throughput was: " << result.first);
+        VERBOSE_INFO(" - Size of critical circuit was: " << result.critical_edges.size());
+        VERBOSE_INFO(" - Throughput was: " << result.throughput);
         VERBOSE_INFO(" - stop_at_first: " << stop_at_first);
         VERBOSE_INFO("   K  = " << commons::toString(kvector));
-        VERBOSE_INFO("   Th = " << result.first);
-        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+        VERBOSE_INFO("   Th = " << result.throughput);
+        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
         iteration_count++;
     }
 
@@ -113,13 +113,13 @@ scheduling_t algorithms::scheduling::bufferless_kperiodic_scheduling (models::Da
     }}
 
     VERBOSE_INFO("K-periodic schedule - total_ki=" << total_ki << " total_ni=" << total_ni );
-    TIME_UNIT res = result.first;
+    TIME_UNIT res = result.throughput;
     std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
     std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 
     models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
 
-    TIME_UNIT omega = 1 / result.first ;
+    TIME_UNIT omega = 1 / result.throughput ;
     eg->computeStartingTimeWithOmega (omega);
 
     scheduling_t sheduling_result;

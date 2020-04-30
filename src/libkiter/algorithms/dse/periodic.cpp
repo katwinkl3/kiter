@@ -31,7 +31,7 @@ void algorithms::compute_csdf_dse_periodic   (models::Dataflow* const  dataflow,
 
 
     kperiodic_result_t result = KSchedule(dataflow,&kvector);
-    TIME_UNIT FREQUENCY = result.first;
+    TIME_UNIT FREQUENCY = result.throughput;
     TIME_UNIT MAX_GRANULARITY =FREQUENCY / 10000;
     //TIME_UNIT PERIOD = 1 / result.first;
 

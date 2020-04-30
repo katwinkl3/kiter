@@ -20,7 +20,6 @@ namespace models {
 	class EventGraph;
 }
 
-typedef  std::pair<TIME_UNIT, std::set<Edge> > kperiodic_result_t ;
 
 namespace algorithms {
 

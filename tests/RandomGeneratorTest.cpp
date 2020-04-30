@@ -11,6 +11,7 @@
 #include <models/Dataflow.h>
 #include <algorithms/repetition_vector.h>
 #include <algorithms/symbolic_execution.h>
+#include <algorithms/schedulings.h>
 #include <generators/RandomGenerator.h>
 
 static void verify_dataflow (models::Dataflow * dataflow, RandomGeneratorConfiguration config) {
@@ -20,6 +21,8 @@ static void verify_dataflow (models::Dataflow * dataflow, RandomGeneratorConfigu
 
 	BOOST_REQUIRE(computeRepetitionVector(dataflow));
 
+	BOOST_REQUIRE_GT(algorithms::scheduling::CSDF_KPeriodicScheduling(dataflow).getGraphThroughput() , 0);
+
 }
 
 BOOST_FIXTURE_TEST_SUITE( generator_test , WITH_VERBOSE)
@@ -27,7 +30,9 @@ BOOST_FIXTURE_TEST_SUITE( generator_test , WITH_VERBOSE)
 BOOST_AUTO_TEST_CASE( generator_test_two_tasks ) {
 
 	RandomGeneratorConfiguration config;
+	config.min_vertices_count       = 2;
 	config.max_vertices_count      = 2;
+	config.min_edges_count         = 1;
 	config.max_edges_count         = 1;
 	config.max_weight              = 1;
 	config.max_duration            = 1;
@@ -44,7 +49,9 @@ BOOST_AUTO_TEST_CASE( generator_test_two_tasks ) {
 BOOST_AUTO_TEST_CASE( generator_test_ten_tasks_HSDF ) {
 
 	RandomGeneratorConfiguration config;
+	config.min_vertices_count       = 10;
 	config.max_vertices_count       = 10;
+	config.min_edges_count         = 15;
 	config.max_edges_count          = 15;
 	config.max_weight               = 1;
 	config.max_duration             = 1;
@@ -61,7 +68,9 @@ BOOST_AUTO_TEST_CASE( generator_test_ten_tasks_HSDF ) {
 BOOST_AUTO_TEST_CASE( generator_test_ten_tasks_SDF ) {
 
 	RandomGeneratorConfiguration config;
+	config.min_vertices_count       = 10;
 	config.max_vertices_count       = 10;
+	config.min_edges_count         = 15;
 	config.max_edges_count          = 15;
 	config.max_weight               = 10;
 	config.max_duration             = 10;

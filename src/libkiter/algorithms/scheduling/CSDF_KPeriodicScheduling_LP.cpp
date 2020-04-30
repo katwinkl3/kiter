@@ -245,7 +245,8 @@ models::Scheduling collect_lp_results (const commons::GLPSol &g, const models::D
 		}
     }}
 
-	return models::Scheduling(dataflow, OMEGA, res_schedule);
+    // TODO: Need to get critical circuit
+	return models::Scheduling(dataflow, OMEGA, res_schedule, critical_circuit_t());
 }
 
 

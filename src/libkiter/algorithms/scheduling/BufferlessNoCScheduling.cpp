@@ -44,6 +44,8 @@ static void print_graph (models::Dataflow * to, std::string suffix = "none") {
 
 	std::string sfilename = "bufferless_noc_schedule_"+ commons::toString(counter) + "_" + suffix + "";
 
+	commons::writeSDF3File(sfilename + ".xml", to);
+
 	{
 
 		std::string filename = sfilename + "_noc";
@@ -76,7 +78,6 @@ static void print_graph (models::Dataflow * to, std::string suffix = "none") {
 
 	}
 
-	commons::writeSDF3File(sfilename+ ".xml", to);
 	to->reset_computation();
 
 }

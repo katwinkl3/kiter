@@ -98,7 +98,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
         ARRAY_INDEX channel_id = eg->getChannelId(*it);
         try {
             Edge        channel    = dataflow->getEdgeById(channel_id);
-            result.second.insert(channel);
+            result.critical_edges.insert(channel);
         } catch(...) {
             VERBOSE_DEBUG("      is loopback");
         }
@@ -109,18 +109,18 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
     VERBOSE_INFO("KSchedule function get " << frequency << " from MCRP." );
     VERBOSE_INFO("  ->  then omega =  " <<  1 / frequency );
 
-    result.first = frequency;
+    result.throughput = frequency;
 
     ////////////// SCHEDULE CALL // END
 
 
-    VERBOSE_INFO("Iteration "<< std::fixed << std::setw( 4 ) << iteration_count <<  "      period = "  << std::fixed << std::setw( 15 ) << std::setprecision( 2 ) << 1.0/result.first  <<  "      complexity = "  << std::setw( 4 )  << (sumNi ?  ((sumKi * 100) / sumNi) : 0));
+    VERBOSE_INFO("Iteration "<< std::fixed << std::setw( 4 ) << iteration_count <<  "      period = "  << std::fixed << std::setw( 15 ) << std::setprecision( 2 ) << 1.0/result.throughput  <<  "      complexity = "  << std::setw( 4 )  << (sumNi ?  ((sumKi * 100) / sumNi) : 0));
 
-    if (result.second.size() != 0) {
+    if (result.critical_edges.size() != 0) {
 
 
-        VERBOSE_INFO("1-periodic throughput (" << result.first <<  ") is not enough.");
-        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+        VERBOSE_INFO("1-periodic throughput (" << result.throughput <<  ") is not enough.");
+        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
 
         while (true) {
 
@@ -135,7 +135,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
             VERBOSE_INFO("KPeriodic EventGraph generation");
 
             //STEP 1 - Generate Event Graph and update vector
-            if (!algorithms::updateEventGraph( dataflow ,  &kvector, &(result.second), eg)) break ;
+            if (!algorithms::updateEventGraph( dataflow ,  &kvector, &(result.critical_edges), eg)) break ;
 
             VERBOSE_INFO("KVector = " << commons::toString(kvector) );
             VERBOSE_INFO("KPeriodic EventGraph generation Done");
@@ -153,7 +153,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
                 ARRAY_INDEX channel_id = eg->getChannelId(*it);
                 try {
                     Edge        channel    = dataflow->getEdgeById(channel_id);
-                    resultprime.second.insert(channel);
+                    resultprime.critical_edges.insert(channel);
                 } catch(...) {
                     VERBOSE_DEBUG("      is loopback");
                 }
@@ -164,19 +164,19 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
             VERBOSE_INFO("KSchedule function get " << frequency << " from MCRP." );
             VERBOSE_INFO("  ->  then omega =  " <<  1 / frequency );
 
-            resultprime.first = frequency;
+            resultprime.throughput = frequency;
 
             ////////////// SCHEDULE CALL // END
 
-            if (sameset(dataflow,&(resultprime.second),&(result.second)))  {
+            if (sameset(dataflow,&(resultprime.critical_edges),&(result.critical_edges)))  {
                 VERBOSE_INFO("Critical circuit is the same");
                 result = resultprime;
 
                 break;
             }
             result = resultprime;
-            VERBOSE_INFO("Current K-periodic throughput (" << result.first <<  ") is not enough.");
-            VERBOSE_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+            VERBOSE_INFO("Current K-periodic throughput (" << result.throughput <<  ") is not enough.");
+            VERBOSE_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
 
 
 
@@ -185,7 +185,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
                     sumKi += kvector[t];
                 }}
 
-                VERBOSE_INFO("Iteration "<< std::fixed << std::setw( 4 ) << iteration_count <<  "      period = "  << std::fixed << std::setw( 15 ) << std::setprecision( 2 ) << 1.0/result.first  <<  "      complexity = "  << std::setw( 4 )  << (sumKi * 100) / sumNi ) ;
+                VERBOSE_INFO("Iteration "<< std::fixed << std::setw( 4 ) << iteration_count <<  "      period = "  << std::fixed << std::setw( 15 ) << std::setprecision( 2 ) << 1.0/result.throughput  <<  "      complexity = "  << std::setw( 4 )  << (sumKi * 100) / sumNi ) ;
 
 
         }
@@ -203,12 +203,12 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
 
     VERBOSE_INFO("K-periodic schedule - total_ki=" << sumKi << " total_ni=" << sumNi );
 
-    TIME_UNIT res = result.first;
+    TIME_UNIT res = result.throughput;
     VERBOSE_INFO( "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res );
     VERBOSE_INFO( "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   );
 
 
-    models::Scheduling persched = period2Scheduling(dataflow,kvector,result.first);
+    models::Scheduling persched = period2Scheduling(dataflow,kvector,result);
 
     return persched;
 

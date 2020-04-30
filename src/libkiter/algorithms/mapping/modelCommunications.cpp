@@ -75,7 +75,7 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 		returnValue[(unsigned int)e].push_back(  d->getVertexId(middle)  );
 		vid_to_conflict_map[ d->getVertexId(middle) ] = (unsigned int)e;
 
-		d->setVertexName(middle,ss.str());
+		//d->setVertexName(middle,ss.str());
 
 		d->setPhasesQuantity(middle,1); // number of state for the actor, only one in SDF
 		d->setVertexDuration(middle,{1}); // is specify for every state , only one for SDF.
@@ -131,7 +131,7 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 			key_str = config_key.str();
 
 
-			d->setVertexName(vtx,config_name.str());
+			//d->setVertexName(vtx,config_name.str());
 			d->setPhasesQuantity(vtx,1); // number of state for the actor, only one in SDF
 			d->setVertexDuration(vtx,{NULL_DURATION}); // is specify for every state , only one for SDF.
 			d->setReentrancyFactor(vtx,1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
@@ -269,7 +269,11 @@ void algorithms::ModelNoCConflictFreeCommunication(models::Dataflow* const  data
 	for (auto cid : edges_to_process) {
 		Edge c = dataflow->getEdgeById(cid);
 		auto route = dataflow->getRoute(c);
-		VERBOSE_INFO("replace edge " << dataflow->getEdgeName(c) << "by a sequence");
+
+		Vertex src = dataflow->getEdgeSource(c);
+		Vertex tgt = dataflow->getEdgeTarget(c);
+
+		VERBOSE_INFO("replace edge " << dataflow->getEdgeName(c) << " (" << dataflow->getVertexId(src) << "-" <<   dataflow->getVertexId(tgt) << ")" << " by a sequence << " << commons::toString(route));
 		addPathNode(dataflow, c, route, conflictEdges, configs, vid_to_conflict_map, true);
 	}
 

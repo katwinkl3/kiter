@@ -18,7 +18,7 @@
 #include "kperiodic.h"
 
 
-bool algorithms::sameset(models::Dataflow* const dataflow, std::set<Edge> *cc1 , std::set<Edge>* cc2) {
+bool algorithms::sameset(models::Dataflow* const dataflow, critical_circuit_t *cc1 , critical_circuit_t* cc2) {
 
     VERBOSE_DEBUG_ASSERT(cc1,"cc1 is not valid");
     VERBOSE_DEBUG_ASSERT(cc2,"cc2 is not valid");
@@ -27,9 +27,9 @@ bool algorithms::sameset(models::Dataflow* const dataflow, std::set<Edge> *cc1 ,
 
     bool result = false;
 
-    for (std::set<Edge>::iterator it1 = cc1->begin() ; it1 != cc1->end() ; it1++ ) {
+    for (critical_circuit_t::iterator it1 = cc1->begin() ; it1 != cc1->end() ; it1++ ) {
         result = false;
-        for (std::set<Edge>::iterator it2 = cc2->begin() ; it2 != cc2->end() ; it2++ ) {
+        for (critical_circuit_t::iterator it2 = cc2->begin() ; it2 != cc2->end() ; it2++ ) {
             if (dataflow->getEdgeId(*it1) == dataflow->getEdgeId(*it2)) result = true;
         }
         if (result == false) return false;
@@ -39,9 +39,9 @@ bool algorithms::sameset(models::Dataflow* const dataflow, std::set<Edge> *cc1 ,
 
 
 
-std::string algorithms::cc2string  (models::Dataflow* const dataflow,std::set<Edge>* cc) {
+std::string algorithms::cc2string  (models::Dataflow* const dataflow,critical_circuit_t* cc) {
     std::ostringstream returnStream;
-    for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end() ; it++ ) {
+    for (critical_circuit_t::iterator it = cc->begin() ; it != cc->end() ; it++ ) {
         returnStream <<  dataflow->getEdgeName(*it) <<
 	  " (" << dataflow->getVertexName(dataflow->getEdgeSource(*it)) << "->"
 	       << dataflow->getVertexName(dataflow->getEdgeTarget(*it)) << "), ";
@@ -122,12 +122,12 @@ void algorithms::print_kperiodic_expansion_graph    (models::Dataflow* const  da
 
 }
 
-models::Scheduling period2Scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) {
+models::Scheduling period2Scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , kperiodic_result_t & result) {
 
-    TIME_UNIT omega = 1.0 / throughput ;
+    TIME_UNIT omega = 1.0 / result.throughput ;
     VERBOSE_INFO("models::Scheduling period2Scheduling   omega = " << std::scientific << std::setprecision( 9 )  << omega  );
-    scheduling_t scheduling_result = period2scheduling    (dataflow, kvector ,  throughput) ;
-	return models::Scheduling(dataflow, omega, scheduling_result);
+    scheduling_t scheduling_result = period2scheduling    (dataflow, kvector ,  result.throughput) ;
+	return models::Scheduling(dataflow, omega, scheduling_result, result.critical_edges);
 }
 
 scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) {
@@ -142,6 +142,9 @@ scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  std::map<
 
     VERBOSE_INFO("Compute starts "  );
     TIME_UNIT omega = 1 / throughput ;
+
+    if (omega <= 0) return scheduling_result;
+
     eg->computeStartingTimeWithOmega (omega);
 
     VERBOSE_INFO("Retrieve starts "  );
@@ -192,8 +195,8 @@ void algorithms::print_kperiodic_scheduling    (models::Dataflow* const  dataflo
         }
     }}
     kperiodic_result_t result = KSchedule(dataflow,&kvector);
-    print_function    ( dataflow, kvector , result.first , true, true, true);
-    VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+    print_function    ( dataflow, kvector , result.throughput , true, true, true);
+    VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
 
 }
 
@@ -226,7 +229,7 @@ kperiodic_result_t algorithms::KSchedule(models::Dataflow *  const dataflow ,std
         ARRAY_INDEX channel_id = eg->getChannelId(*it);
         try {
             Edge        channel    = dataflow->getEdgeById(channel_id);
-            result.second.insert(channel);
+            result.critical_edges.insert(channel);
         } catch(...) {
             VERBOSE_KPERIODIC_DEBUG("      is loopback");
         }
@@ -243,7 +246,7 @@ kperiodic_result_t algorithms::KSchedule(models::Dataflow *  const dataflow ,std
 
 
     //result.first = thg;
-    result.first = frequency;
+    result.throughput = frequency;
     delete eg;
 
     return result;
@@ -278,7 +281,7 @@ kperiodic_result_t algorithms::KScheduleBufferLess(models::Dataflow *  const dat
         ARRAY_INDEX channel_id = eg->getChannelId(*it);
         try {
             Edge        channel    = dataflow->getEdgeById(channel_id);
-            result.second.insert(channel);
+            result.critical_edges.insert(channel);
         } catch(...) {
             VERBOSE_KPERIODIC_DEBUG("      is loopback");
         }
@@ -295,7 +298,7 @@ kperiodic_result_t algorithms::KScheduleBufferLess(models::Dataflow *  const dat
 
 
     //result.first = thg;
-    result.first = frequency;
+    result.throughput = frequency;
     delete eg;
 
     return result;
@@ -425,7 +428,7 @@ void algorithms::print_1periodic_eventgraph    (models::Dataflow* const  dataflo
 
 
 
-bool algorithms::updateVectorWithFineNi( models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * oldkvector, std::set<Edge>* cc ) {
+bool algorithms::updateVectorWithFineNi( models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * oldkvector, critical_circuit_t* cc ) {
 
     VERBOSE_ASSERT(dataflow,"error");
     VERBOSE_ASSERT(oldkvector,"error");
@@ -463,7 +466,7 @@ bool algorithms::updateVectorWithFineNi( models::Dataflow * const dataflow , std
 
 
 
-models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * oldkvector, std::set<Edge>* cc, models::EventGraph* g) {
+models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * oldkvector, critical_circuit_t* cc, models::EventGraph* g) {
 
 
 
@@ -500,7 +503,7 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
     // STEP 1
     //remove all connected edges
     EXEC_COUNT current = 0;
-    for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
+    for (critical_circuit_t::iterator it = cc->begin() ; it != cc->end(); it++ ) {
         current ++ ;
 
         Vertex source = dataflow->getEdgeSource(*it);
@@ -530,7 +533,7 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
 
     current = 0;
 
-    for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
+    for (critical_circuit_t::iterator it = cc->begin() ; it != cc->end(); it++ ) {
 
         current ++ ;
         Vertex t = dataflow->getEdgeSource(*it);
@@ -557,10 +560,10 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
     // add all edges
 
     current = 0;
-    for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end() ; it++) {
+    for (critical_circuit_t::iterator it = cc->begin() ; it != cc->end() ; it++) {
 
         current ++ ;
-        std::set<Edge>::iterator it_previous = it;
+        critical_circuit_t::iterator it_previous = it;
         if (it == cc->begin())  {
             it_previous = cc->end();
         }
@@ -610,7 +613,7 @@ models::EventGraph* algorithms::updateEventGraph( models::Dataflow * const dataf
 
 
 
-models::EventGraph*  algorithms::generateCycleOnly(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues,   std::set<Edge> * cc ) {
+models::EventGraph*  algorithms::generateCycleOnly(models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues,   critical_circuit_t * cc ) {
 
 
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
@@ -621,7 +624,7 @@ models::EventGraph*  algorithms::generateCycleOnly(models::Dataflow * const data
 
 
     /* generate nodes */
-    for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
+    for (critical_circuit_t::iterator it = cc->begin() ; it != cc->end(); it++ ) {
         Vertex pTask = dataflow->getEdgeSource(*it);
         EXEC_COUNT start_count = kValues->at(pTask);
         {ForEachPhase(dataflow,pTask,p) {
@@ -633,7 +636,7 @@ models::EventGraph*  algorithms::generateCycleOnly(models::Dataflow * const data
     }
 
 
-    for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
+    for (critical_circuit_t::iterator it = cc->begin() ; it != cc->end(); it++ ) {
         Vertex pTask = dataflow->getEdgeSource(*it);
         EXEC_COUNT start_count = kValues->at(pTask);
         generateKperiodicSelfloop(dataflow,start_count,g,pTask);
@@ -647,7 +650,7 @@ models::EventGraph*  algorithms::generateCycleOnly(models::Dataflow * const data
     //******************************************************************
 
 
-    for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
+    for (critical_circuit_t::iterator it = cc->begin() ; it != cc->end(); it++ ) {
         generateKPeriodicConstraint(dataflow , kValues,   g ,  *it);
     }
 
@@ -835,11 +838,11 @@ void algorithms::generateKperiodicSelfloop(models::Dataflow * const dataflow , E
 
 
 
-void algorithms::updateVectorWithFullNi(models::Dataflow *  const dataflow ,std::map<Vertex,EXEC_COUNT> * kvector , std::set<Edge> * cc)  {
+void algorithms::updateVectorWithFullNi(models::Dataflow *  const dataflow ,std::map<Vertex,EXEC_COUNT> * kvector , critical_circuit_t * cc)  {
 
     EXEC_COUNT before = 0;
     EXEC_COUNT after = 0;
-    for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
+    for (critical_circuit_t::iterator it = cc->begin() ; it != cc->end(); it++ ) {
         Vertex source = dataflow->getEdgeSource(*it);
         Vertex target = dataflow->getEdgeTarget(*it);
         before += kvector->at(source) * kvector->at(target);
@@ -851,19 +854,19 @@ void algorithms::updateVectorWithFullNi(models::Dataflow *  const dataflow ,std:
 
 }
 
-bool algorithms::updateVectorWithLocalNi(models::Dataflow *  const dataflow ,std::map<Vertex,EXEC_COUNT> * kvector , std::set<Edge> * cc)  {
+bool algorithms::updateVectorWithLocalNi(models::Dataflow *  const dataflow ,std::map<Vertex,EXEC_COUNT> * kvector , critical_circuit_t * cc)  {
 
     bool changed = false;
 
     EXEC_COUNT gcdNi = 0;
-    for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
+    for (critical_circuit_t::iterator it = cc->begin() ; it != cc->end(); it++ ) {
         Vertex source = dataflow->getEdgeSource(*it);
         gcdNi = boost::integer::gcd(gcdNi,dataflow->getNi(source)  / dataflow->getPhasesQuantity(source) );
     }
 
     VERBOSE_INFO("      updateVectorWithLocalNi -  gcdNi = " << commons::toString(gcdNi) );
 
-    for (std::set<Edge>::iterator it = cc->begin() ; it != cc->end(); it++ ) {
+    for (critical_circuit_t::iterator it = cc->begin() ; it != cc->end(); it++ ) {
         Vertex source = dataflow->getEdgeSource(*it);
         Vertex target = dataflow->getEdgeTarget(*it);
 
@@ -903,7 +906,7 @@ void algorithms::compute_NKperiodic_throughput            (models::Dataflow* con
 
     kperiodic_result_t result = KSchedule(dataflow,&kvector);
 
-    TIME_UNIT res = result.first;
+    TIME_UNIT res = result.throughput;
     std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
     std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 
@@ -923,7 +926,7 @@ void algorithms::compute_2Kperiodic_throughput            (models::Dataflow* con
     }}
 
     kperiodic_result_t result = KSchedule(dataflow,&kvector);
-    TIME_UNIT res = result.first;
+    TIME_UNIT res = result.throughput;
     std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
     std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 
@@ -948,9 +951,9 @@ void algorithms::compute_1Kperiodic_throughput            (models::Dataflow* con
     kperiodic_result_t result = KSchedule(dataflow,&kvector);
 
     if (printRequired) {
-    	print_function    ( dataflow, kvector , result.first , false,false,true);
+    	print_function    ( dataflow, kvector , result.throughput , false,false,true);
     } else {
-    	TIME_UNIT res = result.first;
+    	TIME_UNIT res = result.throughput;
     	std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
     	std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
     }
@@ -998,7 +1001,7 @@ std::map<Vertex,EXEC_COUNT> algorithms::get_Kvector(models::Dataflow *  const da
         ARRAY_INDEX channel_id = eg->getChannelId(*it);
         try {
             Edge        channel    = dataflow->getEdgeById(channel_id);
-            result.second.insert(channel);
+            result.critical_edges.insert(channel);
         } catch(...) {
             VERBOSE_KPERIODIC_DEBUG("      is loopback");
         }
@@ -1009,14 +1012,14 @@ std::map<Vertex,EXEC_COUNT> algorithms::get_Kvector(models::Dataflow *  const da
     VERBOSE_INFO("KSchedule function get " << frequency << " from MCRP." );
     VERBOSE_INFO("  ->  then omega =  " <<  1 / frequency );
 
-    result.first = frequency;
+    result.throughput = frequency;
 
     ////////////// SCHEDULE CALL // END
 
-    if (result.second.size() != 0) {
+    if (result.critical_edges.size() != 0) {
 
-        VERBOSE_INFO("1-periodic throughput (" << result.first <<  ") is not enough.");
-        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+        VERBOSE_INFO("1-periodic throughput (" << result.throughput <<  ") is not enough.");
+        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
 
         while (true) {
             iteration_count++;
@@ -1028,7 +1031,7 @@ std::map<Vertex,EXEC_COUNT> algorithms::get_Kvector(models::Dataflow *  const da
             VERBOSE_INFO("KPeriodic EventGraph generation");
 
             //STEP 1 - Generate Event Graph and update vector
-            if (!updateEventGraph( dataflow ,  &kvector, &(result.second), eg)) break ;
+            if (!updateEventGraph( dataflow ,  &kvector, &(result.critical_edges), eg)) break ;
 
             VERBOSE_INFO("KPeriodic EventGraph generation Done");
 
@@ -1044,7 +1047,7 @@ std::map<Vertex,EXEC_COUNT> algorithms::get_Kvector(models::Dataflow *  const da
                 ARRAY_INDEX channel_id = eg->getChannelId(*it);
                 try {
                     Edge        channel    = dataflow->getEdgeById(channel_id);
-                    resultprime.second.insert(channel);
+                    resultprime.critical_edges.insert(channel);
                 } catch(...) {
                     VERBOSE_KPERIODIC_DEBUG("      is loopback");
                 }
@@ -1055,19 +1058,19 @@ std::map<Vertex,EXEC_COUNT> algorithms::get_Kvector(models::Dataflow *  const da
             VERBOSE_INFO("KSchedule function get " << frequency << " from MCRP." );
             VERBOSE_INFO("  ->  then omega =  " <<  1 / frequency );
 
-            resultprime.first = frequency;
+            resultprime.throughput = frequency;
 
             ////////////// SCHEDULE CALL // END
 
-            if (sameset(dataflow,&(resultprime.second),&(result.second)))  {
+            if (sameset(dataflow,&(resultprime.critical_edges),&(result.critical_edges)))  {
                 VERBOSE_INFO("Critical circuit is the same");
                 result = resultprime;
 
                 break;
             }
             result = resultprime;
-            VERBOSE_INFO("Current K-periodic throughput (" << result.first <<  ") is not enough.");
-            VERBOSE_KPERIODIC_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+            VERBOSE_INFO("Current K-periodic throughput (" << result.throughput <<  ") is not enough.");
+            VERBOSE_KPERIODIC_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
         }
 
     }
@@ -1099,23 +1102,23 @@ void algorithms::compute_KperiodicSlow_throughput    (models::Dataflow* const da
     }}
     kperiodic_result_t result = KSchedule(dataflow,&kvector);
 
-    if (result.second.size() != 0) {
+    if (result.critical_edges.size() != 0) {
 
-        VERBOSE_INFO("1-periodic throughput (" << result.first <<  ") is not enough.");
-        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+        VERBOSE_INFO("1-periodic throughput (" << result.throughput <<  ") is not enough.");
+        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
 
         while (true) {
             iteration_count++;
-            updateVectorWithLocalNi(dataflow,&kvector,&(result.second));
+            updateVectorWithLocalNi(dataflow,&kvector,&(result.critical_edges));
             kperiodic_result_t resultprime = KSchedule(dataflow,&kvector);
-            if (sameset(dataflow,&(resultprime.second),&(result.second)))  {
+            if (sameset(dataflow,&(resultprime.critical_edges),&(result.critical_edges)))  {
                 VERBOSE_INFO("Critical circuit is the same");
                 result = resultprime;
                 break;
             }
             result = resultprime;
-            VERBOSE_INFO("Current K-periodic throughput (" << result.first <<  ") is not enough.");
-            VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+            VERBOSE_INFO("Current K-periodic throughput (" << result.throughput <<  ") is not enough.");
+            VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
         }
 
     } {
@@ -1133,7 +1136,7 @@ void algorithms::compute_KperiodicSlow_throughput    (models::Dataflow* const da
     }}
 
     VERBOSE_INFO("K-periodic schedule - total_ki=" << total_ki << " total_ni=" << total_ni );
-    TIME_UNIT res = result.first;
+    TIME_UNIT res = result.throughput;
     std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
     std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 
@@ -1201,7 +1204,7 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
         ARRAY_INDEX channel_id = eg->getChannelId(*it);
         try {
             Edge        channel    = dataflow->getEdgeById(channel_id);
-            result.second.insert(channel);
+            result.critical_edges.insert(channel);
         } catch(...) {
             VERBOSE_KPERIODIC_DEBUG("      is loopback");
         }
@@ -1212,16 +1215,16 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
     VERBOSE_INFO("KSchedule function get " << frequency << " from MCRP." );
     VERBOSE_INFO("  ->  then omega =  " <<  1 / frequency );
 
-    result.first = frequency;
+    result.throughput = frequency;
 
     ////////////// SCHEDULE CALL // END
 
 
-    if (result.second.size() != 0) {
+    if (result.critical_edges.size() != 0) {
 
 
-        VERBOSE_INFO("1-periodic throughput (" << result.first <<  ") is not enough.");
-        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+        VERBOSE_INFO("1-periodic throughput (" << result.throughput <<  ") is not enough.");
+        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
 
         while (true) {
 
@@ -1236,7 +1239,7 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
             VERBOSE_INFO("KPeriodic EventGraph generation");
 
             //STEP 1 - Generate Event Graph and update vector
-            if (!updateEventGraph( dataflow ,  &kvector, &(result.second), eg)) break ;
+            if (!updateEventGraph( dataflow ,  &kvector, &(result.critical_edges), eg)) break ;
 
             VERBOSE_INFO("KPeriodic EventGraph generation Done");
 
@@ -1252,7 +1255,7 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
                 ARRAY_INDEX channel_id = eg->getChannelId(*it);
                 try {
                     Edge        channel    = dataflow->getEdgeById(channel_id);
-                    resultprime.second.insert(channel);
+                    resultprime.critical_edges.insert(channel);
                 } catch(...) {
                     VERBOSE_KPERIODIC_DEBUG("      is loopback");
                 }
@@ -1263,19 +1266,19 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
             VERBOSE_INFO("KSchedule function get " << frequency << " from MCRP." );
             VERBOSE_INFO("  ->  then omega =  " <<  1 / frequency );
 
-            resultprime.first = frequency;
+            resultprime.throughput = frequency;
 
             ////////////// SCHEDULE CALL // END
 
-            if (sameset(dataflow,&(resultprime.second),&(result.second)))  {
+            if (sameset(dataflow,&(resultprime.critical_edges),&(result.critical_edges)))  {
                 VERBOSE_INFO("Critical circuit is the same");
                 result = resultprime;
 
                 break;
             }
             result = resultprime;
-            VERBOSE_INFO("Current K-periodic throughput (" << result.first <<  ") is not enough.");
-            VERBOSE_KPERIODIC_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+            VERBOSE_INFO("Current K-periodic throughput (" << result.throughput <<  ") is not enough.");
+            VERBOSE_KPERIODIC_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
 
 
 
@@ -1294,7 +1297,7 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
 
     VERBOSE_INFO("K-periodic schedule - total_ki=" << sumKi << " total_ni=" << sumNi );
 
-    TIME_UNIT res = result.first;
+    TIME_UNIT res = result.throughput;
 
     TIME_UNIT omega = 1 / res ;
     eg->computeStartingTimeWithOmega (omega);
@@ -1384,7 +1387,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
         ARRAY_INDEX channel_id = eg->getChannelId(*it);
         try {
             Edge        channel    = dataflow->getEdgeById(channel_id);
-            result.second.insert(channel);
+            result.critical_edges.insert(channel);
         } catch(...) {
             VERBOSE_KPERIODIC_DEBUG("      is loopback");
         }
@@ -1395,17 +1398,17 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
     VERBOSE_INFO("KSchedule function get " << frequency << " from MCRP." );
     VERBOSE_INFO("  ->  then omega =  " <<  1 / frequency );
 
-    result.first = frequency;
+    result.throughput = frequency;
 
     ////////////// SCHEDULE CALL // END
 
 
 
-    if (result.second.size() != 0) {
+    if (result.critical_edges.size() != 0) {
 
 
-        VERBOSE_INFO("1-periodic throughput (" << result.first <<  ") is not enough.");
-        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+        VERBOSE_INFO("1-periodic throughput (" << result.throughput <<  ") is not enough.");
+        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
 
         while (true) {
 
@@ -1420,7 +1423,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
             VERBOSE_INFO("KPeriodic EventGraph generation");
 
             //STEP 1 - Generate Event Graph and update vector
-            if (!updateEventGraph( dataflow ,  &kvector, &(result.second), eg)) break ;
+            if (!updateEventGraph( dataflow ,  &kvector, &(result.critical_edges), eg)) break ;
 
             VERBOSE_INFO("KVector = " << commons::toString(kvector) );
             VERBOSE_INFO("KPeriodic EventGraph generation Done");
@@ -1438,7 +1441,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
                 ARRAY_INDEX channel_id = eg->getChannelId(*it);
                 try {
                     Edge        channel    = dataflow->getEdgeById(channel_id);
-                    resultprime.second.insert(channel);
+                    resultprime.critical_edges.insert(channel);
                 } catch(...) {
                     VERBOSE_KPERIODIC_DEBUG("      is loopback");
                 }
@@ -1449,19 +1452,19 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
             VERBOSE_INFO("KSchedule function get " << frequency << " from MCRP." );
             VERBOSE_INFO("  ->  then omega =  " <<  1 / frequency );
 
-            resultprime.first = frequency;
+            resultprime.throughput = frequency;
 
             ////////////// SCHEDULE CALL // END
 
-            if (sameset(dataflow,&(resultprime.second),&(result.second)))  {
+            if (sameset(dataflow,&(resultprime.critical_edges),&(result.critical_edges)))  {
                 VERBOSE_INFO("Critical circuit is the same");
                 result = resultprime;
 
                 break;
             }
             result = resultprime;
-            VERBOSE_INFO("Current K-periodic throughput (" << result.first <<  ") is not enough.");
-            VERBOSE_KPERIODIC_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+            VERBOSE_INFO("Current K-periodic throughput (" << result.throughput <<  ") is not enough.");
+            VERBOSE_KPERIODIC_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
 
 
 
@@ -1486,7 +1489,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 
     VERBOSE_INFO("K-periodic schedule - total_ki=" << sumKi << " total_ni=" << sumNi );
 
-    TIME_UNIT res = result.first;
+    TIME_UNIT res = result.throughput;
 	std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
 	std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
     
@@ -1529,26 +1532,26 @@ void algorithms::compute_KperiodicSlow2_throughput    (models::Dataflow* const d
     }}
     kperiodic_result_t result = KSchedule(dataflow,&kvector);
 
-    if (result.second.size() != 0) {
+    if (result.critical_edges.size() != 0) {
 
-        VERBOSE_INFO("1-periodic throughput (" << result.first <<  ") is not enough.");
-        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+        VERBOSE_INFO("1-periodic throughput (" << result.throughput <<  ") is not enough.");
+        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
 
         while (true) {
             iteration_count++;
-            updateVectorWithFineNi(dataflow,&kvector,&(result.second));
+            updateVectorWithFineNi(dataflow,&kvector,&(result.critical_edges));
 	    {ForEachVertex(dataflow,v) {
 		VERBOSE_INFO("New vector " << dataflow->getVertexName(v) << " = " << kvector[v]  << "( Ni=" << dataflow->getNi(v) << ")" );
 	      }}
 	    kperiodic_result_t resultprime = KSchedule(dataflow,&kvector);
-            if (sameset(dataflow,&(resultprime.second),&(result.second)))  {
+            if (sameset(dataflow,&(resultprime.critical_edges),&(result.critical_edges)))  {
                 VERBOSE_INFO("Critical circuit is the same");
                 result = resultprime;
                 break;
             }
             result = resultprime;
-            VERBOSE_INFO("Current K-periodic throughput (" << result.first <<  ") is not enough.");
-            VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+            VERBOSE_INFO("Current K-periodic throughput (" << result.throughput <<  ") is not enough.");
+            VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
         }
 
     } {
@@ -1567,7 +1570,7 @@ void algorithms::compute_KperiodicSlow2_throughput    (models::Dataflow* const d
 
     VERBOSE_INFO("K-periodic schedule - total_ki=" << total_ki << " total_ni=" << total_ni );
 
-    TIME_UNIT res = result.first;
+    TIME_UNIT res = result.throughput;
     std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
     std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 
@@ -1585,23 +1588,23 @@ EXEC_COUNT algorithms::test_Kperiodic_throughput    (models::Dataflow* const dat
     }}
     kperiodic_result_t result = KSchedule(dataflow,&kvector);
 
-    if (result.second.size() != 0) {
+    if (result.critical_edges.size() != 0) {
 
-        VERBOSE_INFO("1-periodic throughput (" << result.first <<  ") is not enough.");
-        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+        VERBOSE_INFO("1-periodic throughput (" << result.throughput <<  ") is not enough.");
+        VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
 
         while (true) {
             iteration_count++;
-            updateVectorWithLocalNi(dataflow,&kvector,&(result.second));
+            updateVectorWithLocalNi(dataflow,&kvector,&(result.critical_edges));
             kperiodic_result_t resultprime = KSchedule(dataflow,&kvector);
-            if (sameset(dataflow,&(resultprime.second),&(result.second)))  {
+            if (sameset(dataflow,&(resultprime.critical_edges),&(result.critical_edges)))  {
                 VERBOSE_INFO("Critical circuit is the same");
                 result = resultprime;
                 break;
             }
             result = resultprime;
-            VERBOSE_INFO("Current K-periodic throughput (" << result.first <<  ") is not enough.");
-            VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.second)) <<  "");
+            VERBOSE_INFO("Current K-periodic throughput (" << result.throughput <<  ") is not enough.");
+            VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
         }
 
     } {
@@ -1619,7 +1622,7 @@ EXEC_COUNT algorithms::test_Kperiodic_throughput    (models::Dataflow* const dat
     }}
 
     VERBOSE_INFO("K-periodic schedule - total_ki=" << total_ki << " total_ni=" << total_ni );
-    TIME_UNIT res = result.first;
+    TIME_UNIT res = result.throughput;
     std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
     std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 

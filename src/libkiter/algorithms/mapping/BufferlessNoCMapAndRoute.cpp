@@ -279,8 +279,8 @@ static std::map<int, route_t> graphProcessing(const models::Dataflow* const data
 
 }
 
-static std::map<int, Edge> generateEdgesMap(models::Dataflow* dataflow, NoCGraph* noc) {
-	std::map<int, Edge> edge_list;
+static std::map<int, std::vector<Edge>> generateEdgesMap(models::Dataflow* dataflow, NoCGraph* noc) {
+	std::map<int, std::vector<Edge>> edge_list;
 	{ForEachEdge(dataflow,e) {
 		auto v1 = dataflow->getEdgeSource(e);
 		auto v2 = dataflow->getEdgeTarget(e);
@@ -289,7 +289,7 @@ static std::map<int, Edge> generateEdgesMap(models::Dataflow* dataflow, NoCGraph
 		int v2_i = (int)dataflow->getVertexId(v2);
 
 		int index = noc->getMapIndex(v1_i, v2_i);
-		edge_list[index] = e;
+		edge_list[index].push_back ( e );
 	}}
 	return edge_list;
 }
@@ -322,53 +322,53 @@ void algorithms::mapping::BufferlessNoCMapAndRoute (models::Dataflow* const data
 	//#### do some processing to perfrom task mapping, NoC route determination
 	//####  Task to Core mapping
 	std::map<int, route_t> routes = graphProcessing(to,noc);
-	std::map<int, Edge> edge_list = generateEdgesMap(to,noc);
+	std::map<int, std::vector<Edge>> edge_list = generateEdgesMap(to,noc);
 
 	std::map<Vertex, node_id_t> mapping;
 	std::map<Edge, std::vector <edge_id_t> > routing;
 
 
 	for (auto route_item : routes ) {
-		Edge e = edge_list[route_item.first];
-		VERBOSE_INFO ("Edge " << to->getEdgeName(e) << "(" << to->getVertexName(to->getEdgeSource(e)) << " to " << to->getVertexName(to->getEdgeTarget(e))<< ")"   << ", Route " << commons::toString(route_item.second));
-		for (auto edge : route_item.second) {
+		std::vector<Edge> e_to_vec = edge_list[route_item.first];
+		for (Edge e_to : e_to_vec) {
+			VERBOSE_INFO ("Edge " << to->getEdgeName(e_to) << "(" << to->getVertexName(to->getEdgeSource(e_to)) << " to " << to->getVertexName(to->getEdgeTarget(e_to))<< ")"   << ", Route " << commons::toString(route_item.second));
+			for (auto edge : route_item.second) {
 
-			VERBOSE_INFO ("    - " << edge <<" links " << noc->getMapIndexPair(edge).first << " to " << noc->getMapIndexPair(edge).second  );
-			dataflow->getNoC().getEdge( noc->getMapIndexPair(edge).first , noc->getMapIndexPair(edge).second);
+				VERBOSE_INFO ("    - " << edge <<" links " << noc->getMapIndexPair(edge).first << " to " << noc->getMapIndexPair(edge).second  );
+				dataflow->getNoC().getEdge( noc->getMapIndexPair(edge).first , noc->getMapIndexPair(edge).second);
+			}
+
+			ARRAY_INDEX edge_id = to->getEdgeId(e_to);
+			Edge e_dataflow = dataflow->getEdgeById(edge_id);
+
+			node_id_t source_node = noc->getMapIndexPair(route_item.second[0]).first;
+			node_id_t dest_node   = noc->getMapIndexPair(route_item.second[route_item.second.size() - 1]).second;
+
+			Vertex source_vtx   = dataflow->getEdgeSource(e_dataflow);
+			Vertex target_vtx   = dataflow->getEdgeTarget(e_dataflow);
+
+			if (mapping.count(source_vtx)) {
+				VERBOSE_ASSERT (mapping.at(source_vtx) == source_node, "Invalid routes, mor than one mapping per task");
+			} else {
+				mapping[source_vtx] = source_node;
+			}
+
+			if (mapping.count(target_vtx)) {
+				VERBOSE_ASSERT (mapping.at(target_vtx) == dest_node, "Invalid routes, mor than one mapping per task");
+			} else {
+				mapping[target_vtx] = dest_node;
+			}
+
+			for (auto edge : route_item.second) {
+
+						const NetworkEdge& nedge = dataflow->getNoC().getEdge(noc->getMapIndexPair(edge).first, noc->getMapIndexPair(edge).second);
+						VERBOSE_ASSERT(nedge.id == edge, "Inconsistent mapping between Original NoC and replicate.");
+
+
+			}
+
+			routing[e_dataflow] = route_item.second;
 		}
-
-		Edge e_to = edge_list[route_item.first];
-		ARRAY_INDEX edge_id = to->getEdgeId(e_to);
-		Edge e_dataflow = dataflow->getEdgeById(edge_id);
-
-		node_id_t source_node = noc->getMapIndexPair(route_item.second[0]).first;
-		node_id_t dest_node   = noc->getMapIndexPair(route_item.second[route_item.second.size() - 1]).second;
-
-		Vertex source_vtx   = dataflow->getEdgeSource(e_dataflow);
-		Vertex target_vtx   = dataflow->getEdgeTarget(e_dataflow);
-
-		if (mapping.count(source_vtx)) {
-			VERBOSE_ASSERT (mapping.at(source_vtx) == source_node, "Invalid routes, mor than one mapping per task");
-		} else {
-			mapping[source_vtx] = source_node;
-		}
-
-		if (mapping.count(target_vtx)) {
-			VERBOSE_ASSERT (mapping.at(target_vtx) == dest_node, "Invalid routes, mor than one mapping per task");
-		} else {
-			mapping[target_vtx] = dest_node;
-		}
-
-		for (auto edge : route_item.second) {
-
-					const NetworkEdge& nedge = dataflow->getNoC().getEdge(noc->getMapIndexPair(edge).first, noc->getMapIndexPair(edge).second);
-					VERBOSE_ASSERT(nedge.id == edge, "Inconsistent mapping between Original NoC and replicate.");
-
-
-		}
-
-		routing[e_dataflow] = route_item.second;
-
 	}
 
 
