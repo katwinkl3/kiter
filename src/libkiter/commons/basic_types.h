@@ -13,7 +13,7 @@ typedef               long int  PHASE_INDEX;
 typedef               long int  EXEC_COUNT;
 typedef               long int  TOKEN_UNIT;
 typedef               long int  DATA_UNIT;
-typedef unsigned      long int  ARRAY_INDEX;
+typedef 	          long int  ARRAY_INDEX;
 typedef            long double  TIME_UNIT;
 typedef            long double  DATA_BY_TIME_UNIT;
 

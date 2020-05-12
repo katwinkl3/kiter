@@ -305,6 +305,7 @@ void algorithms::KPeriodic_memory   (models::Dataflow* const  dataflow,  std::ma
     //******************************************************************
     {ForEachVertex(dataflow,t) {
         std::string name = dataflow->getVertexName(t);
+        VERBOSE_ASSERT(name != "", "Unnamed task is unsupported");
         for(EXEC_COUNT k = 1; k <= kvector[t] ; k++) {
             g.addColumn("s_" + commons::toString<EXEC_COUNT>(k) + "_" + name,commons::KIND_CONTINUE,commons::bound_s(commons::LOW_BOUND,0),0);
         }
@@ -323,6 +324,7 @@ void algorithms::KPeriodic_memory   (models::Dataflow* const  dataflow,  std::ma
         const Vertex target   = dataflow->getEdgeTarget(c);
 
         const std::string  buffername= dataflow->getEdgeName(c);
+        VERBOSE_ASSERT(buffername != "", "Unnamed edge is unsupported");
         const std::string  feedbackbuffername= "feedback_" + dataflow->getEdgeName(c);
         const std::string  feedback_mo_name   = "Mop_" + feedbackbuffername;
         const std::string  mo_name   = "Mop_" + buffername;

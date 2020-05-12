@@ -25,6 +25,7 @@ namespace algorithms {
 	namespace transformation {
 		bool mergeCSDFFromKperiodicSchedule(models::Dataflow* to, std::string name , std::vector< ARRAY_INDEX >& mergeNodes);
 		bool mergeCSDFFromSchedule(models::Dataflow* to, std::string name , const std::vector< ARRAY_INDEX >& mergeNodes, const models::Scheduling* scheduling_res);
+		bool basic_mergeCSDFFromSchedule(models::Dataflow* to, std::string name , const std::vector< ARRAY_INDEX >& mergeNodes, const models::Scheduling* scheduling_res);
 		void merge_tasks    (models::Dataflow* const dataflow, parameters_list_t  parameters  );
 	}
 }

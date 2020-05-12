@@ -229,7 +229,8 @@ private :
 
 		{ForEachVertex(to,source) {
 			auto s_id = to->getVertexId(source);
-			out_vtx_map[s_id] = out.addVertex();
+			auto s_name = to->getVertexName(source);
+			out_vtx_map[s_id] = out.addVertex(s_id,s_name);
 		}}
 		// Note: getEdgeOut and getEdgeIn are Output and input Rates of a buffer
 		{ForEachVertex(to,source) {
@@ -237,7 +238,9 @@ private :
 				auto target = to->getEdgeTarget(e);
 				auto s_id = to->getVertexId(source);
 				auto t_id = to->getVertexId(target);
-				out.addEdge(out_vtx_map[t_id], out_vtx_map[s_id]);
+				auto id = to->getEdgeId(e);
+				auto name = to->getEdgeName(e);
+				out.addEdge(out_vtx_map[t_id], out_vtx_map[s_id], id, name);
 			}}
 		}}
 

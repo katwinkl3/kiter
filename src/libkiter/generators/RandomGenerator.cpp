@@ -216,7 +216,7 @@ models::Dataflow * RandomGenerator::generate (int seed) {
 
 
 
-			Edge c = dataflow->addEdge(source,target,i);
+			Edge c = dataflow->addEdge(source,target,i,"buffer_" + commons::toString(i));
 
 
 			dataflow->setEdgeInPhases(c, in_periodic_phases);

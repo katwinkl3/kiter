@@ -207,8 +207,11 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
     VERBOSE_INFO( "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res );
     VERBOSE_INFO( "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   );
 
+    VERBOSE_INFO("Run period2Scheduling");
 
     models::Scheduling persched = period2Scheduling(dataflow,kvector,result);
+
+    VERBOSE_INFO("End of period2Scheduling");
 
     return persched;
 

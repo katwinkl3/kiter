@@ -13,6 +13,7 @@
 #include <models/Dataflow.h>
 #include <algorithms/schedulings.h>
 #include <commons/SDF3Wrapper.h>
+#include <algorithms/transformation/merging.h>
 
 BOOST_FIXTURE_TEST_SUITE( use_case_test , WITH_VERBOSE)
 
@@ -26,7 +27,8 @@ BOOST_AUTO_TEST_CASE( merge_test_LTE )
 	auto v1 = graph->getVertexByName("mid-10-14_34");
 	auto v2 = graph->getVertexByName("mid-9-13_34");
 	std::vector<ARRAY_INDEX> tasks = {graph->getVertexId(v1), graph->getVertexId(v2) };
-	//mergeConfigNodesInit (graph , name ,tasks );
+	BOOST_REQUIRE(algorithms::transformation::mergeCSDFFromKperiodicSchedule(graph,name, tasks));
+
 	printers::GenerateGraphDOT(graph);
 }
 

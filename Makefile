@@ -35,7 +35,7 @@ all : build
 build: ${BUILDS}
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 clean:
-	rm -Rf Release Debug *.lp *.mps 
+	rm -Rf Release Debug *.lp *.mps *.png *.dot *.pdf *.xml *.lp
 
 benchmark :  sdf.log  csdf.log csdf_sized.log
 

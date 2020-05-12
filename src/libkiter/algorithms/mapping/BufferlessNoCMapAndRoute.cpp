@@ -186,7 +186,8 @@ static Vertex removeCycleEdges(models::Dataflow* to, const std::vector<ARRAY_IND
 	for(int i = 0; i < (int)vertexId.size(); i++)
 	{
 		auto t = to->getVertexById( vertexId[i]);
-		to->addEdge(start, t);
+		auto ne = to->addEdge(start, t);
+		to->setEdgeName(ne,"start_to_isolated_" + commons::toString(to->getEdgeId(ne)));
 	}
 	return start;
 }
@@ -224,13 +225,15 @@ static std::map<int, route_t> graphProcessing(const models::Dataflow* const data
 
 		if(dataflow->getVertexInDegree( dataflow->getVertexById(to->getVertexId(t)) ) == 0) {
 			input_task_found = true;
-			to->addEdge(start, t);
+			auto ne = to->addEdge(start, t);
+			to->setEdgeName(ne,"between_start_" + commons::toString(to->getEdgeId(ne)));
 			//std::cout << "adding new edge between start " << to->getVertexId(t) << "\n";
 		}
 	}}
 
 	if(!input_task_found) {
-		to->addEdge(start, top);
+		auto ne = to->addEdge(start, top);
+		to->setEdgeName(ne,"start_top_" + commons::toString(to->getEdgeId(ne)));
 	}
 
 	// Result: "start" in an artifical task, and every other task is reachable from start.

@@ -42,7 +42,7 @@ static void print_graph (models::Dataflow * to, std::string suffix = "none") {
 	counter ++ ;
 	VERBOSE_INFO("=========== Write file " << counter << "\n");
 
-	std::string sfilename = "bufferless_noc_schedule_"+ commons::toString(counter) + "_" + suffix + "";
+	std::string sfilename = "bufferless_noc_schedule_"+ to->getGraphName() + "_"+ commons::toString(counter) + "_" + suffix + "";
 
 	commons::writeSDF3File(sfilename + ".xml", to);
 

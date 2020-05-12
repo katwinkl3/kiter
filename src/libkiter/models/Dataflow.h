@@ -319,12 +319,28 @@ public :
 public :
 
 inline	 Edge addEdge(const Vertex from, const Vertex to) {
-	ASSERT_WRITABLE();
-	reset_computation();
-	return addEdge(from , to , auto_edge_num++);;
+	ForEachEdge(this,e) 	{ if (this->getEdgeId(e) >= auto_edge_num) auto_edge_num = this->getEdgeId(e) + 1;};
+	return addEdgeUnsafe(from , to , auto_edge_num);
 }
 
-inline	 Edge addEdge(const Vertex from, const Vertex to,const  ARRAY_INDEX id) {
+inline	 Edge addEdge(const Vertex from, const Vertex to, const  ARRAY_INDEX id) {
+	return addEdgeUnsafe(from , to , id);
+}
+
+inline	 Edge addEdge(const Vertex from, const Vertex to, const  ARRAY_INDEX id, const std::string name) {
+	Edge ne = addEdge(from , to , id);
+	this->setEdgeName(ne,name);
+	return ne;
+}
+
+inline	 Edge addEdge(const Vertex from, const Vertex to, const std::string name) {
+	Edge ne = addEdge(from , to);
+	this->setEdgeName(ne,name);
+	return ne;
+}
+
+
+inline	 Edge addEdgeUnsafe(const Vertex from, const Vertex to, const  ARRAY_INDEX id) {
 	ASSERT_WRITABLE();
 	reset_computation();
 	std::pair<EdgeD,bool> res = boost::add_edge( from.v, to.v,this->getG());
@@ -332,30 +348,41 @@ inline	 Edge addEdge(const Vertex from, const Vertex to,const  ARRAY_INDEX id) {
 	Edge newChannel = Edge(res.first);
 	this->setEdgeId(newChannel,id);
 	this->setEdgeType(newChannel,EDGE_TYPE::NORMAL_EDGE);
-	this->setEdgeName(newChannel,"channel_" + commons::toString<ARRAY_INDEX>(this->getEdgeId(newChannel)));
-	this->setEdgeOutputPortName(newChannel,"out_" + this->getEdgeName(newChannel));
-	this->setEdgeInputPortName(newChannel,"in_" + this->getEdgeName(newChannel));
 	return newChannel;
 }
 
 
 inline 	Vertex 				addVertex			() 							{
-	ASSERT_WRITABLE();
-	reset_computation();
-	Vertex nt = Vertex(boost::add_vertex(this->getG()));
-	//std::cout << "orig:" << nt << ",vtx_id:" << auto_vertex_num << "\n";
-	this->setVertexIdUnsafe(nt,auto_vertex_num++);
-	this->setVertexName(nt,"Vertex" + std::to_string(this->getVertexId(nt)));
-	this->setInitPhasesQuantity(nt,0);
-	this->setMapping(nt,-1);
-	return nt;
+	ForEachVertex(this,v) 	{ if (this->getVertexId(v) >= auto_vertex_num) auto_vertex_num = this->getVertexId(v) + 1;};
+	return addUnsafeVertex(auto_vertex_num++);
 }
+
 inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
+	ForEachVertex(this,v) 	{ if (this->getVertexId(v) >= id) VERBOSE_FAILURE();};
+	return addUnsafeVertex(id);
+
+}
+
+inline  Vertex                addVertex         (const ARRAY_INDEX id, const std::string name)      {
+	Vertex nt = addVertex(id);
+	this->setVertexName(nt,name);
+	return nt;
+
+}
+inline  Vertex                addVertex         (const std::string name)      {
+	Vertex nt = addVertex();
+	this->setVertexName(nt,name);
+	return nt;
+
+}
+
+inline  Vertex                addUnsafeVertex         (const ARRAY_INDEX id)      {
+
 	ASSERT_WRITABLE();
 	reset_computation();
 	Vertex nt = Vertex(boost::add_vertex(this->getG()));
 	this->setVertexId(nt,id);
-	this->setVertexName(nt,"Vertex" + std::to_string(this->getVertexId(nt)));
+	//this->setVertexName(nt,"Vertex" + std::to_string(this->getVertexId(nt)));
 	this->setInitPhasesQuantity(nt,0);
 	this->setMapping(nt,-1);
 	return nt;
@@ -484,19 +511,31 @@ public :
                                                  const std::string name)    {
     	ASSERT_WRITABLE();
     	reset_computation();
+    	VERBOSE_ASSERT(name != "", "Empty name is not permit for vertex.");
     	try {
     		Vertex other = this->getVertexByName(name);
-    		VERBOSE_ASSERT(other == t , "Cannot name two vertex the same.");
+    		VERBOSE_ASSERT(other == t , "Cannot name two vertex the same: " << name);
     	} catch (std::out_of_range& e) {
 
     	}
     	boost::put(boost::vertex_name, this->getG(), t.v, name);
     }
-    inline  const std::string   getVertexName   (const Vertex t)      const {return boost::get(get(boost::vertex_name, this->getG()), t.v);}
+    /**
+     * TODO: Be careful tasks can be unamed from now.
+     */
+    inline  const std::string   getVertexName   (const Vertex t)      const {
+
+    	std::string name = boost::get(get(boost::vertex_name, this->getG()), t.v);
+    	//VERBOSE_ASSERT(name != "", "Empty name is not permit for vertex.");
+    	return name;
+    }
+
+
     inline  Vertex              getVertexByName (const std::string s) const {ForEachVertex(this,pVertex) {if (this->getVertexName(pVertex) == s)return pVertex;};throw std::out_of_range(TXT_TASK_NOT_FOUND + s);}
 
     inline 	const std::string 	getEdgeName	    (const Edge c)		const	{
     		std::string s = boost::get(get(boost::edge_name, this->getG()), c.e);
+        	//VERBOSE_ASSERT(s != "", "Empty name is not permit for edges.");
     		return s;
     }
 
@@ -511,6 +550,14 @@ public :
 		ASSERT_WRITABLE();
 		reset_computation();
     	VERBOSE_ASSERT(name != "", "Empty name is not permit for edges.");
+
+    	try {
+    	    		Edge other = this->getEdgeByName(name);
+    	    		VERBOSE_ASSERT(other == c , "Cannot name two edges the same: " << name);
+    	} catch (std::out_of_range& e) {
+
+    	}
+
     	boost::put(boost::edge_name, this->getG(), c.e, name);
     }
 
@@ -817,10 +864,11 @@ public :
       }
 
       inline  TIME_UNIT          getVertexDuration    (const Vertex t, EXEC_COUNT k)   const {
+    	  const std::vector<TIME_UNIT>&  vec = boost::get(get(boost::vertex_phaseduration, this->getG()), t.v);
     	  if (k <= 0 ) {
     		  return getVertexInitDuration(t, k + getInitPhasesQuantity(t));
     	  }
-      	return boost::get(get(boost::vertex_phaseduration, this->getG()), t.v).at(k-1);
+      	return vec.at( (k-1) % vec.size() );
       }
 
       inline  TIME_UNIT          getVertexInitDuration    (const Vertex t, EXEC_COUNT k)   const {

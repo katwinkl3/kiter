@@ -120,6 +120,8 @@ template<typename T>
 
 
 template<>
+    std::string toString(const std::set<long  int, std::less<long  int>, std::allocator<long  int> >& t) ;
+template<>
     std::string toString(const std::set<long unsigned int, std::less<long unsigned int>, std::allocator<long unsigned int> >& t) ;
 
 template<>
@@ -140,8 +142,6 @@ std::string toString< std::vector<int> >(const std::vector<int>& v);
 template<>
 std::string toString< std::vector<ARRAY_INDEX> >(const std::vector<ARRAY_INDEX>& v);
 
-template<>
-std::string toString< std::vector<TOKEN_UNIT> >(const std::vector<TOKEN_UNIT>& v);
 
 template<>
 std::string toString< std::vector<long double> >(const std::vector<long double>& v);

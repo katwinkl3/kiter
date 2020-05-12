@@ -60,6 +60,7 @@ models::Dataflow*  generators::generate_lte_sdf(parameters_list_t   param_list) 
 				auto src = to->getVertexById( vertex_info[i][j] );
 				auto dst = to->getVertexById( vertex_info[i+1][k] );
 				auto e1 = to->addEdge(src, dst);
+				to->setEdgeName(e1,"channel_" + commons::toString(to->getEdgeId(e1)));
 				to->setEdgeInPhases(e1,{pkts});
 				to->setEdgeOutPhases(e1,{pkts}); // and the consumption rate (as many rates as states for the associated task)
 				to->setPreload(e1,0);  // preload is M0

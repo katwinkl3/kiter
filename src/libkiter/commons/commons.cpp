@@ -38,7 +38,14 @@ std::string toString< std::vector<TOKEN_UNIT> >(const std::vector<TOKEN_UNIT>& v
 }
 
 
-
+template<>
+    std::string toString(const std::set<long  int, std::less<long  int>, std::allocator<long  int> >& t) {
+	 std::stringstream s;
+	 for (auto myt : t) {
+		 s << commons::toString(myt) + " ";
+	 }
+	 return s.str();
+}
 template<>
     std::string toString(const std::set<long unsigned int, std::less<long unsigned int>, std::allocator<long unsigned int> >& t) {
 	 std::stringstream s;
@@ -77,11 +84,7 @@ std::string toString< std::pair<unsigned long , unsigned long> >(const std::pair
         return "<" + commons::toString(std::get<0>(v)) +  "," +  commons::toString(std::get<1>(v)) +  "," + ">";
 }
 
-template<>
-std::string toString< std::vector<ARRAY_INDEX> >(const std::vector<ARRAY_INDEX>& v)
-{
-        return  "{" + commons::join(v.begin(),v.end(),std::string(","))+ "}";
-}
+
 template<>
 std::string toString< std::vector<long double> >(const std::vector<long double>& v)
 {

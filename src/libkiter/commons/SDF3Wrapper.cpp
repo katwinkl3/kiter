@@ -677,6 +677,26 @@ models::Dataflow* wrapSDF3Dataflow (xmlDocPtr doc) {
 
 	return to;
 }
+
+models::Dataflow*  parseSDF3XML         (const std::string data) {
+
+	xmlDocPtr doc =  xmlReadMemory(data.c_str(), data.size(), NULL, NULL,XML_PARSE_NOERROR|XML_PARSE_NOWARNING|XML_PARSE_RECOVER);
+
+	if (doc == NULL) {
+		VERBOSE_ERROR("Document XML invalide");
+		return NULL;
+	}
+
+
+
+	models::Dataflow* wrappedDataflow = wrapSDF3Dataflow(doc);
+	wrappedDataflow->setFilename("FromMemory");
+
+	xmlFreeDoc(doc);
+
+	return wrappedDataflow;
+}
+
 models::Dataflow*  readSDF3File         (const std::string f) {
 
 	xmlDocPtr doc =  xmlReadFile(f.c_str(),NULL,XML_PARSE_NOERROR|XML_PARSE_NOWARNING|XML_PARSE_RECOVER);
@@ -747,9 +767,9 @@ void writeChannel (xmlTextWriterPtr writer, const models::Dataflow* dataflow, co
 
 	const std::string edge_name = dataflow->getEdgeName(e);
 	const std::string edge_srcActor = dataflow->getVertexName(dataflow->getEdgeSource(e));
-	const std::string edge_srcPort = dataflow->getEdgeInputPortName(e);
+	const std::string edge_srcPort ="in_" + commons::toString(dataflow->getEdgeId(e));
 	const std::string edge_dstActor =dataflow->getVertexName(dataflow->getEdgeTarget(e));
-	const std::string edge_dstPort = dataflow->getEdgeOutputPortName(e);
+	const std::string edge_dstPort = "out_" + commons::toString(dataflow->getEdgeId(e));
 	const DATA_UNIT edge_size = dataflow->getTokenSize(e);
 	const TOKEN_UNIT edge_initialTokens = dataflow->getPreload(e);
 	xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "channel");
@@ -768,6 +788,12 @@ void writeChannel (xmlTextWriterPtr writer, const models::Dataflow* dataflow, co
 
 
 std::string  generateSDF3XML         (const models::Dataflow* dataflow)  {
+
+
+
+
+
+
 
 	xmlBufferPtr buf = xmlBufferCreate();
 	if (buf == NULL) {
@@ -809,11 +835,11 @@ std::string  generateSDF3XML         (const models::Dataflow* dataflow)  {
 
 					for (auto it : dataflow->in_edges(t)) {
 									Edge e = *it;
-									const std::string in_port =  dataflow->getEdgeOutputPortName(e);
+									const std::string out_port =  "out_" + commons::toString(dataflow->getEdgeId(e));
 									const auto in_init_rates = dataflow->getEdgeInitOutVector(e);
 									const auto in_rates = dataflow->getEdgeOutVector(e);
 									xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
-									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) in_port.c_str());
+									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) out_port.c_str());
 									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "in");
 									std::string rates_str = vectorAsStr(in_rates);
 									if (in_init_rates.size()) {
@@ -825,11 +851,11 @@ std::string  generateSDF3XML         (const models::Dataflow* dataflow)  {
 
 					for (auto it : dataflow->out_edges(t)) {
 									Edge e = *it;
-									const std::string out_port =  dataflow->getEdgeInputPortName(e);
+									const std::string in_port =  "in_" + commons::toString(dataflow->getEdgeId(e));
 									const auto out_init_rates = dataflow->getEdgeInitInVector(e);
 									const auto out_rates = dataflow->getEdgeInVector(e);
 									xmlTextWriterSetIndent(writer,3); xmlTextWriterStartElement(writer,(const xmlChar*) "port");
-									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) out_port.c_str());
+									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"name", (const xmlChar*) in_port.c_str());
 									xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"type", (const xmlChar*) "out");
 									std::string rates_str = vectorAsStr(out_rates);
 									if (out_init_rates.size()) {

@@ -50,6 +50,7 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 		return new_vertices;
 
 	bool flag = true;
+	ARRAY_INDEX original_edge_id = d->getEdgeId(c);
 	d->removeEdge(c); //we delete the edge
 
 
@@ -70,12 +71,12 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 
 		////PLLLEASE DONT CHANGE THE "mid-" value in the name"
 		std::stringstream ss;
-		ss << "mid-" << source << "-" << target << "_" << e;
+		ss << "link-" << original_edge_id << "_" << source << "_" << target << "_" << e;
 
 		returnValue[(unsigned int)e].push_back(  d->getVertexId(middle)  );
 		vid_to_conflict_map[ d->getVertexId(middle) ] = (unsigned int)e;
 
-		//d->setVertexName(middle,ss.str());
+		d->setVertexName(middle,ss.str());
 
 		d->setPhasesQuantity(middle,1); // number of state for the actor, only one in SDF
 		d->setVertexDuration(middle,{1}); // is specify for every state , only one for SDF.
@@ -91,6 +92,7 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 
 		// we create a new edge between source and middle,
 		Edge e1 = d->addEdge(source_vtx, middle);
+		d->setEdgeName(e1, "artificial_" + commons::toString(d->getEdgeId(e1)));
 		if (list_idx == 0)
 		d->setRoute(e1,list);
 
@@ -114,7 +116,7 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 		{
 			std::stringstream config_key, config_name;
 			config_key << list[list_idx] << "_" << list[list_idx+1];
-			config_name << "cfg-" << source << "_" << target << "-" << list[list_idx] << "_" << list[list_idx+1];
+			config_name << "router-" << original_edge_id << "_"  << source << "_" << target << "_" << list[list_idx] << "_" << list[list_idx+1];
 
 
 			auto vtx = d->addVertex();
@@ -131,13 +133,14 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 			key_str = config_key.str();
 
 
-			//d->setVertexName(vtx,config_name.str());
+			d->setVertexName(vtx,config_name.str());
 			d->setPhasesQuantity(vtx,1); // number of state for the actor, only one in SDF
 			d->setVertexDuration(vtx,{NULL_DURATION}); // is specify for every state , only one for SDF.
 			d->setReentrancyFactor(vtx,1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
 
 			// we create a new edge between source and middle,
 			auto e1 = d->addEdge(middle, vtx);
+			d->setEdgeName(e1, "artificial_" + commons::toString(d->getEdgeId(e1)));
 
 			d->setEdgeInPhases(e1,{1});
 			d->setEdgeType(e1,EDGE_TYPE::BUFFERLESS_EDGE);
@@ -151,6 +154,7 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 	}
 	//find the final edge
 	auto e2 = d->addEdge(source_vtx, target_vtx);
+	d->setEdgeName(e2, "final_" + commons::toString(d->getEdgeId(e2)));
 	d->setEdgeOutPhases(e2,{outrate});
 	d->setEdgeInPhases(e2,{1});
 	d->setPreload(e2,preload);  // preload is M0
