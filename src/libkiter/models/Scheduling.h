@@ -13,7 +13,8 @@
 #include <map>
 #include <vector>
 
-typedef std::map<ARRAY_INDEX,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> scheduling_t;
+typedef std::pair<TIME_UNIT,std::vector<TIME_UNIT>> periodic_task_schedule_t;
+typedef std::map<ARRAY_INDEX,periodic_task_schedule_t> scheduling_t;
 typedef std::set<Edge>  critical_circuit_t;
 
 namespace models {

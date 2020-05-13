@@ -879,7 +879,8 @@ public :
                                                    std::vector<TIME_UNIT> l)    {
 		ASSERT_WRITABLE();
 		reset_computation();
-    	VERBOSE_ASSERT((EXEC_COUNT) l.size() == getPhasesQuantity(t), "Task " << getVertexName(t) <<  " - " << getVertexId(t) <<  " duration vector does not match task phase count.")
+		auto pq = getPhasesQuantity(t);
+    	VERBOSE_ASSERT((EXEC_COUNT) l.size() == pq, "Task " << getVertexName(t) <<  "(" << getVertexId(t) <<  ") duration vector of size " << l.size() << " does not match task phase count (" << pq << ").")
     	boost::put(boost::vertex_phaseduration, this->getG(), t.v, l);
 
     }
@@ -888,8 +889,9 @@ public :
                                                       std::vector<TIME_UNIT> l)    {
    		ASSERT_WRITABLE();
    		reset_computation();
-       	VERBOSE_ASSERT((EXEC_COUNT)l.size() == getInitPhasesQuantity(t), "Task " << getVertexName(t) <<  " - " << getVertexId(t) <<  " duration vector does not match task init phase count.")
-       	boost::put(boost::vertex_initphaseduration, this->getG(), t.v, l);
+   		auto ipq = getInitPhasesQuantity(t);
+       	VERBOSE_ASSERT((EXEC_COUNT) l.size() == ipq, "Task " << getVertexName(t) <<  "(" << getVertexId(t) <<  ") duration vector of size " << l.size() << " does not match init task phase count (" << ipq << ").")
+   		boost::put(boost::vertex_initphaseduration, this->getG(), t.v, l);
 
        }
 

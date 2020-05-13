@@ -176,9 +176,32 @@ bool algorithms::transformation::basic_mergeCSDFFromSchedule(models::Dataflow* t
 
 }
 
+struct vertex_infos {
+	ARRAY_INDEX id;
+	EXEC_COUNT init_phases;
+	EXEC_COUNT periodic_phases;
+	std::vector<TIME_UNIT> durations;
+	TIME_UNIT period;
+	std::vector<TIME_UNIT> starts;
+	EXEC_COUNT ni;
+
+	vertex_infos (models::Dataflow* to, periodic_task_schedule_t sched, Vertex v) :
+		id (to->getVertexId(v)) ,
+		init_phases (to->getInitPhasesQuantity(v)) ,
+		periodic_phases (to->getPhasesQuantity(v)) {
+		durations = to->getVertexInitPhaseDuration(v);
+
+		const std::vector<TIME_UNIT>& original_periodic = to->getVertexPhaseDuration(v);
+		durations.insert( durations.end(), original_periodic.begin(), original_periodic.end() );
+		period = sched.first;
+		starts = sched.second;
+		ni = to->getNi(v);
+	}
+};
 
 struct edge_infos {
 
+	ARRAY_INDEX id;
 	ARRAY_INDEX src_id;
 	ARRAY_INDEX dst_id;
 
@@ -194,6 +217,7 @@ struct edge_infos {
 
 
 	edge_infos (models::Dataflow* to, Edge e) :
+		id (to->getEdgeId(e)),
 		src_id (to->getVertexId(to->getEdgeSource(e))),
 		dst_id (to->getVertexId(to->getEdgeTarget(e))),
 		in_per_vector(to->getEdgeInVector(e)),
@@ -208,27 +232,102 @@ struct edge_infos {
 };
 
 
+/**
+ * given an init and a periodic pattern, return a sequence of the n first values
+ * @param init      init pattern
+ * @param periodic  periodic pattern
+ * @param n         size of output vector
+ * @return          sequence of the n first values
+ */
+std::vector<TOKEN_UNIT> produce_sequence (const std::vector<TOKEN_UNIT>& init , const std::vector<TOKEN_UNIT>& periodic, size_t n) {
+
+	// Check input
+	VERBOSE_ASSERT((init.size() + periodic.size()) <= n, "Invalid input");
+
+	std::vector<TOKEN_UNIT> res;
+
+	for (size_t i = 0 ; i < init.size(); i++) {
+		res.push_back(init[i]);
+	}
+
+	for (size_t i = 0 ; (init.size() + i) < n; i++) {
+		res.push_back(periodic[i % periodic.size()]);
+	}
+
+	VERBOSE_ASSERT(res.size() == n, "Something unexpected happen, result is not correct");
+	return res;
+}
+
+TIME_UNIT get_next_execution_time (vertex_infos infos, EXEC_COUNT index) {
+	VERBOSE_DEBUG("get_next_execution_time: Scheduling of task " << infos.id);
+	VERBOSE_DEBUG("get_next_execution_time: period: " << commons::toString(infos.period));
+	VERBOSE_DEBUG("get_next_execution_time: Init starts: " << commons::toString(std::vector<TIME_UNIT>(infos.starts.begin(), infos.starts.begin() + infos.init_phases)));
+	VERBOSE_DEBUG("get_next_execution_time: periodic starts: " << commons::toString(std::vector<TIME_UNIT>(infos.starts.begin() + infos.init_phases, infos.starts.end())));
+
+	if (index < infos.starts.size()) {
+		VERBOSE_DEBUG("get_next_execution_time: result: " << infos.starts[index]);
+		return infos.starts[index];
+	}
+
+	EXEC_COUNT periodic_index = index -  infos.init_phases;
+	EXEC_COUNT iteration = periodic_index / (infos.starts.size() -  infos.init_phases);
+	EXEC_COUNT phase     = periodic_index % (infos.starts.size() -  infos.init_phases);
+	TIME_UNIT res = infos.starts[ infos.init_phases + phase ] + iteration * infos.period;
+	{
+		VERBOSE_DEBUG("get_next_execution_time: result: " << res);
+		return res;
+	}
+}
+
+struct task_execution_t {
+	ARRAY_INDEX task_id;
+	EXEC_COUNT  task_iteration;
+	TIME_UNIT   starting_time;
+	task_execution_t(ARRAY_INDEX task_id,
+	EXEC_COUNT  task_iteration,
+	TIME_UNIT   starting_time) : task_id (task_id) , task_iteration (task_iteration), starting_time (starting_time) {}
+};
+
+
+inline bool operator==(const task_execution_t& lhs, const task_execution_t& rhs){ return lhs.task_id == rhs.task_id ; }
+
+
+inline std::ostream& operator<< (std::ostream &out,const task_execution_t& e)		{out << "(id:" << e.task_id << ", it:" << e.task_iteration << ", start:" << e.starting_time << ")"; return out;}
 
 bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std::string name , const std::vector< ARRAY_INDEX >& mergeNodes, const models::Scheduling* scheduling_res) {
 
 	VERBOSE_INFO("Start mergeCSDFFromSchedule");
 
+
+	// Check tasks
 	// we assume there is no init phases to merge
+	for (auto vid : mergeNodes) {
+		Vertex v = to->getVertexById(vid);
+		VERBOSE_ASSERT(to->getInitPhasesQuantity(v) == 0, "Unsupported case");
+	}
 
 
+	// Check the scheduling is correct
+	VERBOSE_INFO("Check Scheduling");
+	TIME_UNIT omega = scheduling_res->getGraphPeriod();
+	VERBOSE_ASSERT(omega != std::numeric_limits<TIME_UNIT>::infinity(), "Infinite period, this dataflow does not schedule, thus I cannot merge anymore.");
+	VERBOSE_INFO("omega = " << omega);
+	auto persched = scheduling_res->getTaskSchedule();
 
 
+	// For each edge we need to store , input vector, output vector, initial marking, gcd
 	VERBOSE_INFO("Store what to merge");
 
-	// For each edge we need to store , input vector, output vector, initial marking
-
+	EXEC_COUNT gcd_value = 0;
+	std::map<ARRAY_INDEX, vertex_infos> original_tasks;
 	std::map<ARRAY_INDEX, std::vector<edge_infos>> input_edges;
 	std::map<ARRAY_INDEX,  std::vector<edge_infos>> output_edges;
-
 
 	for (auto vid : mergeNodes) {
 		Vertex v = to->getVertexById(vid);
 
+		EXEC_COUNT ni = to->getNi(v);
+		gcd_value = boost::integer::gcd (gcd_value , ni) ;
 
 		for (auto it : to->in_edges(v)) {
 			input_edges[vid].push_back(edge_infos(to, *it));
@@ -237,133 +336,21 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 			output_edges[vid].push_back(edge_infos(to, *it));
 		}
 
+		original_tasks.insert({vid,vertex_infos(to,persched[vid],v)});
 	}
 
-	VERBOSE_INFO("Schedule original tasks");
-
-	//Find GCD value
-	EXEC_COUNT gcd_value = 0;
-	for(ARRAY_INDEX vid :mergeNodes)
-	{
-		Vertex vi     = to->getVertexById(vid);
-		EXEC_COUNT ni = to->getNi(vi);
-		gcd_value = boost::integer::gcd (gcd_value , ni) ;
+	VERBOSE_DEBUG("Check what is stored");
+	VERBOSE_DEBUG("gcd_value = " << gcd_value);
+	for (auto it : original_tasks) {
+		ARRAY_INDEX vid = it.first;
+		vertex_infos infos = it.second;
+		VERBOSE_DEBUG("  - Scheduling of task " << vid);
+		VERBOSE_DEBUG("  - Ni:" << infos.ni);
+		VERBOSE_DEBUG("  - period: " << commons::toString(infos.period));
+		VERBOSE_DEBUG("  - Init starts: " << commons::toString(std::vector<TIME_UNIT>(infos.starts.begin(), infos.starts.begin() + infos.init_phases)));
+		VERBOSE_DEBUG("  - periodic starts: " << commons::toString(std::vector<TIME_UNIT>(infos.starts.begin() + infos.init_phases, infos.starts.end())));
 	}
 
-
-	TIME_UNIT omega = scheduling_res->getGraphPeriod();
-	VERBOSE_ASSERT(omega != std::numeric_limits<TIME_UNIT>::infinity(), "Infinite period, this dataflow does not schedule, thus I cannot merge anymore.");
-	VERBOSE_INFO("omega = " << omega);
-	auto persched = scheduling_res->getTaskSchedule();
-	EXEC_COUNT init_executions_count = 0;
-	EXEC_COUNT periodic_executions_count = 0;
-	std::map<ARRAY_INDEX, EXEC_COUNT> symbolic_execution;
-	std::map<ARRAY_INDEX, EXEC_COUNT> objective;
-
-	// TODO : This is not a good idea, not generic enough
-	for (auto vid : mergeNodes) {
-		Vertex v = to->getVertexById(vid);
-		EXEC_COUNT ni = to->getNi(v);
-		init_executions_count += to->getInitPhasesQuantity(v);
-		periodic_executions_count += to->getPhasesQuantity(v) * (ni/gcd_value);
-		objective[vid] = to->getInitPhasesQuantity(v) + to->getPhasesQuantity(v);
-		symbolic_execution[vid] = 0;
-		VERBOSE_INFO(" - Original task " << vid << " has ni = " << ni <<  ", " << to->getInitPhasesQuantity(v) << " init phases and " << to->getPhasesQuantity(v) <<  " periodic phases.");
-
-	}
-	VERBOSE_INFO(" - Merged task will have at least " << init_executions_count << " init phases and " << periodic_executions_count <<  " periodic phases.");
-
-	VERBOSE_ASSERT(init_executions_count == 0 , "Unsupported case");
-
-	// we perform a symbolic execution to sequence task execution from scheduling
-
-	std::vector<ARRAY_INDEX> task_order;
-	TIME_UNIT last_time = 0;
-
-	for (bool need_to_execute = true  ; need_to_execute ; ) {
-		need_to_execute = false;
-		VERBOSE_DEBUG(" - Symbolic execution iteration");
-		VERBOSE_DEBUG("  - last_time = " << last_time);
-		VERBOSE_INFO("  - Task order is " << commons::toString(task_order));
-
-		ARRAY_INDEX next_id = -1;
-		TIME_UNIT next_time = std::numeric_limits<TIME_UNIT>::infinity() ;
-		for (auto vid : mergeNodes) {
-			VERBOSE_DEBUG("  - Test task " << vid);
-			Vertex v = to->getVertexById(vid);
-			EXEC_COUNT current_index = symbolic_execution[vid];
-			ARRAY_INDEX current_start_index = current_index ;
-			TIME_UNIT current_start_time = persched[vid].second[current_start_index % persched[vid].second.size()]  + (current_start_index / persched[vid].second.size() ) * persched[vid].first;
-
-			VERBOSE_DEBUG("    - next_time = " << next_time);
-			VERBOSE_DEBUG("    - current_index = " << current_index);
-			VERBOSE_DEBUG("    - current_start_time = " << current_start_time);
-			VERBOSE_DEBUG("    - objective[vid] = " << objective[vid]);
-
-			VERBOSE_ASSERT(last_time <= current_start_time , "The task " << vid << " should have been executed already.");
-
-			if (current_start_time <= next_time) {
-				next_time = current_start_time;
-				next_id = vid;
-			}
-
-		}
-
-		VERBOSE_DEBUG("  - next_id = " << next_id << " and next_time = " << next_time);
-		task_order.push_back(next_id);
-
-		objective[next_id] = objective[next_id] - 1; // ending not proved
-		symbolic_execution[next_id] ++ ;
-		last_time = next_time;
-
-
-		for (auto vid : mergeNodes) {
-			if (objective[vid] > 0) {
-				VERBOSE_DEBUG("    - need_to_execute " << vid);
-				need_to_execute = true; // make sure to continue executing if we did not reach objectives
-			}
-		}
-	}
-
-
-	VERBOSE_INFO("  - Task order is " << commons::toString(task_order));
-
-
-	std::vector<ARRAY_INDEX> init_executions_vec;
-	std::vector<ARRAY_INDEX> periodic_executions_vec;
-
-	std::vector<TIME_UNIT> init_duration_vec;
-	std::vector<TIME_UNIT> periodic_duration_vec;
-
-	VERBOSE_INFO("  - Gather init timings and phases ");
-
-
-
-	for (auto idx = 0 ; idx < (task_order.size() - periodic_executions_count) ; idx++) {
-		ARRAY_INDEX tid = task_order[idx];
-		VERBOSE_INFO("  - idx = " << idx << " tid = " << tid);
-		Vertex t = to->getVertexById(tid);
-		TIME_UNIT dur = to->getVertexDuration(t, idx + 1 - to->getInitPhasesQuantity(t));
-		init_executions_vec.push_back(tid);
-		init_duration_vec.push_back(dur);
-
-		VERBOSE_INFO("  - init_duration_vec =  " << commons::toString(init_duration_vec));
-	}
-
-	VERBOSE_INFO("  - Gather periodic timings and phases ");
-
-	for (auto idx = (task_order.size() - periodic_executions_count) ; idx < task_order.size() ; idx++) {
-		ARRAY_INDEX tid = task_order[idx];
-		VERBOSE_INFO("  - idx = " << idx << " tid = " << tid);
-		Vertex t = to->getVertexById(tid);
-		TIME_UNIT dur = to->getVertexDuration(t, idx + 1 - to->getInitPhasesQuantity(t));
-		periodic_executions_vec.push_back(tid);
-		periodic_duration_vec.push_back(dur);
-		VERBOSE_INFO("  - periodic_duration_vec =  " << commons::toString(init_duration_vec));
-	}
-
-
-	VERBOSE_INFO(" - Merged task has " << init_executions_vec.size() << " init phases and " << periodic_executions_vec.size() <<  " periodic phases.");
 
 
 	VERBOSE_INFO("Delete original tasks");
@@ -376,14 +363,268 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 	}
 
 
+	VERBOSE_INFO("Schedule original tasks");
+
+
+	std::map<ARRAY_INDEX,EXEC_COUNT> execution_count;
+	for (auto it : original_tasks) {
+		execution_count[it.first] = 0;
+	}
+
+
+
+	std::vector < task_execution_t > execution_sequence;
+
+	bool dontstop = true;
+	while(dontstop) {
+		dontstop = false;
+
+		// Pick the next candidate
+		ARRAY_INDEX next_id   = -1;
+		TIME_UNIT   next_time = std::numeric_limits<TIME_UNIT>::infinity() ;
+		for (auto it : original_tasks) {
+			ARRAY_INDEX vid = it.first;
+			vertex_infos infos = it.second;
+			TIME_UNIT task_execution_time = get_next_execution_time (infos, execution_count[vid] );
+			VERBOSE_DEBUG("  - Scheduling of task " << vid << " execution count = " << execution_count[vid] << " next execution is " << task_execution_time);
+			if (task_execution_time <= next_time) {
+					next_time = task_execution_time;
+					next_id = vid;
+					VERBOSE_DEBUG("  - New next task!");
+			}
+		}
+
+
+		// Execute candidate
+		execution_sequence.push_back(  task_execution_t(next_id, execution_count[next_id], next_time) );
+		execution_count[next_id] ++ ;
+
+
+		// Stopping condition
+		// NOTE: In theory a valid one should be similar to Symbolic Execution (reach previously seen state)
+		//       I did not implement that yet, it will have to be done until a better solution emerge.
+		//       Currently the solution used is not bullet proof!
+
+
+		for (auto it : original_tasks) {
+			ARRAY_INDEX vid = it.first;
+			vertex_infos infos = it.second;
+			EXEC_COUNT threshold = infos.init_phases + (infos.periodic_phases * infos.ni);
+			if (execution_count[vid] < threshold) {
+				dontstop = true;
+				VERBOSE_DEBUG("  - We will continue because " << vid << " needs " << threshold << " and only has " << execution_count[vid]);
+				break;
+			}
+		}
+
+
+	}
+
+	VERBOSE_INFO("End of scheduling with " << commons::toString(execution_sequence));
+
+
+
+	for (auto it : original_tasks) {
+		ARRAY_INDEX vid = it.first;
+		vertex_infos infos = it.second;
+		VERBOSE_DEBUG("  - Scheduling of task " << vid);
+		VERBOSE_DEBUG("  - Ni:" << infos.ni);
+		VERBOSE_DEBUG("  - Init phases:" << infos.init_phases);
+		VERBOSE_DEBUG("  - periodic phases:" << infos.periodic_phases);
+		VERBOSE_DEBUG("  - period: " << commons::toString(infos.period));
+		VERBOSE_DEBUG("  - Init starts: " << commons::toString(std::vector<TIME_UNIT>(infos.starts.begin(), infos.starts.begin() + infos.init_phases)));
+		VERBOSE_DEBUG("  - periodic starts: " << commons::toString(std::vector<TIME_UNIT>(infos.starts.begin() + infos.init_phases, infos.starts.end())));
+	}
+
+
+	VERBOSE_INFO("Check there is a valid init phase count");
+
+	VERBOSE_ASSERT(execution_sequence.size()  > 0, "This should never happen");
+
+	ARRAY_INDEX init_phase_count = execution_sequence.size() - 1 ;
+	bool need_to_continue = true;
+	while (init_phase_count >= 0 and need_to_continue) {
+		VERBOSE_DEBUG("Check init phase count = " << init_phase_count);
+
+		need_to_continue = false;
+
+		std::map<ARRAY_INDEX,EXEC_COUNT> task_periodic_execution_count;
+		for (auto exec_pair : std::vector< task_execution_t > (execution_sequence.begin() + init_phase_count , execution_sequence.end() ) ) {
+			task_periodic_execution_count[exec_pair.task_id] ++ ;
+		}
+
+		for (auto it : original_tasks) {
+			ARRAY_INDEX tid = it.first;
+			vertex_infos infos = it.second;
+			EXEC_COUNT ratio =   (infos.ni)/gcd_value;
+			VERBOSE_DEBUG("    In the current periodic pattern the task " << tid << " is executed " << task_periodic_execution_count[tid] << " with expected ratio " << ratio );
+
+		}
+
+		EXEC_COUNT factor = 0;
+		for (auto it : original_tasks) {
+			ARRAY_INDEX tid = it.first;
+			vertex_infos infos = it.second;
+			EXEC_COUNT ratio =   (infos.ni)/gcd_value;
+			if (task_periodic_execution_count[tid] == 0) {
+				need_to_continue = true;
+				VERBOSE_DEBUG("  Every task need to be executed, task " << tid  << " is not.");
+
+			}
+			if (task_periodic_execution_count[tid] %  ratio  != 0) {
+				need_to_continue = true;
+				VERBOSE_DEBUG("  In the current periodic pattern the task " << tid << " is executed " << task_periodic_execution_count[tid] << " not divisible by ratio " << ratio );
+
+			}
+
+			if (factor == 0) {
+				factor = task_periodic_execution_count[tid] / ratio;
+			}
+			if (task_periodic_execution_count[tid] !=  ratio * factor) {
+							need_to_continue = true;
+							VERBOSE_DEBUG("  In the current periodic pattern the task " << tid << " is executed " << task_periodic_execution_count[tid] << " not equal to expected " << factor * ratio );
+
+			}
+
+		}
+		if (need_to_continue) {
+			init_phase_count--;
+		}
+
+	}
+
+
+	VERBOSE_ASSERT(init_phase_count >= 0 , "Problem detected.");
+
+
+	// Optimising when we can to reduce the init phase
+	VERBOSE_INFO("Check if we can reduce the inint phase");
+
+	std::vector<task_execution_t> periodic_sequence (execution_sequence.begin() + init_phase_count , execution_sequence.end() );
+	std::vector<task_execution_t> init_sequence (execution_sequence.begin() , execution_sequence.begin() + init_phase_count  );
+
+	EXEC_COUNT new_init_end;
+	for (ARRAY_INDEX init_end = init_phase_count ;init_end >= 0; init_end -= periodic_sequence.size()) {
+		VERBOSE_DEBUG("test new init_end = " << init_end);
+		std::vector<task_execution_t> maybe_periodic_sequence (execution_sequence.begin() + init_end,  execution_sequence.begin() + init_end + periodic_sequence.size()  );
+
+		VERBOSE_DEBUG("maybe_periodic_sequence = " << commons::toString(maybe_periodic_sequence));
+		VERBOSE_DEBUG("periodic_sequence = " << commons::toString(periodic_sequence));
+		VERBOSE_DEBUG("Test result  = " << (maybe_periodic_sequence == periodic_sequence));
+
+		if (maybe_periodic_sequence == periodic_sequence) {
+			VERBOSE_DEBUG("WORKED");
+			new_init_end = init_end;
+
+		} else {
+			VERBOSE_DEBUG("FAILED");
+		}
+	}
+
+	init_phase_count = new_init_end;
+	//execution_sequence = std::vector<task_execution_t>(execution_sequence.begin() , execution_sequence.begin() + init_phase_count + periodic_sequence.size()) ;
+
+	ARRAY_INDEX periodic_phase_count = execution_sequence.size() - init_phase_count;
+
+
+	VERBOSE_INFO("Optimised scheduling with " << commons::toString(execution_sequence));
+
+
+
+	VERBOSE_INFO("periodic_phase_count = " << periodic_phase_count);
+	VERBOSE_INFO("init_phase_count = " << init_phase_count);
+
+	VERBOSE_INFO("Prepare rates");
+	std::map<ARRAY_INDEX, std::vector<TOKEN_UNIT>> previous_input_edge_rates;
+	std::map<ARRAY_INDEX, std::vector<TOKEN_UNIT>> previous_output_edge_rates;
+
+	std::map<ARRAY_INDEX, std::vector<TOKEN_UNIT>> new_input_edge_rates;
+	std::map<ARRAY_INDEX, std::vector<TOKEN_UNIT>> new_output_edge_rates;
+
+	VERBOSE_INFO("Produce the input edge rates");
+	for (auto it : input_edges) {
+		for (edge_infos infos : it.second) {
+			std::vector<TOKEN_UNIT> previous_rates = produce_sequence (infos.out_ini_vector, infos.out_per_vector, execution_sequence.size()) ;
+			std::vector<TOKEN_UNIT> new_rates (execution_sequence.size(), 0);
+			ARRAY_INDEX task_to_match = infos.dst_id;
+			VERBOSE_DEBUG("  - Previous Edge " << infos.id);
+			VERBOSE_DEBUG("  - Task to consider " << task_to_match);
+			VERBOSE_DEBUG("  - previous_input_edge_rates " << commons::toString(previous_rates));
+			VERBOSE_DEBUG("  - new_input_edge_rates (empty) " << commons::toString(new_rates));
+			VERBOSE_DEBUG("  - execution_sequence " << commons::toString(execution_sequence));
+
+
+			for (size_t idx = 0 ; idx < execution_sequence.size() ; idx++ ) {
+				if (execution_sequence[idx].task_id == task_to_match) {
+					new_rates[idx] = previous_rates[execution_sequence[idx].task_iteration];
+				}
+			}
+
+			VERBOSE_DEBUG("  - new_input_edge_rates " << commons::toString(new_rates));
+			new_input_edge_rates[infos.id] = new_rates;
+
+		}
+	}
+	VERBOSE_INFO("Produce the output edge rates");
+	for (auto it : output_edges) {
+		for (edge_infos infos : it.second) {
+			std::vector<TOKEN_UNIT> previous_rates = produce_sequence (infos.in_ini_vector, infos.in_per_vector, execution_sequence.size()) ;
+			std::vector<TOKEN_UNIT> new_rates (execution_sequence.size(), 0);
+			ARRAY_INDEX task_to_match = infos.src_id;
+			VERBOSE_DEBUG("  - Previous Edge " << infos.id);
+			VERBOSE_DEBUG("  - Task to consider " << task_to_match);
+			VERBOSE_DEBUG("  - previous_input_edge_rates " << commons::toString(previous_rates));
+			VERBOSE_DEBUG("  - new_input_edge_rates (empty) " << commons::toString(new_rates));
+			VERBOSE_DEBUG("  - execution_sequence " << commons::toString(execution_sequence));
+
+
+			for (size_t idx = 0 ; idx < execution_sequence.size() ; idx++ ) {
+				if (execution_sequence[idx].task_id == task_to_match) {
+					new_rates[idx] = previous_rates[execution_sequence[idx].task_iteration];
+				}
+			}
+
+			VERBOSE_DEBUG("  - new_input_edge_rates " << commons::toString(new_rates));
+			new_output_edge_rates[infos.id] = new_rates;
+
+		}
+	}
+
+
+	std::vector<TIME_UNIT> init_duration_vec;
+	std::vector<TIME_UNIT> periodic_duration_vec;
+
+	VERBOSE_INFO("  - Gather init timings and phases ");
+
+
+	for (auto exec_pair : execution_sequence) {
+
+
+		ARRAY_INDEX tid  = exec_pair.task_id;
+		EXEC_COUNT  phase = exec_pair.task_iteration;
+		vertex_infos infos = original_tasks.at(tid);
+
+		TIME_UNIT execution_time = (phase < infos.durations.size()) ? infos.durations[phase]: infos.durations[infos.init_phases +  ((phase - infos.init_phases) % infos.periodic_phases)];
+
+		VERBOSE_INFO("     - Execution of task "  << tid << ", phase=" << phase << " duration=" << execution_time << " taken from " << commons::toString(infos.durations));
+
+		if (init_duration_vec.size() < init_phase_count) {
+			init_duration_vec.push_back(execution_time);
+		} else {
+			periodic_duration_vec.push_back(execution_time);
+		}
+
+	}
+
+
 
 	VERBOSE_INFO("Add the merge task");
 
 	auto middle = to->addVertex();
 	to->setVertexName(middle, name);
 	to->setReentrancyFactor(middle, 1); // This is the reentrancy, it avoid a task to be executed more than once at the same time.
-	to->setInitPhasesQuantity(middle, init_executions_vec.size());
-	to->setPhasesQuantity(middle, periodic_executions_vec.size());
+	to->setInitPhasesQuantity(middle, init_phase_count);
+	to->setPhasesQuantity(middle, periodic_phase_count);
 	to->setVertexDuration(middle,periodic_duration_vec);
 	to->setVertexInitDuration(middle,  init_duration_vec );
 
@@ -409,29 +650,13 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 			to->setEdgeInPhases(new_edge, infos.in_per_vector);
 			to->setEdgeInInitPhases(new_edge, infos.in_ini_vector);
 
-			std::vector<TOKEN_UNIT> init_out (init_executions_vec.size(), 0) ;
-			std::vector<TOKEN_UNIT> per_out (periodic_executions_vec.size(), 0) ;
+			VERBOSE_ASSERT(new_input_edge_rates.count(infos.id), "The output rates for input edge " << infos.id << " not defined.");
+			std::vector<TOKEN_UNIT> computed_rates = new_input_edge_rates[infos.id];
+			std::vector<TOKEN_UNIT> init_out (computed_rates.begin(), computed_rates.begin() + init_phase_count) ;
+			std::vector<TOKEN_UNIT> per_out (computed_rates.begin() + init_phase_count, computed_rates.end()) ;
 
-			ARRAY_INDEX task_to_match = infos.dst_id ;
-			for (size_t idx = 0, state = 0 ; idx < (init_executions_vec.size() +  periodic_executions_vec.size()); idx ++) {
 
-				VERBOSE_DEBUG("    - check idx " << idx << " current state " << state );
-
-				ARRAY_INDEX task_id = idx < init_executions_vec.size() ? init_executions_vec[idx] : periodic_executions_vec[idx - init_executions_vec.size() ];
-				VERBOSE_DEBUG("     - task id is " << task_id << " looking for " << task_to_match );
-				if (task_id == task_to_match) {
-
-					VERBOSE_DEBUG("      - task " << task_id << " is good " );
-					if (idx < init_executions_vec.size()) {
-						VERBOSE_DEBUG("        Update init " );
-						init_out[idx] =  (state < infos.out_ini_vector.size()) ? infos.out_ini_vector[state] : infos.out_per_vector[(state -  infos.out_ini_vector.size()) % infos.out_per_vector.size()] ;
-					} else {
-						VERBOSE_DEBUG("        Update periodic " );
-						per_out[idx -  init_executions_vec.size()] =  (state < infos.out_ini_vector.size()) ? infos.out_ini_vector[state] : infos.out_per_vector[(state -  infos.out_ini_vector.size()) % infos.out_per_vector.size()] ;
-					}
-					state++;
-				}
-			}
+			VERBOSE_DEBUG("    - computed_rates = " << commons::toString(computed_rates));
 			VERBOSE_DEBUG("    - init_out = " << commons::toString(init_out));
 			VERBOSE_DEBUG("    - per_out = " << commons::toString(per_out));
 
@@ -464,29 +689,15 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 			to->setEdgeOutInitPhases(new_edge, infos.out_ini_vector);
 
 
-			std::vector<TOKEN_UNIT> init_in (init_executions_vec.size(), 0) ;
-			std::vector<TOKEN_UNIT> per_in (periodic_executions_vec.size(), 0) ;
+			VERBOSE_ASSERT(new_output_edge_rates.count(infos.id), "The input rates for output edge " << infos.id << " not defined.");
+			std::vector<TOKEN_UNIT> computed_rates = new_output_edge_rates[infos.id];
+			std::vector<TOKEN_UNIT> init_in (computed_rates.begin(), computed_rates.begin() + init_phase_count) ;
+			std::vector<TOKEN_UNIT> per_in (computed_rates.begin() + init_phase_count, computed_rates.end()) ;
 
-			ARRAY_INDEX task_to_match = infos.src_id ;
-			for (size_t idx = 0, state = 0 ; idx < (init_executions_vec.size() +  periodic_executions_vec.size()); idx ++) {
 
-				VERBOSE_DEBUG("    - check idx " << idx << " current state " << state );
 
-				ARRAY_INDEX task_id = idx < init_executions_vec.size() ? init_executions_vec[idx] : periodic_executions_vec[idx - init_executions_vec.size() ];
-				VERBOSE_DEBUG("     - task id is " << task_id << " looking for " << task_to_match );
-				if (task_id == task_to_match) {
 
-					VERBOSE_DEBUG("      - task " << task_id << " is good " );
-					if (idx < init_executions_vec.size()) {
-						VERBOSE_DEBUG("        Update init " );
-						init_in[idx] =  (state < infos.in_ini_vector.size()) ? infos.in_ini_vector[state] : infos.in_per_vector[(state -  infos.in_ini_vector.size()) % infos.in_per_vector.size()] ;
-					} else {
-						VERBOSE_DEBUG("        Update periodic " );
-						per_in[idx -  init_executions_vec.size()] =  (state < infos.in_ini_vector.size()) ? infos.in_ini_vector[state] : infos.in_per_vector[(state -  infos.in_ini_vector.size()) % infos.in_per_vector.size()] ;
-					}
-					state++;
-				}
-			}
+			VERBOSE_DEBUG("    - computed_rates = " << commons::toString(computed_rates));
 			VERBOSE_DEBUG("    - init_in = " << commons::toString(init_in));
 			VERBOSE_DEBUG("    - per_in = " << commons::toString(per_in));
 

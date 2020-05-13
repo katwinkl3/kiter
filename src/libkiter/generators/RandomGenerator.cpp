@@ -80,6 +80,7 @@ models::Dataflow * RandomGenerator::generate (int seed) {
 		for (ARRAY_INDEX i = 1 ; i <= vertices_count ; i++) {
 			VERBOSE_INFO("Autogen new task");
 			Vertex nv = dataflow->addVertex(i);
+			dataflow->setVertexName(nv,"Node_" + commons::toString(dataflow->getVertexId(nv)));
 
 			if (not _configuration.no_reentrancy) {
 				dataflow->setReentrancyFactor(nv,1);
