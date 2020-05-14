@@ -202,6 +202,7 @@ struct vertex_infos {
 struct edge_infos {
 
 	ARRAY_INDEX id;
+	std::string name;
 	ARRAY_INDEX src_id;
 	ARRAY_INDEX dst_id;
 
@@ -218,6 +219,7 @@ struct edge_infos {
 
 	edge_infos (models::Dataflow* to, Edge e) :
 		id (to->getEdgeId(e)),
+		name (to->getEdgeName(e)),
 		src_id (to->getVertexId(to->getEdgeSource(e))),
 		dst_id (to->getVertexId(to->getEdgeTarget(e))),
 		in_per_vector(to->getEdgeInVector(e)),
@@ -323,6 +325,7 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 	std::map<ARRAY_INDEX, std::vector<edge_infos>> input_edges;
 	std::map<ARRAY_INDEX,  std::vector<edge_infos>> output_edges;
 
+
 	for (auto vid : mergeNodes) {
 		Vertex v = to->getVertexById(vid);
 
@@ -330,14 +333,21 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 		gcd_value = boost::integer::gcd (gcd_value , ni) ;
 
 		for (auto it : to->in_edges(v)) {
-			input_edges[vid].push_back(edge_infos(to, *it));
+			edge_infos ne(to, *it);
+			input_edges[vid].push_back(ne);
 		}
+
 		for (auto it : to->out_edges(v)) {
-			output_edges[vid].push_back(edge_infos(to, *it));
+			edge_infos ne(to, *it);
+			output_edges[vid].push_back(ne);
 		}
 
 		original_tasks.insert({vid,vertex_infos(to,persched[vid],v)});
 	}
+
+
+
+
 
 	VERBOSE_DEBUG("Check what is stored");
 	VERBOSE_DEBUG("gcd_value = " << gcd_value);
@@ -643,8 +653,14 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 					<< " with  infos.out_ini_vector = " << commons::toString(infos.out_ini_vector)
 			<< " and  infos.out_per_vector = " << commons::toString(infos.out_per_vector) );
 
-			auto new_edge = to->addEdge(to->getVertexById(infos.src_id), middle);
-			to->setEdgeName(new_edge, "merged_" + commons::toString(to->getEdgeId(new_edge)));
+			if ( original_tasks.count(infos.src_id)  and original_tasks.count(infos.dst_id) ) {
+				VERBOSE_DEBUG("  skip internal edge");
+				continue;
+			}
+
+
+			auto new_edge = to->addEdge(to->getVertexById(infos.src_id), middle, infos.id , infos.name);
+			//to->setEdgeName(new_edge, "merged_" + commons::toString(to->getEdgeId(new_edge)));
 			to->setEdgeType(new_edge,infos.type);
 			to->setPreload(new_edge, infos.preload);
 			to->setEdgeInPhases(new_edge, infos.in_per_vector);
@@ -680,8 +696,13 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 					<< " with  infos.in_ini_vector = " << commons::toString( infos.in_ini_vector)
 			<< " and  infos.in_per_vector = " << commons::toString( infos.in_per_vector ));
 
-			auto new_edge = to->addEdge( middle, to->getVertexById(infos.dst_id));
-			to->setEdgeName(new_edge, "merged_" + commons::toString(to->getEdgeId(new_edge)));
+			if ( original_tasks.count(infos.src_id)  and original_tasks.count(infos.dst_id) ) {
+					VERBOSE_DEBUG("  skip internal edge");
+					continue;
+				}
+
+			auto new_edge = to->addEdge( middle, to->getVertexById(infos.dst_id), infos.id , infos.name);
+			//to->setEdgeName(new_edge, "merged_" + commons::toString(to->getEdgeId(new_edge)));
 			to->setEdgeType(new_edge,infos.type);
 			to->setPreload(new_edge, infos.preload);
 

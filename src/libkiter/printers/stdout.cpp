@@ -566,6 +566,9 @@ std::string printers::GenerateGraphDOT    (models::Dataflow* const  dataflow , b
     	  returnStream	  << bl
     		  	  << "\nid:" << eid
 				  << "\npreload:"  << commons::toString(dataflow->getPreload(c)) ;
+      } else {
+
+    	  returnStream	  << commons::toString(dataflow->getPreload(c)) ;
       }
       returnStream << "\"," ;
       returnStream << " headlabel=\"" ;
