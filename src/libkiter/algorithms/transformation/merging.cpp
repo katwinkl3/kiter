@@ -430,7 +430,7 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 
 	}
 
-	VERBOSE_INFO("End of scheduling with " << commons::toString(execution_sequence));
+	VERBOSE_DEBUG("End of scheduling with " << commons::toString(execution_sequence));
 
 
 
@@ -532,7 +532,7 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 	}
 
 	init_phase_count = new_init_end;
-	//execution_sequence = std::vector<task_execution_t>(execution_sequence.begin() , execution_sequence.begin() + init_phase_count + periodic_sequence.size()) ;
+	execution_sequence = std::vector<task_execution_t>(execution_sequence.begin() , execution_sequence.begin() + init_phase_count + periodic_sequence.size()) ;
 
 	ARRAY_INDEX periodic_phase_count = execution_sequence.size() - init_phase_count;
 

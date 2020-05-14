@@ -9,13 +9,16 @@
 #include "RandomGenerator.h"
 #include <algorithms/schedulings.h>
 #include <algorithms/normalization.h>
+#include <algorithms/repetition_vector.h>
 #include <random>
 
 
 static bool set_initial_marking (models::Dataflow * dataflow) {
 
+
 	for (bool stopping_condition = false ; !stopping_condition ; ) {
 		VERBOSE_INFO("increase marking continue");
+	    VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 		models::Scheduling scheduling_result = algorithms::scheduling::CSDF_KPeriodicScheduling(dataflow);
 		VERBOSE_INFO("Period = " << scheduling_result.getGraphPeriod());
 

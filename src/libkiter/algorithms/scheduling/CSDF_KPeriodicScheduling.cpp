@@ -40,7 +40,7 @@
 }
 
 
-models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::Dataflow* const dataflow) {
+models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (const models::Dataflow* const dataflow) {
 
 	if (VERBOSE_IS_DEBUG()) {
 	    VERBOSE_DEBUG("Save SDF3 XML file.");
@@ -48,7 +48,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
 		commons::writeSDF3File( "CSDF_KPeriodicScheduling_" + std::to_string(count++) + ".xml", dataflow);
 	}
 
-    VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+   VERBOSE_ASSERT((dataflow->is_repetition_vector()),"inconsistent graph or repetition vector not computed");
 
     VERBOSE_INFO("Please note you can use the PRINT parameter");
 
@@ -61,7 +61,6 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
 
     // STEP 0.1 - PRE
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
-    VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
     EXEC_COUNT iteration_count = 0;
 
     // STEP 1 - generate initial vector
@@ -216,6 +215,26 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (models::
     return persched;
 
 }
+
+void algorithms::scheduling::CSDF_1PeriodicScheduling (models::Dataflow*  dataflow, parameters_list_t )  {
+
+	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+   //STEP 1 - Generate Event Graph
+	auto kvector = generate1PeriodicVector(dataflow);
+   models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector);
+
+
+   VERBOSE_INFO("KPeriodic EventGraph generation Done");
+
+   //STEP 2 - resolve the MCRP on this Event Graph
+   std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
+   TIME_UNIT omega = 1/howard_res.first;
+
+   std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
+   std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
+
+}
+
 
 void algorithms::scheduling::CSDF_NPeriodicScheduling (models::Dataflow*  dataflow, parameters_list_t )  {
 

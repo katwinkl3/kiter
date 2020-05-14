@@ -22,8 +22,8 @@ struct kperiodic_result_t {
 	std::set<Edge> critical_edges;
 };
 
-scheduling_t period2scheduling    (models::Dataflow* const  dataflow,  periodicity_vector_t & kvector , TIME_UNIT throughput) ;
-models::Scheduling  period2Scheduling    (models::Dataflow* const  dataflow,  periodicity_vector_t & kvector , kperiodic_result_t &) ;
+scheduling_t period2scheduling    (const models::Dataflow* const  dataflow,  periodicity_vector_t & kvector , TIME_UNIT throughput) ;
+models::Scheduling  period2Scheduling    (const models::Dataflow* const  dataflow,  periodicity_vector_t & kvector , kperiodic_result_t &) ;
 
 namespace algorithms {
 
@@ -37,7 +37,7 @@ void BufferlessNoCScheduling(models::Dataflow* const  dataflow, parameters_list_
 		scheduling_t bufferless_kperiodic_scheduling(models::Dataflow* const  dataflow, bool stop_at_first, bool get_previous);
 		void bufferlessKPeriodicScheduling (models::Dataflow* const  dataflow, parameters_list_t params) ;
 
-		models::Scheduling CSDF_KPeriodicScheduling       (models::Dataflow* const dataflow) ;
+		models::Scheduling CSDF_KPeriodicScheduling       (const models::Dataflow* const dataflow) ;
 		const periodicity_vector_t generate1PeriodicVector(const models::Dataflow* dataflow);
 		const periodicity_vector_t generateKPeriodicVector(const models::Dataflow* dataflow, int k);
 		const periodicity_vector_t generateNPeriodicVector(const models::Dataflow* dataflow);
@@ -45,6 +45,7 @@ void BufferlessNoCScheduling(models::Dataflow* const  dataflow, parameters_list_
 		 models::Scheduling CSDF_KPeriodicScheduling_LP    (const models::Dataflow* const dataflow, const periodicity_vector_t& kvector);
 		 void CSDF_1PeriodicScheduling_LP (models::Dataflow*  dataflow, parameters_list_t );
 		 void CSDF_NPeriodicScheduling_LP (models::Dataflow*  dataflow, parameters_list_t );
+		 void CSDF_1PeriodicScheduling    (models::Dataflow*  dataflow, parameters_list_t );
 		 void CSDF_NPeriodicScheduling    (models::Dataflow*  dataflow, parameters_list_t );
 
 
@@ -57,8 +58,10 @@ ADD_TRANSFORMATION(LP1,
 transformation_t({ "LP1" , "Rewriting Bodin2016 Threshold CSDF 1-Periodic Scheduling with Bufferless channel using Linear Programming", algorithms::scheduling::CSDF_1PeriodicScheduling_LP}));
 ADD_TRANSFORMATION(LPN,
 transformation_t({ "LPN" , "Rewriting Bodin2016 Threshold CSDF N-Periodic Scheduling with Bufferless channel using Linear Programming", algorithms::scheduling::CSDF_NPeriodicScheduling_LP}));
+ADD_TRANSFORMATION(EG1,
+transformation_t({ "EG1" , "Rewriting Bodin2013 CSDF 1-Periodic Scheduling", algorithms::scheduling::CSDF_1PeriodicScheduling}));
 ADD_TRANSFORMATION(EGN,
-transformation_t({ "EGN" , "Rewriting Bodin2013 Threshold CSDF Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling}));
+transformation_t({ "EGN" , "Rewriting Bodin2013 CSDF N-Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling}));
 ADD_TRANSFORMATION(BufferlessKPeriodicScheduling,
 		transformation_t({ "BufferlessKPeriodicScheduling" , "Run Bufferless Kperiodic", algorithms::scheduling::bufferlessKPeriodicScheduling} )
 	);

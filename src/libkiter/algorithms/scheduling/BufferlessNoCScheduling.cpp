@@ -36,6 +36,14 @@
 typedef std::pair<ARRAY_INDEX, ARRAY_INDEX>  mypair;
 typedef std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> mytuple;
 
+
+static inline models::Scheduling  CSDF_SCHEDULING_FUNCTION    (const models::Dataflow* const dataflow) {
+	//return algorithms::scheduling::CSDF_KPeriodicScheduling_LP (dataflow , algorithms::scheduling::generateNPeriodicVector(dataflow)) ;
+		
+	return algorithms::scheduling::CSDF_KPeriodicScheduling (dataflow ) ;
+}
+
+
 static void print_graph (models::Dataflow * to, std::string suffix = "none") {
 
 	static int counter = 0;
@@ -209,7 +217,7 @@ void algorithms::BufferlessNoCScheduling(models::Dataflow* const  _dataflow, par
 			}
 			to->reset_computation();
 			VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
-			models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, scheduling::generateNPeriodicVector(to));
+			models::Scheduling scheduling_res = CSDF_SCHEDULING_FUNCTION(to);
 			algorithms::transformation::mergeCSDFFromSchedule(to,new_name,bag,&scheduling_res);
 
 
@@ -227,7 +235,7 @@ void algorithms::BufferlessNoCScheduling(models::Dataflow* const  _dataflow, par
 
 	VERBOSE_INFO("Step 3 - Check scheduling");
     VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
-	models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling_LP(to, scheduling::generateNPeriodicVector(to));
+	models::Scheduling scheduling_res = CSDF_SCHEDULING_FUNCTION(to);
 
 
 	for (std::pair<ARRAY_INDEX,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> item : scheduling_res.getTaskSchedule()) {

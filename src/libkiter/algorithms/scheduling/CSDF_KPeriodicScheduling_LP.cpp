@@ -18,6 +18,10 @@ static inline const std::string OMEGA_COL_STR ()  {
 	return "OMEGA" ;
 }
 
+static inline const std::string START_INIT_COL_STR (const std::string name, const EXEC_COUNT a)  {
+	return "si_" + name + "_" + commons::toString<EXEC_COUNT>(a)+ "_" ;
+}
+
 static inline const std::string START_COL_STR (const std::string name, const EXEC_COUNT a, const EXEC_COUNT k)  {
 	return "s_" + name + "_" + commons::toString<EXEC_COUNT>(a)+ "_" + commons::toString<EXEC_COUNT>(k) + "_" ;
 }
@@ -55,6 +59,10 @@ bool add_precedences_constraints (commons::GLPSol &g, commons::idx_t OMEGA_COL, 
 	const EXEC_COUNT  subphi_tp = dataflow->getPhasesQuantity(target);
 	const EXEC_COUNT  N_t = dataflow->getNi(source) / subphi_t;
 	const EXEC_COUNT  N_tp = dataflow->getNi(target) / subphi_tp;
+
+
+	VERBOSE_ASSERT(dataflow->getInitPhasesQuantity(source) == 0, "Unsupported case, unfinished business, this function does not support Init phases");
+	VERBOSE_ASSERT(dataflow->getInitPhasesQuantity(target) == 0, "Unsupported case, unfinished business, this function does not support Init phases");
 
 	VERBOSE_DEBUG("Buffer " << buffername << " between " << sourceStr << " and " << targetStr );
 
@@ -184,44 +192,59 @@ bool add_reentrancy_constraints (commons::GLPSol &g, const models::Dataflow* con
 
 	const std::string name = dataflow->getVertexName(t);
 
-	const EXEC_COUNT phase_quantity = dataflow->getPhasesQuantity(t);
+	const EXEC_COUNT init_phase_quantity = dataflow->getInitPhasesQuantity(t);
+	const EXEC_COUNT periodic_phase_quantity = dataflow->getPhasesQuantity(t);
 	const EXEC_COUNT periodicity_factor = kvector.at(t);
 	const EXEC_COUNT repetition_factor = dataflow->getNi(t);
 
     std::string last_col_name = "";
     TIME_UNIT last_col_time = 0;
 
-	    		for(EXEC_COUNT k = 1; k <= periodicity_factor ; k++) {
-	    			for(EXEC_COUNT a = 1; a <= phase_quantity ; a++) {
-	    				const TIME_UNIT       ltai    = last_col_time;
-	    				std::string new_col_name = START_COL_STR(name,a,k);
-	    				std::string row_name = "Task_order_"  + name + "_" + new_col_name;
-	    				if (last_col_name != "") {
-	    					g.addRow(row_name,commons::bound_s(commons::LOW_BOUND, ltai ));
-	    					g.addCoef(row_name , last_col_name   , - 1     );
-	    					g.addCoef(row_name , new_col_name    ,   1     );
-	    				}
-	    				last_col_name = new_col_name;
-	    				last_col_time = dataflow->getVertexDuration(t,a);
-	    			}
-	    		}
+	for(EXEC_COUNT a = 1; a <= init_phase_quantity ; a++) {
+		const TIME_UNIT       ltai    = last_col_time;
+		std::string new_col_name = START_INIT_COL_STR(name,a);
+		std::string row_name = "Task_order_"  + name + "_" + new_col_name;
+		if (last_col_name != "") {
+			g.addRow(row_name,commons::bound_s(commons::LOW_BOUND, ltai ));
+			g.addCoef(row_name , last_col_name   , - 1     );
+			g.addCoef(row_name , new_col_name    ,   1     );
+		}
+		last_col_name = new_col_name;
+		last_col_time = dataflow->getVertexInitDuration(t,a);
+	}
 
-	    	    // Last one for reentrancy
 
-	    		if (dataflow->getReentrancyFactor(t)) {
-					TIME_UNIT omega_coef =  - ((TIME_UNIT) (phase_quantity * periodicity_factor)  / (TIME_UNIT) repetition_factor ) ;
-	    			const std::string last_row_name = "Task_reentracy_" + name;
-	    			g.addRow(last_row_name,commons::bound_s(commons::LOW_BOUND, dataflow->getVertexDuration(t,dataflow->getPhasesQuantity(t)) ));
-	    			std::string source_col =  START_COL_STR(name,phase_quantity, periodicity_factor);
-	    			std::string target_col =  START_COL_STR(name,1,1);
-	    			if (target_col != source_col) {
-	    				g.addCoef(last_row_name , source_col   , - 1     );
-	    				g.addCoef(last_row_name , target_col    ,   1    );
-	    			}
-	    			g.addCoef(last_row_name , OMEGA_COL_STR(), (double) - omega_coef     );
-	    		}
+	for(EXEC_COUNT k = 1; k <= periodicity_factor ; k++) {
+		for(EXEC_COUNT a = 1; a <= periodic_phase_quantity ; a++) {
+			const TIME_UNIT       ltai    = last_col_time;
+			std::string new_col_name = START_COL_STR(name,a,k);
+			std::string row_name = "Task_order_"  + name + "_" + new_col_name;
+			if (last_col_name != "") {
+				g.addRow(row_name,commons::bound_s(commons::LOW_BOUND, ltai ));
+				g.addCoef(row_name , last_col_name   , - 1     );
+				g.addCoef(row_name , new_col_name    ,   1     );
+			}
+			last_col_name = new_col_name;
+			last_col_time = dataflow->getVertexDuration(t,a);
+		}
+	}
 
-	    		return true;
+	// Last one for reentrancy
+
+	if (dataflow->getReentrancyFactor(t)) {
+		TIME_UNIT omega_coef =  - ((TIME_UNIT) (periodic_phase_quantity * periodicity_factor)  / (TIME_UNIT) repetition_factor ) ;
+		const std::string last_row_name = "Task_reentracy_" + name;
+		g.addRow(last_row_name,commons::bound_s(commons::LOW_BOUND, dataflow->getVertexDuration(t,dataflow->getPhasesQuantity(t)) ));
+		std::string source_col =  START_COL_STR(name,periodic_phase_quantity, periodicity_factor);
+		std::string target_col =  START_COL_STR(name,1,1);
+		if (target_col != source_col) {
+			g.addCoef(last_row_name , source_col   , - 1     );
+			g.addCoef(last_row_name , target_col    ,   1    );
+		}
+		g.addCoef(last_row_name , OMEGA_COL_STR(), (double) - omega_coef     );
+	}
+
+	return true;
 }
 
 
@@ -236,6 +259,14 @@ models::Scheduling collect_lp_results (const commons::GLPSol &g, const models::D
 
 		res_schedule[dataflow->getVertexId(t)].first = OMEGA / (TIME_UNIT) ( (TIME_UNIT) dataflow->getNi(t) / (TIME_UNIT) periodicity_factor );
 
+		// Collect init starting times
+		for(EXEC_COUNT a = 1; a <= dataflow->getInitPhasesQuantity(t) ; a++) {
+			auto starting_time_col_str = START_INIT_COL_STR(vname,a);
+			auto starting_time = g.getValue(starting_time_col_str);
+			res_schedule[vid].second.push_back(starting_time);
+		}
+
+		// Collect periodic starting times
 		for(EXEC_COUNT a = 1; a <= dataflow->getPhasesQuantity(t) ; a++) {
 			for(EXEC_COUNT k = 1; k <= periodicity_factor ; k++) {
 				auto starting_time_col_str = START_COL_STR(vname,a,k);
@@ -280,8 +311,12 @@ models::Scheduling  algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (cons
         {ForEachVertex(dataflow,t) {
             std::string name = dataflow->getVertexName(t);
 
-            // TODO: Additionally, there will be initial phases later
+            // Define init phases
+    		for(EXEC_COUNT a = 1; a <= dataflow->getInitPhasesQuantity(t) ; a++) {
+    			g.addColumn(START_INIT_COL_STR(name,a),commons::KIND_CONTINUE,commons::bound_s(commons::LOW_BOUND,0),0);
+    		}
 
+            // Define periodic phases
     		for(EXEC_COUNT a = 1; a <= dataflow->getPhasesQuantity(t) ; a++) {
     			for(EXEC_COUNT k = 1; k <= kvector.at(t); k++) {
     				g.addColumn(START_COL_STR(name,a,k),commons::KIND_CONTINUE,commons::bound_s(commons::LOW_BOUND,0),0);

@@ -642,8 +642,7 @@ public :
     inline  TOKEN_UNIT          getPreload        (const Edge c)        const    {return boost::get(get(boost::edge_preload, this->getG()), c.e);}
     inline  void                setPreload        (const Edge c,
                                                    const TOKEN_UNIT p)   {		ASSERT_WRITABLE();
-                                               	reset_computation();
-                                               	boost::put(boost::edge_preload, this->getG(), c.e, p);}
+                                                   boost::put(boost::edge_preload, this->getG(), c.e, p);}
     inline  DATA_UNIT           getTokenSize      (const Edge c)       const     {return boost::get(get(boost::edge_tokensize, this->getG()), c.e);}
     inline  void                setTokenSize      (const Edge c,
                                                    const DATA_UNIT ts)    {				ASSERT_WRITABLE();
