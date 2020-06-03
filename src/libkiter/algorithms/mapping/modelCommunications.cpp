@@ -71,7 +71,7 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 
 		////PLLLEASE DONT CHANGE THE "mid-" value in the name"
 		std::stringstream ss;
-		ss << "link-" << original_edge_id << "_" << source << "_" << target << "_" << e;
+		ss << "link-" << original_edge_id << "_" << e;
 
 		returnValue[(unsigned int)e].push_back(  d->getVertexId(middle)  );
 		vid_to_conflict_map[ d->getVertexId(middle) ] = (unsigned int)e;
@@ -116,7 +116,7 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 		{
 			std::stringstream config_key, config_name;
 			config_key << list[list_idx] << "_" << list[list_idx+1];
-			config_name << "router-" << original_edge_id << "_"  << source << "_" << target << "_" << list[list_idx] << "_" << list[list_idx+1];
+			config_name << "router-" << original_edge_id << "_"  << list[list_idx] << "_" << list[list_idx+1];
 
 
 			auto vtx = d->addVertex();

@@ -78,7 +78,7 @@ static void print_graph (models::Dataflow * to, std::string suffix = "none") {
 		myfile << printers::GenerateGraphDOT(to);
 		myfile.close();
 
-		std::string cmd = "dot " + filename + ".dot -Gdpi=300 -T png -o " + filename + ".png";
+		std::string cmd = "dot " + filename + ".dot -Gdpi=200  -T png -o " + filename + ".png";
 		auto out_err = system(cmd.c_str());
 		if(out_err) {
 			VERBOSE_INFO ("System call returns error\n");

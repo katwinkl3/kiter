@@ -299,7 +299,7 @@ protected:
 public :
 	Dataflow		(unsigned int nVertex = 0)		: readonly(false), normalizationisdone(false), repetitionvectorisdone(false),
 	g(nVertex), graph_name(""),graph_type(""),app_name(""), graph_id(0) ,  auto_vertex_num (1) , auto_edge_num (1) ,
-	normalized_period(0), noc (4,4) {
+	normalized_period(0), noc (0,0) {
 		VERBOSE_ASSERT(nVertex == 0,TXT_NO_IMPLEMENTATION);
 	}
 

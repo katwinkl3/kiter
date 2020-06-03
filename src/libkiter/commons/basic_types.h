@@ -8,7 +8,6 @@
 #ifndef SRC_LIBKITER_COMMONS_BASIC_TYPES_H_
 #define SRC_LIBKITER_COMMONS_BASIC_TYPES_H_
 
-
 typedef               long int  PHASE_INDEX;
 typedef               long int  EXEC_COUNT;
 typedef               long int  TOKEN_UNIT;

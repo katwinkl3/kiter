@@ -528,10 +528,10 @@ std::string printers::GenerateGraphDOT    (models::Dataflow* const  dataflow , b
   returnStream << "// Auto-generate by Kiter" << std::endl;
   returnStream << "//   use this dot file with circo for an optimal visu\n" << std::endl;
   returnStream << "digraph G {\n" << std::endl;
-  
-  returnStream <<  "  graph [label=\"" << "Auto-generate by the Kiter"
+  returnStream <<  "    rankdir=\"LR\";" << std::endl;
+  returnStream <<  "  graph [label=\"" << ""
 	       << "\",splines=false]\n";
-  returnStream << "  edge [labelangle=15,labeldistance=1,len=1.5,fontsize=8,labelsize=4,color=grey]" << std::endl;
+  returnStream << "  edge [len=1.5,fontsize=8,labelsize=4,color=grey]" << std::endl;
 
   returnStream << std::endl;
 
@@ -540,7 +540,7 @@ std::string printers::GenerateGraphDOT    (models::Dataflow* const  dataflow , b
 
       ARRAY_INDEX tid =  dataflow->getVertexId(t);
 
-      returnStream << "  t_" << tid << " ["  << "shape=circle,  fixedsize=\"shape\", fontsize=\"2\"," << "label = \"" << dataflow->getVertexName(t);
+      returnStream << "  t_" << tid << " ["  << "shape=circle,  fixedsize=\"shape\", fontsize=\"7\"," << "label = \"" << dataflow->getVertexName(t);
       if (!simple) {
     	  returnStream	  << "\nid:" << tid
     		  << "\nPhases:" << commons::toString(dataflow->getPhasesQuantity(t))
