@@ -7,7 +7,7 @@
 
 #include "LTEGenerator.h"
 #include <models/Dataflow.h>
-#include <commons/SDF3Wrapper.h>
+#include <printers/SDF3Wrapper.h>
 
 models::Dataflow*  generators::generate_lte_sdf(parameters_list_t   param_list) {
 

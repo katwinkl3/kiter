@@ -11,7 +11,7 @@
 
 #include <algorithms/throughput/kperiodic.h>
 #include <models/EventGraph.h>
-#include <commons/SDF3Wrapper.h>
+#include <printers/SDF3Wrapper.h>
 
 
  const periodicity_vector_t algorithms::scheduling::generateNPeriodicVector(const models::Dataflow* dataflow) {
@@ -45,7 +45,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (const mo
 	if (VERBOSE_IS_DEBUG()) {
 	    VERBOSE_DEBUG("Save SDF3 XML file.");
 		static int count = 0;
-		commons::writeSDF3File( "CSDF_KPeriodicScheduling_" + std::to_string(count++) + ".xml", dataflow);
+		printers::writeSDF3File( "CSDF_KPeriodicScheduling_" + std::to_string(count++) + ".xml", dataflow);
 	}
 
    VERBOSE_ASSERT((dataflow->is_repetition_vector()),"inconsistent graph or repetition vector not computed");

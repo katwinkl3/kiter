@@ -39,6 +39,8 @@ clean:
 
 benchmark :  sdf.log  csdf.log csdf_sized.log
 
+ubuntu_test:
+	docker build -f DockerFile.u18 -t bbodin/kiter-u18 ./
 travis_test: ${SDF3_BENCHMARK}
 	for f in  benchmark/*.xml ; do echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
 	for f in  benchmark_sized/*.xml ; do echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput ;  done

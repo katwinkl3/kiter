@@ -28,7 +28,7 @@
 #include <set>
 #include <queue>
 #include <tuple>
-#include <commons/SDF3Wrapper.h>
+#include <printers/SDF3Wrapper.h>
 #include <unordered_map>
 #include <commons/GroupList.h>
 
@@ -52,7 +52,7 @@ static void print_graph (models::Dataflow * to, std::string suffix = "none") {
 
 	std::string sfilename = "bufferless_noc_schedule_"+ to->getGraphName() + "_"+ commons::toString(counter) + "_" + suffix + "";
 
-	commons::writeSDF3File(sfilename + ".xml", to);
+	printers::writeSDF3File(sfilename + ".xml", to);
 
 	{
 

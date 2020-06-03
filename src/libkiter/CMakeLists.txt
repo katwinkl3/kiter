@@ -62,10 +62,10 @@ SET(LIBKITER_FLAGS "-Wconversion -Wfloat-equal  ${CMAKE_CXX_FLAGS_DEBUG} ")
 
 #          ######### API         ##########
 
-ADD_LIBRARY			               (kiter_commons SHARED  ${commons_sources})
+ADD_LIBRARY			               (kiter_commons STATIC  ${commons_sources})
 TARGET_LINK_LIBRARIES              (kiter_commons PUBLIC ${LIBXML2_LIBRARIES})
 
-ADD_LIBRARY			               (kiter_models SHARED  ${models_sources})
+ADD_LIBRARY			               (kiter_models STATIC  ${models_sources})
 TARGET_LINK_LIBRARIES              (kiter_models PUBLIC kiter_commons )
 
 
@@ -81,21 +81,22 @@ if(GUROBI_FOUND AND FALSE)
 endif(GUROBI_FOUND)
 
 
-ADD_LIBRARY			   (kiter_algorithms SHARED  ${algorithms_sources})
-TARGET_LINK_LIBRARIES  (kiter_algorithms PUBLIC kiter_commons kiter_models kiter_lp)
+ADD_LIBRARY			   (kiter_algorithms STATIC  ${algorithms_sources})
+TARGET_LINK_LIBRARIES  (kiter_algorithms PUBLIC kiter_commons kiter_models kiter_printers kiter_lp)
 
 
-ADD_LIBRARY			   (kiter_generators SHARED  ${generators_sources})
+ADD_LIBRARY			   (kiter_generators STATIC  ${generators_sources})
 TARGET_LINK_LIBRARIES  (kiter_generators PUBLIC kiter_commons kiter_algorithms)
 
-ADD_LIBRARY			   (kiter_printers SHARED  ${printers_sources})
+ADD_LIBRARY			   (kiter_printers STATIC  ${printers_sources})
 TARGET_LINK_LIBRARIES  (kiter_printers PUBLIC kiter_commons kiter_algorithms)
 
 
 file(WRITE null.cpp "")
 ADD_LIBRARY			   (libkiter STATIC   null.cpp )
 TARGET_LINK_LIBRARIES  (libkiter  
-				kiter_algorithms 
+                                kiter_algorithms
+  				kiter_models 
 				kiter_commons 
 				kiter_lp 
 				kiter_generators 

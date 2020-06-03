@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <commons/KiterRegistry.h>
 #include <commons/verbose.h>
-#include <commons/SDF3Wrapper.h>
+#include <printers/SDF3Wrapper.h>
 
 
 inline double tock() {
@@ -94,7 +94,7 @@ int main (int argc, char **argv)
 	// Step 1 = Load XML file if any
 	if (filename != "") {
 		VERBOSE_INFO("Read XML file : " << filename);
-		csdf = commons::readSDF3File(filename);
+		csdf = printers::readSDF3File(filename);
 	}
 
 	if (generators.size() > 1) {

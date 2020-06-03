@@ -10,7 +10,7 @@
 
 
 #include <commons/basic_types.h>
-#include <commons/SDF3Wrapper.h>
+#include <printers/SDF3Wrapper.h>
 #include <algorithms/schedulings.h>
 #include <algorithms/repetition_vector.h>
 

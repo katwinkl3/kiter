@@ -9,7 +9,7 @@
 #include <algorithms/repetition_vector.h>
 #include <printers/stdout.h>
 #include <commons/commons.h>
-#include <commons/SDF3Wrapper.h>
+#include <printers/SDF3Wrapper.h>
 
 std::string add_block ( std::string name , TIME_UNIT start, TIME_UNIT duration, double node_height,  double current_task_y_pos, double line_width =  0.1 , bool fill = false) {
 		std::ostringstream returnStream;
@@ -639,9 +639,9 @@ void printers::printXML    (models::Dataflow* const  dataflow, parameters_list_t
 
 	if (params.find(filename_argument) != params.end() ) {
 		std::string filename = params[filename_argument];
-		commons::writeSDF3File(filename, dataflow );
+		printers::writeSDF3File(filename, dataflow );
 	} else {
-		 std::cout << commons::generateSDF3XML(dataflow) << std::endl;
+		 std::cout << printers::generateSDF3XML(dataflow) << std::endl;
 	}
 
 }

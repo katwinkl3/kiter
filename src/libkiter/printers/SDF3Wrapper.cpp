@@ -13,7 +13,7 @@
 #include <libxml/parser.h>
 #include <libxml/encoding.h>
 
-#include <commons/SDF3Wrapper.h>
+#include <printers/SDF3Wrapper.h>
 #include <commons/commons.h>
 #include <commons/verbose.h>
 #include <models/Dataflow.h>
@@ -57,7 +57,7 @@ std::string vectorAsStr(const std::vector<TIME_UNIT>& t)
 }
 
 
-namespace commons {
+namespace printers {
 
 
 
@@ -82,42 +82,10 @@ std::pair<T1,T2> splitAndDefault(const std::string &s,char del,T2 d) {
 }
 
 
-TIME_UNIT runSDF3Throughput(models::Dataflow* const  dataflow, std::string SDF3_binary) {
-	static ARRAY_INDEX counter = 0;
-	std::string tmp_filename = "/tmp/tmp" + std::to_string(counter++) +  ".xml";
-	commons::writeSDF3File (tmp_filename,dataflow);
-	std::string cmd = SDF3_binary + " --graph " + tmp_filename + " --algo throughput";
-
-	VERBOSE_INFO (" Running SDF3: " << cmd);
-
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
-    if (!pipe) {
-        throw std::runtime_error("popen() failed!");
-    }
-
-    std::string result;
-    std::array<char, 128> buffer;
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-        result += buffer.data();
-    }
-    VERBOSE_INFO(result);
-
-    std::vector<std::string> lines = commons::split<std::string>(result,'\n');
-    if (not (lines.size() == 2)) return 0;
-
-    std::string throughput_line = lines[0]; // thr(autogen) = 0.0434783
-    std::vector<std::string> thr_fields = commons::split<std::string>(throughput_line,'=');
-    if (not (thr_fields.size() == 2)) return 0;
-    TIME_UNIT throughput = commons::fromString<TIME_UNIT>(thr_fields[1]);
-
-    return throughput;
-}
-
-
 
 void                        readSDF3OutputSpec      (models::Dataflow *to, const Edge c, const std::string rates) {
 
-	std::vector<std::string>  init_periodic = split<std::string> (rates, INIT_PERIODIC_SEPARATOR);
+	std::vector<std::string>  init_periodic = commons::split<std::string> (rates, INIT_PERIODIC_SEPARATOR);
 	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? commons::split<std::string> (init_periodic[0], ',') : std::vector<std::string>() ;
 	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? commons::split<std::string> (init_periodic[0], ',') : commons::split<std::string> (init_periodic[1], ',') ;
 	std::vector<TOKEN_UNIT>   init_cons;
@@ -140,9 +108,9 @@ void                        readSDF3OutputSpec      (models::Dataflow *to, const
 
 void                        readSDF3InputSpec      (models::Dataflow *to, const Edge c, const std::string rates) {
 
-	std::vector<std::string>  init_periodic = split<std::string> (rates, INIT_PERIODIC_SEPARATOR);
-	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? split<std::string> (init_periodic[0], ',') : std::vector<std::string>() ;
-	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? split<std::string> (init_periodic[0], ',') : split<std::string> (init_periodic[1], ',') ;
+	std::vector<std::string>  init_periodic = commons::split<std::string> (rates, INIT_PERIODIC_SEPARATOR);
+	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? commons::split<std::string> (init_periodic[0], ',') : std::vector<std::string>() ;
+	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? commons::split<std::string> (init_periodic[0], ',') : commons::split<std::string> (init_periodic[1], ',') ;
 	std::vector<TOKEN_UNIT>   init_prod;
 	std::vector<TOKEN_UNIT>   periodic_prod;
 
@@ -273,9 +241,9 @@ void readSDF3VertexTimings (models::Dataflow *to,xmlNodePtr taskNode) {
 		}
 	}
 
-	std::vector<std::string>  init_periodic = split<std::string> (timings, INIT_PERIODIC_SEPARATOR);
-	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? splitSDF3List (init_periodic[0]) : std::vector<std::string>() ;
-	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? splitSDF3List (init_periodic[0]) : splitSDF3List (init_periodic[1]) ;
+	std::vector<std::string>  init_periodic = commons::split<std::string> (timings, INIT_PERIODIC_SEPARATOR);
+	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? commons::splitSDF3List (init_periodic[0]) : std::vector<std::string>() ;
+	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? commons::splitSDF3List (init_periodic[0]) : commons::splitSDF3List (init_periodic[1]) ;
 
 	std::vector<TIME_UNIT> init_times;
 	std::vector<TIME_UNIT> periodic_times;
@@ -341,7 +309,7 @@ void readSDF3VertexReentrancy (models::Dataflow *to,xmlNodePtr taskNode) {
 }
 
 bool onlyOneRate(std::string rates) {
-	std::vector<std::string>  init_periodic = split <std::string> (rates, INIT_PERIODIC_SEPARATOR);
+	std::vector<std::string>  init_periodic = commons::split <std::string> (rates, INIT_PERIODIC_SEPARATOR);
 	if (init_periodic.size() > 1) {
 		for (auto x : init_periodic) {
 			if (not onlyOneRate(x)) {return false;}

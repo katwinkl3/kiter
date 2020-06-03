@@ -1,0 +1,16 @@
+FROM ubuntu:bionic
+
+
+
+################################### PACKAGE INSTALL  ##########################
+RUN apt-get update && apt install -y git make cmake libboost-all-dev libxml2-dev libglpk-dev
+################################################################################
+
+# RUN git clone https://github.com/bbodin/kiter.git
+ RUN mkdir /kiter/
+COPY . /kiter/
+RUN ls
+RUN ls /
+RUN ls /kiter/
+# RUN cd kiter && git checkout routing
+RUN cd kiter && make clean && make build

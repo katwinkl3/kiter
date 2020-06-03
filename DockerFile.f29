@@ -1,0 +1,33 @@
+FROM fedora:29
+
+
+
+################################### PACKAGE INSTALL  ##########################
+
+RUN yum install -y  unzip gcc
+RUN yum install -y  make
+RUN yum install -y  gcc-c++
+RUN yum install -y  libxml2-devel
+RUN yum install -y  boost-devel 
+RUN yum install -y  emacs git 
+RUN yum install -y  wget
+
+################################################################################
+
+
+
+
+################################### COPY              ##########################
+RUN mkdir /sdf3/
+WORKDIR /sdf3
+RUN wget http://www.es.ele.tue.nl/sdf3/download/files/releases/sdf3-140724.zip
+RUN unzip sdf3-140724.zip
+################################################################################
+
+
+
+
+#################################### BUILD  #####################################
+WORKDIR sdf3
+RUN make
+################################################################################

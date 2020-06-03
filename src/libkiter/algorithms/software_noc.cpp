@@ -25,7 +25,7 @@
 #include <set>
 #include <queue>
 #include <tuple>
-#include <commons/SDF3Wrapper.h>
+#include <printers/SDF3Wrapper.h>
 #include <unordered_map>
 
 static TIME_UNIT NULL_DURATION = 0;
@@ -89,7 +89,7 @@ static void print_graph (models::Dataflow * to, std::string suffix = "none") {
 
 	}
 
-	commons::writeSDF3File(sfilename+ ".xml", to);
+	printers::writeSDF3File(sfilename+ ".xml", to);
 	to->reset_computation();
 
 }

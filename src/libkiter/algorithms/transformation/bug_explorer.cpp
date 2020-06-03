@@ -10,7 +10,7 @@
 #include <algorithms/transformations.h>
 
 #include <commons/commons.h>
-#include <commons/SDF3Wrapper.h>
+#include <algorithms/throughput/SDF3Wrapper.h>
 
 
 TIME_UNIT runKiterThroughput(models::Dataflow* const  dataflow) {
@@ -20,7 +20,7 @@ TIME_UNIT runKiterThroughput(models::Dataflow* const  dataflow) {
 
 bool compareKiterVsSDF3Results (models::Dataflow* const  dataflow, TIME_UNIT epsilon = std::numeric_limits<TIME_UNIT>::epsilon()) {
 	  VERBOSE_INFO("runSDF3Throughput");
-	  TIME_UNIT sdf3_res = commons::runSDF3Throughput(dataflow);
+	  TIME_UNIT sdf3_res = algorithms::runSDF3Throughput(dataflow);
 	  VERBOSE_INFO("runKiterThroughput");
 	  TIME_UNIT kiter_res = runKiterThroughput(dataflow);
 	  VERBOSE_INFO(std::scientific << std::setw( 11 ) << std::setprecision( 9 ) << " sdf3_res = " << sdf3_res << " kiter_res = " << kiter_res);
@@ -31,7 +31,7 @@ bool compareKiterVsSDF3Results (models::Dataflow* const  dataflow, TIME_UNIT eps
 void algorithms::transformation::compare_sdf3_throughput (models::Dataflow* const  dataflow, parameters_list_t) {
 	TIME_UNIT epsilon = std::numeric_limits<TIME_UNIT>::epsilon();
 	VERBOSE_INFO("runSDF3Throughput");
-	TIME_UNIT sdf3_res = commons::runSDF3Throughput(dataflow);
+	TIME_UNIT sdf3_res = algorithms::runSDF3Throughput(dataflow);
 	VERBOSE_INFO("runKiterThroughput");
 	TIME_UNIT kiter_res = runKiterThroughput(dataflow);
 	VERBOSE_INFO(std::scientific << std::setw( 11 ) << std::setprecision( 9 ) << " sdf3_res = " << sdf3_res << " kiter_res = " << kiter_res);

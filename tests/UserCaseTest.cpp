@@ -11,7 +11,7 @@
 #include "helpers/echo_buffered.h"
 #include <models/Dataflow.h>
 #include <algorithms/schedulings.h>
-#include <commons/SDF3Wrapper.h>
+#include <printers/SDF3Wrapper.h>
 
 BOOST_FIXTURE_TEST_SUITE( use_case_test , WITH_VERBOSE)
 

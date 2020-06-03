@@ -11,16 +11,16 @@
 #include "helpers/echo_buffered.h"
 #include <models/Dataflow.h>
 #include <algorithms/schedulings.h>
-#include <commons/SDF3Wrapper.h>
+#include <printers/SDF3Wrapper.h>
 
 BOOST_FIXTURE_TEST_SUITE( sdf3_writer_test , WITH_VERBOSE)
 
 BOOST_AUTO_TEST_CASE( test_echo )
 {
 	models::Dataflow* echo =  generateEchoBuffered () ;
-	std::string echoStr = commons::generateSDF3XML(echo);
-	models::Dataflow* echobis = commons::parseSDF3XML(echoStr);
-	std::string echoStrBis = commons::generateSDF3XML(echobis);
+	std::string echoStr = printers::generateSDF3XML(echo);
+	models::Dataflow* echobis = printers::parseSDF3XML(echoStr);
+	std::string echoStrBis = printers::generateSDF3XML(echobis);
 
 
 
