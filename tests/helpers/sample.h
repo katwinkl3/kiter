@@ -15,11 +15,9 @@
 models::Dataflow * generateSample () {
 	// Auto-generate by Kiter for Kiter
 	//
-	std::cout << "generate a dataflow graph..." << std::endl;
 	models::Dataflow* new_graph = new models::Dataflow();
 
 	{
-		std::cout << "generate a task ..." << std::endl;
 		auto new_vertex = new_graph->addVertex(1);
 		new_graph->setVertexName(new_vertex,"a");
 		new_graph->setPhasesQuantity(new_vertex,1);
@@ -27,7 +25,6 @@ models::Dataflow * generateSample () {
 		new_graph->setVertexDuration(new_vertex,{1});
 	}
 	{
-		std::cout << "generate a task ..." << std::endl;
 		auto new_vertex = new_graph->addVertex(2);
 		new_graph->setVertexName(new_vertex,"b");
 		new_graph->setPhasesQuantity(new_vertex,1);
@@ -35,7 +32,6 @@ models::Dataflow * generateSample () {
 		new_graph->setVertexDuration(new_vertex,{2});
 	}
 	{
-		std::cout << "generate a task ..." << std::endl;
 		auto new_vertex = new_graph->addVertex(3);
 		new_graph->setVertexName(new_vertex,"c");
 		new_graph->setPhasesQuantity(new_vertex,1);
@@ -43,7 +39,6 @@ models::Dataflow * generateSample () {
 		new_graph->setVertexDuration(new_vertex,{2});
 	}
 	{
-		std::cout << "generate a buffer ..." << std::endl;
 		auto new_edge = new_graph->addEdge(new_graph->getVertexById(1), new_graph->getVertexById(2));
 		new_graph->setEdgeInPhases(new_edge,{2});
 		new_graph->setEdgeOutPhases(new_edge,{3});
@@ -51,7 +46,6 @@ models::Dataflow * generateSample () {
 		new_graph->setEdgeName(new_edge,"alpha");
 	}
 	{
-		std::cout << "generate a buffer ..." << std::endl;
 		auto new_edge = new_graph->addEdge(new_graph->getVertexById(2), new_graph->getVertexById(3));
 		new_graph->setEdgeInPhases(new_edge,{1});
 		new_graph->setEdgeOutPhases(new_edge,{2});

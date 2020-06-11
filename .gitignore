@@ -64,3 +64,4 @@ CSDF_KPeriodicScheduling_*.xml
 software_noc_*.xml
 
 /*.xml
+/*.lp

@@ -15,7 +15,6 @@
 #include <models/NoC.h>
 #include <vector>
 #include <iostream>
-#include <printers/stdout.h>
 #include <commons/verbose.h>
 #include <commons/commons.h>
 #include <models/Dataflow.h>
@@ -31,7 +30,6 @@
 #include <set>
 #include <queue>
 #include <tuple>
-#include <printers/SDF3Wrapper.h>
 #include <unordered_map>
 
 

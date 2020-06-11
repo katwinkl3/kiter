@@ -6,7 +6,6 @@
  */
 
 #include <models/Dataflow.h>
-#include <algorithms/repetition_vector.h>
 #include <printers/stdout.h>
 #include <commons/commons.h>
 #include <printers/SDF3Wrapper.h>
@@ -518,7 +517,7 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 
 std::string printers::GenerateGraphDOT    (models::Dataflow* const  dataflow , bool simple) {
 
-    VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+  bool consistent = dataflow->is_repetition_vector();
 
   std::ostringstream returnStream;
   
@@ -544,7 +543,7 @@ std::string printers::GenerateGraphDOT    (models::Dataflow* const  dataflow , b
       if (!simple) {
     	  returnStream	  << "\nid:" << tid
     		  << "\nPhases:" << commons::toString(dataflow->getPhasesQuantity(t))
-    		  << "\nNi:" << commons::toString(dataflow->getNi(t))
+    		  << "\nNi:" << (consistent ? commons::toString(dataflow->getNi(t)) : "N/A")
     		  << "\nduration:" << commons::toString(dataflow->getVertexPhaseDuration(t))
               << "\nreentrancy:" << commons::toString(dataflow->getReentrancyFactor(t))  ;
       }
@@ -649,8 +648,7 @@ void printers::printXML    (models::Dataflow* const  dataflow, parameters_list_t
 
 void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list_t ) {
 
-	bool consistent = computeRepetitionVector(dataflow);
-
+	bool consistent = dataflow->is_repetition_vector();
 
 
 	std::cout << "App name       = " <<  dataflow->getAppName() << std::endl;
