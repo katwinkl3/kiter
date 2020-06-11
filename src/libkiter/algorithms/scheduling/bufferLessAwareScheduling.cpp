@@ -6,7 +6,6 @@
  */
 
 
-#include <algorithms/repetition_vector.h>
 #include <algorithms/schedulings.h>
 #include <algorithms/mappings.h>
 #include <lp/glpsol.h>

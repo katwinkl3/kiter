@@ -8,7 +8,6 @@
 
 #include <models/Dataflow.h>
 #include <models/Scheduling.h>
-#include <algorithms/repetition_vector.h>
 #include <algorithms/transformation/merging.h>
 #include <algorithms/schedulings.h>
 #include <string>

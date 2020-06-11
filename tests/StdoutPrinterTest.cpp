@@ -6,7 +6,6 @@
 
 #include <printers/stdout.h>
 #include <algorithms/schedulings.h>
-#include <algorithms/repetition_vector.h>
 
 #define BOOST_TEST_MODULE TemplateTest
 #include "helpers/test_classes.h"

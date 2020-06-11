@@ -8,7 +8,6 @@
 
 
 #include <models/Dataflow.h>
-#include <algorithms/repetition_vector.h>
 #include <algorithms/mappings.h>
 #include <algorithms/schedulings.h>
 
@@ -21,7 +20,6 @@
 #include <models/EventGraph.h>
 #include <algorithms/normalization.h>
 #include <algorithms/software_noc.h>
-#include <algorithms/repetition_vector.h>
 #include <algorithms/throughput/kperiodic.h>
 #include <cstdlib>
 #include <stack>
@@ -52,7 +50,7 @@
 
 	std::vector<ARRAY_INDEX> prog_order;
 	// Need RV.
-	VERBOSE_ASSERT(from->is_repetition_vector(),"The graph needs to have a repetition vector.");
+	VERBOSE_ASSERT(from->has_repetition_vector(),"The graph needs to have a repetition vector.");
 	// Store task to execute by number of execution.
 	EXEC_COUNT total = 0 ;
 	std::vector < EXEC_COUNT >  remained_execution (from->getMaxVertexId());

@@ -23,6 +23,7 @@
 #include <commons/commons.h>
 #include <commons/verbose.h>
 #include <models/NoC.h>
+#include <models/repetition_vector.h>
 
 #define TXT_NEW_EDGE_ERROR "NEW_EDGE_ERROR"
 #define TXT_TASK_NOT_FOUND "TASK_NOT_FOUND"
@@ -314,7 +315,13 @@ public :
 
 	bool is_read_only() const {return readonly;}
 	bool is_normalized() const {return normalizationisdone ;}
-	bool is_repetition_vector() const {return repetitionvectorisdone ;}
+	bool has_repetition_vector() const {
+		return repetitionvectorisdone ;
+	}
+	bool is_consistent()  {
+		if (!repetitionvectorisdone) computeRepetitionVector(this);
+		return repetitionvectorisdone ;
+	}
 
 public :
 

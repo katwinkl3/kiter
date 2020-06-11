@@ -9,7 +9,6 @@
 #include "RandomGenerator.h"
 #include <algorithms/schedulings.h>
 #include <algorithms/normalization.h>
-#include <algorithms/repetition_vector.h>
 #include <random>
 
 models::Dataflow*  generators::generate_random_sdf(parameters_list_t   param_list) {

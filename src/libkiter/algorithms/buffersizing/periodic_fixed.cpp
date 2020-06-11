@@ -11,7 +11,6 @@
 #include <lp/glpsol.h>
 #include <models/Dataflow.h>
 #include <algorithms/normalization.h>
-#include <algorithms/repetition_vector.h>
 
 #include "periodic_fixed.h"
 

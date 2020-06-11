@@ -7,7 +7,6 @@
 #define BOOST_TEST_MODULE TemplateTest
 #include "helpers/test_classes.h"
 #include "helpers/sample.h"
-#include <algorithms/repetition_vector.h>
 
 BOOST_FIXTURE_TEST_SUITE( repetition_vector_test , WITH_SAMPLE)
 

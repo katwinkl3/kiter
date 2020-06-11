@@ -103,8 +103,13 @@ sdf.log:  ./Release/bin/kiter Makefile
 	rm -f $@
 	@echo "==============================================================================================="
 	@echo "==============================================================================================="
-	for f in  ${SDF3_BENCHMARK}/*.xml ; do echo === $$f  >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput  -a deGrooteThroughput >> $@ ; if [ -d ${SDF3_BINARY_ROOT} ];then ${SDF3ANALYSIS_SDF}  --graph $$f  --algo throughput  >> $@ || true ; fi ;  done
-
+	for f in  ${SDF3_BENCHMARK}/*.xml ; do echo === $$f ;\
+	echo === $$f === 1PeriodicThroughput  >> $@; ${KITER} -f $$f  -a 1PeriodicThroughput >> $@ ; \
+	echo === $$f === KPeriodicThroughput  >> $@; ${KITER} -f $$f  -a KPeriodicThroughput >> $@ ; \
+	echo === $$f === deGrooteThroughput  >> $@; ${KITER} -f $$f  -a deGrooteThroughput >> $@ ; \
+	if [ -d ${SDF3_BINARY_ROOT} ];then ${SDF3ANALYSIS_SDF}  --graph $$f  --algo throughput  >> $@ || true ; fi ;\
+	done
+	
 %/bin/kiter: ${SOURCES}  %/Makefile
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	@$(MAKE) -C $* all

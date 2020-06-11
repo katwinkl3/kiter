@@ -6,7 +6,6 @@
  */
 
 
-#include <algorithms/repetition_vector.h>
 #include <algorithms/schedulings.h>
 
 #include <algorithms/throughput/kperiodic.h>
@@ -16,7 +15,7 @@
 
  const periodicity_vector_t algorithms::scheduling::generateNPeriodicVector(const models::Dataflow* dataflow) {
 
-	VERBOSE_ASSERT(dataflow->is_repetition_vector(),"Need repetition vector.");
+	VERBOSE_ASSERT(dataflow->has_repetition_vector(),"Need repetition vector.");
 	periodicity_vector_t kvector;
 	for (Vertex v : dataflow->vertices()){
 	        kvector[v] = dataflow->getNi(v);
@@ -48,7 +47,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (const mo
 		printers::writeSDF3File( "CSDF_KPeriodicScheduling_" + std::to_string(count++) + ".xml", dataflow);
 	}
 
-   VERBOSE_ASSERT((dataflow->is_repetition_vector()),"inconsistent graph or repetition vector not computed");
+   VERBOSE_ASSERT((dataflow->has_repetition_vector()),"inconsistent graph or repetition vector not computed");
 
     VERBOSE_INFO("Please note you can use the PRINT parameter");
 

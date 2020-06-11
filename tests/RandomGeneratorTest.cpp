@@ -9,7 +9,6 @@
 #define BOOST_TEST_MODULE TemplateTest
 #include "helpers/test_classes.h"
 #include <models/Dataflow.h>
-#include <algorithms/repetition_vector.h>
 #include <algorithms/symbolic_execution.h>
 #include <algorithms/schedulings.h>
 #include <generators/RandomGenerator.h>

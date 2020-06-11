@@ -8,7 +8,6 @@
 #include <models/Dataflow.h>
 #include <models/EventGraph.h>
 #include <algorithms/symbolic_execution.h>
-#include <algorithms/repetition_vector.h>
 #include <algorithms/nperiodic.h>
 
 
@@ -45,7 +44,7 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 
 
 	// We need the repetition vector to proceed.
-	VERBOSE_ASSERT(computeRepetitionVector(graph),"inconsistent graph");
+	VERBOSE_ASSERT(graph->is_consistent(),"inconsistent graph");
 
 	  {ForEachVertex(graph,t) {
 	  	  VERBOSE_ASSERT(graph->getPhasesQuantity(t) == 1, "Support only SDF");
@@ -210,7 +209,7 @@ void algorithms::symbolic_execution_with_packets(models::Dataflow* const  graph,
 bool algorithms::symbolic_execution(models::Dataflow* const  from) {
 
 	// Need RV.
-	VERBOSE_ASSERT(computeRepetitionVector(from),"inconsistent graph");
+	VERBOSE_ASSERT(from->is_consistent(),"inconsistent graph");
 
 	// Store task to execute by number of execution.
 	EXEC_COUNT total = 0 ;

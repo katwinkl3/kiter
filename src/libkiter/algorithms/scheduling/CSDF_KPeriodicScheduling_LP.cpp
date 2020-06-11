@@ -6,7 +6,6 @@
  */
 
 
-#include <algorithms/repetition_vector.h>
 #include <algorithms/schedulings.h>
 //#include <algorithms/throughput/kperiodic.h>
 
@@ -286,7 +285,7 @@ models::Scheduling  algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (cons
 
     // STEP 0.1 - PRE
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
-    VERBOSE_ASSERT(dataflow->is_repetition_vector(),"Please generate the repetition vector before using this function.");
+    VERBOSE_ASSERT(dataflow->has_repetition_vector(),"Please generate the repetition vector before using this function.");
     EXEC_COUNT sumNi = std::accumulate(dataflow->getVertices().first, dataflow->getVertices().second, 0, [&](EXEC_COUNT sum, Vertex t){return  sum + dataflow->getNi(t);}) ;
     EXEC_COUNT sumKi = accumulate(kvector.begin(), kvector.end(), 0, [](int v, const periodicity_vector_t::value_type& p){return v + p.second;});
 

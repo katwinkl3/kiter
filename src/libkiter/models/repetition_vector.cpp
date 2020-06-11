@@ -6,7 +6,7 @@
  */
 
 
-#include <algorithms/repetition_vector.h>
+#include "repetition_vector.h"
 #include <models/Dataflow.h>
 
 
@@ -156,7 +156,7 @@ bool calcRepetitionVector(models::Dataflow *from,std::map<Vertex,EXEC_COUNT_FRAC
  *
  */
 bool computeRepetitionVector(models::Dataflow *from) {
-	if (from->is_repetition_vector()) return true;
+	if (from->has_repetition_vector()) return true;
 	from->set_read_only();
     std::map<Vertex,EXEC_COUNT_FRACT> fractions;
     {ForEachVertex(from,v) {

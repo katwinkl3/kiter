@@ -7,7 +7,6 @@
 
 #include <models/EventGraph.h>
 #include <models/Dataflow.h>
-#include <algorithms/repetition_vector.h>
 #include <algorithms/normalization.h>
 
 

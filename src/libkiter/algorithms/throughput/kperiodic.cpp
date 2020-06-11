@@ -13,7 +13,6 @@
 #include <models/Dataflow.h>
 #include <models/EventGraph.h>
 #include <algorithms/normalization.h>
-#include <algorithms/repetition_vector.h>
 
 #include "kperiodic.h"
 
@@ -308,7 +307,7 @@ kperiodic_result_t algorithms::KScheduleBufferLess(models::Dataflow *  const dat
 models::EventGraph* algorithms::generateKPeriodicEventGraph(const models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues ) {
 
 	VERBOSE_KPERIODIC_DEBUG("generateKPeriodicEventGraph Starts ");
-    VERBOSE_ASSERT((dataflow->is_repetition_vector()),"inconsistent graph or repetition vector not computed");
+    VERBOSE_ASSERT((dataflow->has_repetition_vector()),"inconsistent graph or repetition vector not computed");
 
     models::EventGraph * g = new models::EventGraph();
 

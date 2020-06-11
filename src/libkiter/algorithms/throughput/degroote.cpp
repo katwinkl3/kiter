@@ -12,7 +12,6 @@
 #include <models/Dataflow.h>
 #include <models/EventGraph.h>
 #include <algorithms/normalization.h>
-#include <algorithms/repetition_vector.h>
 
 #include "degroote.h"
 

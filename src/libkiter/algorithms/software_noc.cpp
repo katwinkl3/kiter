@@ -16,7 +16,6 @@
 #include <models/EventGraph.h>
 #include <algorithms/normalization.h>
 #include <algorithms/software_noc.h>
-#include <algorithms/repetition_vector.h>
 #include <algorithms/throughput/kperiodic.h>
 #include <cstdlib>
 #include <stack>

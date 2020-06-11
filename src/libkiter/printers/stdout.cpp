@@ -517,7 +517,7 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 
 std::string printers::GenerateGraphDOT    (models::Dataflow* const  dataflow , bool simple) {
 
-  bool consistent = dataflow->is_repetition_vector();
+  bool consistent = dataflow->is_consistent();
 
   std::ostringstream returnStream;
   
@@ -648,7 +648,7 @@ void printers::printXML    (models::Dataflow* const  dataflow, parameters_list_t
 
 void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list_t ) {
 
-	bool consistent = dataflow->is_repetition_vector();
+	bool consistent = dataflow->is_consistent();
 
 
 	std::cout << "App name       = " <<  dataflow->getAppName() << std::endl;

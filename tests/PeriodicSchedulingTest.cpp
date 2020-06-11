@@ -12,7 +12,6 @@
 #include <commons/basic_types.h>
 #include <printers/SDF3Wrapper.h>
 #include <algorithms/schedulings.h>
-#include <algorithms/repetition_vector.h>
 
 // TODO : find a way to parametrize TEST_SUITE to try different scheduling techniques with the same tests.
 

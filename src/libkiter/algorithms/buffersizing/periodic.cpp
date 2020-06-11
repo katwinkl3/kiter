@@ -13,7 +13,6 @@
 #include <models/EventGraph.h>
 #include <algorithms/normalization.h>
 #include <algorithms/buffersizing/periodic.h>
-#include <algorithms/repetition_vector.h>
 
 
 
@@ -35,7 +34,7 @@ TOKEN_UNIT algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  d
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 	VERBOSE_ASSERT (PERIOD > 0, "The period must be defined");
 	VERBOSE_ASSERT (PERIOD != std::numeric_limits<TIME_UNIT>::infinity(), "The period must be defined");
-	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+	VERBOSE_ASSERT(dataflow->is_consistent(),"inconsistent graph");
 
 	TIME_UNIT FREQUENCY = 1.0 / PERIOD;
 
