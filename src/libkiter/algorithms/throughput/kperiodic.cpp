@@ -157,7 +157,6 @@ scheduling_t period2scheduling    (const models::Dataflow* const  dataflow,  std
 
         TIME_UNIT period = (kvector[v] *  dataflow->getPhasesQuantity(v) * omega) / dataflow->getNi(v);
         scheduling_result[dataflow->getVertexId(v)].first = period;
-        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << "(" <<kvector[v] << "*" << dataflow->getPhasesQuantity(v) << "*" << omega<< ") / " << dataflow->getNi(v) << " Period = " << period  );
 
     	for (EXEC_COUNT ki = 1  ; ki <= maxki ; ki++) {
     		for (EXEC_COUNT pi = first_pi ; pi <=pq ; pi++)  {
@@ -169,6 +168,9 @@ scheduling_t period2scheduling    (const models::Dataflow* const  dataflow,  std
 
     		}
     	}
+        VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " Starts=" <<  commons::toString(scheduling_result[tid].second) << " Period = " << period  );
+
+
     }
 
 
@@ -1332,16 +1334,16 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
 }
 
 
-void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const dataflow, parameters_list_t    ) {
+void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const dataflow, parameters_list_t   params ) {
 
 
+	bool showdetails = params.count("DETAILS") > 0 ;
 
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
 
 
     EXEC_COUNT sumNi = 0;
-    EXEC_COUNT sumKi = dataflow->getVerticesCount();
 
     {ForEachTask(dataflow,t) {
         sumNi += dataflow->getNi(t) ;
@@ -1411,6 +1413,17 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 
         while (true) {
 
+            EXEC_COUNT sumKi = 0;
+            {ForEachVertex(dataflow,t) {
+            	sumKi += kvector[t];
+            }}
+
+            if (showdetails) {
+            	std::cout << "Current throughput with T=" << dataflow->getVerticesCount() << " and sum(K)/sum(N)= " << sumKi << "/" << sumNi << " is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  result.throughput   << std::endl;
+
+            	// skip that, we've seen it all
+            } else {
+            }
 
 
             iteration_count++;
@@ -1471,8 +1484,16 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 
         }
 
-    }
+    } else {
 
+    }
+    {
+    EXEC_COUNT total_ki = 0;
+       {ForEachVertex(dataflow,t) {
+           total_ki += kvector[t];
+       }}
+   	std::cout << "Final throughput with T=" << dataflow->getVerticesCount() << " and sum(K)/sum(N)= " << total_ki << "/" << sumNi << " is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  result.throughput   << std::endl;
+    }
 
     VERBOSE_INFO( "K-periodic schedule - iterations count is " << iteration_count << "  final size is " << eg->getEventCount() << " events and " << eg->getConstraintsCount() << " constraints.");
     delete eg;
@@ -1481,17 +1502,13 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
     {ForEachVertex(dataflow,t) {
         total_ki += kvector[t];
     }}
-    sumKi = 0;
-    {ForEachVertex(dataflow,t) {
-    	sumKi += kvector[t];
-    }}
 
-    VERBOSE_INFO("K-periodic schedule - total_ki=" << sumKi << " total_ni=" << sumNi );
+
+    VERBOSE_INFO("K-periodic schedule - total_ki=" << total_ki << " total_ni=" << sumNi );
 
     TIME_UNIT res = result.throughput;
-	std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
-	std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
     
+
     if (VERBOSE_IS_INFO()) {
 		scheduling_t persched = period2scheduling    (dataflow,  kvector , res);
 
@@ -1508,6 +1525,14 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 		}
     }
 
+
+
+    if (showdetails) {
+
+    } else {
+    	std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
+    	std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
+    }
 
 }
 

@@ -86,13 +86,14 @@ public:
 			available_cores = temp_vec;
 		}
 		else
-	*/
+
 		if(origV <= 16)
 		{
 			std::vector<int> temp_vec{5, 6, 10, 9, 8, 4, 0, 1, 2, 3, 7, 11, 15, 14, 13, 12};
 			available_cores = temp_vec;
 		}
 		else
+		*/
 		{
 			for(int i = 0; i < noc->getMeshSize(); i++)
 				available_cores.push_back(i);

@@ -65,3 +65,5 @@ software_noc_*.xml
 
 /*.xml
 /*.lp
+/.ipynb_checkpoints
+/ascent_pictures/

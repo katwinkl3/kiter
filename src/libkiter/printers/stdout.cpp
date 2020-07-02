@@ -481,7 +481,9 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 	   if (ts.small) {
 		   returnStream <<  "task_" << ts.id << "[label=\"Task\\n" << ts.id << "\", style=\"filled\", color=\"red\", fontsize=\"2\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.1, height=0.1];" << std::endl;
 	   } else {
-		   returnStream <<  "task_" << ts.id << "[label=\"Task\\n" << ts.id << "\", style=\"filled\", color=\"red\", fontsize=\"9\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.4, height=0.4];" << std::endl;
+		   Vertex v = dataflow->getVertexById(ts.id);
+		   std::string label = dataflow->getVertexName(v) ;
+		   returnStream <<  "task_" << ts.id << "[label=\"Task\\n" << label << "\", style=\"filled\", color=\"red\", fontsize=\"9\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.4, height=0.4];" << std::endl;
 	   }
 	 }
    }
@@ -645,6 +647,52 @@ void printers::printXML    (models::Dataflow* const  dataflow, parameters_list_t
 
 }
 
+static EXEC_COUNT computeComplexity(models::Dataflow* const  dataflow) {
+	bool consistent = dataflow->is_consistent();
+	if (!consistent) { return 0; }
+
+	EXEC_COUNT total = 0;
+	{ForEachTask(dataflow,t) {
+		total += dataflow->getNi(t) ;
+	}}
+
+	return total;
+}
+
+ EXEC_COUNT computeNCombinations(models::Dataflow* const  dataflow) {
+	bool consistent = dataflow->is_consistent();
+	if (!consistent) { return 0; }
+
+	EXEC_COUNT total = 1;
+	{ForEachTask(dataflow,t) {
+		total *= dataflow->getNi(t) ;
+	}}
+
+	return total;
+}
+
+
+ EXEC_COUNT divisorCount(EXEC_COUNT n) {
+	EXEC_COUNT total = 0;
+
+	for (EXEC_COUNT i = 1 ; i <= n ; i++) {
+		if (n % i == 0) {total ++; };
+	}
+
+	return total;
+}
+
+ EXEC_COUNT computeKCombinations(models::Dataflow* const  dataflow) {
+	bool consistent = dataflow->is_consistent();
+	if (!consistent) { return 0; }
+
+	EXEC_COUNT total = 1;
+	{ForEachTask(dataflow,t) {
+		total *= divisorCount ( dataflow->getNi(t) ) ;
+	}}
+
+	return total;
+}
 
 void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list_t ) {
 
@@ -657,15 +705,20 @@ void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list
 	std::cout << "Task count     = " <<  dataflow->getVerticesCount() << std::endl;
 	std::cout << "Channels total = " <<  dataflow->getEdgesCount() << std::endl;
 
+	EXEC_COUNT complexity = computeComplexity(dataflow) ;
+	EXEC_COUNT NCombinations = computeNCombinations(dataflow) ;
+	EXEC_COUNT KCombinations = computeKCombinations(dataflow) ;
+
 	if (consistent) {
-		EXEC_COUNT total = 0;
-		{ForEachTask(dataflow,t) {
-			total += dataflow->getNi(t) ;
-		}}
-		std::cout << "Complexity     = " <<  total << std::endl;
+		std::cout << "Complexity     = " <<  complexity << std::endl;
+		//// Experimental
+		//std::cout << "NCombinations    = " <<  NCombinations << std::endl;
+		//std::cout << "KCombinations    = " <<  KCombinations << std::endl;
 	} else {
 		std::cout << "This dataflow graph is not consistent!" << std::endl;
 	}
+
+
 	std::cout << "                 " << std::endl;
 
 	size_t max_str = 0 ;
