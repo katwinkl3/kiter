@@ -384,7 +384,142 @@ models::Scheduling  algorithms::scheduling::CSDF_KPeriodicScheduling_LP    (cons
 }
 
 
+models::Scheduling  algorithms::scheduling::CSDF_RealPeriodicScheduling_LP    (const models::Dataflow* const dataflow) {
 
+
+    // STEP 0.1 - PRE
+    VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
+    VERBOSE_ASSERT(dataflow->has_repetition_vector(),"Please generate the repetition vector before using this function.");
+
+    // We do not process empty graph.
+    if (dataflow->getVerticesCount() == 0) return models::Scheduling ();
+
+    //Does not support init phases
+    {ForEachVertex(dataflow,t) {
+    	VERBOSE_ASSERT(dataflow->getInitPhasesQuantity(t) == 0, "CSDF_RealPeriodicScheduling_LP Does not support init phases (yet)" );
+    }}
+
+
+
+    const periodicity_vector_t& kvector = generate1PeriodicVector(dataflow);
+
+
+
+    //##################################################################
+    // Linear program generation
+    //##################################################################
+
+        const std::string problemName =  "CSDF_RealPeriodicScheduling_LP" + dataflow->getGraphName();
+        commons::GLPSol g = commons::GLPSol(problemName,commons::MIN_OBJ);
+
+        // Hyper Period
+        //******************************************************************
+        auto OMEGA_COL = g.addColumn(OMEGA_COL_STR(),commons::KIND_CONTINUE,commons::bound_s(commons::LOW_BOUND,0),1);
+
+        // Starting times
+        //******************************************************************
+        {ForEachVertex(dataflow,t) {
+            std::string name = dataflow->getVertexName(t);
+
+            // Define periodic phases
+    		for(EXEC_COUNT a = 1; a <= dataflow->getPhasesQuantity(t) ; a++) {
+    				g.addColumn(START_COL_STR(name,a,1),commons::KIND_CONTINUE,commons::bound_s(commons::LOW_BOUND,0),0);
+    		}
+
+
+    		for(EXEC_COUNT a = 2; a <= dataflow->getPhasesQuantity(t) ; a++) {
+    			// Constraint the starting time to be periodic
+    			// an = an-1 + omega / PhaseCount
+    			// an - an-1 - omega / PhaseCount = 0
+
+    			std::string colam1_name = START_COL_STR(name,a-1,1);
+    			std::string cola_name   = START_COL_STR(name,a,1);
+    			std::string omega_name  = OMEGA_COL_STR();
+    			EXEC_COUNT execution_count = dataflow->getPhasesQuantity(t) * dataflow->getNi(t);
+
+    			std::string row_name = "Fully_periodic_"  + name + "_" + cola_name;
+
+    			g.addRow(row_name,commons::bound_s(commons::FIX_BOUND, 0 ));
+    			g.addCoef(row_name , colam1_name   , - 1     );
+    			g.addCoef(row_name , cola_name    ,   1     );
+    			g.addCoef(row_name , omega_name    ,   - 1.0 / (double) execution_count     );
+
+
+
+
+    		}
+
+        }}
+
+
+        // Voir Bodin 2013 Page 105-106 for a full example of Periodic schedule of CSDF with bi-weighted graph
+
+        // Reentrancy Constraints
+        //******************************************************************
+
+        {ForEachVertex(dataflow,t) {
+        	VERBOSE_ASSERT(add_reentrancy_constraints (g, dataflow, kvector, t), "Error when generating reentrancy constraints for task " << t);
+        }}
+
+        // Communication Constraints
+        //******************************************************************
+
+        {ForEachEdge(dataflow,c) {
+        	VERBOSE_ASSERT(add_precedences_constraints (g, OMEGA_COL, dataflow, kvector, c),"Error when generating reentrancy constraints for edge " << c);
+        }}
+
+
+
+
+        //##################################################################
+        // SOLVE LP
+        //##################################################################
+
+        // commons::GLPParameters ilp_params = commons::getDefaultParams();
+
+        // ilp_params.general_doScale = true;
+        // ilp_params.linear_doAdvBasis = true;
+        // ilp_params.linear_method = commons::DUAL_LINEAR_METHOD;
+        //
+        // bool sol = g.solve(ilp_params);
+
+
+        VERBOSE_INFO("Solving problem ...");
+
+        bool sol = g.solve();
+
+        VERBOSE_INFO("Solved, gathering results ...");
+
+        //##################################################################
+        // GATHERING RESULTS
+        //##################################################################
+
+        // SCHEDULING RESULT
+        //******************************************************************
+
+        models::Scheduling persched;
+        if (sol) {
+        	persched = collect_lp_results (g,  dataflow, kvector) ;
+        } else {
+            VERBOSE_ERROR("No feasible solution");
+        }
+
+        return persched;
+
+
+}
+
+
+void algorithms::scheduling::CSDF_Real1PeriodicScheduling_LP (models::Dataflow*  dataflow, parameters_list_t )  {
+
+	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+	models::Scheduling res = CSDF_RealPeriodicScheduling_LP    (dataflow);
+
+   TIME_UNIT omega = res.getGraphPeriod();
+   std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
+   std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
+
+}
 
  void algorithms::scheduling::CSDF_1PeriodicScheduling_LP (models::Dataflow*  dataflow, parameters_list_t )  {
 
