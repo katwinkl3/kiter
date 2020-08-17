@@ -2,8 +2,8 @@
 <sdf3 type="csdf" version="1.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="http://www.es.ele.tue.nl/sdf3/xsd/sdf3-csdf.xsd">
-<applicationGraph name='autogen'>
-    <csdf name='autogen' type='autogen'>
+<applicationGraph name='new_benchmark'>
+    <csdf name='new_benchmark' type='new_benchmark'>
         <actor name='A' type='a'>
             <port type='in' name='out_channel_3' rate='1,3'/>
             <port type='out' name='in_channel_1' rate='3,5'/>
