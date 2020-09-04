@@ -9,7 +9,7 @@
 #include "repetition_vector.h"
 #include <models/Dataflow.h>
 
-
+#define CRAZY
 
 
 bool calcFractionsConnectedActors(const models::Dataflow *from, std::map<Vertex,EXEC_COUNT_FRACT> &fractions, Vertex a, TOKEN_UNIT ratePeriod) {
