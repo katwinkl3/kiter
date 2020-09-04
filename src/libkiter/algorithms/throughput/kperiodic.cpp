@@ -6,6 +6,7 @@
  */
 
 
+#include <chrono>
 #include <map>
 #include <vector>
 #include <printers/stdout.h>
@@ -15,6 +16,7 @@
 #include <algorithms/normalization.h>
 
 #include "kperiodic.h"
+#include <algorithms/schedulings.h>
 
 
 bool algorithms::sameset(const models::Dataflow* const dataflow, critical_circuit_t *cc1 , critical_circuit_t* cc2) {
@@ -944,10 +946,7 @@ void algorithms::compute_1Kperiodic_throughput            (models::Dataflow* con
     VERBOSE_INFO("Please note you cna use the print parameter.");
 
     // STEP 0.2 - Assert SDF
-    std::map<Vertex,EXEC_COUNT> kvector;
-    {ForEachVertex(dataflow,t) {
-        kvector[t] = 1;
-    }}
+    std::map<Vertex,EXEC_COUNT> kvector = algorithms::scheduling::generate1PeriodicVector(dataflow);
 
     kperiodic_result_t result = KSchedule(dataflow,&kvector);
 
@@ -1334,32 +1333,56 @@ scheduling_t algorithms::generateKperiodicSchedule    (models::Dataflow* const d
 }
 
 
+EXEC_COUNT sum_Ni (models::Dataflow* const dataflow) {
+	   EXEC_COUNT sumNi = 0;
+
+	    {ForEachTask(dataflow,t) {
+	        sumNi += dataflow->getNi(t) ;
+	    }}
+	    return sumNi;
+}
+
+EXEC_COUNT sum_Ki (models::EventGraph* eg) {
+	return eg->getEventCount();
+}
+
+EXEC_COUNT sum_KiKj (models::EventGraph* eg) {
+	return eg->getConstraintsCount();
+}
+
+
+
+EXEC_COUNT sum_NiNj (models::Dataflow* const dataflow) {
+	EXEC_COUNT sumNiNj = 0;
+	 {ForEachChannel(dataflow,c) {
+		  Vertex in  = dataflow->getEdgeSource(c);
+		  Vertex out = dataflow->getEdgeTarget(c);
+
+		  sumNiNj += std::max(dataflow->getNi(in),dataflow->getNi(out));
+	 }}
+	 return sumNiNj;
+}
+
+
 void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const dataflow, parameters_list_t   params ) {
+
+	 auto start = std::chrono::steady_clock::now();
 
 
 	bool showdetails = params.count("DETAILS") > 0 ;
 
-    VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-
-
-
-    EXEC_COUNT sumNi = 0;
-
-    {ForEachTask(dataflow,t) {
-        sumNi += dataflow->getNi(t) ;
-    }}
-
-    // STEP 0.1 - PRE
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+
+    EXEC_COUNT sumNi = sum_Ni (dataflow);
+    EXEC_COUNT sumNiNj = sum_NiNj (dataflow);
+
+
+    // STEP 0.1 - PRE
     EXEC_COUNT iteration_count = 0;
 
     // STEP 1 - generate initial vector
-    std::map<Vertex,EXEC_COUNT> kvector;
-    {ForEachVertex(dataflow,t) {
-        kvector[t] = 1;
-
-    }}
+    std::map<Vertex,EXEC_COUNT> kvector = algorithms::scheduling::generate1PeriodicVector(dataflow);
 
 
     kperiodic_result_t result;
@@ -1383,6 +1406,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 
     //STEP 3 - convert CC(eg) => CC(graph)
     VERBOSE_KPERIODIC_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
+
     for (std::vector<models::EventGraphEdge>::iterator it = critical_circuit->begin() ; it != critical_circuit->end() ; it++ ) {
         VERBOSE_KPERIODIC_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
         ARRAY_INDEX channel_id = eg->getChannelId(*it);
@@ -1404,6 +1428,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
     ////////////// SCHEDULE CALL // END
 
 
+	auto end_phase = std::chrono::steady_clock::now();
 
     if (result.critical_edges.size() != 0) {
 
@@ -1413,15 +1438,22 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 
         while (true) {
 
-            EXEC_COUNT sumKi = 0;
-            {ForEachVertex(dataflow,t) {
-            	sumKi += kvector[t];
-            }}
-
             if (showdetails) {
-            	std::cout << "Current throughput with T=" << dataflow->getVerticesCount() << " and sum(K)/sum(N)= " << sumKi << "/" << sumNi << " is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  result.throughput   << std::endl;
+                EXEC_COUNT total_ki = sum_Ki(eg);
+                EXEC_COUNT total_kikj = sum_KiKj(eg);
+                end_phase = std::chrono::steady_clock::now();
+                double duration = std::chrono::duration<double> (end_phase-start).count();
+                start = end_phase;
+           	std::cout << "Current throughput with"
+           			<< " duration=" << duration
+					<< " T=" << dataflow->getVerticesCount()
+					<< " sum_Ki=" << total_ki
+					<< " sum_KiKj=" << total_kikj
+					<< " sum_Ni=" << sumNi
+					<< " sum_NiNj=" <<  sumNiNj
+        			<< " is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  result.throughput   << std::endl;
 
-            	// skip that, we've seen it all
+
             } else {
             }
 
@@ -1488,11 +1520,20 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 
     }
     {
-    EXEC_COUNT total_ki = 0;
-       {ForEachVertex(dataflow,t) {
-           total_ki += kvector[t];
-       }}
-   	std::cout << "Final throughput with T=" << dataflow->getVerticesCount() << " and sum(K)/sum(N)= " << total_ki << "/" << sumNi << " is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  result.throughput   << std::endl;
+        EXEC_COUNT total_ki = sum_Ki(eg);
+        EXEC_COUNT total_kikj = sum_KiKj(eg);
+
+        end_phase = std::chrono::steady_clock::now();
+        double duration = std::chrono::duration<double> (end_phase-start).count();
+        start = end_phase;
+   	std::cout << "Final throughput with"
+   			<< " duration=" << duration
+			<< " T=" << dataflow->getVerticesCount()
+			<< " sum_Ki=" << total_ki
+			<< " sum_KiKj=" << total_kikj
+			<< " sum_Ni=" << sumNi
+			<< " sum_NiNj=" <<  sumNiNj
+			<< " is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  result.throughput   << std::endl;
     }
 
     VERBOSE_INFO( "K-periodic schedule - iterations count is " << iteration_count << "  final size is " << eg->getEventCount() << " events and " << eg->getConstraintsCount() << " constraints.");
