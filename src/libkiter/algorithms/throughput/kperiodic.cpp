@@ -1545,6 +1545,24 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 
 			resultprime.throughput = frequency;
 
+			////////////// SCHEDULE LOG
+
+
+			end_phase = std::chrono::steady_clock::now();
+
+			if (showdetails) {
+						double gduration = std::chrono::duration<double> (graph_done-start).count();
+						double hduration = std::chrono::duration<double> (end_phase-graph_done).count();
+						double  duration = std::chrono::duration<double> (end_phase-start).count();
+						VERBOSE_ASSERT(start <= end_phase,"Error in the system");
+						VERBOSE_ASSERT(start <= graph_done,"Error in the system");
+						VERBOSE_ASSERT(graph_done <= end_phase,"Error in the system");
+						print_kiter_throughput_iteration (dataflow, eg, resultprime , iteration_count, gduration,  hduration ) ;
+					}
+
+
+
+
 			////////////// SCHEDULE CALL // END
 
 			if (sameset(dataflow,&(resultprime.critical_edges),&(result.critical_edges)))  {
@@ -1556,18 +1574,6 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 			result = resultprime;
 			VERBOSE_INFO("Current K-periodic throughput (" << result.throughput <<  ") is not enough.");
 			VERBOSE_KPERIODIC_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
-
-			end_phase = std::chrono::steady_clock::now();
-
-			if (showdetails) {
-						double gduration = std::chrono::duration<double> (graph_done-start).count();
-						double hduration = std::chrono::duration<double> (end_phase-graph_done).count();
-						double  duration = std::chrono::duration<double> (end_phase-start).count();
-						VERBOSE_ASSERT(start <= end_phase,"Error in the system");
-						VERBOSE_ASSERT(start <= graph_done,"Error in the system");
-						VERBOSE_ASSERT(graph_done <= end_phase,"Error in the system");
-						print_kiter_throughput_iteration (dataflow, eg, result , iteration_count, gduration,  hduration ) ;
-					}
 
 
 
