@@ -70,8 +70,9 @@ TARGET_LINK_LIBRARIES              (kiter_models PUBLIC   kiter_commons )
 
 
 ADD_LIBRARY		(kiter_lp STATIC  ${lp_sources})
-TARGET_LINK_LIBRARIES   (kiter_lp         ${GLPK_LIBRARIES})
-
+if(GLPK_FOUND)
+  TARGET_LINK_LIBRARIES   (kiter_lp         ${GLPK_LIBRARIES})
+endif(GLPK_FOUND)
 
 if(GUROBI_FOUND AND FALSE)
     message(STATUS "GUROBI FOUND")
