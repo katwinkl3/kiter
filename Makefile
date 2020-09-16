@@ -4,7 +4,7 @@
 ###
 
 SHELL = /bin/bash
-BUILDS = Debug/bin/kiter
+
 
 CPU_COUNT := $(shell cat /proc/cpuinfo |grep processor |wc -l)
 SDF3_BENCHMARK := ./sdf3bench/
@@ -24,7 +24,8 @@ info :
 	@echo SDF3_ROOT is [${SDF3_ROOT}]
 	@echo SDF3_BINARY_ROOT is [${SDF3_BINARY_ROOT}]
 	@echo "-------------------------------------------"
-	@echo "make build: Compile Kiter"
+	@echo "make release: Compile Kiter in release mode"
+	@echo "make debug: Compile Kiter in debug mode (more verbose, slower)"
 	@echo "make travis_test: Run Kiter test"
 	@echo "make sdf3_build: Download and Compile SDF3"
 	@echo "-------------------------------------------"
@@ -32,7 +33,10 @@ info :
 all : build
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 
-build: ${BUILDS}
+debug: ./Debug/bin/kiter
+	@echo "###########"" ENTER IN $@ : $^  #####################"
+
+release: ./Release/bin/kiter
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 clean:
 	rm -Rf Release Debug *.lp *.mps *.png *.dot *.pdf *.xml *.lp
@@ -41,11 +45,11 @@ benchmark :  sdf.log  csdf.log csdf_sized.log
 
 ubuntu_test:
 	docker build -f DockerFile.u18 -t bbodin/kiter-u18 ./
-travis_test: ${SDF3_BENCHMARK}
-	for f in  benchmark/*.xml ; do echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
-	for f in  benchmark_sized/*.xml ; do echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput ;  done
-	${KITER} -f benchmark/sample.xml -a PrintKPeriodicThroughput -pA=1 -pB=1 -pC=1
-	${KITER} -f benchmark/sample.xml -a PrintKPeriodicThroughput -pA=2 -pB=1 -pC=2
+travis_test: ./Release/bin/kiter ${SDF3_BENCHMARK} 
+	for f in  benchmark/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
+	for f in  benchmark_sized/*.xml ; do echo === $$f ; ${KITER} -f $$f   -a 1PeriodicThroughput -a KPeriodicThroughput ;  done
+	${KITER} -f benchmark/sample.xml -a KPeriodicThroughput -pA=1 -pB=1 -pC=1
+	${KITER} -f benchmark/sample.xml -a KPeriodicThroughput -pA=2 -pB=1 -pC=2
 
 csdf.log:  ./Release/bin/kiter Makefile 
 	rm -f $@
@@ -109,7 +113,7 @@ sdf.log:  ./Release/bin/kiter Makefile
 	echo === $$f === deGrooteThroughput  >> $@; ${KITER} -f $$f  -a deGrooteThroughput >> $@ ; \
 	if [ -d ${SDF3_BINARY_ROOT} ];then ${SDF3ANALYSIS_SDF}  --graph $$f  --algo throughput  >> $@ || true ; fi ;\
 	done
-	
+
 %/bin/kiter: ${SOURCES}  %/Makefile
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	@$(MAKE) -C $* all
@@ -122,7 +126,7 @@ sdf.log:  ./Release/bin/kiter Makefile
 test: Debug/bin/kiter Debug/Makefile
 	make -C Debug/ test
 
-various:
+various: ./Release/bin/kiter 
 	./Release/bin/kiter -f ./benchmark/21.xml -a KPeriodicThroughput -v 5
 	./Release/bin/kiter -f ./benchmark/BlackScholes.xml -a KPeriodicThroughput -v 5
 	./Release/bin/kiter -f ./benchmark/Echo.xml -a KPeriodicThroughput -v 5
@@ -134,4 +138,4 @@ various:
 	./Release/bin/kiter -f ./benchmark/Pdectect.xml -a KPeriodicThroughput -v 5
 	./Release/bin/kiter -f ./benchmark/sample.xml -a KPeriodicThroughput -v 5
 
-.PHONY :  all clean tests various test benchmark
+.PHONY :  all clean tests various test benchmark debug release
