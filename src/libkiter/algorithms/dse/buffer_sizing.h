@@ -31,6 +31,7 @@ public:
   TOKEN_UNIT getDistributionSize() const;
   TIME_UNIT getThroughput() const;
   unsigned int getEdgeCount() const;
+  std::vector<Edge> getEdges() const;
   bool operator==(const StorageDistribution& distribution) const;
   bool operator!=(const StorageDistribution& distribution) const;
   void updateDistributionSize();

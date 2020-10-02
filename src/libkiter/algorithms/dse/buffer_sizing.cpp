@@ -74,6 +74,16 @@ unsigned int StorageDistribution::getEdgeCount() const {
   return this->edge_count;
 }
 
+// Return set of edges
+std::vector<Edge> StorageDistribution::getEdges() const {
+  std::vector<Edge> edgeSet;
+  for (auto it = this->channel_quantities.begin();
+       it != this->channel_quantities.end(); it++) {
+    edgeSet.push_back(it->first);
+  }
+  return edgeSet;
+}
+
 // Storage distributions are equal if every channel has the same quantity
 bool StorageDistribution::operator==(const StorageDistribution& distribution) const {
   assert(this->getEdgeCount() == distribution.getEdgeCount());
