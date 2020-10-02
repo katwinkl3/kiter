@@ -426,6 +426,11 @@ void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
   }
 }
 
+// void StorageDistributionSet::updateKneeSet(StorageDistributionSet infeasibleSet,
+//                                            StorageDistribution newDist) {
+  
+// }
+
 // Print info of all storage distributions of a given distribution size in set
 std::string StorageDistributionSet::printDistributions(TOKEN_UNIT dist_sz,
 						       models::Dataflow* const dataflow) {
@@ -576,4 +581,18 @@ std::string timeToString(TIME_UNIT t)
   std::stringstream s;
   s << std::setprecision(6) << t;
   return s.str();
+}
+
+// compares 2 storage distributions and returns a SD that is the local minima of the two
+// NOTE this assumes that both storage distributions have the same number of edges
+StorageDistribution makeMinimalSD(StorageDistribution sd1,
+                                  StorageDistribution sd2) {
+  StorageDistribution minSD(sd1);
+  std::vector<Edge> edgeSet = sd1.getEdges(); // use edges from sd1
+  for (auto it = edgeSet.begin(); it != edgeSet.end(); it++) {
+    // NOTE might need to set initial tokens to 0
+    minSD.setChannelQuantity(*it, std::min(sd1.getChannelQuantity(*it),
+                                           sd2.getChannelQuantity(*it)));
+  }
+  return minSD;
 }

@@ -90,5 +90,6 @@ void initSearchParameters(models::Dataflow *dataflow,
                           std::map<Edge,
                           std::pair<TOKEN_UNIT, TOKEN_UNIT>> &minChannelSizes);
 std::string timeToString(TIME_UNIT t);
-
+StorageDistribution makeMinimalSD(StorageDistribution sd1,
+                                  StorageDistribution sd2);
 #endif /* BUFFER_SIZING_H_ */
