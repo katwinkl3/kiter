@@ -60,6 +60,7 @@ public:
   void minimizeStorageDistributions(StorageDistribution newDist);
   bool hasDistribution(TOKEN_UNIT dist_sz);
   bool isSearchComplete(StorageDistributionSet checklist, TIME_UNIT target_thr);
+  void removeNonMaximum(StorageDistribution checkDist);
   void updateInfeasibleSet(StorageDistribution new_sd); // add new SD to infeasible set of SDs for monotonic optimisation
   std::string printDistributions(TOKEN_UNIT dist_sz,
 				 models::Dataflow* const dataflow); /* prints info of all storage distributions 

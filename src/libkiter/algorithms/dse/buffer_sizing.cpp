@@ -347,33 +347,82 @@ bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
           (checklist.getSize() <= 0)); // also end when we're out of distributions to check
 }
 
+void StorageDistributionSet::removeNonMaximum(StorageDistribution checkDist) {
+  std::vector<Edge> checkDistEdges = checkDist.getEdges();
+  std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
+  for (auto &distribution_sz : reference_set) {
+    for (auto &storage_dist : distribution_sz.second) {
+      // don't check against itself or with smaller SDs (these would have been removed by now)
+      if (checkDist != storage_dist &&
+          checkDist.getDistributionSize() > storage_dist.getDistributionSize()) {
+        for (auto it = checkDistEdges.begin();
+             it != checkDistEdges.end(); it++) {
+          // end check for checkDist if, at any point, it proves to be non-minimal
+          if (checkDist.getChannelQuantity(*it) > storage_dist.getChannelQuantity(*it)) {
+            return;
+          }
+        }
+      }
+    }
+  }
+  // at this point, it has been shown to be non-maximal
+  std::cout << "SD of size " << checkDist.getDistributionSize()
+            << " found to be non-maximal, removed from U" << std::endl;
+  this->removeStorageDistribution(checkDist);
+}
+
 // add new SD to set of infeasible SDs
 void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
   TOKEN_UNIT newDistSz = newDist.getDistributionSize();
   TOKEN_UNIT maxDistSz;
+  bool isFound = false; // track if newDist found to be maximal
 
+  // identify current maximum distribution size
   if (!this->getSize()) {
-    this->addStorageDistribution(newDist);  // if there aren't any other SDs in set, just add
+    std::cout << "Adding SD of size " << newDist.getDistributionSize()
+              << " to U" << std::endl;
+    this->addStorageDistribution(newDist); // if there aren't any other SDs in set, just add
     return;
   } else {
     maxDistSz = this->set.rbegin()->first; // store largest SD
-    std::cout << "Max size: " << maxDistSz << std::endl;
+    // std::cout << "Max size: " << maxDistSz << std::endl;
   }
-
+  // if new SD has larger distribution size, then can definitely add
   if (newDistSz >= maxDistSz) {
+    std::cout << "Adding SD of size " << newDist.getDistributionSize()
+              << " to U" << std::endl;
     this->addStorageDistribution(newDist);
     return;
   }
-
-  // if (newDistSz < maxDistSz) {
-  //   std::cout << "new SD smaller than maxSD, need to compare the following buffer sizes" << std::endl;
-  //   for (auto it = newDist.channel_quantities.begin();
-  //        it != newDist.channel_quantities.end(); it++) {
-  //     std::cout << newDist.getChannelQuantity(it->first) << std::endl;
-  //   }
-  // }
-  
-  
+  // else, check if it has at least one channel with larger quantity than those (SDs) currently in set
+  std::vector<Edge> newDistEdges = newDist.getEdges();
+  std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
+  if (newDistSz < maxDistSz) {
+    // only add new SD if at least one channel has larger size than an SD currently in infeasible set
+    for (auto &distribution_sz : reference_set) {
+      for (auto &storage_dist : distribution_sz.second) {
+        for (auto it = newDistEdges.begin();
+             it != newDistEdges.end(); it++) {
+          // std::cout << "New SD, current SD: " << newDist.getChannelQuantity(*it)
+          //           << " " << storage_dist.getChannelQuantity(*it) << std::endl;
+          if (newDist.getChannelQuantity(*it) > storage_dist.getChannelQuantity(*it) &&
+              !isFound) {
+            std::cout << "Adding SD of size " << newDist.getDistributionSize()
+                      << " to U" << std::endl;
+            isFound = true;
+            this->addStorageDistribution(newDist);
+            break;
+          }
+        }
+      }
+    }
+  }
+  // remove SDs subsumed by edge of infeasible set (non-maximal SDs)
+  for (auto &distribution_sz : reference_set) {
+    for (auto &storage_dist : distribution_sz.second) {
+      this->removeNonMaximum(storage_dist);
+    }
+  }
 }
 
 // Print info of all storage distributions of a given distribution size in set
