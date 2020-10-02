@@ -337,6 +337,35 @@ bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
           (checklist.getSize() <= 0)); // also end when we're out of distributions to check
 }
 
+// add new SD to set of infeasible SDs
+void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
+  TOKEN_UNIT newDistSz = newDist.getDistributionSize();
+  TOKEN_UNIT maxDistSz;
+
+  if (!this->getSize()) {
+    this->addStorageDistribution(newDist);  // if there aren't any other SDs in set, just add
+    return;
+  } else {
+    maxDistSz = this->set.rbegin()->first; // store largest SD
+    std::cout << "Max size: " << maxDistSz << std::endl;
+  }
+
+  if (newDistSz >= maxDistSz) {
+    this->addStorageDistribution(newDist);
+    return;
+  }
+
+  // if (newDistSz < maxDistSz) {
+  //   std::cout << "new SD smaller than maxSD, need to compare the following buffer sizes" << std::endl;
+  //   for (auto it = newDist.channel_quantities.begin();
+  //        it != newDist.channel_quantities.end(); it++) {
+  //     std::cout << newDist.getChannelQuantity(it->first) << std::endl;
+  //   }
+  // }
+  
+  
+}
+
 // Print info of all storage distributions of a given distribution size in set
 std::string StorageDistributionSet::printDistributions(TOKEN_UNIT dist_sz,
 						       models::Dataflow* const dataflow) {
