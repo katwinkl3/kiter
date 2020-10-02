@@ -405,6 +405,7 @@ void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
              it != newDistEdges.end(); it++) {
           // std::cout << "New SD, current SD: " << newDist.getChannelQuantity(*it)
           //           << " " << storage_dist.getChannelQuantity(*it) << std::endl;
+          // FIXME this doesn't break out of nested for loops
           if (newDist.getChannelQuantity(*it) > storage_dist.getChannelQuantity(*it) &&
               !isFound) {
             std::cout << "Adding SD of size " << newDist.getDistributionSize()
