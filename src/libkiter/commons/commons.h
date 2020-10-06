@@ -142,8 +142,6 @@ inline bool isInteger(TIME_UNIT v){
 
 
 
-std::string convBase    (   unsigned long       v,
-                            long                base);
 
 bool        is_readable (   const std::string&  file );
 
@@ -216,7 +214,7 @@ const std::string runCmd( const std::string sendme , TIME_UNIT timeout) ;
 
 
 
-unsigned int getRandomSeed(void);
+
 
 template <typename entier>
 inline entier modulo(entier a, entier b) {

@@ -35,7 +35,7 @@ namespace models {
                    models::EventGraphVertex w;
                    do {
                       w =  S->back(); S->pop_back();
-                      g->setSCC(w,(int)v);
+                      g->setSCC(w,(unsigned int)v);
                    } while (w != v );
                }
 
