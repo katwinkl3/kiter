@@ -371,6 +371,35 @@ void StorageDistributionSet::removeNonMaximum(StorageDistribution checkDist) {
   this->removeStorageDistribution(checkDist);
 }
 
+
+// Updates the given set of knee points according to the given set of infeasible SDs
+// the new SD point
+void StorageDistributionSet::updateKneeSet(StorageDistributionSet infeasibleSet) {
+                                           // StorageDistribution newDist) {
+  StorageDistributionSet checkQueue(infeasibleSet); // store queue of SDs to be compared
+  StorageDistributionSet checkedSDs;
+  // go through every permutation of pairs of SDs to compare
+  while(checkQueue.getSize() > 0) {
+    StorageDistribution checkDist(checkQueue.getNextDistribution());
+    checkQueue.removeStorageDistribution(checkDist);
+    std::cout << "(Knees) Comparing SD of dist sz: "
+              << checkDist.getDistributionSize() << std::endl;
+    for (auto &distribution_sz : checkQueue->set) { // FIXME cannot iterate through checkQueue in this manner --- maybe make getNextDistribution to return an end pointer?
+      for (auto &storage_dist : distribution_sz.second) {
+        StorageDistribution kneePoint = makeMinimalSD(checkDist, storage_dist);
+        this->addStorageDistribution(kneePoint);
+      }
+    }
+  }
+  // std::cout << "Distribution sizes of knee points found: " << std::endl;
+  // for (auto &distribution_sz : this->set) {
+  //   for (auto &storage_dist : distribution_sz.second) {
+  //     std::cout << storage_dist.getDistributionSize() << std::endl;
+  //   }
+  // }
+  
+}
+
 // add new SD to set of infeasible SDs
 void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
   TOKEN_UNIT newDistSz = newDist.getDistributionSize();
@@ -387,6 +416,7 @@ void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
     maxDistSz = this->set.rbegin()->first; // store largest SD
     // std::cout << "Max size: " << maxDistSz << std::endl;
   }
+  
   // if new SD has larger distribution size, then can definitely add
   if (newDistSz >= maxDistSz) {
     std::cout << "Adding SD of size " << newDist.getDistributionSize()
@@ -425,11 +455,6 @@ void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
     }
   }
 }
-
-// void StorageDistributionSet::updateKneeSet(StorageDistributionSet infeasibleSet,
-//                                            StorageDistribution newDist) {
-  
-// }
 
 // Print info of all storage distributions of a given distribution size in set
 std::string StorageDistributionSet::printDistributions(TOKEN_UNIT dist_sz,
