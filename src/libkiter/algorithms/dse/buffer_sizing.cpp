@@ -360,7 +360,7 @@ void StorageDistributionSet::removeNonMaximum(StorageDistribution checkDist) {
     for (auto &storage_dist : distribution_sz.second) {
       // don't check against itself or with smaller SDs (these would have been removed by now)
       if (checkDist != storage_dist &&
-          checkDist.getDistributionSize() > storage_dist.getDistributionSize()) {
+          checkDist.getDistributionSize() >= storage_dist.getDistributionSize()) {
         for (auto it = checkDistEdges.begin();
              it != checkDistEdges.end(); it++) {
           // end check for checkDist if, at any point, it proves to be non-minimal
@@ -373,7 +373,7 @@ void StorageDistributionSet::removeNonMaximum(StorageDistribution checkDist) {
   }
   // at this point, it has been shown to be non-maximal
   std::cout << "SD of size " << checkDist.getDistributionSize()
-            << " found to be non-maximal, removed from U" << std::endl;
+            << " found to be non-maximal, removed from set" << std::endl;
   this->removeStorageDistribution(checkDist);
 }
 
@@ -390,19 +390,26 @@ void StorageDistributionSet::updateKneeSet(StorageDistributionSet infeasibleSet)
     checkQueue.removeStorageDistribution(checkDist);
     std::cout << "(Knees) Comparing SD of dist sz: "
               << checkDist.getDistributionSize() << std::endl;
-    // for (auto &distribution_sz : checkQueue->set) { // FIXME cannot iterate through checkQueue in this manner --- maybe make getNextDistribution to return an end pointer?
-    //   for (auto &storage_dist : distribution_sz.second) {
-    //     StorageDistribution kneePoint = makeMinimalSD(checkDist, storage_dist);
-    //     this->addStorageDistribution(kneePoint);
-    //   }
-    // }
+    std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set = checkQueue.getSet();
+    for (auto &distribution_sz : reference_set) {
+      for (auto &storage_dist : distribution_sz.second) {
+        StorageDistribution kneePoint = makeMinimalSD(checkDist, storage_dist);
+        this->addStorageDistribution(kneePoint);
+      }
+    }
   }
-  // std::cout << "Distribution sizes of knee points found: " << std::endl;
-  // for (auto &distribution_sz : this->set) {
-  //   for (auto &storage_dist : distribution_sz.second) {
-  //     std::cout << storage_dist.getDistributionSize() << std::endl;
-  //   }
-  // }
+  std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
+  for (auto &distribution_sz : reference_set) {
+    for (auto &storage_dist : distribution_sz.second) {
+      this->removeNonMaximum(storage_dist);
+    }
+  }
+  std::cout << "Distribution sizes of knee points found: " << std::endl;
+  for (auto &distribution_sz : this->set) {
+    for (auto &storage_dist : distribution_sz.second) {
+      std::cout << storage_dist.getDistributionSize() << std::endl;
+    }
+  }
   
 }
 
@@ -417,6 +424,12 @@ void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
     std::cout << "Adding SD of size " << newDist.getDistributionSize()
               << " to U" << std::endl;
     this->addStorageDistribution(newDist); // if there aren't any other SDs in set, just add
+    std::cout << "Distribution sizes of U (" << this->getSize() << " distributions):" << std::endl;
+    for (auto &distribution_sz : this->set) {
+      for (auto &storage_dist : distribution_sz.second) {
+        std::cout << storage_dist.getDistributionSize() << std::endl;
+      }
+    }
     return;
   } else {
     maxDistSz = this->set.rbegin()->first; // store largest SD
@@ -428,6 +441,12 @@ void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
     std::cout << "Adding SD of size " << newDist.getDistributionSize()
               << " to U" << std::endl;
     this->addStorageDistribution(newDist);
+    std::cout << "Distribution sizes of U (" << this->getSize() << " distributions):" << std::endl;
+    for (auto &distribution_sz : this->set) {
+      for (auto &storage_dist : distribution_sz.second) {
+        std::cout << storage_dist.getDistributionSize() << std::endl;
+      }
+    }
     return;
   }
   // else, check if it has at least one channel with larger quantity than those (SDs) currently in set
@@ -448,6 +467,12 @@ void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
                       << " to U" << std::endl;
             isFound = true;
             this->addStorageDistribution(newDist);
+            std::cout << "Distribution sizes of U (" << this->getSize() << " distributions):" << std::endl;
+            for (auto &distribution_sz : this->set) {
+              for (auto &storage_dist : distribution_sz.second) {
+                std::cout << storage_dist.getDistributionSize() << std::endl;
+              }
+            }
             break;
           }
         }
@@ -458,6 +483,12 @@ void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
   for (auto &distribution_sz : reference_set) {
     for (auto &storage_dist : distribution_sz.second) {
       this->removeNonMaximum(storage_dist);
+    }
+  }
+  std::cout << "Distribution sizes of U (" << this->getSize() << " distributions):" << std::endl;
+  for (auto &distribution_sz : this->set) {
+    for (auto &storage_dist : distribution_sz.second) {
+      std::cout << storage_dist.getDistributionSize() << std::endl;
     }
   }
 }
