@@ -57,6 +57,7 @@ public:
                                                       distribution size dist_sz */
   StorageDistribution getNextDistribution() const;
   size_t getSize() const;
+  std::map<TOKEN_UNIT, std::vector<StorageDistribution>> getSet();
   void minimizeStorageDistributions(StorageDistribution newDist);
   bool hasDistribution(TOKEN_UNIT dist_sz);
   bool isSearchComplete(StorageDistributionSet checklist, TIME_UNIT target_thr);

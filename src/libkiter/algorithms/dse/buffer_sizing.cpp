@@ -282,6 +282,12 @@ size_t StorageDistributionSet::getSize() const {
   return total_size;
 }
 
+// returns a copy of the set of storage distributions
+std::map<TOKEN_UNIT, std::vector<StorageDistribution>> StorageDistributionSet::getSet() {
+  std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
+  return reference_set;
+}
+
 /* Removes the new storage distribution from the storage distribution set if:
    - there already is a storage distribution with equal distribution size with 
    throughput >= to new storage distribution's throughput
@@ -384,12 +390,12 @@ void StorageDistributionSet::updateKneeSet(StorageDistributionSet infeasibleSet)
     checkQueue.removeStorageDistribution(checkDist);
     std::cout << "(Knees) Comparing SD of dist sz: "
               << checkDist.getDistributionSize() << std::endl;
-    for (auto &distribution_sz : checkQueue->set) { // FIXME cannot iterate through checkQueue in this manner --- maybe make getNextDistribution to return an end pointer?
-      for (auto &storage_dist : distribution_sz.second) {
-        StorageDistribution kneePoint = makeMinimalSD(checkDist, storage_dist);
-        this->addStorageDistribution(kneePoint);
-      }
-    }
+    // for (auto &distribution_sz : checkQueue->set) { // FIXME cannot iterate through checkQueue in this manner --- maybe make getNextDistribution to return an end pointer?
+    //   for (auto &storage_dist : distribution_sz.second) {
+    //     StorageDistribution kneePoint = makeMinimalSD(checkDist, storage_dist);
+    //     this->addStorageDistribution(kneePoint);
+    //   }
+    // }
   }
   // std::cout << "Distribution sizes of knee points found: " << std::endl;
   // for (auto &distribution_sz : this->set) {
