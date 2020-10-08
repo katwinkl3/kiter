@@ -9,6 +9,8 @@ addons:
     packages:
     - gcc-5
     - g++-5
+    - libglpk-dev
+    - glpk-utils
 
 install:
   - sudo apt-get update -qq

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
  
-FIND_PACKAGE( GLPK   )
+FIND_PACKAGE( GLPK    REQUIRED )
 FIND_PACKAGE( GUROBI )
 
 #
