@@ -458,10 +458,8 @@ void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
         std::cout << storage_dist.getDistributionSize() << std::endl;
       }
     }
-    return;
-  }
-  // else, check if it has at least one channel with larger quantity than those (SDs) currently in set
-  else {
+  } else {
+    // else, check if it has at least one channel with larger quantity than those (SDs) currently in set
     std::vector<Edge> newDistEdges = newDist.getEdges();
     std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
     // only add new SD if at least one channel has larger size than an SD currently in infeasible set
