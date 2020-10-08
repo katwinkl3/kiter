@@ -354,27 +354,38 @@ bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
 }
 
 void StorageDistributionSet::removeNonMaximum(StorageDistribution checkDist) {
+  bool isMinimal = true;
+  
+  std::cout << "Removing non-maximal SDs..." << std::endl;
+  if (!this->getSize()) {
+    std::cout << "Only 1 SD in set; skipping check" << std::endl;
+    return; // only check if there's more than one SD in set
+  }
   std::vector<Edge> checkDistEdges = checkDist.getEdges();
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
   for (auto &distribution_sz : reference_set) {
     for (auto &storage_dist : distribution_sz.second) {
-      // don't check against itself or with smaller SDs (these would have been removed by now)
-      if (checkDist != storage_dist &&
-          checkDist.getDistributionSize() >= storage_dist.getDistributionSize()) {
+      // don't check against itself
+      if (checkDist != storage_dist) {
         for (auto it = checkDistEdges.begin();
              it != checkDistEdges.end(); it++) {
-          // end check for checkDist if, at any point, it proves to be non-minimal
           if (checkDist.getChannelQuantity(*it) > storage_dist.getChannelQuantity(*it)) {
-            return;
+            isMinimal = false;
           }
+        }
+        // remove checkDist if, at some point, there was another SD that was strictly larger than checkDist
+        if (isMinimal) {
+          std::cout << "SD of size " << checkDist.getDistributionSize()
+                    << " found to be non-maximal, removed from set" << std::endl;
+          this->removeStorageDistribution(checkDist);
+          return;
+        } else {
+          isMinimal = true; // reset for check against next SD in set
         }
       }
     }
   }
-  // at this point, it has been shown to be non-maximal
-  std::cout << "SD of size " << checkDist.getDistributionSize()
-            << " found to be non-maximal, removed from set" << std::endl;
-  this->removeStorageDistribution(checkDist);
+  std::cout << "SD of size " << checkDist.getDistributionSize() << " not removed" << std::endl;
 }
 
 
@@ -450,9 +461,9 @@ void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
     return;
   }
   // else, check if it has at least one channel with larger quantity than those (SDs) currently in set
-  std::vector<Edge> newDistEdges = newDist.getEdges();
-  std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
-  if (newDistSz < maxDistSz) {
+  else {
+    std::vector<Edge> newDistEdges = newDist.getEdges();
+    std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
     // only add new SD if at least one channel has larger size than an SD currently in infeasible set
     for (auto &distribution_sz : reference_set) {
       for (auto &storage_dist : distribution_sz.second) {
@@ -479,6 +490,7 @@ void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
       }
     }
   }
+  std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
   // remove SDs subsumed by edge of infeasible set (non-maximal SDs)
   for (auto &distribution_sz : reference_set) {
     for (auto &storage_dist : distribution_sz.second) {
