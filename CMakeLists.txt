@@ -47,36 +47,36 @@ SET(CMAKE_CXX_FLAGS_RELEASE "")
 
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 
-# errors checking in all mode
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic-errors -ansi  -Wextra     -Wunused  -Wno-error=unused-result")
+  # errors checking in all mode
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic-errors -ansi  -Wextra     -Wunused  -Wno-error=unused-result")
 
-# some errors checking in debug mode
-SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pedantic-errors -ansi  -Wextra ")
-SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wformat=2 -Winit-self -Wmissing-include-dirs -Wswitch-default    -Wswitch-enum       -Wno-endif-labels ")
-SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wcast-qual    -Wcast-align      -Wno-packed   -Wmissing-format-attribute -Wredundant-decls")
+  # some errors checking in debug mode
+  SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pedantic-errors -ansi  -Wextra ")
+  SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wformat=2 -Winit-self -Wmissing-include-dirs -Wswitch-default    -Wswitch-enum       -Wno-endif-labels ")
+  SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wcast-qual    -Wcast-align      -Wno-packed   -Wmissing-format-attribute -Wredundant-decls")
 
-# fix 64bit warning failure
-SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-long-long")
+  # fix 64bit warning failure
+  SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-long-long")
 
-# not work with Qt
-#SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wconversion -Wfloat-equal ")
+  # not work with Qt
+  #SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wconversion -Wfloat-equal ")
 
-# not work on CentOS
-#SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}   -Wlogical-op    -Wundef  ")
+  # not work on CentOS
+  #SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}   -Wlogical-op    -Wundef  ")
 
-# not work in fc10
-#SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wlarger-than=1024   -Wsync-nand ")
+  # not work in fc10
+  #SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wlarger-than=1024   -Wsync-nand ")
 
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-# BugFix fc10:boost
-SET(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS}       -Wno-deprecated -Wno-deprecated-declarations -Wno-unused-but-set-variable") 
-endif()
-# don't add profiling helper
-#SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DGLIBCXX_FORCE_NEW")
-
-# DON'TTRAP OVERFLOW
-# SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ftrapv")
-
+  if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+    # BugFix fc10:boost
+    SET(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS}       -Wno-deprecated -Wno-deprecated-declarations -Wno-unused-but-set-variable") 
+  endif()
+  # don't add profiling helper
+  #SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DGLIBCXX_FORCE_NEW")
+  
+  # DON'TTRAP OVERFLOW
+  # SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ftrapv")
+  
 endif()
 
 # -g in debug mode
@@ -84,7 +84,8 @@ SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -std=c++11 -fno-inlin
 # -fno-inline  -fno-default-inline -Wextra -fno-inline-small-functions
 
 # -O3 in normal mode
-SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -std=c++11") #-Ofast -fno-signed-zeros -mtune=native -fno-signaling-nans -fno-trapping-math -fno-math-errno
+SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -std=c++11")
+#SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-signed-zeros -mtune=native -fno-signaling-nans -fno-trapping-math -fno-math-errno")
 
 
 #

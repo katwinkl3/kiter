@@ -744,8 +744,9 @@ void algorithms::generateKPeriodicConstraint(const models::Dataflow * const data
 					const TOKEN_UNIT alphamax =   (rpimax >= 0) ? ( lpimax - rpimax ) : ( lpimax - rpimax - gcdz );
 					const TOKEN_UNIT lpimin =    (std::max((TOKEN_UNIT)0, wak - vakp) - mop - normdapk + normdamkp) ;
 
-					//if (lpimin > alphamax ) continue; // ca ne fera qu'empirer
-
+#ifdef STRONGLY_OPTIMIZED
+					if (lpimin > alphamax ) continue; // ca ne fera qu'empirer
+#endif
 					const TOKEN_UNIT rpimin =     lpimin % gcdz;
 					const TOKEN_UNIT alphamin =   (rpimin <= 0) ? ( lpimin - rpimin ) : ( lpimin - rpimin + gcdz );
 #endif
@@ -1403,25 +1404,16 @@ std::cout << dataflow->getFilename()
 
 void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const dataflow, parameters_list_t   params ) {
 
+	auto very_start = std::chrono::steady_clock::now();
 	auto start = std::chrono::steady_clock::now();
-
-
 	bool showdetails = params.count("DETAILS") > 0 ;
 
-
-	print_kiter_throughput_header () ;
-
-
 	if (showdetails) {
-
+		print_kiter_throughput_header () ;
 	}
 
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-
-	//EXEC_COUNT sumNi = sum_Ni (dataflow);
-	//EXEC_COUNT sumNiNj = sum_NiNj (dataflow);
-
 
 	// STEP 0.1 - PRE
 	EXEC_COUNT iteration_count = 0;
@@ -1429,17 +1421,13 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 	// STEP 1 - generate initial vector
 	std::map<Vertex,EXEC_COUNT> kvector = algorithms::scheduling::generate1PeriodicVector(dataflow);
 
-
 	kperiodic_result_t result;
 
-
-
 	VERBOSE_INFO("KPeriodic EventGraph generation");
-
 	VERBOSE_INFO("KVector = " << commons::toString(kvector) );
+
 	//STEP 1 - Generate Event Graph
 	models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector);
-
 
 	auto graph_done = std::chrono::steady_clock::now();
 	VERBOSE_ASSERT(start <= graph_done,"Impossible");
@@ -1488,10 +1476,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 			print_kiter_throughput_iteration (dataflow, eg, result , iteration_count, gduration,  hduration ) ;
 	}
 
-
-
 	if (result.critical_edges.size() != 0) {
-
 
 		VERBOSE_INFO("1-periodic throughput (" << result.throughput <<  ") is not enough.");
 		VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
@@ -1619,9 +1604,14 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 	if (showdetails) {
 
 	} else {
-		std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
-		std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
-	}
+
+		auto very_end = std::chrono::steady_clock::now();
+		double  duration = std::chrono::duration<double> (very_end-very_start).count() * 1000;
+
+		std::cout << "Maximum throughput is " << std::scientific << std::setw( 20 ) << std::setprecision( 9 ) <<     res    << std::endl;
+		std::cout << "Maximum period     is " << std::fixed      << std::setw( 20 ) << std::setprecision( 6 ) << 1.0/res    << std::endl;
+		std::cout << "Execution Time     is " << std::fixed      << std::setw( 20 ) << std::setprecision( 6 ) << duration   << std::endl;
+		}
 
 }
 
