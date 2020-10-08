@@ -30,7 +30,6 @@
 // REALLY STRANGE BUGFIX : For Andrea config (old boost version in fc10)
 #include <boost/graph/detail/edge.hpp>
 #include <boost/rational.hpp>
-
 #include <commons/basic_types.h>
 
 namespace boost {struct bidirectional_tag;}
@@ -41,8 +40,6 @@ bool operator<(const boost::detail::edge_desc_impl<boost::bidirectional_tag, uns
 
 typedef         boost::rational<EXEC_COUNT> EXEC_COUNT_FRACT   ;
 typedef    boost::rational<TOKEN_UNIT>      TOKEN_FRACT        ;
-typedef    boost::rational<DATA_UNIT>       DATA_FRACT         ;
-
 
 
 

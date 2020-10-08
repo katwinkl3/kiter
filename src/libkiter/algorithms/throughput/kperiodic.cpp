@@ -5,6 +5,7 @@
  *      Author: toky
  */
 
+#define STRONGLY_OPTIMIZED
 
 #include <chrono>
 #include <map>
@@ -17,10 +18,6 @@
 #include "kperiodic.h"
 #include <algorithms/schedulings.h>
 
-// #include <algorithms/kperiodic.h>
-// #include <algorithms/repetition_vector.h>
-// #include <algorithms/buffersizing/buffer_sizing.h>
-// #include <chrono> // to take computation timings
 
 
 bool algorithms::sameset(const models::Dataflow* const dataflow, critical_circuit_t *cc1 , critical_circuit_t* cc2) {
