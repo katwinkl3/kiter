@@ -396,6 +396,8 @@ void StorageDistributionSet::updateKneeSet(StorageDistributionSet infeasibleSet)
   StorageDistributionSet checkQueue(infeasibleSet); // store queue of SDs to be compared
   StorageDistributionSet checkedSDs;
   // go through every permutation of pairs of SDs to compare
+  // NOTE this is a little inefficient as it generates a whole new set of knee points every time it's called
+  // - would be better to find a way if a new point would affect the current knee set in any way before iterating
   while(checkQueue.getSize() > 0) {
     StorageDistribution checkDist(checkQueue.getNextDistribution());
     checkQueue.removeStorageDistribution(checkDist);
@@ -409,6 +411,8 @@ void StorageDistributionSet::updateKneeSet(StorageDistributionSet infeasibleSet)
       }
     }
   }
+  this->addEdgeKnees(infeasibleSet);
+  // remove knee points in backwards cone of knee set
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
   for (auto &distribution_sz : reference_set) {
     for (auto &storage_dist : distribution_sz.second) {
@@ -420,8 +424,37 @@ void StorageDistributionSet::updateKneeSet(StorageDistributionSet infeasibleSet)
     for (auto &storage_dist : distribution_sz.second) {
       std::cout << storage_dist.getDistributionSize() << std::endl;
     }
+  }  
+}
+
+
+// Adds the edge cases to the knee set
+void StorageDistributionSet::addEdgeKnees(StorageDistributionSet infeasibleSet) {
+  std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set = infeasibleSet.getSet();
+  StorageDistribution maximalSD(infeasibleSet.getNextDistribution());
+  std::vector<Edge> edges = maximalSD.getEdges();
+  // find maximal buffer sizes for all buffers
+  for (auto &distribution_sz : reference_set) {
+    for (auto &storage_dist : distribution_sz.second) {
+      for (auto it = edges.begin(); it != edges.end(); it++) {
+        if (storage_dist.getChannelQuantity(*it) > maximalSD.getChannelQuantity(*it)) {
+          maximalSD.setChannelQuantity(*it, storage_dist.getChannelQuantity(*it));
+        }
+      }
+    }
   }
-  
+  std::cout << "Maximal SD dist sz: " << maximalSD.getDistributionSize() << std::endl;
+  // construct and add edge knee points
+  for (auto it = edges.begin(); it != edges.end(); it++) {
+    StorageDistribution tempSD(maximalSD);
+    for (auto it2 = edges.begin(); it2 != edges.end(); it2++) {
+      if (*it != *it2) {
+        tempSD.setChannelQuantity(*it, 0);
+      }
+    }
+    std::cout << "Adding edge knee of dist sz: " << tempSD.getDistributionSize() << std::endl;
+    this->addStorageDistribution(tempSD);
+  }
 }
 
 // add new SD to set of infeasible SDs
