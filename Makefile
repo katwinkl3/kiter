@@ -19,6 +19,9 @@ KITER := timeout 180 ./Release/bin/kiter
 
 SOURCES=$(shell find src tests)
 
+all : release
+	@echo "###########"" ENTER IN $@ : $^  #####################"
+
 info :
 	@echo "-------------------------------------------"
 	@echo SDF3_ROOT is [${SDF3_ROOT}]
@@ -30,14 +33,12 @@ info :
 	@echo "make sdf3_build: Download and Compile SDF3"
 	@echo "-------------------------------------------"
 
-all : build
-	@echo "###########"" ENTER IN $@ : $^  #####################"
-
 debug: ./Debug/bin/kiter
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 
 release: ./Release/bin/kiter
 	@echo "###########"" ENTER IN $@ : $^  #####################"
+	
 clean:
 	rm -Rf Release Debug *.lp *.mps *.png *.dot *.pdf *.xml *.lp
 
@@ -123,7 +124,7 @@ sdf.log:  ./Release/bin/kiter Makefile
 	@mkdir -p $*
 	@pushd $* && cmake -D CMAKE_BUILD_TYPE=$* .. && popd
 
-test: Debug/bin/kiter Debug/Makefile
+test: ./Debug/bin/kiter
 	make -C Debug/ test
 
 various: ./Release/bin/kiter 

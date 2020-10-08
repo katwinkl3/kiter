@@ -33,7 +33,6 @@
 
 #define TXT_NEW_EDGE_ERROR "NEW_EDGE_ERROR"
 
-
 #define VERBOSE_EVENTGRAPH_DEBUG(msg) {VERBOSE_CUSTOM_DEBUG("EventGraph",msg);}
 /**
  * This struct is the holy graal ...
@@ -406,8 +405,8 @@ public :
                     auto previous_start2 = this->getStartingTime(event2);
                     VERBOSE_EVENTGRAPH_DEBUG("  test " << event2 << " Start from " << previous_start2 << " to " << this->getFlow(constraint) << "+" <<  previous_start1);
 
-                    if (this->getStartingTime(event2) - this->getStartingTime(event1) < this->getFlow(constraint)) {
-                        this->setStartingTime(event2, this->getFlow(constraint) + this->getStartingTime(event1));
+                    if (previous_start2 - previous_start1 < this->getFlow(constraint)) {
+                        this->setStartingTime(event2, this->getFlow(constraint) + previous_start1);
                         VERBOSE_EVENTGRAPH_DEBUG("   Update " << event2 << " Start from " << previous_start2 << " to " << this->getFlow(constraint) << "+" <<  previous_start1);
 
                         updated = true;

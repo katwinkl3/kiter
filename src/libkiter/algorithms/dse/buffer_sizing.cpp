@@ -3,18 +3,20 @@
  *
  */
 
-#include <boost/math/common_factor_rt.hpp>  // for boost::math::gcd, lcm
+
 #include "buffer_sizing.h"
 #include <models/Dataflow.h>
 #include <printers/stdout.h> // to print DOT files
 #include <iostream>
 #include <fstream>
+#include <boost/integer/common_factor_ct.hpp>
+
 
 StorageDistribution::StorageDistribution()
   :edge_count{0}, thr{0}, channel_quantities(), distribution_size{0} {
                           }
 
-StorageDistribution::StorageDistribution(unsigned int edge_count,
+StorageDistribution::StorageDistribution(ARRAY_INDEX edge_count,
                                          TIME_UNIT thr,
                                          std::map<Edge, std::pair<TOKEN_UNIT, TOKEN_UNIT>> channel_quantities,
                                          TOKEN_UNIT distribution_size)
@@ -70,7 +72,7 @@ TIME_UNIT StorageDistribution::getThroughput() const {
 }
 
 // Return number of edges
-unsigned int StorageDistribution::getEdgeCount() const {
+ARRAY_INDEX StorageDistribution::getEdgeCount() const {
   return this->edge_count;
 }
 
@@ -120,7 +122,7 @@ void StorageDistribution::updateDistributionSize() {
 // Prints member data of StorageDistribution for debugging
 std::string StorageDistribution::printInfo(models::Dataflow* const dataflow) {
   std::string sdInfo;
-  unsigned int ch_count = 0;
+  ARRAY_INDEX ch_count = 0;
 
   sdInfo += "\tCurrent StorageDistribution info:\n";
   sdInfo += "\tNumber of edges: " + std::to_string(this->edge_count) + "\n";
@@ -157,7 +159,7 @@ std::string StorageDistribution::printInfo(models::Dataflow* const dataflow) {
 std::string StorageDistribution::print_quantities_csv(models::Dataflow* const dataflow) {
   std::string output("\"");
   std::string delim("");
-  unsigned int ch_count = 0;
+  ARRAY_INDEX ch_count = 0;
   // for (auto &it : this->channel_quantities) {
   //   if (ch_count >= (this->edge_count / 2)) {
   //     output += delim;
@@ -404,9 +406,9 @@ void findMinimumStepSz(models::Dataflow *dataflow,
       TOKEN_UNIT minStepSz;
       minStepSz = dataflow->getEdgeInVector(c)[0]; // initialise with first value
       for (EXEC_COUNT i = 0; i < dataflow->getEdgeInPhasesCount(c); i++)
-        minStepSz = boost::math::gcd(minStepSz, dataflow->getEdgeInVector(c)[i]);
+        minStepSz = boost::integer::gcd(minStepSz, dataflow->getEdgeInVector(c)[i]);
       for (EXEC_COUNT i = 0; i < dataflow->getEdgeOutPhasesCount(c); i++)
-        minStepSz = boost::math::gcd(minStepSz, dataflow->getEdgeOutVector(c)[i]);
+        minStepSz = boost::integer::gcd(minStepSz, dataflow->getEdgeOutVector(c)[i]);
       minStepSizes[c] = minStepSz;
       VERBOSE_DSE("Min. step size for channel " << dataflow->getEdgeName(c)
                   << ": " << minStepSz << std::endl);
@@ -423,7 +425,7 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
   {ForEachEdge(dataflow, c) {
       // initialise channel size to maximum int size
       minChannelSizes[c].second = INT_MAX; // NOTE (should use ULONG_MAX but it's a really large value)
-      TOKEN_UNIT ratePeriod = (TOKEN_UNIT) boost::math::gcd(dataflow->getEdgeInPhasesCount(c),
+      TOKEN_UNIT ratePeriod = (TOKEN_UNIT) boost::integer::gcd(dataflow->getEdgeInPhasesCount(c),
                                                             dataflow->getEdgeOutPhasesCount(c));
       
       for (TOKEN_UNIT i = 0; i < ratePeriod; i++) {
@@ -435,13 +437,13 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
                     << tokensConsumed << ", " << tokensInitial << std::endl);
         TOKEN_UNIT lowerBound;
 
-        if (boost::math::gcd(tokensProduced, tokensConsumed)) {
+        if (boost::integer::gcd(tokensProduced, tokensConsumed)) {
           lowerBound = tokensProduced + tokensConsumed -
-            boost::math::gcd(tokensProduced, tokensConsumed) +
-            tokensInitial % boost::math::gcd(tokensProduced, tokensConsumed);
+            boost::integer::gcd(tokensProduced, tokensConsumed) +
+            tokensInitial % boost::integer::gcd(tokensProduced, tokensConsumed);
         } else {
           lowerBound = tokensProduced + tokensConsumed -
-            boost::math::gcd(tokensProduced, tokensConsumed);
+            boost::integer::gcd(tokensProduced, tokensConsumed);
         }
         lowerBound = (lowerBound > tokensInitial ? lowerBound : tokensInitial);
         
@@ -459,8 +461,7 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
  * Returns the distribution size of a given graph by summing the channel quantities 
  * on every channel
  */
-TOKEN_UNIT findMinimumDistributionSz(models::Dataflow *dataflow,
-                                     std::map<Edge,
+TOKEN_UNIT findMinimumDistributionSz(std::map<Edge,
                                      std::pair<TOKEN_UNIT, TOKEN_UNIT>> minChannelSizes) {
   TOKEN_UNIT minDistributionSize = 0;
   

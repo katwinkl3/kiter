@@ -67,10 +67,10 @@ void algorithms::compute_backpressure_memory_sizing (models::Dataflow* const  da
 
 
 		for (EXEC_COUNT kj = 1 ; kj <= max_kj ; kj++) {
-			lambda_p = boost::gcd(lambda_p , dataflow->getEdgeOutPhase(e,kj));
+			lambda_p = boost::integer::gcd<TOKEN_UNIT>(lambda_p , dataflow->getEdgeOutPhase(e,kj));
 		}
 		for (EXEC_COUNT ki = 1 ; ki <= max_ki ; ki++) {
-			lambda_c = boost::gcd(lambda_c , dataflow->getEdgeInPhase(e,ki));
+			lambda_c = boost::integer::gcd<TOKEN_UNIT>(lambda_c , dataflow->getEdgeInPhase(e,ki));
 		}
 
 		lambda_prod[e]      = lambda_p;

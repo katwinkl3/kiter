@@ -17,6 +17,7 @@ namespace models {
 
 namespace algorithms {
 
+    std::map<Vertex,EXEC_COUNT>  get_Kvector(models::Dataflow *  const);
 	models::EventGraph* 						generateNPeriodicEventGraph         (models::Dataflow *  const) ;
 	std::pair<TIME_UNIT, std::vector<Edge> > 	NSchedule							(models::Dataflow *  const dataflow ) ;
     void                						compute_NPeriodic_throughput  	    (models::Dataflow* const  dataflow, parameters_list_t);

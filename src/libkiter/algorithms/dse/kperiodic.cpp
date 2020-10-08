@@ -240,8 +240,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
       minChannelSizes[c].first = dataflow_prime->getPreload(c);
    }}
 
-  minDistributionSize = findMinimumDistributionSz(dataflow_prime,
-                                                  minChannelSizes);
+  minDistributionSize = findMinimumDistributionSz(minChannelSizes);
   
   // initialise and store initial storage distribution state
   StorageDistribution initDist(dataflow_prime->getEdgesCount(),

@@ -39,7 +39,7 @@
 
 		NoCGraph* g = new NoCGraph(noc->size()*2);
 		for (auto edge : noc->getEdges()) {
-			g->addEdge(edge.src, edge.dst);
+			g->addEdge((int) edge.src, (int) edge.dst); // TODO : integer around here
 		}
 		return g;
 	}

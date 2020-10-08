@@ -648,7 +648,7 @@ models::Dataflow* wrapSDF3Dataflow (xmlDocPtr doc) {
 
 models::Dataflow*  parseSDF3XML         (const std::string data) {
 
-	xmlDocPtr doc =  xmlReadMemory(data.c_str(), data.size(), NULL, NULL,XML_PARSE_NOERROR|XML_PARSE_NOWARNING|XML_PARSE_RECOVER);
+	xmlDocPtr doc =  xmlReadMemory(data.c_str(), (int) data.size(), NULL, NULL,XML_PARSE_NOERROR|XML_PARSE_NOWARNING|XML_PARSE_RECOVER);
 
 	if (doc == NULL) {
 		VERBOSE_ERROR("Document XML invalide");

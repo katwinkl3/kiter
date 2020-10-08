@@ -16,7 +16,7 @@ namespace models {
 class StorageDistribution {
 public:
   StorageDistribution();
-  StorageDistribution(unsigned int edge_count,
+  StorageDistribution(ARRAY_INDEX edge_count,
                       TIME_UNIT thr,
                       std::map<Edge,
                       std::pair<TOKEN_UNIT, TOKEN_UNIT>> channel_quantities,
@@ -30,7 +30,7 @@ public:
   TOKEN_UNIT getInitialTokens(Edge e) const;
   TOKEN_UNIT getDistributionSize() const;
   TIME_UNIT getThroughput() const;
-  unsigned int getEdgeCount() const;
+  ARRAY_INDEX getEdgeCount() const;
   bool operator==(const StorageDistribution& distribution) const;
   bool operator!=(const StorageDistribution& distribution) const;
   void updateDistributionSize();
@@ -38,7 +38,7 @@ public:
   std::string print_quantities_csv(models::Dataflow* const dataflow);
   std::string printGraph(models::Dataflow* const dataflow);
 private:
-  unsigned int edge_count;
+  ARRAY_INDEX edge_count;
   TIME_UNIT thr; // throughput of given storage distribution
   std::map<Edge, std::pair<TOKEN_UNIT, // initial tokens
                            TOKEN_UNIT>> channel_quantities; // amount of space (in tokens per channel)
@@ -79,8 +79,7 @@ void findMinimumStepSz(models::Dataflow *dataflow,
 void findMinimumChannelSz(models::Dataflow *dataflow,
                           std::map<Edge,
                           std::pair<TOKEN_UNIT, TOKEN_UNIT>> &minChannelSizes); // initial tokens in first element of pair and channel quantity in second element of pair
-TOKEN_UNIT findMinimumDistributionSz(models::Dataflow *dataflow,
-                                     std::map<Edge,
+TOKEN_UNIT findMinimumDistributionSz(std::map<Edge,
                                      std::pair<TOKEN_UNIT, TOKEN_UNIT>> minChannelSizes);
 void initSearchParameters(models::Dataflow *dataflow,
                           std::map<Edge, TOKEN_UNIT> &minStepSizes,

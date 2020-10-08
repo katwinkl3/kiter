@@ -80,13 +80,13 @@ void myterminate(int);
 
 #endif
 
-static inline bool  VERBOSE_IS_EXTRA_DEBUG()  { return (commons::VERBOSE_MODE >= commons::EXTRA_DEBUG_LEVEL) ;}
-static inline bool  VERBOSE_IS_DEBUG()        { return (commons::VERBOSE_MODE >= commons::DEBUG_LEVEL)       ;}
-static inline bool  VERBOSE_IS_INFO()         { return (commons::VERBOSE_MODE >= commons::INFO_LEVEL)        ;}
-static inline bool  VERBOSE_IS_ERROR()        { return (commons::VERBOSE_MODE >= commons::ERROR_LEVEL)       ;}
-static inline bool  VERBOSE_IS_WARNING()      { return (commons::VERBOSE_MODE >= commons::WARNING_LEVEL)     ;}
-static inline bool  VERBOSE_IS_PB()           { return (commons::VERBOSE_MODE >= commons::PB_LEVEL)          ;}
-static inline bool  VERBOSE_IS_ILP()          { return (commons::VERBOSE_MODE >= commons::ILP_LEVEL)         ;}
+static inline bool  VERBOSE_IS_EXTRA_DEBUG()             { return (commons::VERBOSE_MODE >= commons::EXTRA_DEBUG_LEVEL) ;}
+static inline bool  VERBOSE_IS_DEBUG()                   { return (commons::VERBOSE_MODE >= commons::DEBUG_LEVEL)       ;}
+static inline bool  VERBOSE_IS_INFO()                    { return (commons::VERBOSE_MODE >= commons::INFO_LEVEL)        ;}
+static inline bool  VERBOSE_IS_ERROR()                   { return (commons::VERBOSE_MODE >= commons::ERROR_LEVEL)       ;}
+static inline bool  VERBOSE_IS_WARNING()                 { return (commons::VERBOSE_MODE >= commons::WARNING_LEVEL)     ;}
+static inline bool  VERBOSE_IS_PB()                      { return (commons::VERBOSE_MODE >= commons::PB_LEVEL)          ;}
+static inline bool  VERBOSE_IS_ILP()                     { return (commons::VERBOSE_MODE >= commons::ILP_LEVEL)         ;}
 
 #ifndef __RELEASE_MODE__
 #define VERBOSE_EXTRA_DEBUG(m)   if (VERBOSE_IS_EXTRA_DEBUG())      std::cerr << BLUE_COLOR   << "[X]" << __SHOW_LEVEL << m << std::string(20,' ') << "\n" ; //PRINT_STATE();

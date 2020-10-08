@@ -309,11 +309,10 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 
   {ForEachChannel(dataflow,c){
 	  edge_color[c] = available_colors[edge_color.size() % available_colors.size()];
-	  ARRAY_INDEX edge_id = dataflow->getEdgeId(c);
 	  Vertex source_vtx   = dataflow->getEdgeSource(c);
 	  Vertex target_vtx   = dataflow->getEdgeTarget(c);
 	  const std::vector<edge_id_t>& route = dataflow->getRoute(c);
-	  VERBOSE_DEBUG("edge_id=" << edge_id << " from tasks " <<  dataflow->getVertexId(source_vtx) << " and " <<   dataflow->getVertexId(target_vtx)  << " route = " <<  commons::toString(route));
+	  VERBOSE_DEBUG("edge_id=" << dataflow->getEdgeId(c) << " from tasks " <<  dataflow->getVertexId(source_vtx) << " and " <<   dataflow->getVertexId(target_vtx)  << " route = " <<  commons::toString(route));
 
 	  for (edge_id_t e : route) {
 		  const NetworkEdge& nedge = dataflow->getNoC().getEdge(e);
@@ -706,14 +705,9 @@ void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list
 	std::cout << "Channels total = " <<  dataflow->getEdgesCount() << std::endl;
 
 	EXEC_COUNT complexity = computeComplexity(dataflow) ;
-	EXEC_COUNT NCombinations = computeNCombinations(dataflow) ;
-	EXEC_COUNT KCombinations = computeKCombinations(dataflow) ;
 
 	if (consistent) {
 		std::cout << "Complexity     = " <<  complexity << std::endl;
-		//// Experimental
-		//std::cout << "NCombinations    = " <<  NCombinations << std::endl;
-		//std::cout << "KCombinations    = " <<  KCombinations << std::endl;
 	} else {
 		std::cout << "This dataflow graph is not consistent!" << std::endl;
 	}

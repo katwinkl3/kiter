@@ -16,6 +16,134 @@
 #include <lp/glpsol.h>
 
 
+std::map<Vertex,EXEC_COUNT> algorithms::get_Kvector(models::Dataflow *  const dataflow ) {
+
+	// STEP 0.1 - PRE
+	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
+	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+	EXEC_COUNT iteration_count = 0;
+
+	// STEP 1 - generate initial vector
+	std::map<Vertex,EXEC_COUNT> kvector;
+	{ForEachVertex(dataflow,t) {
+		kvector[t] = 1;
+
+	}}
+
+
+	kperiodic_result_t result;
+
+
+
+	VERBOSE_INFO("KPeriodic EventGraph generation");
+
+	//STEP 1 - Generate Event Graph
+	models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector);
+
+
+	VERBOSE_INFO("KPeriodic EventGraph generation Done");
+
+	//STEP 2 - resolve the MCRP on this Event Graph
+	std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
+
+	std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res.second);
+
+	//STEP 3 - convert CC(eg) => CC(graph)
+	VERBOSE_KPERIODIC_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
+	for (std::vector<models::EventGraphEdge>::iterator it = critical_circuit->begin() ; it != critical_circuit->end() ; it++ ) {
+		VERBOSE_KPERIODIC_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
+		ARRAY_INDEX channel_id = eg->getChannelId(*it);
+		try {
+			Edge        channel    = dataflow->getEdgeById(channel_id);
+			result.critical_edges.insert(channel);
+		} catch(...) {
+			VERBOSE_KPERIODIC_DEBUG("      is loopback");
+		}
+	}
+
+	TIME_UNIT frequency = howard_res.first;
+
+	VERBOSE_INFO("KSchedule function get " << frequency << " from MCRP." );
+	VERBOSE_INFO("  ->  then omega =  " <<  1 / frequency );
+
+	result.throughput = frequency;
+
+	////////////// SCHEDULE CALL // END
+
+	if (result.critical_edges.size() != 0) {
+
+		VERBOSE_INFO("1-periodic throughput (" << result.throughput <<  ") is not enough.");
+		VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
+
+		while (true) {
+			iteration_count++;
+			////////////// SCHEDULE CALL // BEGIN : resultprime = KSchedule(dataflow,&kvector);
+
+			kperiodic_result_t resultprime;
+
+			//VERBOSE_ASSERT( algorithms::normalize(dataflow),"inconsistent graph");
+			VERBOSE_INFO("KPeriodic EventGraph generation");
+
+			//STEP 1 - Generate Event Graph and update vector
+			if (!updateEventGraph( dataflow ,  &kvector, &(result.critical_edges), eg)) break ;
+
+			VERBOSE_INFO("KPeriodic EventGraph generation Done");
+
+			//STEP 2 - resolve the MCRP on this Event Graph
+			std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res_bis = eg->MinCycleRatio();
+
+			std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res_bis.second);
+
+			//STEP 3 - convert CC(eg) => CC(graph)
+			VERBOSE_KPERIODIC_DEBUG("Critical circuit is about " << critical_circuit->size() << " edges.");
+			for (std::vector<models::EventGraphEdge>::iterator it = critical_circuit->begin() ; it != critical_circuit->end() ; it++ ) {
+				VERBOSE_KPERIODIC_DEBUG("   -> " << eg->getChannelId(*it) << " : " << eg->getSchedulingEvent(eg->getSource(*it)).toString() << " to " <<  eg->getSchedulingEvent(eg->getTarget(*it)).toString() <<  " = (" << eg->getConstraint(*it)._w << "," << eg->getConstraint(*it)._d << ")" );
+				ARRAY_INDEX channel_id = eg->getChannelId(*it);
+				try {
+					Edge        channel    = dataflow->getEdgeById(channel_id);
+					resultprime.critical_edges.insert(channel);
+				} catch(...) {
+					VERBOSE_KPERIODIC_DEBUG("      is loopback");
+				}
+			}
+
+			TIME_UNIT frequency = howard_res_bis.first;
+
+			VERBOSE_INFO("KSchedule function get " << frequency << " from MCRP." );
+			VERBOSE_INFO("  ->  then omega =  " <<  1 / frequency );
+
+			resultprime.throughput = frequency;
+
+			////////////// SCHEDULE CALL // END
+
+			if (sameset(dataflow,&(resultprime.critical_edges),&(result.critical_edges)))  {
+				VERBOSE_INFO("Critical circuit is the same");
+				result = resultprime;
+
+				break;
+			}
+			result = resultprime;
+			VERBOSE_INFO("Current K-periodic throughput (" << result.throughput <<  ") is not enough.");
+			VERBOSE_KPERIODIC_DEBUG("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
+		}
+
+	}
+
+
+	VERBOSE_INFO( "K-periodic schedule - iterations count is " << iteration_count << "  final size is " << eg->getEventCount() << " events and " << eg->getConstraintsCount() << " constraints.");
+	delete eg;
+
+	EXEC_COUNT total_ni = 0;
+	EXEC_COUNT total_ki = 0;
+	{ForEachVertex(dataflow,t) {
+		total_ni += dataflow->getNi(t);
+		total_ki += kvector[t];
+	}}
+
+	VERBOSE_INFO("K-periodic schedule - total_ki=" << total_ki << " total_ni=" << total_ni );
+	return kvector;
+}
+
 
 void algorithms::print_Nperiodic_eventgraph    (models::Dataflow* const  dataflow, parameters_list_t) {
 
