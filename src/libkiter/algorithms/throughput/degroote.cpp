@@ -69,7 +69,7 @@ models::EventGraph*     algorithms::generate_LCG   		                  (models::
 					long int  tilde_pi_c_j = commons::modulo((pi_c_j - 1)  , (long int) Ni ) + 1 ;
 					long int  delta_c_j    =  (long int )  std ::floor(commons::division( (double) pi_c_j -  (double) 1 , (double) Ni));
 
-					EXEC_COUNT i          = tilde_pi_c_j;
+					EXEC_COUNT i          = (EXEC_COUNT) tilde_pi_c_j;
 
 
 					VERBOSE_DEBUG("  j = " << j );
@@ -125,7 +125,7 @@ models::EventGraph*     algorithms::generate_LCG   		                  (models::
 			long int  tilde_pi_c_j = commons::modulo((pi_c_j - 1)  , (long int) Ni ) + 1 ;
 			long int  delta_c_j    =  (long int )  std ::floor(commons::division( (double) pi_c_j -  (double) 1 , (double) Ni));
 
-			EXEC_COUNT i          = tilde_pi_c_j;
+			EXEC_COUNT i          = (EXEC_COUNT) tilde_pi_c_j;
 
 
 			VERBOSE_DEBUG("  j = " << j );

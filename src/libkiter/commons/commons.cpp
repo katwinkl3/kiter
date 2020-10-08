@@ -119,22 +119,7 @@ char * string2char(const std::string& str) {
 	strcpy(ret, str.c_str());
 	return ret;
 }
-std::string convBase(unsigned long v, unsigned long base)
-	{
-		std::string digits = "0123456789abcdef";
-		std::string result;
-		if((base < 2) || (base > 16)) {
-			result = "Error: base out of range.";
-		}
-		else {
-			do {
-				result = digits[v % base] + result;
-				v /= base;
-			}
-			while(v);
-		}
-		return result;
-	}
+
 bool is_readable( const std::string & file )
 {
     std::ifstream fichier( file.c_str() );
