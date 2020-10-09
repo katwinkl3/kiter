@@ -8,6 +8,7 @@
 
 #include <models/Dataflow.h>
 #include <commons/commons.h>
+#include <algorithms/throughput/kperiodic.h>
 
 namespace models {
   class Dataflow;
@@ -96,4 +97,8 @@ void initSearchParameters(models::Dataflow *dataflow,
 std::string timeToString(TIME_UNIT t);
 StorageDistribution makeMinimalSD(StorageDistribution sd1,
                                   StorageDistribution sd2);
+void handleInfeasiblePoint(StorageDistributionSet infeasibleSet,
+                           StorageDistributionSet kneeSet,
+                           StorageDistribution newSD,
+                           kperiodic_result_t deps);
 #endif /* BUFFER_SIZING_H_ */

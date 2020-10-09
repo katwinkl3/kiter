@@ -536,6 +536,7 @@ void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
   }
 }
 
+
 // Print info of all storage distributions of a given distribution size in set
 std::string StorageDistributionSet::printDistributions(TOKEN_UNIT dist_sz,
 						       models::Dataflow* const dataflow) {
@@ -700,4 +701,28 @@ StorageDistribution makeMinimalSD(StorageDistribution sd1,
                                            sd2.getChannelQuantity(*it)));
   }
   return minSD;
+}
+
+
+/* updates infeasible set and set of knee points given a new SD,
+   also reduces search space using critical edges */
+void handleInfeasiblePoint(StorageDistributionSet infeasibleSet,
+                           StorageDistributionSet kneeSet,
+                           StorageDistribution newSD,
+                           kperiodic_result_t deps) {
+  if ((deps.critical_edges).empty()) {
+    std::cerr << "ERROR: throughput requirement unreachable (no critical edges found)" << std::endl;
+  }
+  StorageDistribution checkSD(newSD);
+  std::vector<Edge> edges = checkSD.getEdges();
+  std::set<Edge> dependencies = deps.critical_edges;
+  for (auto edge : edges) {
+    // max out buffer size of edges not in set of critical edges
+    if (dependencies.find(edge) == dependencies.end()) {
+      checkSD.setChannelQuantity(edge, INT_MAX);
+    }
+  }
+
+  infeasibleSet.updateInfeasibleSet(checkSD);
+  kneeSet.updateKneeSet(infeasibleSet);
 }
