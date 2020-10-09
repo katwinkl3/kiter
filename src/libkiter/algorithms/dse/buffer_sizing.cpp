@@ -424,7 +424,7 @@ void StorageDistributionSet::updateKneeSet(StorageDistributionSet infeasibleSet)
     for (auto &storage_dist : distribution_sz.second) {
       std::cout << storage_dist.getDistributionSize() << std::endl;
     }
-  }  
+  }
 }
 
 
@@ -449,7 +449,7 @@ void StorageDistributionSet::addEdgeKnees(StorageDistributionSet infeasibleSet) 
     StorageDistribution tempSD(maximalSD);
     for (auto it2 = edges.begin(); it2 != edges.end(); it2++) {
       if (*it != *it2) {
-        tempSD.setChannelQuantity(*it, 0);
+        tempSD.setChannelQuantity(*it2, 0);
       }
     }
     std::cout << "Adding edge knee of dist sz: " << tempSD.getDistributionSize() << std::endl;
@@ -706,8 +706,9 @@ StorageDistribution makeMinimalSD(StorageDistribution sd1,
 
 /* updates infeasible set and set of knee points given a new SD,
    also reduces search space using critical edges */
-void handleInfeasiblePoint(StorageDistributionSet infeasibleSet,
-                           StorageDistributionSet kneeSet,
+void handleInfeasiblePoint(models::Dataflow* const dataflow,
+                           StorageDistributionSet &infeasibleSet,
+                           StorageDistributionSet &kneeSet,
                            StorageDistribution newSD,
                            kperiodic_result_t deps) {
   if ((deps.critical_edges).empty()) {
@@ -716,12 +717,14 @@ void handleInfeasiblePoint(StorageDistributionSet infeasibleSet,
   StorageDistribution checkSD(newSD);
   std::vector<Edge> edges = checkSD.getEdges();
   std::set<Edge> dependencies = deps.critical_edges;
-  for (auto edge : edges) {
-    // max out buffer size of edges not in set of critical edges
-    if (dependencies.find(edge) == dependencies.end()) {
-      checkSD.setChannelQuantity(edge, INT_MAX);
-    }
-  }
+  // for (auto edge : edges) {
+  //   // max out buffer size of edges not in set of critical edges
+  //   if (dataflow->getEdgeId(edge) > (edges.size() / 2)) { // only consider edges modelling bounded buffers
+  //     if (dependencies.find(edge) == dependencies.end()) {
+  //       checkSD.setChannelQuantity(edge, INT_MAX);
+  //     }
+  //   }
+  // }
 
   infeasibleSet.updateInfeasibleSet(checkSD);
   kneeSet.updateKneeSet(infeasibleSet);
