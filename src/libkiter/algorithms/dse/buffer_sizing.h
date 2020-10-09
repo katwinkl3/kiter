@@ -63,10 +63,12 @@ public:
   bool hasDistribution(TOKEN_UNIT dist_sz);
   bool isSearchComplete(StorageDistributionSet checklist, TIME_UNIT target_thr);
   void removeNonMaximum(StorageDistribution checkDist);
+  void removeNonMinimum(StorageDistribution checkDist);
   void updateKneeSet(StorageDistributionSet infeasibleSet);
                      // StorageDistribution newDist);
   void addEdgeKnees(StorageDistributionSet infeasibleSet);
   void updateInfeasibleSet(StorageDistribution new_sd); // add new SD to infeasible set of SDs for monotonic optimisation
+  void updateFeasibleSet(StorageDistribution new_sd); // add new SD to infeasible set of SDs for monotonic optimisation
   std::string printDistributions(TOKEN_UNIT dist_sz,
 				 models::Dataflow* const dataflow); /* prints info of all storage distributions 
 								       of given distribution size */
