@@ -62,6 +62,8 @@ public:
   void minimizeStorageDistributions(StorageDistribution newDist);
   bool hasDistribution(TOKEN_UNIT dist_sz);
   bool isSearchComplete(StorageDistributionSet checklist, TIME_UNIT target_thr);
+  bool isInBackCone(StorageDistribution checkDist);
+  bool isInForeCone(StorageDistribution checkDist);
   void removeNonMaximum(StorageDistribution checkDist);
   void removeNonMinimum(StorageDistribution checkDist);
   void updateKneeSet(StorageDistributionSet infeasibleSet);

@@ -353,16 +353,18 @@ bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
           (checklist.getSize() <= 0)); // also end when we're out of distributions to check
 }
 
-void StorageDistributionSet::removeNonMaximum(StorageDistribution checkDist) {
-  bool isMinimal = true;
-  
-  std::cout << "Removing non-maximal SDs..." << std::endl;
-  if (!this->getSize()) {
-    std::cout << "Only 1 SD in set; skipping check" << std::endl;
-    return; // only check if there's more than one SD in set
-  }
+
+/* returns true if given SD is within the backward cone of the set of SDs
+   (i.e. given SD is not maximal in set) */
+bool StorageDistributionSet::isInBackCone(StorageDistribution checkDist) {
+  bool isMinimal = true; // assume that it's in the backward cone until proven otherwise
   std::vector<Edge> checkDistEdges = checkDist.getEdges();
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
+
+  if (this->getSize() == 1) {
+    std::cout << "Only 1 SD in set; skipping check" << std::endl;
+    return false; // can't be within backward cone if only one SD in set
+  }
   for (auto &distribution_sz : reference_set) {
     for (auto &storage_dist : distribution_sz.second) {
       // don't check against itself
@@ -371,34 +373,36 @@ void StorageDistributionSet::removeNonMaximum(StorageDistribution checkDist) {
              it != checkDistEdges.end(); it++) {
           if (checkDist.getChannelQuantity(*it) > storage_dist.getChannelQuantity(*it)) {
             isMinimal = false;
+            return isMinimal;
           }
         }
-        // remove checkDist if, at some point, there was another SD that was strictly larger than checkDist
+        /* remove checkDist if, at some point, there was another SD that was strictly 
+           larger than checkDist (this proves that it's non-maximal) */
         if (isMinimal) {
           std::cout << "SD of size " << checkDist.getDistributionSize()
-                    << " found to be non-maximal, removed from set" << std::endl;
-          this->removeStorageDistribution(checkDist);
-          return;
+                    << " found to be non-maximal in set" << std::endl;
+          return isMinimal;
         } else {
           isMinimal = true; // reset for check against next SD in set
         }
       }
     }
   }
-  std::cout << "SD of size " << checkDist.getDistributionSize() << " not removed" << std::endl;
+  return isMinimal;
 }
 
 
-void StorageDistributionSet::removeNonMinimum(StorageDistribution checkDist) {
-  bool isMaximal = true;
-  
-  std::cout << "Removing non-minimal SDs..." << std::endl;
-  if (!this->getSize()) {
-    std::cout << "Only 1 SD in set; skipping check" << std::endl;
-    return; // only check if there's more than one SD in set
-  }
+/* returns true if given SD is within the foreward cone of the set of SDs
+   (i.e. given SD is not minimal in set) */
+bool StorageDistributionSet::isInForeCone(StorageDistribution checkDist) {
+  bool isMaximal = true; // assume that it's in the foreward cone until proven otherwise
   std::vector<Edge> checkDistEdges = checkDist.getEdges();
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
+
+  if (this->getSize() == 1) {
+    std::cout << "Only 1 SD in set; skipping check" << std::endl;
+    return false; // can't be within foreward cone if only one SD in set
+  }
   for (auto &distribution_sz : reference_set) {
     for (auto &storage_dist : distribution_sz.second) {
       // don't check against itself
@@ -407,21 +411,48 @@ void StorageDistributionSet::removeNonMinimum(StorageDistribution checkDist) {
              it != checkDistEdges.end(); it++) {
           if (checkDist.getChannelQuantity(*it) < storage_dist.getChannelQuantity(*it)) {
             isMaximal = false;
+            return isMaximal;
           }
         }
         // remove checkDist if, at some point, there was another SD that was strictly smaller than checkDist
         if (isMaximal) {
           std::cout << "SD of size " << checkDist.getDistributionSize()
-                    << " found to be non-minimal, removed from set" << std::endl;
-          this->removeStorageDistribution(checkDist);
-          return;
+                    << " found to be non-minimal in set" << std::endl;
+          return isMaximal;
         } else {
           isMaximal = true; // reset for check against next SD in set
         }
       }
     }
   }
-  std::cout << "SD of size " << checkDist.getDistributionSize() << " not removed" << std::endl;
+  return isMaximal;
+}
+
+void StorageDistributionSet::removeNonMaximum(StorageDistribution checkDist) {
+  // bool isMinimal = true;
+  std::cout << "Removing non-maximal SDs..." << std::endl;
+  if (!this->getSize()) {
+    std::cout << "No SDs in set; skipping check" << std::endl;
+    return; // only check if there's more than one SD in set
+  }
+  else if (this->isInBackCone(checkDist)) {
+    this->removeStorageDistribution(checkDist);
+  }
+}
+
+
+void StorageDistributionSet::removeNonMinimum(StorageDistribution checkDist) {
+  // bool isMaximal = true;
+  // std::vector<Edge> checkDistEdges = checkDist.getEdges();
+  // std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
+  std::cout << "Removing non-minimal SDs..." << std::endl;
+  if (!this->getSize()) {
+    std::cout << "No SDs in set; skipping check" << std::endl;
+    return; // only check if there's more than one SD in set
+  }
+  else if (this->isInForeCone(checkDist)) {
+    this->removeStorageDistribution(checkDist);
+  }
 }
 
 
