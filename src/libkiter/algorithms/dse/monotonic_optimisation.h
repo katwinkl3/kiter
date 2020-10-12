@@ -17,9 +17,11 @@ namespace models {
 }
 
 namespace algorithms {
-        /* kperiodic_result_t compute_Kperiodic_throughput_and_cycles(models::Dataflow* const dataflow, parameters_list_t params); */
-  void update_infeasible_set(StorageDistributionSet infeasible_sd,
-                             StorageDistribution new_sd);
+  StorageDistribution selectNewSD(models::Dataflow* const dataflow,
+                                  StorageDistributionSet infeasibleSet,
+                                  StorageDistributionSet kneeSet,
+                                  StorageDistributionSet feasibleSet,
+                                  TIME_UNIT throughput);
   void monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* const dataflow, parameters_list_t params);
         
 }
