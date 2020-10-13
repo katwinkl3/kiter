@@ -486,12 +486,12 @@ void StorageDistributionSet::updateKneeSet(StorageDistributionSet infeasibleSet)
       this->removeNonMaximum(storage_dist);
     }
   }
-  std::cout << "Distribution sizes of knee points found: " << std::endl;
-  for (auto &distribution_sz : this->set) {
-    for (auto &storage_dist : distribution_sz.second) {
-      std::cout << storage_dist.getDistributionSize() << std::endl;
-    }
-  }
+  // std::cout << "Distribution sizes of knee points found: " << std::endl;
+  // for (auto &distribution_sz : this->set) {
+  //   for (auto &storage_dist : distribution_sz.second) {
+  //     std::cout << storage_dist.getDistributionSize() << std::endl;
+  //   }
+  // }
 }
 
 
@@ -527,14 +527,14 @@ void StorageDistributionSet::addEdgeKnees(StorageDistributionSet infeasibleSet) 
 // add new SD to set of infeasible SDs
 void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
   TOKEN_UNIT newDistSz = newDist.getDistributionSize();
-  TOKEN_UNIT minDistSz;
+  TOKEN_UNIT maxDistSz;
   bool isFound = false; // track if newDist found to be maximal
 
   // identify current maximum distribution size
-  if (!this->getSize()) {
+  if (!this->getSize()) { // if there aren't any other SDs in set, just add
     std::cout << "Adding SD of size " << newDist.getDistributionSize()
               << " to U" << std::endl;
-    this->addStorageDistribution(newDist); // if there aren't any other SDs in set, just add
+    this->addStorageDistribution(newDist);
     std::cout << "Distribution sizes of U (" << this->getSize() << " distributions):" << std::endl;
     for (auto &distribution_sz : this->set) {
       for (auto &storage_dist : distribution_sz.second) {
@@ -543,85 +543,8 @@ void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
     }
     return;
   } else {
-    minDistSz = this->set.begin()->first; // store smallest SD
-    std::cout << "Min size: " << minDistSz << std::endl;
-  }
-  
-  // if new SD has smaller distribution size, then can definitely add
-  if (newDistSz <= minDistSz) {
-    std::cout << "Adding SD of size " << newDist.getDistributionSize()
-              << " to S" << std::endl;
-    this->addStorageDistribution(newDist);
-    std::cout << "Distribution sizes of S (" << this->getSize() << " distributions):" << std::endl;
-    for (auto &distribution_sz : this->set) {
-      for (auto &storage_dist : distribution_sz.second) {
-        std::cout << storage_dist.getDistributionSize() << std::endl;
-      }
-    }
-  } else {
-    std::vector<Edge> newDistEdges = newDist.getEdges();
-    std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
-    // only add new SD if at least one channel has smaller size than an SD currently in infeasible set
-    for (auto &distribution_sz : reference_set) {
-      for (auto &storage_dist : distribution_sz.second) {
-        for (auto it = newDistEdges.begin();
-             it != newDistEdges.end(); it++) {
-          // FIXME this doesn't break out of nested for loops
-          if (newDist.getChannelQuantity(*it) < storage_dist.getChannelQuantity(*it) &&
-              !isFound) {
-            std::cout << "Adding SD of size " << newDist.getDistributionSize()
-                      << " to S" << std::endl;
-            isFound = true;
-            this->addStorageDistribution(newDist);
-            std::cout << "Distribution sizes of S (" << this->getSize() << " distributions):" << std::endl;
-            for (auto &distribution_sz : this->set) {
-              for (auto &storage_dist : distribution_sz.second) {
-                std::cout << storage_dist.getDistributionSize() << std::endl;
-              }
-            }
-            break;
-          }
-        }
-      }
-    }
-  }
-  std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
-  // remove SDs subsumed by edge of feasible set (non-minimal SDs)
-  for (auto &distribution_sz : reference_set) {
-    for (auto &storage_dist : distribution_sz.second) {
-      this->removeNonMinimum(storage_dist);
-    }
-  }
-  std::cout << "Distribution sizes of S (" << this->getSize() << " distributions):" << std::endl;
-  for (auto &distribution_sz : this->set) {
-    for (auto &storage_dist : distribution_sz.second) {
-      std::cout << storage_dist.getDistributionSize() << std::endl;
-    }
-  }
-}
-
-
-// add new SD to set of feasible SDs
-void StorageDistributionSet::updateFeasibleSet(StorageDistribution newDist) {
-  TOKEN_UNIT newDistSz = newDist.getDistributionSize();
-  TOKEN_UNIT maxDistSz;
-  bool isFound = false; // track if newDist found to be minimal
-
-  // identify current maximum distribution size
-  if (!this->getSize()) {
-    std::cout << "Adding SD of size " << newDist.getDistributionSize()
-              << " to S" << std::endl;
-    this->addStorageDistribution(newDist); // if there aren't any other SDs in set, just add
-    std::cout << "Distribution sizes of S (" << this->getSize() << " distributions):" << std::endl;
-    for (auto &distribution_sz : this->set) {
-      for (auto &storage_dist : distribution_sz.second) {
-        std::cout << storage_dist.getDistributionSize() << std::endl;
-      }
-    }
-    return;
-  } else {
     maxDistSz = this->set.rbegin()->first; // store largest SD
-    // std::cout << "Max size: " << maxDistSz << std::endl;
+    std::cout << "Max size: " << maxDistSz << std::endl;
   }
   
   // if new SD has larger distribution size, then can definitely add
@@ -636,7 +559,6 @@ void StorageDistributionSet::updateFeasibleSet(StorageDistribution newDist) {
       }
     }
   } else {
-    // else, check if it has at least one channel with larger quantity than those (SDs) currently in set
     std::vector<Edge> newDistEdges = newDist.getEdges();
     std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
     // only add new SD if at least one channel has larger size than an SD currently in infeasible set
@@ -644,9 +566,6 @@ void StorageDistributionSet::updateFeasibleSet(StorageDistribution newDist) {
       for (auto &storage_dist : distribution_sz.second) {
         for (auto it = newDistEdges.begin();
              it != newDistEdges.end(); it++) {
-          // std::cout << "New SD, current SD: " << newDist.getChannelQuantity(*it)
-          //           << " " << storage_dist.getChannelQuantity(*it) << std::endl;
-          // FIXME this doesn't break out of nested for loops
           if (newDist.getChannelQuantity(*it) > storage_dist.getChannelQuantity(*it) &&
               !isFound) {
             std::cout << "Adding SD of size " << newDist.getDistributionSize()
@@ -673,6 +592,82 @@ void StorageDistributionSet::updateFeasibleSet(StorageDistribution newDist) {
     }
   }
   std::cout << "Distribution sizes of U (" << this->getSize() << " distributions):" << std::endl;
+  for (auto &distribution_sz : this->set) {
+    for (auto &storage_dist : distribution_sz.second) {
+      std::cout << storage_dist.getDistributionSize() << std::endl;
+    }
+  }
+}
+
+
+// add new SD to set of feasible SDs
+void StorageDistributionSet::updateFeasibleSet(StorageDistribution newDist) {
+  TOKEN_UNIT newDistSz = newDist.getDistributionSize();
+  TOKEN_UNIT minDistSz;
+  bool isFound = false; // track if newDist found to be minimal
+
+  // identify current minimum distribution size
+  if (!this->getSize()) {
+    std::cout << "Adding SD of size " << newDist.getDistributionSize()
+              << " to S" << std::endl;
+    this->addStorageDistribution(newDist); // if there aren't any other SDs in set, just add
+    std::cout << "Distribution sizes of S (" << this->getSize() << " distributions):" << std::endl;
+    for (auto &distribution_sz : this->set) {
+      for (auto &storage_dist : distribution_sz.second) {
+        std::cout << storage_dist.getDistributionSize() << std::endl;
+      }
+    }
+    return;
+  } else {
+    minDistSz = this->set.begin()->first; // store smallest SD
+    std::cout << "Min size: " << minDistSz << std::endl;
+  }
+  
+  // if new SD has smaller distribution size, then can definitely add
+  if (newDistSz <= minDistSz) {
+    std::cout << "Adding SD of size " << newDist.getDistributionSize()
+              << " to S" << std::endl;
+    this->addStorageDistribution(newDist);
+    std::cout << "Distribution sizes of S (" << this->getSize() << " distributions):" << std::endl;
+    for (auto &distribution_sz : this->set) {
+      for (auto &storage_dist : distribution_sz.second) {
+        std::cout << storage_dist.getDistributionSize() << std::endl;
+      }
+    }
+  } else {
+    std::vector<Edge> newDistEdges = newDist.getEdges();
+    std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
+    // only add new SD if at least one channel has smaller size than an SD currently in feasible set
+    for (auto &distribution_sz : reference_set) {
+      for (auto &storage_dist : distribution_sz.second) {
+        for (auto it = newDistEdges.begin();
+             it != newDistEdges.end(); it++) {
+          if (newDist.getChannelQuantity(*it) < storage_dist.getChannelQuantity(*it) &&
+              !isFound) {
+            std::cout << "Adding SD of size " << newDist.getDistributionSize()
+                      << " to S" << std::endl;
+            isFound = true;
+            this->addStorageDistribution(newDist);
+            std::cout << "Distribution sizes of S (" << this->getSize() << " distributions):" << std::endl;
+            for (auto &distribution_sz : this->set) {
+              for (auto &storage_dist : distribution_sz.second) {
+                std::cout << storage_dist.getDistributionSize() << std::endl;
+              }
+            }
+            break;
+          }
+        }
+      }
+    }
+  }
+  std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
+  // remove SDs subsumed by edge of feasible set (non-minimal SDs)
+  for (auto &distribution_sz : reference_set) {
+    for (auto &storage_dist : distribution_sz.second) {
+      this->removeNonMinimum(storage_dist);
+    }
+  }
+  std::cout << "Distribution sizes of S(" << this->getSize() << " distributions):" << std::endl;
   for (auto &distribution_sz : this->set) {
     for (auto &storage_dist : distribution_sz.second) {
       std::cout << storage_dist.getDistributionSize() << std::endl;
@@ -868,7 +863,7 @@ void handleInfeasiblePoint(models::Dataflow* const dataflow,
   //     }
   //   }
   // }
-
+  std::cout << "SD sent to updateInfeasible is dist sz: " << checkSD.getDistributionSize() << std::endl;
   infeasibleSet.updateInfeasibleSet(checkSD);
   kneeSet.updateKneeSet(infeasibleSet);
 }
