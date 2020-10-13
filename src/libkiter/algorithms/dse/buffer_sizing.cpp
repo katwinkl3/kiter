@@ -357,7 +357,7 @@ bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
 /* returns true if given SD is within the backward cone of the set of SDs
    (i.e. given SD is not maximal in set) */
 bool StorageDistributionSet::isInBackCone(StorageDistribution checkDist) {
-  bool isMinimal = true; // assume that it's in the backward cone until proven otherwise
+  bool isMinimal = false;
   std::vector<Edge> checkDistEdges = checkDist.getEdges();
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
 
@@ -367,27 +367,26 @@ bool StorageDistributionSet::isInBackCone(StorageDistribution checkDist) {
   }
   for (auto &distribution_sz : reference_set) {
     for (auto &storage_dist : distribution_sz.second) {
-      // don't check against itself
-      if (checkDist != storage_dist) {
+      if (checkDist != storage_dist) { // don't check against itself
+        isMinimal = true;
         for (auto it = checkDistEdges.begin();
              it != checkDistEdges.end(); it++) {
           if (checkDist.getChannelQuantity(*it) > storage_dist.getChannelQuantity(*it)) {
             isMinimal = false;
-            return isMinimal;
           }
         }
-        /* remove checkDist if, at some point, there was another SD that was strictly 
-           larger than checkDist (this proves that it's non-maximal) */
-        if (isMinimal) {
-          std::cout << "SD of size " << checkDist.getDistributionSize()
-                    << " found to be non-maximal in set" << std::endl;
-          return isMinimal;
-        } else {
-          isMinimal = true; // reset for check against next SD in set
-        }
+      }
+      /* if isMinimal = true at this point, should remove checkDist as it's def non-maximal
+         if isMinimal = false at this point, should check the remaining SDs as there could
+         still be another SD that is strictly larger than checkDist */
+      if (isMinimal) {
+        std::cout << "SD of size " << checkDist.getDistributionSize()
+                  << " found to be non-maximal in set" << std::endl;
+        return isMinimal;
       }
     }
   }
+  isMinimal = false; // if checkDist hasn't been removed at this point, then it's not in the backward cone
   return isMinimal;
 }
 
@@ -395,7 +394,7 @@ bool StorageDistributionSet::isInBackCone(StorageDistribution checkDist) {
 /* returns true if given SD is within the foreward cone of the set of SDs
    (i.e. given SD is not minimal in set) */
 bool StorageDistributionSet::isInForeCone(StorageDistribution checkDist) {
-  bool isMaximal = true; // assume that it's in the foreward cone until proven otherwise
+  bool isMaximal = false;
   std::vector<Edge> checkDistEdges = checkDist.getEdges();
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
 
@@ -405,16 +404,17 @@ bool StorageDistributionSet::isInForeCone(StorageDistribution checkDist) {
   }
   for (auto &distribution_sz : reference_set) {
     for (auto &storage_dist : distribution_sz.second) {
-      // don't check against itself
-      if (checkDist != storage_dist) {
+      if (checkDist != storage_dist) { // don't check against itself
+        isMaximal = true;
         for (auto it = checkDistEdges.begin();
              it != checkDistEdges.end(); it++) {
           if (checkDist.getChannelQuantity(*it) < storage_dist.getChannelQuantity(*it)) {
             isMaximal = false;
-            return isMaximal;
           }
         }
-        // remove checkDist if, at some point, there was another SD that was strictly smaller than checkDist
+        /* if isMaximal = true at this point, should remove checkDist as it's def non-minimal
+           if isMaximal = false at this point, should check the remaining SDs as there could
+           still be another SD that is strictly smaller than checkDist */
         if (isMaximal) {
           std::cout << "SD of size " << checkDist.getDistributionSize()
                     << " found to be non-minimal in set" << std::endl;
@@ -425,6 +425,7 @@ bool StorageDistributionSet::isInForeCone(StorageDistribution checkDist) {
       }
     }
   }
+  isMaximal = false; // if checkDist hasn't been removed at this point, then it's not in the foreward cone
   return isMaximal;
 }
 
