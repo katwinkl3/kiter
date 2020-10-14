@@ -66,9 +66,10 @@ public:
   bool isInForeCone(StorageDistribution checkDist);
   void removeNonMaximum(StorageDistribution checkDist);
   void removeNonMinimum(StorageDistribution checkDist);
-  void updateKneeSet(StorageDistributionSet infeasibleSet);
-                     // StorageDistribution newDist);
-  void addEdgeKnees(StorageDistributionSet infeasibleSet);
+  void updateKneeSet(models::Dataflow* const dataflow,
+                     StorageDistributionSet infeasibleSet);
+  void addEdgeKnees(models::Dataflow* const dataflow,
+                    StorageDistributionSet infeasibleSet);
   void updateInfeasibleSet(StorageDistribution new_sd); // add new SD to infeasible set of SDs for monotonic optimisation
   void updateFeasibleSet(StorageDistribution new_sd); // add new SD to infeasible set of SDs for monotonic optimisation
   std::string printDistributions(TOKEN_UNIT dist_sz,

@@ -459,7 +459,8 @@ void StorageDistributionSet::removeNonMinimum(StorageDistribution checkDist) {
 
 // Updates the given set of knee points according to the given set of infeasible SDs
 // the new SD point
-void StorageDistributionSet::updateKneeSet(StorageDistributionSet infeasibleSet) {
+void StorageDistributionSet::updateKneeSet(models::Dataflow* const dataflow,
+                                           StorageDistributionSet infeasibleSet) {
                                            // StorageDistribution newDist) {
   StorageDistributionSet checkQueue(infeasibleSet); // store queue of SDs to be compared
   StorageDistributionSet checkedSDs;
@@ -482,7 +483,7 @@ void StorageDistributionSet::updateKneeSet(StorageDistributionSet infeasibleSet)
     }
     checkFinished = (checkQueue.getSet() == checkedSDs.getSet());
   }
-  this->addEdgeKnees(infeasibleSet);
+  this->addEdgeKnees(dataflow, infeasibleSet);
   // remove knee points in backwards cone of knee set
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
   for (auto &distribution_sz : reference_set) {
@@ -494,7 +495,8 @@ void StorageDistributionSet::updateKneeSet(StorageDistributionSet infeasibleSet)
 
 
 // Adds the edge cases to the knee set
-void StorageDistributionSet::addEdgeKnees(StorageDistributionSet infeasibleSet) {
+void StorageDistributionSet::addEdgeKnees(models::Dataflow* const dataflow,
+                                          StorageDistributionSet infeasibleSet) {
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set = infeasibleSet.getSet();
   StorageDistribution maximalSD(infeasibleSet.getNextDistribution());
   std::vector<Edge> edges = maximalSD.getEdges();
@@ -508,18 +510,14 @@ void StorageDistributionSet::addEdgeKnees(StorageDistributionSet infeasibleSet) 
       }
     }
   }
-  std::cout << "Maximal SD dist sz: " << maximalSD.getDistributionSize() << std::endl;
   // construct and add edge knee points
-  for (auto it = edges.begin(); it != edges.end(); it++) {
-    StorageDistribution tempSD(maximalSD);
-    for (auto it2 = edges.begin(); it2 != edges.end(); it2++) {
-      if (*it != *it2) {
-        tempSD.setChannelQuantity(*it2, 0);
+  {ForEachEdge(dataflow, c) {
+      if (dataflow->getEdgeId(c) > dataflow->getEdgesCount() / 2) {
+        StorageDistribution tempSD(maximalSD);
+        tempSD.setChannelQuantity(c, 0);
+        this->addStorageDistribution(tempSD);
       }
-    }
-    std::cout << "Adding edge knee of dist sz: " << tempSD.getDistributionSize() << std::endl;
-    this->addStorageDistribution(tempSD);
-  }
+    }}
 }
 
 // add new SD to set of infeasible SDs
@@ -863,5 +861,5 @@ void handleInfeasiblePoint(models::Dataflow* const dataflow,
   // }
   std::cout << "SD sent to updateInfeasible is dist sz: " << checkSD.getDistributionSize() << std::endl;
   infeasibleSet.updateInfeasibleSet(checkSD);
-  kneeSet.updateKneeSet(infeasibleSet);
+  kneeSet.updateKneeSet(dataflow, infeasibleSet);
 }
