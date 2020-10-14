@@ -463,21 +463,24 @@ void StorageDistributionSet::updateKneeSet(StorageDistributionSet infeasibleSet)
                                            // StorageDistribution newDist) {
   StorageDistributionSet checkQueue(infeasibleSet); // store queue of SDs to be compared
   StorageDistributionSet checkedSDs;
-  // go through every permutation of pairs of SDs to compare
-  // NOTE this is a little inefficient as it generates a whole new set of knee points every time it's called
-  // - would be better to find a way if a new point would affect the current knee set in any way before iterating
-  while(checkQueue.getSize() > 0) {
+  // go through every permutation of pairs of SDs (including newly found knee points) and find local min
+  /* NOTE this is a little inefficient as it generates a whole new set of knee points every time it's called
+     - might be better to find a way if a new point would affect the current knee set in any way before iterating */
+  bool checkFinished = false;
+  while(!checkFinished) {
     StorageDistribution checkDist(checkQueue.getNextDistribution());
-    checkQueue.removeStorageDistribution(checkDist);
-    std::cout << "(Knees) Comparing SD of dist sz: "
-              << checkDist.getDistributionSize() << std::endl;
+    checkedSDs.addStorageDistribution(checkDist);
     std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set = checkQueue.getSet();
     for (auto &distribution_sz : reference_set) {
       for (auto &storage_dist : distribution_sz.second) {
-        StorageDistribution kneePoint = makeMinimalSD(checkDist, storage_dist);
-        this->addStorageDistribution(kneePoint);
+        if (checkDist != storage_dist) { // don't check against itself
+          StorageDistribution kneePoint = makeMinimalSD(checkDist, storage_dist);
+          this->addStorageDistribution(kneePoint);
+          checkQueue.addStorageDistribution(kneePoint);
+        }
       }
     }
+    checkFinished = (checkQueue.getSet() == checkedSDs.getSet());
   }
   this->addEdgeKnees(infeasibleSet);
   // remove knee points in backwards cone of knee set
@@ -487,12 +490,6 @@ void StorageDistributionSet::updateKneeSet(StorageDistributionSet infeasibleSet)
       this->removeNonMaximum(storage_dist);
     }
   }
-  // std::cout << "Distribution sizes of knee points found: " << std::endl;
-  // for (auto &distribution_sz : this->set) {
-  //   for (auto &storage_dist : distribution_sz.second) {
-  //     std::cout << storage_dist.getDistributionSize() << std::endl;
-  //   }
-  // }
 }
 
 
