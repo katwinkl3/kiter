@@ -468,20 +468,41 @@ void StorageDistributionSet::updateKneeSet(models::Dataflow* const dataflow,
   /* NOTE this is a little inefficient as it generates a whole new set of knee points every time it's called
      - might be better to find a way if a new point would affect the current knee set in any way before iterating */
   bool checkFinished = false;
-  while(!checkFinished) {
-    StorageDistribution checkDist(checkQueue.getNextDistribution());
-    checkedSDs.addStorageDistribution(checkDist);
-    std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set = checkQueue.getSet();
-    for (auto &distribution_sz : reference_set) {
-      for (auto &storage_dist : distribution_sz.second) {
-        if (checkDist != storage_dist) { // don't check against itself
-          StorageDistribution kneePoint = makeMinimalSD(checkDist, storage_dist);
-          this->addStorageDistribution(kneePoint);
-          checkQueue.addStorageDistribution(kneePoint);
+  if (infeasibleSet.getSize() > 1) { // no need to check if there's only one point
+    while(!checkFinished) {
+      StorageDistribution checkDist;
+      if (!checkedSDs.getSize()) {
+        checkDist = checkQueue.getNextDistribution();
+      } else {
+        for (auto &d_sz_a : checkQueue.getSet()) {
+          for (auto &sd_a : d_sz_a.second) {
+            bool isChecked = false;
+            for (auto &d_sz_b : checkedSDs.getSet()) {
+              for (auto &sd_b : d_sz_b.second) {
+                if (sd_a == sd_b) {
+                  isChecked = true;
+                }
+              }
+            }
+            if (!isChecked) {
+              checkDist = sd_a;
+            }
+          }
         }
       }
+      std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set = checkQueue.getSet();
+      for (auto &distribution_sz : reference_set) {
+        for (auto &storage_dist : distribution_sz.second) {
+          if (checkDist != storage_dist) { // don't check against itself
+            StorageDistribution kneePoint = makeMinimalSD(checkDist, storage_dist);
+            this->addStorageDistribution(kneePoint);
+            checkQueue.addStorageDistribution(kneePoint);
+          }
+        }
+      }
+      checkedSDs.addStorageDistribution(checkDist);
+      checkFinished = (checkQueue.getSet() == checkedSDs.getSet());
     }
-    checkFinished = (checkQueue.getSet() == checkedSDs.getSet());
   }
   this->addEdgeKnees(dataflow, infeasibleSet);
   // remove knee points in backwards cone of knee set
