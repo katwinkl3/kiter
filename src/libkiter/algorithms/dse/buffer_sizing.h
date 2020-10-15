@@ -61,6 +61,7 @@ public:
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> getSet();
   void minimizeStorageDistributions(StorageDistribution newDist);
   bool hasDistribution(TOKEN_UNIT dist_sz);
+  bool hasStorageDistribution(StorageDistribution checkDist);
   bool isSearchComplete(StorageDistributionSet checklist, TIME_UNIT target_thr);
   bool isInBackCone(StorageDistribution checkDist);
   bool isInForeCone(StorageDistribution checkDist);

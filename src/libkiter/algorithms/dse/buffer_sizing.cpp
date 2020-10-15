@@ -342,6 +342,19 @@ bool StorageDistributionSet::hasDistribution(TOKEN_UNIT dist_sz) {
   return (this->set.find(dist_sz) != this->set.end());
 }
 
+// returns true if the given SD is in the SD set
+bool StorageDistributionSet::hasStorageDistribution(StorageDistribution checkDist) {
+  bool isInSet = false;
+  for (auto &dist : this->set) {
+    for (auto &sd : dist.second) {
+      if (checkDist == sd) {
+        isInSet = true;
+      }
+    }
+  }
+  return isInSet;
+}
+
 // Check if DSE completion conditions have been met
 bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
                                               TIME_UNIT target_thr) {
@@ -357,14 +370,10 @@ bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
 /* returns true if given SD is within the backward cone of the set of SDs
    (i.e. given SD is not maximal in set) */
 bool StorageDistributionSet::isInBackCone(StorageDistribution checkDist) {
-  bool isMinimal = false;
+  bool isMinimal = true;
   std::vector<Edge> checkDistEdges = checkDist.getEdges();
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
 
-  if (this->getSize() == 1) {
-    std::cout << "Only 1 SD in set; skipping check" << std::endl;
-    return false; // can't be within backward cone if only one SD in set
-  }
   for (auto &distribution_sz : reference_set) {
     for (auto &storage_dist : distribution_sz.second) {
       if (checkDist != storage_dist) { // don't check against itself
@@ -394,14 +403,10 @@ bool StorageDistributionSet::isInBackCone(StorageDistribution checkDist) {
 /* returns true if given SD is within the foreward cone of the set of SDs
    (i.e. given SD is not minimal in set) */
 bool StorageDistributionSet::isInForeCone(StorageDistribution checkDist) {
-  bool isMaximal = false;
+  bool isMaximal = true;
   std::vector<Edge> checkDistEdges = checkDist.getEdges();
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
 
-  if (this->getSize() == 1) {
-    std::cout << "Only 1 SD in set; skipping check" << std::endl;
-    return false; // can't be within foreward cone if only one SD in set
-  }
   for (auto &distribution_sz : reference_set) {
     for (auto &storage_dist : distribution_sz.second) {
       if (checkDist != storage_dist) { // don't check against itself
@@ -432,8 +437,8 @@ bool StorageDistributionSet::isInForeCone(StorageDistribution checkDist) {
 void StorageDistributionSet::removeNonMaximum(StorageDistribution checkDist) {
   // bool isMinimal = true;
   std::cout << "Removing non-maximal SDs..." << std::endl;
-  if (!this->getSize()) {
-    std::cout << "No SDs in set; skipping check" << std::endl;
+  if (this->getSize() <= 1) {
+    std::cout << "0/1 SD in set; skipping check" << std::endl;
     return; // only check if there's more than one SD in set
   }
   else if (this->isInBackCone(checkDist)) {
@@ -447,8 +452,8 @@ void StorageDistributionSet::removeNonMinimum(StorageDistribution checkDist) {
   // std::vector<Edge> checkDistEdges = checkDist.getEdges();
   // std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
   std::cout << "Removing non-minimal SDs..." << std::endl;
-  if (!this->getSize()) {
-    std::cout << "No SDs in set; skipping check" << std::endl;
+  if (this->getSize() <= 1) {
+    std::cout << "0/1 SD in set; skipping check" << std::endl;
     return; // only check if there's more than one SD in set
   }
   else if (this->isInForeCone(checkDist)) {
