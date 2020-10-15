@@ -33,17 +33,53 @@ StorageDistribution algorithms::selectNewSD(models::Dataflow* const dataflow,
                                             StorageDistributionSet infeasibleSet,
                                             StorageDistributionSet kneeSet,
                                             StorageDistributionSet feasibleSet,
-                                            TIME_UNIT throughput) {
-  // pick smallest knee point and feasible point (they're stored in ascending order)
-  StorageDistribution kMinPoint(kneeSet.getNextDistribution());
+                                            bool &isInit,
+                                            bool &foundPoint,
+                                            TIME_UNIT thrCurrent,
+                                            TIME_UNIT thrTarget,
+                                            TOKEN_UNIT &mult,
+                                            std::map<Edge, TOKEN_UNIT> &step,
+                                            StorageDistribution &kMinPoint) {
+  if (isInit && thrCurrent < thrTarget) {
+    mult *= 2;
+    StorageDistribution newDist(kMinPoint);
+    {ForEachEdge(dataflow, c) {
+        if (dataflow->getEdgeId(c) > dataflow->getEdgesCount()/2) {
+          newDist.setChannelQuantity(c,
+                                     (newDist.getChannelQuantity(c) + (mult * step[c])));
+        }
+      }}
+    if (!(feasibleSet.isInForeCone(newDist) || feasibleSet.hasStorageDistribution(newDist))) {
+      std::cout << "SELECT: new point not in S+:\n" << newDist.printInfo(dataflow) << std::endl;
+      return newDist;
+    }
+  }
+
+  mult = 1;
+  kMinPoint = kneeSet.getNextDistribution();
+  StorageDistribution newDist(kMinPoint);
   StorageDistribution sMinPoint(feasibleSet.getNextDistribution());
-  StorageDistribution midPoint(kMinPoint);
   {ForEachEdge(dataflow, c) {
-            TOKEN_UNIT newBufferSize = kMinPoint.getChannelQuantity(c) +
-              ((sMinPoint.getChannelQuantity(c) - kMinPoint.getChannelQuantity(c)) / 2);
-            midPoint.setChannelQuantity(c, newBufferSize);
+      if (dataflow->getEdgeId(c) > dataflow->getEdgesCount()/2) {
+        step[c] = (sMinPoint.getChannelQuantity(c) - kMinPoint.getChannelQuantity(c)) / 2;
+        newDist.setChannelQuantity(c,
+                                   newDist.getChannelQuantity(c) + step[c]);
+      }
     }}
-  return midPoint;
+  if (!isInit) {
+    isInit = true;
+  }
+  if ((infeasibleSet.isInBackCone(newDist) || infeasibleSet.hasStorageDistribution(newDist))
+      ||
+      (feasibleSet.isInForeCone(newDist) || feasibleSet.hasStorageDistribution(newDist))) {
+    // we've gotten to the end of the optimization phase
+    foundPoint = true;
+    std::cout << "SELECT: Cannot find new point, ending on:\n" << newDist.printInfo(dataflow) << std::endl;
+    return newDist;
+  } else {
+    std::cout << "SELECT: new point found:\n" << newDist.printInfo(dataflow) << std::endl;
+    return newDist;
+  }
 }
 
 void algorithms::monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* const dataflow,
@@ -140,6 +176,7 @@ void algorithms::monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* 
   StorageDistributionSet kneeSet;
   StorageDistributionSet feasibleSet;
   while (thrCurrent < thrTarget) {
+    VERBOSE_DSE("SD sending to handleInfeasible:\n" << newDist.printInfo(dataflow_prime) << std::endl);
     handleInfeasiblePoint(dataflow_prime, infeasibleSet, kneeSet, newDist, result);
     VERBOSE_DSE("Current infeasible set:\n" << infeasibleSet.printDistributions(dataflow_prime)
                 << std::endl);
@@ -182,113 +219,74 @@ void algorithms::monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* 
   VERBOSE_DSE("Current knee set:\n" << kneeSet.printDistributions(dataflow_prime)
               << std::endl);
 
+  // Optimization phase
   feasibleSet.updateFeasibleSet(newDist);
   VERBOSE_DSE("Current feasible set:\n"
               << feasibleSet.printDistributions(dataflow_prime) << std::endl);
-  StorageDistribution checkDist = selectNewSD(dataflow_prime, infeasibleSet, kneeSet, feasibleSet, thrCurrent);
+  StorageDistribution kMin;
+  TOKEN_UNIT mult = 1;
+  std::map<Edge, TOKEN_UNIT> step;
+  bool isInit = false;
+  bool foundPoint = false;
+  
+  StorageDistribution checkDist = selectNewSD(dataflow_prime,
+                                              infeasibleSet, kneeSet, feasibleSet,
+                                              isInit, foundPoint,
+                                              thrCurrent, thrTarget,
+                                              mult, step, kMin);
   VERBOSE_DSE("Next SD to check:\n" << checkDist.printInfo(dataflow_prime)
               << std::endl);
-  // if (result.throughput < 0) { // all deadlocked graphs are equal in terms of throughput
-  //   checkDist.setThroughput(0);
-  // } else {
-  //   checkDist.setThroughput(result.throughput);
-  // }
-  // VERBOSE_DSE(checkDist.printInfo(dataflow_prime));
-
-  // // Create new storage distributions for every storage dependency found; add new storage distributions to checklist
-  // for (std::set<Edge>::iterator it = (result.critical_edges).begin();
-  //      it != (result.critical_edges).end(); it++) {
-  //   StorageDistribution newDist(checkDist);
-  //   // only increase channel quantity on "modelled" channels
-  //   if (dataflow_prime->getEdgeId(*it) > dataflow->getEdgesCount()) {
-  //     VERBOSE_DSE("\tFound storage dependency in channel "
-  //                 << dataflow_prime->getEdgeName(*it) << std::endl);
-  //     // make new modelled storage distribution according to storage dependencies
-  //     newDist.setChannelQuantity(*it, (newDist.getChannelQuantity(*it) +
-  //                                      minStepSizes[*it]));
-  //     VERBOSE_DSE("\t\tIncreasing channel size of "
-  //                 << dataflow_prime->getEdgeName(*it) << " to "
-  //                 << newDist.getChannelQuantity(*it) << std::endl);
-  //     VERBOSE_DSE("\tUpdating checklist with new storage distribution..."
-  //                 << std::endl);
-  //     checklist.addStorageDistribution(newDist);
-  //   }
-  // }
-
-  // std::map<Edge, std::pair<TOKEN_UNIT, TOKEN_UNIT>> channelSizes;
-  // int i = 0;
-  // int sz0[2] = {3,3};
-  // StorageDistribution x0;
-  // {ForEachEdge(dataflow_prime, c) {
-  //     if (dataflow_prime->getEdgeId(c) <= dataflow->getEdgesCount()) {
-  //       channelSizes[c].second = 0;
-  //     } else {
-  //       x0.setChannelQuantity(c, sz0[i]);
-  //       i++;
-  //     }
-  //   }}
-  // i = 0;
-  // int sz[2] = {4,3};
-  // StorageDistribution x1;
-  // {ForEachEdge(dataflow_prime, c) {
-  //     if (dataflow_prime->getEdgeId(c) <= dataflow->getEdgesCount()) {
-  //       channelSizes[c].second = 0;
-  //     } else {
-  //       x1.setChannelQuantity(c, sz[i]);
-  //       i++;
-  //     }
-  //   }}
-  // i = 0;
-  // int sz2[2] = {7,2};
-  // StorageDistribution x2;
-  // {ForEachEdge(dataflow_prime, c) {
-  //     if (dataflow_prime->getEdgeId(c) <= dataflow->getEdgesCount()) {
-  //       channelSizes[c].second = 0;
-  //     } else {
-  //       x2.setChannelQuantity(c, sz2[i]);
-  //       i++;
-  //     }
-  //   }}
-  // i = 0;
-  // int sz3[2] = {4,4};
-  // StorageDistribution x3;
-  // {ForEachEdge(dataflow_prime, c) {
-  //     if (dataflow_prime->getEdgeId(c) <= dataflow->getEdgesCount()) {
-  //       channelSizes[c].second = 0;
-  //     } else {
-  //       x3.setChannelQuantity(c, sz3[i]);
-  //       i++;
-  //     }
-  //   }}
-  // i = 0;
-  // int sz4[2] = {2,8};
-  // StorageDistribution x4;
-  // {ForEachEdge(dataflow_prime, c) {
-  //     if (dataflow_prime->getEdgeId(c) <= dataflow->getEdgesCount()) {
-  //       channelSizes[c].second = 0;
-  //     } else {
-  //       x4.setChannelQuantity(c, sz4[i]);
-  //       i++;
-  //     }
-  //   }}
-  // i = 0;
-  // int sz5[2] = {5,3};
-  // StorageDistribution x5;
-  // {ForEachEdge(dataflow_prime, c) {
-  //     if (dataflow_prime->getEdgeId(c) <= dataflow->getEdgesCount()) {
-  //       channelSizes[c].second = 0;
-  //     } else {
-  //       x5.setChannelQuantity(c, sz5[i]);
-  //       i++;
-  //     }
-  //   }}
-  // StorageDistributionSet infeasibleSet;
-  // StorageDistributionSet kneeSet;
-  // infeasibleSet.updateInfeasibleSet(x0); // 3, 3
-  // infeasibleSet.updateInfeasibleSet(x1); // 4, 3
-  // infeasibleSet.updateInfeasibleSet(x2); // 7, 2
-  // infeasibleSet.updateInfeasibleSet(x3); // 4, 4
-  // infeasibleSet.updateInfeasibleSet(x4); // 2, 8
-  // infeasibleSet.updateInfeasibleSet(x5); // 5, 3
-  // kneeSet.updateKneeSet(infeasibleSet);
+  
+  while (!foundPoint) {
+    VERBOSE_DSE("Analysing new storage distribution: " << std::endl);
+    dataflow_prime->reset_computation(); // make graph writeable to alter channel size
+    {ForEachEdge(dataflow_prime, c) {
+        if (dataflow_prime->getEdgeId(c) > dataflow->getEdgesCount()) { // only modelled buffer preloads change
+          dataflow_prime->setPreload(c, (checkDist.getChannelQuantity(c) -
+                                         checkDist.getInitialTokens(c))); // always account for initial tokens in buffer
+        }
+      }}
+    result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
+    if (result.throughput < 0) { // all deadlocked graphs are equal in terms of throughput
+      checkDist.setThroughput(0);
+    } else {
+      checkDist.setThroughput(result.throughput);
+    }
+    VERBOSE_DSE(checkDist.printInfo(dataflow_prime));
+    thrCurrent = checkDist.getThroughput();
+    std::cout << "thrCurrent, thrTarget: " << thrCurrent << ", " << thrTarget << std::endl;
+    if (thrCurrent < thrTarget) {
+      handleInfeasiblePoint(dataflow_prime, infeasibleSet, kneeSet,
+                            checkDist, result);
+    } else {
+      feasibleSet.updateFeasibleSet(checkDist);
+    }
+    checkDist = selectNewSD(dataflow_prime,
+                            infeasibleSet, kneeSet, feasibleSet,
+                            isInit, foundPoint,
+                            thrCurrent, thrTarget,
+                            mult, step, kMin);
+    VERBOSE_DSE("Current infeasible set:\n" << infeasibleSet.printDistributions(dataflow_prime)
+                << std::endl);
+    VERBOSE_DSE("Current knee set:\n" << kneeSet.printDistributions(dataflow_prime)
+                << std::endl);
+    VERBOSE_DSE("Current feasible set:\n"
+                << feasibleSet.printDistributions(dataflow_prime) << std::endl);
+    
+  }
+  dataflow_prime->reset_computation(); // make graph writeable to alter channel size
+  {ForEachEdge(dataflow_prime, c) {
+      if (dataflow_prime->getEdgeId(c) > dataflow->getEdgesCount()) { // only modelled buffer preloads change
+        dataflow_prime->setPreload(c, (checkDist.getChannelQuantity(c) -
+                                       checkDist.getInitialTokens(c))); // always account for initial tokens in buffer
+      }
+    }}
+  result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
+  if (result.throughput < 0) { // all deadlocked graphs are equal in terms of throughput
+    checkDist.setThroughput(0);
+  } else {
+    checkDist.setThroughput(result.throughput);
+  }
+  VERBOSE_DSE("SD to send to DSE:\n" << checkDist.printInfo(dataflow_prime)
+              << std::endl);
 }

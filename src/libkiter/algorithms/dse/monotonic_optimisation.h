@@ -21,7 +21,13 @@ namespace algorithms {
                                   StorageDistributionSet infeasibleSet,
                                   StorageDistributionSet kneeSet,
                                   StorageDistributionSet feasibleSet,
-                                  TIME_UNIT throughput);
+                                  bool &isInit,
+                                  bool &foundPoint,
+                                  TIME_UNIT thrCurrent,
+                                  TIME_UNIT thrTarget,
+                                  TOKEN_UNIT &mult,
+                                  std::map<Edge, TOKEN_UNIT> &step,
+                                  StorageDistribution &nextDist);
   void monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* const dataflow, parameters_list_t params);
         
 }
