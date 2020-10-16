@@ -74,7 +74,7 @@ StorageDistribution algorithms::selectNewSD(models::Dataflow* const dataflow,
       (feasibleSet.isInForeCone(newDist) || feasibleSet.hasStorageDistribution(newDist))) {
     // we've gotten to the end of the optimization phase
     foundPoint = true;
-    std::cout << "SELECT: Cannot find new point, ending on:\n" << newDist.printInfo(dataflow) << std::endl;
+    std::cout << "SELECT: Cannot find new point, ending search" << std::endl;
     return newDist;
   } else {
     std::cout << "SELECT: new point found:\n" << newDist.printInfo(dataflow) << std::endl;
@@ -229,6 +229,7 @@ void algorithms::monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* 
   std::map<Edge, TOKEN_UNIT> step;
   bool isInit = false;
   bool foundPoint = false;
+  StorageDistribution currDist;
   
   StorageDistribution checkDist = selectNewSD(dataflow_prime,
                                               infeasibleSet, kneeSet, feasibleSet,
@@ -262,11 +263,15 @@ void algorithms::monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* 
     } else {
       feasibleSet.updateFeasibleSet(checkDist);
     }
+    currDist = checkDist;
     checkDist = selectNewSD(dataflow_prime,
                             infeasibleSet, kneeSet, feasibleSet,
                             isInit, foundPoint,
                             thrCurrent, thrTarget,
                             mult, step, kMin);
+    if (!foundPoint) {
+      currDist = checkDist;
+    }
     VERBOSE_DSE("Current infeasible set:\n" << infeasibleSet.printDistributions(dataflow_prime)
                 << std::endl);
     VERBOSE_DSE("Current knee set:\n" << kneeSet.printDistributions(dataflow_prime)
@@ -274,19 +279,20 @@ void algorithms::monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* 
     VERBOSE_DSE("Current feasible set:\n"
                 << feasibleSet.printDistributions(dataflow_prime) << std::endl);
   }
+
   dataflow_prime->reset_computation(); // make graph writeable to alter channel size
   {ForEachEdge(dataflow_prime, c) {
       if (dataflow_prime->getEdgeId(c) > dataflow->getEdgesCount()) { // only modelled buffer preloads change
-        dataflow_prime->setPreload(c, (checkDist.getChannelQuantity(c) -
-                                       checkDist.getInitialTokens(c))); // always account for initial tokens in buffer
+        dataflow_prime->setPreload(c, (currDist.getChannelQuantity(c) -
+                                       currDist.getInitialTokens(c))); // always account for initial tokens in buffer
       }
     }}
   result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
   if (result.throughput < 0) { // all deadlocked graphs are equal in terms of throughput
-    checkDist.setThroughput(0);
+    currDist.setThroughput(0);
   } else {
-    checkDist.setThroughput(result.throughput);
+    currDist.setThroughput(result.throughput);
   }
-  VERBOSE_DSE("SD to send to DSE:\n" << checkDist.printInfo(dataflow_prime)
+  VERBOSE_DSE("SD to send to DSE:\n" << currDist.printInfo(dataflow_prime)
               << std::endl);
 }
