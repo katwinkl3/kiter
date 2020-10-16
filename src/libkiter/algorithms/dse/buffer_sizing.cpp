@@ -370,7 +370,7 @@ bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
 /* returns true if given SD is within the backward cone of the set of SDs
    (i.e. given SD is not maximal in set) */
 bool StorageDistributionSet::isInBackCone(StorageDistribution checkDist) {
-  bool isMinimal = true;
+  bool isMinimal;
   std::vector<Edge> checkDistEdges = checkDist.getEdges();
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
 
@@ -403,7 +403,7 @@ bool StorageDistributionSet::isInBackCone(StorageDistribution checkDist) {
 /* returns true if given SD is within the foreward cone of the set of SDs
    (i.e. given SD is not minimal in set) */
 bool StorageDistributionSet::isInForeCone(StorageDistribution checkDist) {
-  bool isMaximal = true;
+  bool isMaximal;
   std::vector<Edge> checkDistEdges = checkDist.getEdges();
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
 
