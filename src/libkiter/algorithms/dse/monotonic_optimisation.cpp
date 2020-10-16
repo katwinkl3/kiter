@@ -156,6 +156,7 @@ void algorithms::monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* 
     std::cerr << "ERROR: Specified target throughput (" << thrTarget
               << ") is larger than maximum throughput (" << result_max.throughput
               << ")" << std::endl;
+    return;
   }
   kperiodic_result_t result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
 
@@ -272,7 +273,6 @@ void algorithms::monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* 
                 << std::endl);
     VERBOSE_DSE("Current feasible set:\n"
                 << feasibleSet.printDistributions(dataflow_prime) << std::endl);
-    
   }
   dataflow_prime->reset_computation(); // make graph writeable to alter channel size
   {ForEachEdge(dataflow_prime, c) {
