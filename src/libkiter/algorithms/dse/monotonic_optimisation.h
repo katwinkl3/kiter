@@ -28,10 +28,12 @@ namespace algorithms {
                                   TOKEN_UNIT &mult,
                                   std::map<Edge, TOKEN_UNIT> &step,
                                   StorageDistribution &nextDist);
-  void monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* const dataflow, parameters_list_t params);
+  StorageDistributionSet monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* const dataflow,
+                                                                      StorageDistribution initDist,
+                                                                      parameters_list_t params);
         
 }
 
-ADD_TRANSFORMATION(MonotonicOptimisation,
-		transformation_t({"MonotonicOptimisation", "Use monotonic optimisation to reduce search space of buffer sizing and throughput exploration, using K-periodic scheduling method", algorithms::monotonic_optimised_Kperiodic_throughput_dse}));
+// ADD_TRANSFORMATION(MonotonicOptimisation,
+// 		transformation_t({"MonotonicOptimisation", "Use monotonic optimisation to reduce search space of buffer sizing and throughput exploration, using K-periodic scheduling method", algorithms::monotonic_optimised_Kperiodic_throughput_dse}));
 #endif /* SRC_LIBKITER_ALGORITHMS_DSE_MONOTONIC_OPTIMISATION_H_ */
