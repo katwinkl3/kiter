@@ -222,6 +222,7 @@ enum BacktrackTechnique {
     //void resetDefaultParams ();
     //GLPParameters     getDefaultParams   ()     ;
     //extern GLPParameters default_glpsol_parameters;
+
 class  GLPSol {
 public :
 

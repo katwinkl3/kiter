@@ -7,8 +7,8 @@ FIND_PACKAGE( GUROBI )
 #  ######### COMPILE FLAGS ##########
 #
 # -Wno-float-equal -Wno-switch-default ==> temp fix for Coin headers
-SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fPIC -Wconversion -Wno-float-equal -Wno-switch-default")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wconversion -Wno-float-equal -Wno-switch-default")
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}  -Wconversion -Wno-float-equal -Wno-switch-default")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wconversion -Wno-float-equal -Wno-switch-default")
 
 #
 #  ######### INCLUDE PART ##########
@@ -57,8 +57,6 @@ SET(lp_sources      ${lp_cpp}   ${lp_h})
 
 SET(LIBKITER_FLAGS "-Wconversion -Wfloat-equal  ${CMAKE_CXX_FLAGS_DEBUG} ")
 
-### TODO Warning: Only build the static archive with -fPIC on AMD64. On other architectures this is unneeded and will have a performance impact at execution time. 
-# Link about this : http://www.gentoo.org/proj/en/base/amd64/howtos/index.xml?part=1&chap=3
 
 #          ######### API         ##########
 
@@ -70,11 +68,12 @@ TARGET_LINK_LIBRARIES              (kiter_models PUBLIC   kiter_commons )
 
 
 ADD_LIBRARY		(kiter_lp STATIC  ${lp_sources})
+
 if(GLPK_FOUND)
   TARGET_LINK_LIBRARIES   (kiter_lp         ${GLPK_LIBRARIES})
 endif(GLPK_FOUND)
 
-if(GUROBI_FOUND AND FALSE)
+if(GUROBI_FOUND)
     message(STATUS "GUROBI FOUND")
     target_include_directories(kiter_lp PRIVATE ${GUROBI_INCLUDE_DIRS})
     TARGET_LINK_LIBRARIES(kiter_lp ${GUROBI_LIBRARIES} )
@@ -84,21 +83,21 @@ endif(GUROBI_FOUND)
 
 
 
-ADD_LIBRARY			   (kiter_generators SHARED  ${generators_sources})
+ADD_LIBRARY			   (kiter_generators STATIC ${generators_sources})
 TARGET_LINK_LIBRARIES  (kiter_generators PUBLIC kiter_commons kiter_algorithms)
 
-ADD_LIBRARY			   (kiter_printers   SHARED  ${printers_sources})
-TARGET_LINK_LIBRARIES  (kiter_printers PUBLIC kiter_commons)
+ADD_LIBRARY			   (kiter_printers   STATIC  ${printers_sources})
+TARGET_LINK_LIBRARIES  (kiter_printers PUBLIC kiter_commons kiter_models)
 
 
-ADD_LIBRARY			   (kiter_algorithms SHARED  ${algorithms_sources})
-TARGET_LINK_LIBRARIES  (kiter_algorithms PUBLIC kiter_commons kiter_models kiter_lp kiter_printers)
+ADD_LIBRARY			   (kiter_algorithms STATIC  ${algorithms_sources})
+TARGET_LINK_LIBRARIES  (kiter_algorithms PUBLIC kiter_commons kiter_models kiter_printers kiter_lp)
 
 
 file(WRITE null.cpp "")
-ADD_LIBRARY			   (libkiter SHARED   null.cpp )
+ADD_LIBRARY			   (libkiter STATIC   null.cpp )
 TARGET_LINK_LIBRARIES  (libkiter  
-                                kiter_algorithms
+                kiter_algorithms
 				kiter_commons 
 				kiter_lp 
 				kiter_generators 
