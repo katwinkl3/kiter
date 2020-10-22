@@ -53,7 +53,7 @@ ubuntu_test:
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	docker build -f tools/docker/DockerFile.u18 -t bbodin/kiter-u18 ./
 
-test: ./Release/bin/kiter ${SDF3_BENCHMARK}
+test: ./Release/bin/kiter 
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	for f in  benchmarks/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
 	for f in  benchmarks/IB5CSDF/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
