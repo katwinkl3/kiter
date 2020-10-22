@@ -51,7 +51,7 @@ benchmark :  sdf.log  csdf.log csdf_sized.log
 
 ubuntu_test:
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	docker build -f docker/DockerFile.u18 -t bbodin/kiter-u18 ./
+	docker build -f tools/docker/DockerFile.u18 -t bbodin/kiter-u18 ./
 
 test: ./Release/bin/kiter ${SDF3_BENCHMARK}
 	@echo "###########"" ENTER IN $@ : $^  #####################"
