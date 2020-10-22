@@ -5,13 +5,14 @@
 
 SHELL = /bin/bash
 
+SDF3_ARCHIVE := sdf3-140724.zip 
 
 CPU_COUNT := $(shell cat /proc/cpuinfo |grep processor |wc -l)
-SDF3_BENCHMARK := ./sdf3bench/
-SDF3_MEM_BENCHMARK := ./sdf3mem/
-SDF3_CS_BENCHMARK := ./sdf3cs/
-
-SDF3_ROOT := ./sdf3/
+SDF3_BENCHMARK := ./benchmarks/sdf3bench/
+SDF3_MEM_BENCHMARK := ./benchmarks/sdf3mem/
+SDF3_CS_BENCHMARK := ./benchmarks/sdf3cs/
+SDF3_EXAMPLES := ./benchmarks/sdf3examples/
+SDF3_ROOT := `pwd`/tools/sdf3/
 SDF3_BINARY_ROOT := ${SDF3_ROOT}/sdf3/build/release/Linux/bin/
 SDF3ANALYSIS_CSDF :=  timeout 180  ${SDF3_BINARY_ROOT}/sdf3analysis-csdf
 SDF3ANALYSIS_SDF := timeout 180   ${SDF3_BINARY_ROOT}/sdf3analysis-sdf
@@ -29,8 +30,10 @@ info :
 	@echo "-------------------------------------------"
 	@echo "make release: Compile Kiter in release mode"
 	@echo "make debug: Compile Kiter in debug mode (more verbose, slower)"
-	@echo "make travis_test: Run Kiter test"
-	@echo "make sdf3_build: Download and Compile SDF3"
+	@echo "make unit_test: Run Kiter unit tests"
+	@echo "make ubuntu_test: Run kiter with Ubuntu Docker"
+	@echo "make test: Run Kiter user-level test"
+	@echo "make sdf3_build: Download SDF3 source and benchmarks and compile it."
 	@echo "-------------------------------------------"
 
 debug: ./Debug/bin/kiter
@@ -38,63 +41,87 @@ debug: ./Debug/bin/kiter
 
 release: ./Release/bin/kiter
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	
+
 clean:
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	rm -Rf Release Debug *.lp *.mps *.png *.dot *.pdf *.xml *.lp
 
 benchmark :  sdf.log  csdf.log csdf_sized.log
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 
 ubuntu_test:
-	docker build -f DockerFile.u18 -t bbodin/kiter-u18 ./
-travis_test: ./Release/bin/kiter ${SDF3_BENCHMARK} 
-	for f in  benchmark/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
-	for f in  benchmark_sized/*.xml ; do echo === $$f ; ${KITER} -f $$f   -a 1PeriodicThroughput -a KPeriodicThroughput ;  done
-	${KITER} -f benchmark/sample.xml -a KPeriodicThroughput -pA=1 -pB=1 -pC=1
-	${KITER} -f benchmark/sample.xml -a KPeriodicThroughput -pA=2 -pB=1 -pC=2
+	@echo "###########"" ENTER IN $@ : $^  #####################"
+	docker build -f docker/DockerFile.u18 -t bbodin/kiter-u18 ./
 
-csdf.log:  ./Release/bin/kiter Makefile 
+test: ./Release/bin/kiter ${SDF3_BENCHMARK}
+	@echo "###########"" ENTER IN $@ : $^  #####################"
+	for f in  benchmarks/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
+	for f in  benchmarks/IB5CSDF/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
+	${KITER} -f benchmarks/sample.xml -a KPeriodicThroughput -pA=1 -pB=1 -pC=1
+	${KITER} -f benchmarks/sample.xml -a KPeriodicThroughput -pA=2 -pB=1 -pC=2
+
+csdf_benchmarks.log:  ./Release/bin/kiter Makefile 
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	rm -f $@
 	@echo "==============================================================================================="
 	@echo "==============================================================================================="
-	for f in  benchmark/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput -a 1PeriodicThroughput -a KPeriodicThroughput  >> $@ ; if [ -d ${SDF3_BINARY_ROOT} ];then  ${SDF3ANALYSIS_CSDF}  --graph $$f  --algo throughput  >> $@ || true; fi ; done 
+	for f in  benchmarks/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput -a 1PeriodicThroughput -a KPeriodicThroughput  >> $@ ; if [ -d ${SDF3_BINARY_ROOT} ];then  ${SDF3ANALYSIS_CSDF}  --graph $$f  --algo throughput  >> $@ || true; fi ; done 
 
-csdf_sized.log:  ./Release/bin/kiter Makefile
+csdf_IB5CSDF.log:  ./Release/bin/kiter Makefile
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	rm -f $@
 	@echo "==============================================================================================="
 	@echo "==============================================================================================="
-	for f in  benchmark_sized/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput   >> $@  ; if [ -x ${SDF3_BINARY_ROOT} ];then  ${SDF3ANALYSIS_CSDF}  --graph $$f  --algo throughput  >> $@ || true; fi  ; done 
+	for f in  benchmarks/IB5CSDF/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput   >> $@  ; if [ -x ${SDF3_BINARY_ROOT} ];then  ${SDF3ANALYSIS_CSDF}  --graph $$f  --algo throughput  >> $@ || true; fi  ; done 
 
 sdfg_throughput.zip :
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	wget http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_throughput.zip
 
-sdf3-140724.zip :
+${SDF3_ARCHIVE}:
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	wget http://www.es.ele.tue.nl/sdf3/download/files/releases/sdf3-140724.zip
 
 sdfg_buffersizing.zip :
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	wget http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_buffersizing.zip
 
 sdfg_designflow_case_study.zip:
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	wget http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_designflow_case_study.zip
 
-sdf3_build : ${SDF3_BINARY_ROOT} ${SDF3_BENCHMARK} ${SDF3_MEM_BENCHMARK}  ${SDF3_CS_BENCHMARK}
+sdf3_build : ${SDF3_BENCHMARK} ${SDF3_MEM_BENCHMARK}  ${SDF3_CS_BENCHMARK} ${SDF3_EXAMPLES} ${SDF3_BINARY_ROOT} 
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 
-${SDF3_BINARY_ROOT} : sdf3-140724.zip 
+
+
+${SDF3_BINARY_ROOT} : ${SDF3_ARCHIVE}
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p ${SDF3_ROOT}
-	cp sdf3-140724.zip ${SDF3_ROOT}
-	cd ${SDF3_ROOT} && unzip -o sdf3-140724.zip
-	cd ${SDF3_ROOT}/sdf3/ && make
+	cp ${SDF3_ARCHIVE} ${SDF3_ROOT}/
+	cd ${SDF3_ROOT} && unzip -o ${SDF3_ARCHIVE}
+	cd "${SDF3_ROOT}/sdf3/" && make ## TODO : This line of code is not working with recursive Makefiles
 
 ${SDF3_CS_BENCHMARK} : sdfg_designflow_case_study.zip
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p $@
 	cp $< $@/
 	cd $@ && unzip $<
 
 ${SDF3_MEM_BENCHMARK} : sdfg_buffersizing.zip
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p $@
 	cp $< $@/
 	cd $@ && unzip $<
 
+${SDF3_EXAMPLES} :
+	@echo "###########"" ENTER IN $@ : $^  #####################"
+	mkdir -p $@
+	for example in h263decoder h263encoder mp3decoder_granule_parallelism mp3decoder_block_parallelism mp3playback satellite samplerate modem  ; do \
+	wget -nc "http://www.es.ele.tue.nl/sdf3/download/files/examples/$$example.xml" -O ${SDF3_EXAMPLES}/$$example.xml ; done
+
 ${SDF3_BENCHMARK} : sdfg_throughput.zip
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p $@
 	cp $< $@/
 	cd $@ && unzip $<
@@ -105,6 +132,7 @@ ${SDF3_BENCHMARK} : sdfg_throughput.zip
 	cd ${SDF3_BENCHMARK} && rm graphs scripts sdfg_throughput.zip -rf
 
 sdf.log:  ./Release/bin/kiter Makefile 
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	rm -f $@
 	@echo "==============================================================================================="
 	@echo "==============================================================================================="
@@ -124,19 +152,10 @@ sdf.log:  ./Release/bin/kiter Makefile
 	@mkdir -p $*
 	@pushd $* && cmake -D CMAKE_BUILD_TYPE=$* .. && popd
 
-test: ./Debug/bin/kiter
+unit_test: ./Debug/bin/kiter
+	@echo "###########"" ENTER IN $@ : $^  #####################"
 	make -C Debug/ test
 
-various: ./Release/bin/kiter 
-	./Release/bin/kiter -f ./benchmark/21.xml -a KPeriodicThroughput -v 5
-	./Release/bin/kiter -f ./benchmark/BlackScholes.xml -a KPeriodicThroughput -v 5
-	./Release/bin/kiter -f ./benchmark/Echo.xml -a KPeriodicThroughput -v 5
-	./Release/bin/kiter -f ./benchmark/expansion_paper_norm_sdf.xml -a KPeriodicThroughput -v 5
-	./Release/bin/kiter -f ./benchmark/expansion_paper_sdf.xml -a KPeriodicThroughput -v 5
-	./Release/bin/kiter -f ./benchmark/H264.xml -a KPeriodicThroughput -v 5
-	./Release/bin/kiter -f ./benchmark/JPEG2000.xml -a KPeriodicThroughput -v 5
-	./Release/bin/kiter -f ./benchmark/new_benchmark.xml -a KPeriodicThroughput -v 5
-	./Release/bin/kiter -f ./benchmark/Pdectect.xml -a KPeriodicThroughput -v 5
-	./Release/bin/kiter -f ./benchmark/sample.xml -a KPeriodicThroughput -v 5
 
-.PHONY :  all clean tests various test benchmark debug release
+
+.PHONY :  all infos  debug release clean benchmark ubuntu_test test  unit_test

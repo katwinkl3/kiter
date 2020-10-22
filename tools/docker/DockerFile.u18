@@ -13,4 +13,5 @@ RUN ls
 RUN ls /
 RUN ls /kiter/
 # RUN cd kiter && git checkout routing
-RUN cd kiter && make clean && make build
+RUN cd kiter && make clean && make
+RUN cd kiter $$ make unit_test 

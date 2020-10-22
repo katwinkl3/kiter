@@ -31,39 +31,29 @@
 *~
 \#*\#
 
-# sdf3
-sdf3bench/
-sdfg_buffersizing.zip
-sdfg_throughput.zip
-script/
-sdf3-140724.zip
-sdf3/
-sdf3mem/
-sdf3cs/
-sdfg_designflow_case_study.zip
-
-# result
-/*.log
-
-/debug
-/release
-
 # Eclipse files
-.cproject
-.project
-.settings/
+/.cproject
+/.project
+/.settings/
 
-# generation
-/*.txt
-/*.png
-/*.dot
-/Debug/
+# Build outputs
 /Release/
-/Testing/
-CSDF_KPeriodicScheduling_*.xml
-software_noc_*.xml
+/Debug/
 
-/*.xml
+#Execution outputs
 /*.lp
-/.ipynb_checkpoints
-/ascent_pictures/
+/*.xml
+
+# SDF3 Assets	
+benchmarks/sdf3bench/
+benchmarks/sdf3cs/
+benchmarks/sdf3examples/
+benchmarks/sdf3mem/
+
+# Temporary files
+*~
+.Rhistory
+.ipynb_checkpoints/
+
+# Ascent testbench
+benchmarks/ascenttestbench/
