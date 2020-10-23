@@ -205,12 +205,8 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   }
   if (parameters.find("THR") != parameters.end()) {
     thrTargetSpecified = true;
-    thrTarget = std::stold(parameters.find("THR")->second);
-    std::cout << "Target throughput set to "
-              << thrTarget << std::endl;
   } else {
-    std::cout << "No target throughput specified --- specify target throughput with '-p THR=n' flag" << std::endl;
-    std::cout << "Target throughput set to max throughput by default" << std::endl;
+    std::cout << "No target throughput specified (target throughput will be set to max throughput by default) --- specify target throughput with '-p THR=n' flag" << std::endl;
   }
   
   // graph to model bounded channel quantities
@@ -293,9 +289,12 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   VERBOSE_DSE("Max throughput: " << result_max.throughput << std::endl);
   if (!thrTargetSpecified) {
     thrTarget = result_max.throughput;
-    std::cout << "Target throughput set to max of " << thrTarget << std::endl;
-  } else {
-    if (thrTarget > result_max.throughput) {
+    VERBOSE_DSE("Target throughput set to max of " << thrTarget << std::endl);
+  } else { // target throughput specified
+    thrTarget = std::stold(parameters.find("THR")->second);
+    if (thrTarget <= result_max.throughput) {
+      VERBOSE_DSE("Target throughput set to " << thrTarget << std::endl);
+    } else { // invalid target throughput
       std::cerr << "ERROR: Specified target throughput (" << thrTarget
                 << ") is larger than maximum throughput (" << result_max.throughput
                 << ")" << std::endl;
