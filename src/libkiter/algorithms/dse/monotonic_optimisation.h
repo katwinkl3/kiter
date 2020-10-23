@@ -30,6 +30,7 @@ namespace algorithms {
                                   StorageDistribution &nextDist);
   StorageDistributionSet monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* const dataflow,
                                                                       StorageDistribution initDist,
+                                                                      TIME_UNIT targetThr,
                                                                       parameters_list_t params);
         
 }

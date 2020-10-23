@@ -202,15 +202,15 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   }
   if (parameters.find("M_OPT") != parameters.end()) { // use monotonic optimisation
     isMonoOpt = true;
-    if (parameters.find("THR") != parameters.end()) {
-      thrTargetSpecified = true;
-      thrTarget = std::stold(parameters.find("THR")->second);
-      std::cout << "Target throughput set to "
-                << thrTarget << std::endl;
-    } else {
-      std::cout << "No target throughput specified --- specify target throughput with '-p THR=n' flag" << std::endl;
-      std::cout << "Target throughput set to max throughput by default" << std::endl;
-    }
+  }
+  if (parameters.find("THR") != parameters.end()) {
+    thrTargetSpecified = true;
+    thrTarget = std::stold(parameters.find("THR")->second);
+    std::cout << "Target throughput set to "
+              << thrTarget << std::endl;
+  } else {
+    std::cout << "No target throughput specified --- specify target throughput with '-p THR=n' flag" << std::endl;
+    std::cout << "Target throughput set to max throughput by default" << std::endl;
   }
   
   // graph to model bounded channel quantities
@@ -293,6 +293,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   VERBOSE_DSE("Max throughput: " << result_max.throughput << std::endl);
   if (!thrTargetSpecified) {
     thrTarget = result_max.throughput;
+    std::cout << "Target throughput set to max of " << thrTarget << std::endl;
   } else {
     if (thrTarget > result_max.throughput) {
       std::cerr << "ERROR: Specified target throughput (" << thrTarget
@@ -317,7 +318,10 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     checklist = StorageDistributionSet(initDist.getDistributionSize(),
                                        initDist);
   } else {
-    checklist = algorithms::monotonic_optimised_Kperiodic_throughput_dse(dataflow_prime, initDist, parameters);
+    checklist = algorithms::monotonic_optimised_Kperiodic_throughput_dse(dataflow_prime,
+                                                                         initDist,
+                                                                         thrTarget,
+                                                                         parameters);
   }
 
 
@@ -430,7 +434,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     minStorageDist.addStorageDistribution(zeroDist);
   }
   VERBOSE_DSE("\n");
-  VERBOSE_DSE("DSE RESULTS [START] (target throughput: " << result_max.throughput
+  VERBOSE_DSE("DSE RESULTS [START] (target throughput: " << thrTarget
               << "):" << std::endl);
   VERBOSE_DSE("\n" << minStorageDist.printDistributions(dataflow_prime));
   VERBOSE_DSE("DSE RESULTS [END]" << std::endl);

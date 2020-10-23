@@ -84,17 +84,18 @@ StorageDistribution algorithms::selectNewSD(models::Dataflow* const dataflow,
 
 StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* const dataflow,
                                                                                 StorageDistribution initDist,
-                                                              parameters_list_t parameters) {
+                                                                                TIME_UNIT targetThr,
+                                                                                parameters_list_t parameters) {
   // get target throughput
-  bool thrTargetSpecified = false;
-  TIME_UNIT thrTarget;
-  if (parameters.find("THR") != parameters.end()) {
-    thrTargetSpecified = true;
-    thrTarget = std::stold(parameters.find("THR")->second);
-    std::cout << "Target throughput set to " << thrTarget << std::endl;
-  } else {
-    std::cout << "Specify target throughput with '-p THR=n' flag" << std::endl;
-  }
+  // bool thrTargetSpecified = false;
+  TIME_UNIT thrTarget = targetThr;
+  // if (parameters.find("THR") != parameters.end()) {
+  //   thrTargetSpecified = true;
+  //   thrTarget = std::stold(parameters.find("THR")->second);
+  //   std::cout << "Target throughput set to " << thrTarget << std::endl;
+  // } else {
+  //   std::cout << "Specify target throughput with '-p THR=n' flag" << std::endl;
+  // }
   
   // graph to model bounded channel quantities
   // models::Dataflow* dataflow_prime = new models::Dataflow(*dataflow);
@@ -288,7 +289,7 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
   } else {
     currDist.setThroughput(result.throughput);
   }
-  VERBOSE_DSE("SD to send to DSE:\n" << currDist.printInfo(dataflow)
+  VERBOSE_DSE("Knee set to send to DSE:\n" << kneeSet.printDistributions(dataflow)
               << std::endl);
   return kneeSet;
 }
