@@ -86,86 +86,8 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
                                                                                 StorageDistribution initDist,
                                                                                 TIME_UNIT targetThr,
                                                                                 parameters_list_t parameters) {
-  // get target throughput
-  // bool thrTargetSpecified = false;
   TIME_UNIT thrTarget = targetThr;
-  // if (parameters.find("THR") != parameters.end()) {
-  //   thrTargetSpecified = true;
-  //   thrTarget = std::stold(parameters.find("THR")->second);
-  //   std::cout << "Target throughput set to " << thrTarget << std::endl;
-  // } else {
-  //   std::cout << "Specify target throughput with '-p THR=n' flag" << std::endl;
-  // }
-  
-  // graph to model bounded channel quantities
-  // models::Dataflow* dataflow_prime = new models::Dataflow(*dataflow);
   long int computation_counter = 0;
-  
-  // // create channels in new graph to model bounded channel quantities
-  // dataflow_prime->reset_computation(); // make graph writeable to alter channel size
-  // {ForEachEdge(dataflow, c) {
-  //     auto new_edge = dataflow_prime->addEdge(dataflow_prime->getEdgeTarget(c),
-  //                                             dataflow_prime->getEdgeSource(c));
-  //     dataflow_prime->setEdgeInPhases(new_edge,
-  //                                     dataflow_prime->getEdgeOutVector(c));
-  //     dataflow_prime->setEdgeOutPhases(new_edge,
-  //                                      dataflow_prime->getEdgeInVector(c));
-  //     dataflow_prime->setPreload(new_edge, dataflow->getPreload(c));
-  //     dataflow_prime->setEdgeName(new_edge,
-  //                                 dataflow_prime->getEdgeName(c) + "_prime");
-  //   }}
-
-  // // initialise search parameters
-  // std::map<Edge, TOKEN_UNIT> minStepSizes;
-  // std::map<Edge, std::pair<TOKEN_UNIT, TOKEN_UNIT>> minChannelSizes;
-  // TOKEN_UNIT minDistributionSize;
-  
-  // initSearchParameters(dataflow,
-  //                      minStepSizes,
-  //                      minChannelSizes);
-  // dataflow->reset_computation();
-  // // set lower bound channel quantities
-  // {ForEachEdge(dataflow, c) {
-  //     if (dataflow->getEdgeId(c) <= dataflow->getEdgesCount()/2) {
-  //       minChannelSizes[c].second = 0; // original edges must have capacity 0
-  //     }
-  //     minChannelSizes[c].first = dataflow->getPreload(c);
-  //   }}
-
-  // minDistributionSize = findMinimumDistributionSz(dataflow,
-  //                                                 minChannelSizes);
-
-  // // initialise and store initial storage distribution state
-  // StorageDistribution initDist(dataflow->getEdgesCount(),
-  //                              0,
-  //                              minChannelSizes,
-  //                              minDistributionSize);
-  
-  // // // initialise modelled graph with lower bound distribution
-  // {ForEachEdge(dataflow, c) {
-  //     if (dataflow->getEdgeId(c) <= dataflow->getEdgesCount()/2) { // original channels
-  //       dataflow->setPreload(c, initDist.getInitialTokens(c));
-  //     } else {
-  //       // subtract initial tokens from buffer size to model any initial tokens in buffer
-  //       dataflow->setPreload(c, (initDist.getChannelQuantity(c) -
-  //                                      initDist.getInitialTokens(c)));
-  //     }
-  //   }}
-
-  // // calculate max throughput and current throughput with lower bound distribution
-  // kperiodic_result_t result = compute_Kperiodic_throughput_and_cycles(dataflow, parameters);
-
-  // /* a negative throughput indicates a deadlocked graph and so 
-  //    we set it to 0 to avoid bugs from having a negative throughput */
-  // if (result.throughput < 0) {
-  //   initDist.setThroughput(0);
-  // } else { // set throughput to one computed from initial distribution otherwise
-  //   initDist.setThroughput(result.throughput);
-  // }
-
-  // add initial distribution to list of storage distributions
-  // StorageDistributionSet checkList(initDist.getDistributionSize(),
-  //                                  initDist);
   TIME_UNIT thrCurrent = initDist.getThroughput();
   StorageDistribution newDist(initDist);
   kperiodic_result_t result = compute_Kperiodic_throughput_and_cycles(dataflow, parameters);
