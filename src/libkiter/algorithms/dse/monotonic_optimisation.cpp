@@ -156,7 +156,9 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
                                               mult, step, kMin);
   VERBOSE_DSE("Next SD to check:\n" << checkDist.printInfo(dataflow)
               << std::endl);
-  
+  if (foundPoint) { // first call of select function can't find a point between U and S
+    currDist = checkDist;
+  }
   while (!foundPoint) {
     VERBOSE_DSE("Analysing new storage distribution: " << std::endl);
     dataflow->reset_computation(); // make graph writeable to alter channel size
