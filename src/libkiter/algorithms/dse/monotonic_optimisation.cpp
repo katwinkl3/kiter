@@ -213,5 +213,19 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
   }
   VERBOSE_DSE("Knee set to send to DSE:\n" << kneeSet.printDistributions(dataflow)
               << std::endl);
-  return kneeSet;
+  StorageDistributionSet augmentedKneeSet;
+  for (auto &distSz : kneeSet.getSet()) {
+    for (auto &sd : distSz.second) {
+      StorageDistribution tempSD(sd);
+      {ForEachEdge(dataflow, c) {
+          if (dataflow->getEdgeId(c) > dataflow->getEdgesCount()/2) {
+            tempSD.setChannelQuantity(c, (sd.getChannelQuantity(c) + 1));
+          }
+        }}
+      augmentedKneeSet.addStorageDistribution(tempSD);
+    }
+  }
+  VERBOSE_DSE("Augmented knee set:\n" << augmentedKneeSet.printDistributions(dataflow)
+              << std::endl);
+  return augmentedKneeSet;
 }
