@@ -39,7 +39,8 @@ StorageDistribution algorithms::selectNewSD(models::Dataflow* const dataflow,
                                             TIME_UNIT thrTarget,
                                             TOKEN_UNIT &mult,
                                             std::map<Edge, TOKEN_UNIT> &step,
-                                            StorageDistribution &kMinPoint) {
+                                            StorageDistribution &kMinPoint,
+                                            std::map<Edge, TOKEN_UNIT> bufferLb) {
   if (isInit && thrCurrent < thrTarget) {
     mult *= 2;
     StorageDistribution newDist(kMinPoint);
@@ -69,7 +70,7 @@ StorageDistribution algorithms::selectNewSD(models::Dataflow* const dataflow,
   if (!isInit) {
     isInit = true;
   }
-  if ((infeasibleSet.isInBackCone(newDist) || infeasibleSet.hasStorageDistribution(newDist))
+  if ((infeasibleSet.isInBackCone(newDist, bufferLb) || infeasibleSet.hasStorageDistribution(newDist))
       ||
       (feasibleSet.isInForeCone(newDist) || feasibleSet.hasStorageDistribution(newDist))) {
     // we've gotten to the end of the optimization phase
@@ -94,9 +95,14 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
   StorageDistributionSet infeasibleSet;
   StorageDistributionSet kneeSet;
   StorageDistributionSet feasibleSet;
+  // initialise mapping of lower bounds of buffer sizes (to account for storage dependencies)
+  std::map<Edge, TOKEN_UNIT> bufferLowerBounds;
+  for (auto &e : initDist.getEdges()) {
+    bufferLowerBounds[e] = 0;
+  }
   while (thrCurrent < thrTarget) {
     VERBOSE_DSE("SD sending to handleInfeasible:\n" << newDist.printInfo(dataflow) << std::endl);
-    handleInfeasiblePoint(dataflow, infeasibleSet, kneeSet, newDist, result);
+    handleInfeasiblePoint(dataflow, infeasibleSet, kneeSet, newDist, result, bufferLowerBounds);
     VERBOSE_DSE("Current infeasible set:\n" << infeasibleSet.printDistributions(dataflow)
                 << std::endl);
     VERBOSE_DSE("Current knee set:\n" << kneeSet.printDistributions(dataflow)
@@ -107,6 +113,9 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
       if (dataflow->getEdgeId(*it) > dataflow->getEdgesCount()/2) {
         VERBOSE_DSE("\tFound storage dependency in channel "
                     << dataflow->getEdgeName(*it) << std::endl);
+        // if (bufferLowerBounds[*it] < newDist.getChannelQuantity(*it)) {
+        //   bufferLowerBounds[*it] = newDist.getChannelQuantity(*it); // update lower bounds of channel          
+        // }
         // double new modelled storage distribution channels with storage dependencies
         newDist.setChannelQuantity(*it, (newDist.getChannelQuantity(*it) * 2));
         VERBOSE_DSE("\t\tIncreasing channel size of "
@@ -153,7 +162,8 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
                                               infeasibleSet, kneeSet, feasibleSet,
                                               isInit, foundPoint,
                                               thrCurrent, thrTarget,
-                                              mult, step, kMin);
+                                              mult, step, kMin,
+                                              bufferLowerBounds);
   VERBOSE_DSE("Next SD to check:\n" << checkDist.printInfo(dataflow)
               << std::endl);
   if (foundPoint) { // first call of select function can't find a point between U and S
@@ -179,7 +189,7 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
     std::cout << "thrCurrent, thrTarget: " << thrCurrent << ", " << thrTarget << std::endl;
     if (thrCurrent < thrTarget) {
       handleInfeasiblePoint(dataflow, infeasibleSet, kneeSet,
-                            checkDist, result);
+                            checkDist, result, bufferLowerBounds);
     } else {
       feasibleSet.updateFeasibleSet(checkDist);
     }
@@ -188,7 +198,8 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
                             infeasibleSet, kneeSet, feasibleSet,
                             isInit, foundPoint,
                             thrCurrent, thrTarget,
-                            mult, step, kMin);
+                            mult, step, kMin,
+                            bufferLowerBounds);
     if (!foundPoint) {
       currDist = checkDist;
     }

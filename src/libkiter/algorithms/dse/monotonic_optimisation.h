@@ -27,7 +27,8 @@ namespace algorithms {
                                   TIME_UNIT thrTarget,
                                   TOKEN_UNIT &mult,
                                   std::map<Edge, TOKEN_UNIT> &step,
-                                  StorageDistribution &nextDist);
+                                  StorageDistribution &nextDist,
+                                  std::map<Edge, TOKEN_UNIT> bufferLb);
   StorageDistributionSet monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* const dataflow,
                                                                       StorageDistribution initDist,
                                                                       TIME_UNIT targetThr,

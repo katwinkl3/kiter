@@ -369,7 +369,8 @@ bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
 
 /* returns true if given SD is within the backward cone of the set of SDs
    (i.e. given SD is not maximal in set) */
-bool StorageDistributionSet::isInBackCone(StorageDistribution checkDist) {
+bool StorageDistributionSet::isInBackCone(StorageDistribution checkDist,
+                                          std::map<Edge, TOKEN_UNIT> bufferLb) {
   bool isMinimal;
   std::vector<Edge> checkDistEdges = checkDist.getEdges();
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
@@ -380,7 +381,8 @@ bool StorageDistributionSet::isInBackCone(StorageDistribution checkDist) {
         isMinimal = true;
         for (auto it = checkDistEdges.begin();
              it != checkDistEdges.end(); it++) {
-          if (checkDist.getChannelQuantity(*it) > storage_dist.getChannelQuantity(*it)) {
+          if ((checkDist.getChannelQuantity(*it) > storage_dist.getChannelQuantity(*it)) &&
+              (checkDist.getChannelQuantity(*it) > bufferLb[*it])) {
             isMinimal = false;
           }
         }
@@ -434,14 +436,15 @@ bool StorageDistributionSet::isInForeCone(StorageDistribution checkDist) {
   return isMaximal;
 }
 
-void StorageDistributionSet::removeNonMaximum(StorageDistribution checkDist) {
+void StorageDistributionSet::removeNonMaximum(StorageDistribution checkDist,
+                                              std::map<Edge, TOKEN_UNIT> bufferLb) {
   // bool isMinimal = true;
   std::cout << "Removing non-maximal SDs..." << std::endl;
   if (this->getSize() <= 1) {
     std::cout << "0/1 SD in set; skipping check" << std::endl;
     return; // only check if there's more than one SD in set
   }
-  else if (this->isInBackCone(checkDist)) {
+  else if (this->isInBackCone(checkDist, bufferLb)) {
     this->removeStorageDistribution(checkDist);
   }
 }
@@ -465,7 +468,8 @@ void StorageDistributionSet::removeNonMinimum(StorageDistribution checkDist) {
 // Updates the given set of knee points according to the given set of infeasible SDs
 // the new SD point
 void StorageDistributionSet::updateKneeSet(models::Dataflow* const dataflow,
-                                           StorageDistributionSet infeasibleSet) {
+                                           StorageDistributionSet infeasibleSet,
+                                           std::map<Edge, TOKEN_UNIT> bufferLb) {
                                            // StorageDistribution newDist) {
   StorageDistributionSet checkQueue(infeasibleSet); // store queue of SDs to be compared
   StorageDistributionSet checkedSDs;
@@ -509,12 +513,12 @@ void StorageDistributionSet::updateKneeSet(models::Dataflow* const dataflow,
       checkFinished = (checkQueue.getSet() == checkedSDs.getSet());
     }
   }
-  this->addEdgeKnees(dataflow, infeasibleSet);
+  this->addEdgeKnees(dataflow, infeasibleSet, bufferLb);
   // remove knee points in backwards cone of knee set
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set(this->set);
   for (auto &distribution_sz : reference_set) {
     for (auto &storage_dist : distribution_sz.second) {
-      this->removeNonMaximum(storage_dist);
+      this->removeNonMaximum(storage_dist, bufferLb);
     }
   }
 }
@@ -522,7 +526,8 @@ void StorageDistributionSet::updateKneeSet(models::Dataflow* const dataflow,
 
 // Adds the edge cases to the knee set
 void StorageDistributionSet::addEdgeKnees(models::Dataflow* const dataflow,
-                                          StorageDistributionSet infeasibleSet) {
+                                          StorageDistributionSet infeasibleSet,
+                                          std::map<Edge, TOKEN_UNIT> bufferLb) {
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> reference_set = infeasibleSet.getSet();
   StorageDistribution maximalSD(infeasibleSet.getNextDistribution());
   std::vector<Edge> edges = maximalSD.getEdges();
@@ -540,14 +545,15 @@ void StorageDistributionSet::addEdgeKnees(models::Dataflow* const dataflow,
   {ForEachEdge(dataflow, c) {
       if (dataflow->getEdgeId(c) > dataflow->getEdgesCount() / 2) {
         StorageDistribution tempSD(maximalSD);
-        tempSD.setChannelQuantity(c, 0);
+        tempSD.setChannelQuantity(c, bufferLb[c]);
         this->addStorageDistribution(tempSD);
       }
     }}
 }
 
 // add new SD to set of infeasible SDs
-void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
+void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist,
+                                                 std::map<Edge, TOKEN_UNIT> bufferLb) {
   TOKEN_UNIT newDistSz = newDist.getDistributionSize();
   TOKEN_UNIT maxDistSz;
   bool isFound = false; // track if newDist found to be maximal
@@ -610,7 +616,7 @@ void StorageDistributionSet::updateInfeasibleSet(StorageDistribution newDist) {
   // remove SDs subsumed by edge of infeasible set (non-maximal SDs)
   for (auto &distribution_sz : reference_set) {
     for (auto &storage_dist : distribution_sz.second) {
-      this->removeNonMaximum(storage_dist);
+      this->removeNonMaximum(storage_dist, bufferLb);
     }
   }
   std::cout << "Distribution sizes of U (" << this->getSize() << " distributions):" << std::endl;
@@ -870,22 +876,24 @@ void handleInfeasiblePoint(models::Dataflow* const dataflow,
                            StorageDistributionSet &infeasibleSet,
                            StorageDistributionSet &kneeSet,
                            StorageDistribution newSD,
-                           kperiodic_result_t deps) {
+                           kperiodic_result_t deps,
+                           std::map<Edge, TOKEN_UNIT> &bufferLb) {
   if ((deps.critical_edges).empty()) {
     std::cerr << "ERROR: throughput requirement unreachable (no critical edges found)" << std::endl;
   }
   StorageDistribution checkSD(newSD);
   std::vector<Edge> edges = checkSD.getEdges();
   std::set<Edge> dependencies = deps.critical_edges;
-  // for (auto edge : edges) {
-  //   // max out buffer size of edges not in set of critical edges
-  //   if (dataflow->getEdgeId(edge) > (edges.size() / 2)) { // only consider edges modelling bounded buffers
-  //     if (dependencies.find(edge) == dependencies.end()) {
-  //       checkSD.setChannelQuantity(edge, INT_MAX);
-  //     }
-  //   }
-  // }
+  for (auto edge : edges) {
+    if (dataflow->getEdgeId(edge) > (edges.size() / 2)) { // only consider edges modelling bounded buffers
+      if (dependencies.find(edge) != dependencies.end()) { // for edges with storage dependencies
+        if (bufferLb[edge] < checkSD.getChannelQuantity(edge)) { // never decrease bounds
+          bufferLb[edge] = checkSD.getChannelQuantity(edge);
+        }
+      }
+    }
+  }
   std::cout << "SD sent to updateInfeasible is dist sz: " << checkSD.getDistributionSize() << std::endl;
-  infeasibleSet.updateInfeasibleSet(checkSD);
-  kneeSet.updateKneeSet(dataflow, infeasibleSet);
+  infeasibleSet.updateInfeasibleSet(checkSD, bufferLb);
+  kneeSet.updateKneeSet(dataflow, infeasibleSet, bufferLb);
 }

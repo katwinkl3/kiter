@@ -63,15 +63,20 @@ public:
   bool hasDistribution(TOKEN_UNIT dist_sz);
   bool hasStorageDistribution(StorageDistribution checkDist);
   bool isSearchComplete(StorageDistributionSet checklist, TIME_UNIT target_thr);
-  bool isInBackCone(StorageDistribution checkDist);
+  bool isInBackCone(StorageDistribution checkDist,
+                    std::map<Edge, TOKEN_UNIT> bufferLb);
   bool isInForeCone(StorageDistribution checkDist);
-  void removeNonMaximum(StorageDistribution checkDist);
+  void removeNonMaximum(StorageDistribution checkDist,
+                        std::map<Edge, TOKEN_UNIT> bufferLb);
   void removeNonMinimum(StorageDistribution checkDist);
   void updateKneeSet(models::Dataflow* const dataflow,
-                     StorageDistributionSet infeasibleSet);
+                     StorageDistributionSet infeasibleSet,
+                     std::map<Edge, TOKEN_UNIT> bufferLb);
   void addEdgeKnees(models::Dataflow* const dataflow,
-                    StorageDistributionSet infeasibleSet);
-  void updateInfeasibleSet(StorageDistribution new_sd); // add new SD to infeasible set of SDs for monotonic optimisation
+                    StorageDistributionSet infeasibleSet,
+                    std::map<Edge, TOKEN_UNIT> bufferLb);
+  void updateInfeasibleSet(StorageDistribution new_sd,
+                           std::map<Edge, TOKEN_UNIT> bufferLb); // add new SD to infeasible set of SDs for monotonic optimisation
   void updateFeasibleSet(StorageDistribution new_sd); // add new SD to infeasible set of SDs for monotonic optimisation
   std::string printDistributions(TOKEN_UNIT dist_sz,
 				 models::Dataflow* const dataflow); /* prints info of all storage distributions 
@@ -107,5 +112,6 @@ void handleInfeasiblePoint(models::Dataflow* const dataflow,
                            StorageDistributionSet &infeasibleSet,
                            StorageDistributionSet &kneeSet,
                            StorageDistribution newSD,
-                           kperiodic_result_t deps);
+                           kperiodic_result_t deps,
+                           std::map<Edge, TOKEN_UNIT> &bufferLb);
 #endif /* BUFFER_SIZING_H_ */
