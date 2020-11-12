@@ -71,9 +71,11 @@ public:
   void removeNonMinimum(StorageDistribution checkDist);
   void updateKneeSet(models::Dataflow* const dataflow,
                      StorageDistributionSet infeasibleSet,
+                     StorageDistributionSet feasibleSet,
                      std::map<Edge, TOKEN_UNIT> bufferLb);
   void addEdgeKnees(models::Dataflow* const dataflow,
                     StorageDistributionSet infeasibleSet,
+                    StorageDistributionSet feasibleSet,
                     std::map<Edge, TOKEN_UNIT> bufferLb);
   void updateInfeasibleSet(StorageDistribution new_sd,
                            std::map<Edge, TOKEN_UNIT> bufferLb); // add new SD to infeasible set of SDs for monotonic optimisation
@@ -110,6 +112,7 @@ StorageDistribution makeMinimalSD(StorageDistribution sd1,
                                   StorageDistribution sd2);
 void handleInfeasiblePoint(models::Dataflow* const dataflow,
                            StorageDistributionSet &infeasibleSet,
+                           StorageDistributionSet feasibleSet,
                            StorageDistributionSet &kneeSet,
                            StorageDistribution newSD,
                            kperiodic_result_t deps,
