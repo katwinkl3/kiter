@@ -903,15 +903,32 @@ void handleInfeasiblePoint(models::Dataflow* const dataflow,
   StorageDistribution checkSD(newSD);
   std::vector<Edge> edges = checkSD.getEdges();
   std::set<Edge> dependencies = deps.critical_edges;
+  int nDeps = 0;
   for (auto edge : edges) {
-    if (dataflow->getEdgeId(edge) > (edges.size() / 2)) { // only consider edges modelling bounded buffers
-      if (dependencies.find(edge) != dependencies.end()) { // for edges with storage dependencies
-        if (bufferLb[edge] < checkSD.getChannelQuantity(edge)) { // never decrease bounds
-          bufferLb[edge] = checkSD.getChannelQuantity(edge);
+    if (dataflow->getEdgeId(edge) > (edges.size() / 2)) {
+      if (dependencies.find(edge) != dependencies.end()) {
+        nDeps++;
+      }
+    }
+  }
+  std::cout << "Number of dependencies: " << nDeps << std::endl;
+  if (nDeps == (edges.size() / 2)) {
+    std::cout << "No need to update lower bounds as no non-critical channels" << std::endl;
+  } else {
+    std::cout << "Updating lower bounds..." << std::endl;
+    for (auto edge : edges) {
+      if (dataflow->getEdgeId(edge) > (edges.size() / 2)) { // only consider edges modelling bounded buffers
+        if (dependencies.find(edge) != dependencies.end()) { // for edges with storage dependencies
+          if (bufferLb[edge] < checkSD.getChannelQuantity(edge)) { // never decrease bounds
+            std::cout << "Increasing Lb of " << dataflow->getEdgeName(edge)
+                      << " to " << checkSD.getChannelQuantity(edge) << std::endl;
+            bufferLb[edge] = checkSD.getChannelQuantity(edge);
+          }
         }
       }
     }
   }
+
   std::cout << "SD sent to updateInfeasible is dist sz: " << checkSD.getDistributionSize() << std::endl;
   infeasibleSet.updateInfeasibleSet(checkSD, bufferLb);
   std::cout << "Updating knee set given updated U" << std::endl;
