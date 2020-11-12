@@ -511,7 +511,17 @@ void StorageDistributionSet::updateKneeSet(models::Dataflow* const dataflow,
         }
       }
       checkedSDs.addStorageDistribution(checkDist);
-      checkFinished = (checkQueue.getSet() == checkedSDs.getSet());
+      if (checkQueue.getSet().size() == checkedSDs.getSet().size()) { // TODO replace this stand-in SD set equality check
+        checkFinished = true;
+        for (auto &d_sz : checkQueue.getSet()) {
+          for (auto &sd : d_sz.second) {
+            if (!checkedSDs.hasStorageDistribution(sd)) {
+              checkFinished = false;
+            }
+          }
+        }
+      }
+      // checkFinished = (checkQueue.getSet() == checkedSDs.getSet());
     }
   }
   this->addEdgeKnees(dataflow, infeasibleSet, feasibleSet, bufferLb);
