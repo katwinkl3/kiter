@@ -46,8 +46,12 @@ StorageDistribution algorithms::selectNewSD(models::Dataflow* const dataflow,
     StorageDistribution newDist(kMinPoint);
     {ForEachEdge(dataflow, c) {
         if (dataflow->getEdgeId(c) > dataflow->getEdgesCount()/2) {
-          newDist.setChannelQuantity(c,
-                                     (newDist.getChannelQuantity(c) + (mult * step[c])));
+          if (bufferLb[c] > newDist.getChannelQuantity(c) + (mult * step[c])) {
+            newDist.setChannelQuantity(c, bufferLb[c]);
+          } else {
+            newDist.setChannelQuantity(c,
+                                       (newDist.getChannelQuantity(c) + (mult * step[c])));
+          }
         }
       }}
     if (!(feasibleSet.isInForeCone(newDist) || feasibleSet.hasStorageDistribution(newDist))) {
@@ -63,8 +67,12 @@ StorageDistribution algorithms::selectNewSD(models::Dataflow* const dataflow,
   {ForEachEdge(dataflow, c) {
       if (dataflow->getEdgeId(c) > dataflow->getEdgesCount()/2) {
         step[c] = (sMinPoint.getChannelQuantity(c) - kMinPoint.getChannelQuantity(c)) / 2;
-        newDist.setChannelQuantity(c,
-                                   newDist.getChannelQuantity(c) + step[c]);
+        if (bufferLb[c] > newDist.getChannelQuantity(c) + step[c]) {
+          newDist.setChannelQuantity(c, bufferLb[c]);
+        } else {
+          newDist.setChannelQuantity(c,
+                                     newDist.getChannelQuantity(c) + step[c]);
+        }
       }
     }}
   if (!isInit) {
@@ -89,7 +97,8 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
                                                                                 parameters_list_t parameters) {
   TIME_UNIT thrTarget = targetThr;
   long int computation_counter = 0;
-  TIME_UNIT thrCurrent = initDist.getThroughput();
+  // TIME_UNIT thrCurrent = initDist.getThroughput();
+  TIME_UNIT thrCurrent;
   StorageDistribution newDist(initDist);
   kperiodic_result_t result = compute_Kperiodic_throughput_and_cycles(dataflow, parameters);
   StorageDistributionSet infeasibleSet;
@@ -97,9 +106,16 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
   StorageDistributionSet feasibleSet;
   // initialise mapping of lower bounds of buffer sizes (to account for storage dependencies)
   std::map<Edge, TOKEN_UNIT> bufferLowerBounds;
+  // std::map<Edge, TOKEN_UNIT> bufferInc;
   for (auto &e : initDist.getEdges()) {
-    bufferLowerBounds[e] = 0;
+    // bufferLowerBounds[e] = 0;
+    initDist.setChannelQuantity(e, initDist.getChannelQuantity(e) - 1);
+    bufferLowerBounds[e] = initDist.getChannelQuantity(e);
+    // bufferInc[e] = 1;
   }
+  // initialise infeasible set, knee set, feasible set
+  // handleInfeasiblePoint(dataflow, infeasibleSet, feasibleSet, kneeSet, initDist, result, bufferLowerBounds);
+  thrCurrent = newDist.getThroughput();
   while (thrCurrent < thrTarget) {
     VERBOSE_DSE("SD sending to handleInfeasible:\n" << newDist.printInfo(dataflow) << std::endl);
     handleInfeasiblePoint(dataflow, infeasibleSet, feasibleSet, kneeSet, newDist, result, bufferLowerBounds);
@@ -118,6 +134,8 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
         // }
         // double new modelled storage distribution channels with storage dependencies
         newDist.setChannelQuantity(*it, (newDist.getChannelQuantity(*it) * 2));
+        // bufferInc[*it] = bufferInc[*it] * 2;
+        // newDist.setChannelQuantity(*it, (newDist.getChannelQuantity(*it) + bufferInc[*it]));
         VERBOSE_DSE("\t\tIncreasing channel size of "
                     << dataflow->getEdgeName(*it) << " to "
                     << newDist.getChannelQuantity(*it) << std::endl);
