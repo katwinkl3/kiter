@@ -934,3 +934,134 @@ void handleInfeasiblePoint(models::Dataflow* const dataflow,
   std::cout << "Updating knee set given updated U" << std::endl;
   kneeSet.updateKneeSet(dataflow, infeasibleSet, feasibleSet, bufferLb);
 }
+
+// BASE MONOTONIC OPTIMISATION FUNCTIONS
+/* returns true if given SD is within the backward cone of the SD
+   (i.e. given SD is not maximal in set) */
+bool StorageDistribution::inBackConeOf(StorageDistribution checkDist) {
+  for (auto &e : this->getEdges()) {
+    if (this->getChannelQuantity(e) > checkDist.getChannelQuantity(e)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/* returns true if given SD is within the forward cone of the SD
+   (i.e. given SD is not minimal in set) */
+bool StorageDistribution::inForConeOf(StorageDistribution checkDist) {
+  for (auto &e : this->getEdges()) {
+    if (this->getChannelQuantity(e) < checkDist.getChannelQuantity(e)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// tries to add new SD to U; returns true if successful
+bool StorageDistributionSet::addToUnsat(StorageDistribution sd) {
+  StorageDistributionSet subsumed;
+  for (auto &dist_sz : this->set) {
+    for (auto &storage_dist : dist_sz.second) {
+      if (storage_dist.inBackConeOf(sd) && storage_dist != sd) {
+        subsumed.addStorageDistribution(storage_dist);
+      } else if (sd.inBackConeOf(storage_dist)) {
+        return false;
+      }
+    }
+  }
+  for (auto &dist_sz : subsumed.getSet()) {
+    for (auto &storage_dist : dist_sz.second) {
+      this->removeStorageDistribution(storage_dist);
+    }
+  }
+  this->addStorageDistribution(sd);
+  return true;
+}
+
+void StorageDistributionSet::add(StorageDistribution sd,
+                                 StorageDistributionSet &kneePoints) {
+  if (!this->addToUnsat(sd)) {
+    std::cout << "BASE_M_OPT: SD not added to U" << std::endl;
+    return;
+  }
+  // update knee points
+  StorageDistributionSet subsumed;
+  std::cout << "BASE_M_OPT: updating knees" << std::endl;
+  for (auto &dist_sz : kneePoints.getSet()) {
+    for (auto &knee : dist_sz.second) {
+      if (knee.inBackConeOf(sd)) {
+        subsumed.addStorageDistribution(knee);
+      }
+    }
+  }
+  // remove subsumed knees
+  std::cout << "BASE_M_OPT: removing subsumed knees" << std::endl;
+  for (auto &dist_sz : subsumed.getSet()) {
+    for (auto &storage_dist : dist_sz.second) {
+      kneePoints.removeStorageDistribution(storage_dist);
+    }
+  }
+  // create extensions
+  std::cout << "BASE_M_OPT: creating extensions" << std::endl;
+  StorageDistributionSet extensions;
+  for (auto &dist_sz : subsumed.getSet()) {
+    for (auto &storage_dist : dist_sz.second) {
+      for (auto &e : storage_dist.getEdges()) {
+        StorageDistribution newExt(storage_dist);
+        newExt.setChannelQuantity(e, sd.getChannelQuantity(e));
+        addToExtensions(extensions, newExt);
+      }
+    }
+  }
+  std::cout << "BASE_M_OPT: adding extension knees" << std::endl;
+  for (auto &dist_sz : extensions.getSet()) {
+    for (auto &storage_dist : dist_sz.second) {
+      kneePoints.addStorageDistribution(storage_dist);
+    }
+  }
+  std::cout << "BASE_M_OPT: SD added to U" << std::endl;
+  return;
+}
+
+void StorageDistributionSet::addCut(models::Dataflow *dataflow,
+                                    StorageDistribution sd,
+                                    kperiodic_result_t result,
+                                    StorageDistributionSet &kneePoints) {
+  // TODO need to check if there aren't any critical edges --- throw error if so
+  if (!(result.critical_edges).empty()) {
+    bool isCut = false;
+    StorageDistribution tempDist(sd);
+    {ForEachEdge(dataflow, e) {
+        if (dataflow->getEdgeId(e) > dataflow->getEdgesCount()/2) {
+          if ((result.critical_edges).find(e) == (result.critical_edges).end()) {
+            tempDist.setChannelQuantity(e, INT_MAX);
+            isCut = true;
+          }
+        }
+      }}
+    if (isCut) {
+      this->add(tempDist, kneePoints);
+    }
+  }
+}
+
+void addToExtensions(StorageDistributionSet &extensions,
+                     StorageDistribution sd) {
+  StorageDistributionSet subsumed;
+  for (auto &dist_sz : extensions.getSet()) {
+    for (auto &storage_dist : dist_sz.second) {
+      if (storage_dist.inForConeOf(sd)) {
+        subsumed.addStorageDistribution(storage_dist);
+      } else if (sd.inForConeOf(storage_dist)) {
+        return;
+      }
+    }
+  }
+  for (auto &dist_sz : subsumed.getSet()) {
+    for (auto &storage_dist : dist_sz.second) {
+      extensions.removeStorageDistribution(storage_dist);
+    }
+  }
+  extensions.addStorageDistribution(sd);
+}

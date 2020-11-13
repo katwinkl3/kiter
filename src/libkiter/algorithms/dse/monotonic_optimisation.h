@@ -13,7 +13,7 @@
 #include <algorithms/throughput/kperiodic.h>
 
 namespace models {
-	class Dataflow;
+  class Dataflow;
 }
 
 namespace algorithms {

@@ -19,6 +19,7 @@
 #include "buffer_sizing.h"
 #include "kperiodic.h"
 #include "monotonic_optimisation.h"
+#include "base_monotonic_optimisation.h"
 #include <chrono> // to take computation timings
 // #define WRITE_GRAPHS // uncomment to write dot files of explored graphs
 // Compute and return period and causal dependency cycles of given dataflow graph
@@ -195,6 +196,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
                                                    parameters_list_t  parameters) {
   bool writeLogFiles = false;
   bool isMonoOpt = false;
+  bool isBaseMonoOpt = false;
   bool thrTargetSpecified = false;
   TIME_UNIT thrTarget;
   if (parameters.find("LOG") != parameters.end()) {
@@ -202,6 +204,9 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   }
   if (parameters.find("M_OPT") != parameters.end()) { // use monotonic optimisation
     isMonoOpt = true;
+  }
+  if (parameters.find("B_M_OPT") != parameters.end()) { // use base monotonic optimisation
+    isBaseMonoOpt = true;
   }
   if (parameters.find("THR") != parameters.end()) {
     thrTargetSpecified = true;
@@ -313,14 +318,19 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
 
   // add initial distribution to list of storage distributions
   StorageDistributionSet checklist;
-  if (!isMonoOpt) {
-    checklist = StorageDistributionSet(initDist.getDistributionSize(),
-                                       initDist);
-  } else {
+  if (isMonoOpt) {
     checklist = algorithms::monotonic_optimised_Kperiodic_throughput_dse(dataflow_prime,
                                                                          initDist,
                                                                          thrTarget,
                                                                          parameters);
+  } else if (isBaseMonoOpt) {
+    checklist = algorithms::base_monotonic_optimised_Kperiodic_throughput_dse(dataflow_prime,
+                                                                              initDist,
+                                                                              thrTarget,
+                                                                              parameters);
+  } else {
+    checklist = StorageDistributionSet(initDist.getDistributionSize(),
+                                       initDist);
   }
 
 
