@@ -42,6 +42,7 @@ public:
   // BASE MONOTONIC OPTIMISATION FUNCTIONS
   bool inBackConeOf(StorageDistribution checkDist);
   bool inForConeOf(StorageDistribution checkDist);
+
 private:
   unsigned int edge_count;
   TIME_UNIT thr; // throughput of given storage distribution
@@ -91,9 +92,12 @@ public:
   void printGraphs(models::Dataflow* const dataflow, std::string filename); // iterate through storage distribution set and print graphs
   // BASE MONOTONIC OPTIMISATION FUNCTIONS
   bool addToUnsat(StorageDistribution sd);
+  void addToSat(StorageDistribution sd);
   void add(StorageDistribution sd, StorageDistributionSet &kneePoints);
   void addCut(models::Dataflow *dataflow, StorageDistribution sd,
               kperiodic_result_t result, StorageDistributionSet &kneePoints);
+  bool satContains(StorageDistribution sd);
+  bool unsatContains(StorageDistribution sd);
   
 private:
   std::map<TOKEN_UNIT, std::vector<StorageDistribution>> set; /* store storage distributions 
@@ -128,4 +132,8 @@ void handleInfeasiblePoint(models::Dataflow* const dataflow,
 // BASE MONOTONIC OPTIMISATION FUNCTIONS
 void addToExtensions(StorageDistributionSet &extensions,
                      StorageDistribution sd);
+StorageDistribution createPoint(models::Dataflow *dataflow,
+                                StorageDistribution sd,
+                                StorageDistribution hp,
+                                TOKEN_UNIT m);
 #endif /* BUFFER_SIZING_H_ */

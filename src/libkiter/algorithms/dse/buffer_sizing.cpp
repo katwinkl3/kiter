@@ -979,6 +979,25 @@ bool StorageDistributionSet::addToUnsat(StorageDistribution sd) {
   return true;
 }
 
+void StorageDistributionSet::addToSat(StorageDistribution sd) {
+  StorageDistributionSet subsumed;
+  for (auto &dist_sz : this->set) {
+    for (auto &storage_dist : dist_sz.second) {
+      if (sd.inForConeOf(storage_dist)) {
+        return;
+      } else if (storage_dist.inBackConeOf(sd)) {
+        subsumed.addStorageDistribution(storage_dist);
+      }
+    }
+  }
+  for (auto &dist_sz : subsumed.getSet()) {
+    for (auto &storage_dist : dist_sz.second) {
+      this->removeStorageDistribution(storage_dist);
+    }
+  }
+  this->addStorageDistribution(sd);
+}
+
 void StorageDistributionSet::add(StorageDistribution sd,
                                  StorageDistributionSet &kneePoints) {
   if (!this->addToUnsat(sd)) {
@@ -1064,4 +1083,40 @@ void addToExtensions(StorageDistributionSet &extensions,
     }
   }
   extensions.addStorageDistribution(sd);
+}
+
+StorageDistribution createPoint(models::Dataflow *dataflow,
+                                StorageDistribution sd,
+                                StorageDistribution hp,
+                                TOKEN_UNIT m) {
+  StorageDistribution newDist(sd);
+  {ForEachEdge(dataflow, e) {
+      if (dataflow->getEdgeId(e) > dataflow->getEdgesCount()/2) {
+        newDist.setChannelQuantity(e, sd.getChannelQuantity(e) +
+                                   (hp.getChannelQuantity(e) * m));
+      }
+    }}
+  return newDist;
+}
+
+bool StorageDistributionSet::satContains(StorageDistribution sd) {
+  for (auto &dist_sz : this->set) {
+    for (auto &storage_dist : dist_sz.second) {
+      if (sd.inForConeOf(storage_dist)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool StorageDistributionSet::unsatContains(StorageDistribution sd) {
+  for (auto &dist_sz : this->set) {
+    for (auto &storage_dist : dist_sz.second) {
+      if (sd.inBackConeOf(storage_dist)) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
