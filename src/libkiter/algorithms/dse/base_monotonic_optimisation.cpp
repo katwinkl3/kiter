@@ -113,7 +113,7 @@ StorageDistributionSet algorithms::base_monotonic_optimised_Kperiodic_throughput
         newDist.setChannelQuantity(e, newDist.getChannelQuantity(e) + bufferInc[e]);
       }
     }
-    std::cout << "BASE_M_OPT: trying:\n" << newDist.printInfo(dataflow) << std::endl;
+    // std::cout << "BASE_M_OPT: trying:\n" << newDist.printInfo(dataflow) << std::endl;
     dataflow->reset_computation(); // make graph writeable to alter channel size
     {ForEachEdge(dataflow, c) {
         if (dataflow->getEdgeId(c) > dataflow->getEdgesCount()/2) { // only modelled buffer preloads change

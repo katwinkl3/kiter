@@ -55,7 +55,7 @@ StorageDistribution algorithms::selectNewSD(models::Dataflow* const dataflow,
         }
       }}
     if (!(feasibleSet.isInForeCone(newDist) || feasibleSet.hasStorageDistribution(newDist))) {
-      std::cout << "SELECT: new point not in S+:\n" << newDist.printInfo(dataflow) << std::endl;
+      // std::cout << "SELECT: new point not in S+:\n" << newDist.printInfo(dataflow) << std::endl;
       return newDist;
     }
   }
@@ -83,10 +83,10 @@ StorageDistribution algorithms::selectNewSD(models::Dataflow* const dataflow,
       (feasibleSet.isInForeCone(newDist) || feasibleSet.hasStorageDistribution(newDist))) {
     // we've gotten to the end of the optimization phase
     foundPoint = true;
-    std::cout << "SELECT: Cannot find new point, ending search" << std::endl;
+    // std::cout << "SELECT: Cannot find new point, ending search" << std::endl;
     return newDist;
   } else {
-    std::cout << "SELECT: new point found:\n" << newDist.printInfo(dataflow) << std::endl;
+    // std::cout << "SELECT: new point found:\n" << newDist.printInfo(dataflow) << std::endl;
     return newDist;
   }
 }
@@ -207,7 +207,7 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
     }
     VERBOSE_DSE(checkDist.printInfo(dataflow));
     thrCurrent = checkDist.getThroughput();
-    std::cout << "thrCurrent, thrTarget: " << thrCurrent << ", " << thrTarget << std::endl;
+    // std::cout << "thrCurrent, thrTarget: " << thrCurrent << ", " << thrTarget << std::endl;
     if (thrCurrent < thrTarget) {
       handleInfeasiblePoint(dataflow, infeasibleSet, feasibleSet, kneeSet,
                             checkDist, result, bufferLowerBounds);
