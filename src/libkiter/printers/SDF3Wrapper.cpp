@@ -82,22 +82,43 @@ std::pair<T1,T2> splitAndDefault(const std::string &s,char del,T2 d) {
 }
 
 
+std::vector<TOKEN_UNIT> inline stringlist2tokenlist (const std::vector<std::string>&  input) {
+	std::vector<TOKEN_UNIT>   res;
+
+	for (unsigned int i = 1 ; i <= input.size() ; i++) {
+		const std::string cur = input[i-1];
+		std::vector<std::string>  cur_separated = commons::split<std::string> (cur, '*');
+
+		TOKEN_UNIT count = (cur_separated.size() == 2) ? commons::fromString<TOKEN_UNIT>(cur_separated[0]) : 1;
+		TOKEN_UNIT value = commons::fromString<TOKEN_UNIT>(cur_separated[cur_separated.size() - 1]) ;
+
+		for (int p = 1 ; p <= count ; p++) {
+			res.push_back(value);
+		}
+
+
+	}
+	return res;
+}
 
 void                        readSDF3OutputSpec      (models::Dataflow *to, const Edge c, const std::string rates) {
 
 	std::vector<std::string>  init_periodic = commons::split<std::string> (rates, INIT_PERIODIC_SEPARATOR);
 	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? commons::split<std::string> (init_periodic[0], ',') : std::vector<std::string>() ;
 	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? commons::split<std::string> (init_periodic[0], ',') : commons::split<std::string> (init_periodic[1], ',') ;
-	std::vector<TOKEN_UNIT>   init_cons;
-	std::vector<TOKEN_UNIT>   periodic_cons;
+	// std::vector<TOKEN_UNIT>   init_cons;
+	// std::vector<TOKEN_UNIT>   periodic_cons;
 
-	for (unsigned int i = 1 ; i <= init_phases.size() ; i++) {
-		init_cons.push_back(commons::fromString<TOKEN_UNIT>(init_phases[i-1]));
-	}
+	// for (unsigned int i = 1 ; i <= init_phases.size() ; i++) {
+	// 	init_cons.push_back(commons::fromString<TOKEN_UNIT>(init_phases[i-1]));
+	// }
 
-	for (unsigned int i = 1 ; i <= periodic_phases.size() ; i++) {
-		periodic_cons.push_back(commons::fromString<TOKEN_UNIT>(periodic_phases[i-1]));
-	}
+	// for (unsigned int i = 1 ; i <= periodic_phases.size() ; i++) {
+	// 	periodic_cons.push_back(commons::fromString<TOKEN_UNIT>(periodic_phases[i-1]));
+	// }
+
+        std::vector<TOKEN_UNIT>  init_cons  = stringlist2tokenlist (init_phases);
+	std::vector<TOKEN_UNIT>  periodic_cons  = stringlist2tokenlist (periodic_phases);
 
 	VERBOSE_ASSERT(periodic_cons.size() > 0, "Edges output rates must have a periodic pattern. ");
 
@@ -111,16 +132,19 @@ void                        readSDF3InputSpec      (models::Dataflow *to, const 
 	std::vector<std::string>  init_periodic = commons::split<std::string> (rates, INIT_PERIODIC_SEPARATOR);
 	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? commons::split<std::string> (init_periodic[0], ',') : std::vector<std::string>() ;
 	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? commons::split<std::string> (init_periodic[0], ',') : commons::split<std::string> (init_periodic[1], ',') ;
-	std::vector<TOKEN_UNIT>   init_prod;
-	std::vector<TOKEN_UNIT>   periodic_prod;
+	// std::vector<TOKEN_UNIT>   init_prod;
+	// std::vector<TOKEN_UNIT>   periodic_prod;
 
-	for (unsigned int i = 1 ; i <= init_phases.size() ; i++) {
-		init_prod.push_back(commons::fromString<TOKEN_UNIT>(init_phases[i-1]));
-	}
+	// for (unsigned int i = 1 ; i <= init_phases.size() ; i++) {
+	// 	init_prod.push_back(commons::fromString<TOKEN_UNIT>(init_phases[i-1]));
+	// }
 
-	for (unsigned int i = 1 ; i <= periodic_phases.size() ; i++) {
-		periodic_prod.push_back(commons::fromString<TOKEN_UNIT>(periodic_phases[i-1]));
-	}
+	// for (unsigned int i = 1 ; i <= periodic_phases.size() ; i++) {
+	// 	periodic_prod.push_back(commons::fromString<TOKEN_UNIT>(periodic_phases[i-1]));
+	// }
+
+        std::vector<TOKEN_UNIT>  init_prod  = stringlist2tokenlist (init_phases);
+	std::vector<TOKEN_UNIT>  periodic_prod  = stringlist2tokenlist (periodic_phases);
 
 	VERBOSE_ASSERT(periodic_prod.size() > 0, "Edges input rates must have a periodic pattern. ");
 	to->setEdgeInInitPhases(c,init_prod);
