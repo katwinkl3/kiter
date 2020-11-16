@@ -58,8 +58,6 @@ StorageDistribution algorithms::select(models::Dataflow* const dataflow,
     }}
   {ForEachEdge(dataflow, e) {
       if (dataflow->getEdgeId(e) > dataflow->getEdgesCount()/2) {
-        std::cout << "BASE_M_OPT: hpDist" << std::endl;
-        hpDist.getChannelQuantity(e);
         hpDist.setChannelQuantity(e, (hyperPlanePoint.getChannelQuantity(e) - hpDist.getChannelQuantity(e))/2);
       }
     }}
@@ -102,8 +100,7 @@ StorageDistributionSet algorithms::base_monotonic_optimised_Kperiodic_throughput
     tempDist.setChannelQuantity(e, initDist.getChannelQuantity(e) - 1);
     infeasibleSet.add(tempDist, kneeSet);
   }
-  std::cout << "BASE_M_OPT: Variables initialised" << std::endl;
-  std::cout << "BASE_M_OPT: Initial SD (add 1 to each edge):\n" << kneeSet.getNextDistribution().printInfo(dataflow) << std::endl;
+
   result = compute_Kperiodic_throughput_and_cycles(dataflow, parameters);
   thrCurrent = result.throughput;
   while (thrCurrent < thrTarget) {
@@ -133,7 +130,7 @@ StorageDistributionSet algorithms::base_monotonic_optimised_Kperiodic_throughput
     thrCurrent = newDist.getThroughput();
   }
   feasibleSet.addStorageDistribution(newDist);
-  std::cout << "BASE_M_OPT: Entering optimisation phase" << std::endl;
+
   bool foundPoint = false;
   bool isSat = true; // true if thrCurrent >= thrTarget
   TOKEN_UNIT mult = 1;
