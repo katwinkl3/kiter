@@ -318,16 +318,29 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
 
   // add initial distribution to list of storage distributions
   StorageDistributionSet checklist;
+  std::chrono::duration<double, std::milli> cumulativeTime; // store timings
   if (isMonoOpt) {
+    auto startTime = std::chrono::steady_clock::now();
     checklist = algorithms::monotonic_optimised_Kperiodic_throughput_dse(dataflow_prime,
                                                                          initDist,
                                                                          thrTarget,
+                                                                         computation_counter,
                                                                          parameters);
+    auto endTime = std::chrono::steady_clock::now();
+    std::chrono::duration<double, std::milli> execTime = endTime - startTime; // duration in ms
+    cumulativeTime += execTime;
+    std::cout << "M_OPT: time taken: " << cumulativeTime.count() << std::endl;
   } else if (isBaseMonoOpt) {
+    auto startTime = std::chrono::steady_clock::now();
     checklist = algorithms::base_monotonic_optimised_Kperiodic_throughput_dse(dataflow_prime,
                                                                               initDist,
                                                                               thrTarget,
+                                                                              computation_counter,
                                                                               parameters);
+    auto endTime = std::chrono::steady_clock::now();
+    std::chrono::duration<double, std::milli> execTime = endTime - startTime; // duration in ms
+    cumulativeTime += execTime;
+    std::cout << "B_M_OPT: time taken: " << cumulativeTime.count() << std::endl;
   } else {
     checklist = StorageDistributionSet(initDist.getDistributionSize(),
                                        initDist);
@@ -339,9 +352,8 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
      --- this will store the results of our DSE */
   StorageDistributionSet minStorageDist;
   
-  // initialise data logging file and timing variable
+  // initialise data logging file
   std::ofstream dseLog;
-  std::chrono::duration<double, std::milli> cumulativeTime;
   if (writeLogFiles) {
     dseLog.open(dirName + logDirName + dataflow_prime->getGraphName() + "_dselog_kiter.csv");
     dseLog << "storage distribution size,throughput,channel quantities,computation duration,cumulative duration"

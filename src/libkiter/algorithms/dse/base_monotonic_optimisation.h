@@ -28,6 +28,7 @@ namespace algorithms {
   StorageDistributionSet base_monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* const dataflow,
                                                                            StorageDistribution initDist,
                                                                            TIME_UNIT targetThr,
+                                                                           long int &computation_counter,
                                                                            parameters_list_t params);
         
 }

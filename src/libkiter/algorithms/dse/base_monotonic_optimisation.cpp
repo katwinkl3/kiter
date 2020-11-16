@@ -74,9 +74,9 @@ StorageDistribution algorithms::select(models::Dataflow* const dataflow,
 StorageDistributionSet algorithms::base_monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* const dataflow,
                                                                                      StorageDistribution initDist,
                                                                                      TIME_UNIT targetThr,
+                                                                                     long int &computation_counter,
                                                                                      parameters_list_t parameters) {
   TIME_UNIT thrTarget = targetThr;
-  long int computation_counter = 0;
   TIME_UNIT thrCurrent;
   StorageDistribution newDist(initDist);
   StorageDistribution originDist(initDist);
@@ -102,6 +102,7 @@ StorageDistributionSet algorithms::base_monotonic_optimised_Kperiodic_throughput
   }
 
   result = compute_Kperiodic_throughput_and_cycles(dataflow, parameters);
+  computation_counter++;
   thrCurrent = result.throughput;
   while (thrCurrent < thrTarget) {
     infeasibleSet.add(newDist, kneeSet);
@@ -121,6 +122,7 @@ StorageDistributionSet algorithms::base_monotonic_optimised_Kperiodic_throughput
         }
       }}
     result = compute_Kperiodic_throughput_and_cycles(dataflow, parameters);
+    computation_counter++;
     if (result.throughput < 0) { // all deadlocked graphs are equal in terms of throughput
       newDist.setThroughput(0);
     } else {
@@ -150,6 +152,7 @@ StorageDistributionSet algorithms::base_monotonic_optimised_Kperiodic_throughput
         }
       }}
     result = compute_Kperiodic_throughput_and_cycles(dataflow, parameters);
+    computation_counter++;
     if (result.throughput < 0) { // all deadlocked graphs are equal in terms of throughput
       checkDist.setThroughput(0);
     } else {
@@ -186,5 +189,6 @@ StorageDistributionSet algorithms::base_monotonic_optimised_Kperiodic_throughput
     }
   }
   // return kneeSet;
+  std::cout << "B_M_OPT: no. computations: " << computation_counter << std::endl;
   return augmentedKneeSet;
 }
