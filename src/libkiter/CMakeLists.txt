@@ -15,6 +15,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wconversion -Wno-float-equal -Wno-switc
 #
 INCLUDE_DIRECTORIES(${KITER_INCLUDE_DIR})
 INCLUDE_DIRECTORIES (${LIBXML2_INCLUDE_DIR})
+INCLUDE_DIRECTORIES (${Boost_INCLUDE_DIR})
 
 #
 #  ######### GENERAL SOURCES ##########
@@ -68,9 +69,12 @@ TARGET_LINK_LIBRARIES              (kiter_models PUBLIC   kiter_commons )
 
 
 ADD_LIBRARY		(kiter_lp SHARED  ${lp_sources})
+TARGET_LINK_LIBRARIES   (kiter_lp PUBLIC   kiter_commons )
 
 if(GLPK_FOUND)
-  TARGET_LINK_LIBRARIES   (kiter_lp         ${GLPK_LIBRARIES})
+    message(STATUS "GLPK FOUND")
+    target_include_directories(kiter_lp PRIVATE ${GLPK_INCLUDE_DIR})
+    TARGET_LINK_LIBRARIES   (kiter_lp         ${GLPK_LIBRARIES})
 endif(GLPK_FOUND)
 
 if(GUROBI_FOUND)
