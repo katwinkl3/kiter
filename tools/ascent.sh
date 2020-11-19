@@ -9,7 +9,7 @@ KITER=../Debug/bin/kiter
 MOTIV=../benchmarks/NoCMotivation/sdf_mapping.xml
 
 mkdir -p ./${OUTDIR}/
-cd ./${OUTDIR}/
+cd ./${OUTDIR}/ || exit
 
 ${KITER} -f ${MOTIV}  -a BufferlessNoCMapAndRoute -v10 -pcolor_routes=1 -a PrintMapping  > ./mapping.dot && dot ./mapping.dot -Kneato -Tpdf -o ./mapping.pdf
 ${KITER} -f ${MOTIV}  -a BufferlessNoCMapAndRoute -v10 -a BufferlessNoCScheduling

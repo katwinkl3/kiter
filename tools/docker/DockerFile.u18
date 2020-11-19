@@ -3,15 +3,13 @@ FROM ubuntu:bionic
 
 
 ################################### PACKAGE INSTALL  ##########################
-RUN apt-get update && apt install -y git make cmake libboost-all-dev libxml2-dev libglpk-dev
+RUN apt-get update && apt-get install -y git make cmake libboost-all-dev libxml2-dev libglpk-dev && apt-get clean && rm -rf /var/lib/apt/lists/*
 ################################################################################
 
-# RUN git clone https://github.com/bbodin/kiter.git
- RUN mkdir /kiter/
+RUN mkdir /kiter/
 COPY . /kiter/
-RUN ls
-RUN ls /
-RUN ls /kiter/
-# RUN cd kiter && git checkout routing
+
+WORKDIR /kiter/
+
 RUN cd kiter && make clean && make
 RUN cd kiter $$ make unit_test 

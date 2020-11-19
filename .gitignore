@@ -57,3 +57,8 @@ benchmarks/sdf3mem/
 
 # Ascent testbench
 benchmarks/ascenttestbench/
+
+
+
+#generated log
+/sdf.log

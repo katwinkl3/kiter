@@ -1,0 +1,28 @@
+<sdf3 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" type="csdf" version="1.0" xsi:noNamespaceSchemaLocation="http://www.es.ele.tue.nl/sdf3/xsd/sdf3-csdf.xsd">
+<applicationGraph name="Tiny">
+<csdf name="Tiny" type="Tiny">
+<actor name="a" type="a">
+<port type="in" name="ba_cons" rate="3,0"/>
+<port type="out" name="ab_prod" rate="2,1"/>
+</actor>
+<actor name="b" type="a">
+<port type="in" name="ab_cons" rate="1,1,1"/>
+<port type="out" name="ba_prod" rate="1,1,1"/>
+</actor>
+<channel name="ab" srcActor="a" srcPort="ab_prod" dstActor="b" dstPort="ab_cons" initialTokens="0"/>
+<channel name="ba" srcActor="b" srcPort="ba_prod" dstActor="a" dstPort="ba_cons" initialTokens="8"/>
+</csdf>
+<csdfProperties>
+<actorProperties actor="a">
+<processor type="cluster_0" default="true">
+<executionTime time="1,1"/>
+</processor>
+</actorProperties>
+<actorProperties actor="b">
+<processor type="cluster_0" default="true">
+<executionTime time="1,1,1"/>
+</processor>
+</actorProperties>
+</csdfProperties>
+</applicationGraph>
+</sdf3>
