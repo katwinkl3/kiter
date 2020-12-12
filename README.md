@@ -3,6 +3,7 @@
 Kiter is an iterative algorithm based on K-periodic scheduling to compute the throughput of a CSDFG.
 
 Build status: [![Build Status](https://travis-ci.org/bbodin/kiter.svg?branch=master)](https://travis-ci.org/bbodin/kiter)
+[![GitHub Super-Linter](https://github.com/bbodin/kiter/workflows/Lint%20Code%20Base/badge.svg)](https://github.com/marketplace/actions/super-linter)
 
 ## Compile it
 
@@ -22,8 +23,8 @@ The command is :
 Available algorithms are automatically listed if no algorithm provided :
 
 ```bash
-[toky@zebulon kiter]$ ./release/bin/kiter -f AGB5CSDF/autogen1.xml 
- Unsupported algorithm (-a NAME), list of supported algorithms is 
+[toky@zebulon kiter]$ ./release/bin/kiter -f AGB5CSDF/autogen1.xml
+ Unsupported algorithm (-a NAME), list of supported algorithms is
  - 1PeriodicThroughput : Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.
  - 2PeriodicThroughput : Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.
  - NKPeriodicThroughput : Optimal Throughput evaluation of CSDF by using N-periodic method.
@@ -65,7 +66,7 @@ docker run -v $(pwd)/tmp/sdf3:/sdf -t bbodin/sdf3 ./build/release/Linux/bin/sdf3
 
 ## Run the benchmark
 
-To compare with SDF3 you may need to specify a new value for ```SDF3_BINARY_ROOT``` in the Makefile. 
+To compare with SDF3 you may need to specify a new value for ```SDF3_BINARY_ROOT``` in the Makefile.
 Then ```make benchmark``` should do the job.
 
 ## Included benchmarks
@@ -118,9 +119,9 @@ Black-scholes.xml  Echo.xml  H264.xml  JPEG2000.xml  Pdectect.xml
 ## Current xperiments - Notes
 
 
-I am running the mapping using : 
+I am running the mapping using:
 ```bash
-make clean && make all -j8 && ./release/bin/kiter -f ~/Dropbox/.../one_modem.xml  -a SoftwareControlledNoCBufferless  -v 5  2>&1 
+make clean && make all -j8 && ./release/bin/kiter -f ~/Dropbox/.../one_modem.xml  -a SoftwareControlledNoCBufferless  -v 5  2>&1
 ```
 
 Then we can check the throughput with kiter:
@@ -154,4 +155,3 @@ If MOP = 0 , don't print initial Token in XML
 For duration specify a processor type
 print a channel properties XML even if empty
 In the print mapping, if task are on the same mapping, spread then X,Y slightly
-

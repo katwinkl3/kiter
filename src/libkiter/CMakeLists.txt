@@ -88,7 +88,7 @@ endif(GUROBI_FOUND)
 
 
 ADD_LIBRARY			   (kiter_generators SHARED ${generators_sources})
-TARGET_LINK_LIBRARIES  (kiter_generators PUBLIC kiter_commons kiter_algorithms)
+TARGET_LINK_LIBRARIES  (kiter_generators PUBLIC kiter_commons  kiter_models kiter_algorithms)
 
 ADD_LIBRARY			   (kiter_printers   SHARED  ${printers_sources})
 TARGET_LINK_LIBRARIES  (kiter_printers   PUBLIC kiter_commons kiter_models)
@@ -100,13 +100,13 @@ TARGET_LINK_LIBRARIES  (kiter_algorithms PUBLIC kiter_commons kiter_models kiter
 
 file(WRITE null.cpp "")
 ADD_LIBRARY			   (libkiter SHARED   null.cpp )
-TARGET_LINK_LIBRARIES  (libkiter  
-                kiter_algorithms
+TARGET_LINK_LIBRARIES  (libkiter PUBLIC
 				kiter_commons 
 				kiter_lp 
-				kiter_generators 
 				kiter_models 
-				kiter_printers)
+				kiter_printers
+           			kiter_algorithms
+				kiter_generators)
 set_property(TARGET libkiter PROPERTY FRAMEWORK ON)
 
  

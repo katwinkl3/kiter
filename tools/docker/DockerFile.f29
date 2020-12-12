@@ -1,27 +1,8 @@
 FROM fedora:29
 
+RUN yum install -y glpk-devel=4.65-2.fc29 cmake=3.14.5-1.fc29 findutils-1:4.6.0-21.fc29 unzip-6.0-42.fc29   gcc-8.3.1-2.fc29 make-1:4.2.1-10.fc29 gcc-c++-8.3.1-2.fc29 libxml2-devel-2.9.8-5.fc29  boost-devel-1.66.0-14.fc29 git-2.20.1-1.fc29  wget-1.20.3-1.fc29 && yum clean all
 
-
-################################### PACKAGE INSTALL  ##########################
-
-RUN yum install -y  unzip gcc make gcc-c++ libxml2-devel  boost-devel   emacs git  wget && yum clean all
-
-################################################################################
-
-
-
-
-################################### COPY              ##########################
-RUN mkdir /sdf3/
-WORKDIR /sdf3
-RUN wget http://www.es.ele.tue.nl/sdf3/download/files/releases/sdf3-140724.zip
-RUN unzip sdf3-140724.zip
-################################################################################
-
-
-
-
-#################################### BUILD  #####################################
-WORKDIR /sdf3/
-RUN make
-################################################################################
+RUN mkdir /kiter/
+COPY . /kiter/
+WORKDIR /kiter/
+RUN make clean && make test

@@ -11,7 +11,11 @@
 #include <stdlib.h>
 #include <commons/KiterRegistry.h>
 #include <commons/verbose.h>
-#include <printers/SDF3Wrapper.h>
+
+#include <printers/printers.h>
+#include <algorithms/algorithms.h>
+#include <generators/generators.h>
+
 
 
 inline double tock() {
