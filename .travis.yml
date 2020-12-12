@@ -11,6 +11,10 @@ compiler:
 sudo: required
 
 addons:
+  homebrew:
+    packages:
+    - glpk
+
   apt:
     sources:
     - ubuntu-toolchain-r-test
@@ -18,10 +22,6 @@ addons:
     - libglpk-dev
     - glpk-utils
     - libboost-all-dev
-
-before_install:
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update          ; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install glpk    ; fi
 
 script:
   - make test
