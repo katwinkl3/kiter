@@ -5,7 +5,7 @@ os:
   - osx
 
 dist: bionic
-osx_image: xcode12.2
+osx_image: xcode11
 
 compiler:
   - gcc
@@ -17,6 +17,7 @@ addons:
   homebrew:
     packages:
     - glpk
+    update: true
   apt:
     sources:
     - ubuntu-toolchain-r-test
