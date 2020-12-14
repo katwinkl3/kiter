@@ -8,6 +8,7 @@
 
 #include <models/Dataflow.h>
 #include <commons/commons.h>
+#include <algorithms/throughput/kperiodic.h>
 
 namespace models {
   class Dataflow;
@@ -30,7 +31,8 @@ public:
   TOKEN_UNIT getInitialTokens(Edge e) const;
   TOKEN_UNIT getDistributionSize() const;
   TIME_UNIT getThroughput() const;
-  ARRAY_INDEX getEdgeCount() const;
+  unsigned int getEdgeCount() const;
+  std::vector<Edge> getEdges() const;
   bool operator==(const StorageDistribution& distribution) const;
   bool operator!=(const StorageDistribution& distribution) const;
   void updateDistributionSize();
@@ -56,9 +58,28 @@ public:
                                                       distribution size dist_sz */
   StorageDistribution getNextDistribution() const;
   size_t getSize() const;
+  std::map<TOKEN_UNIT, std::vector<StorageDistribution>> getSet();
   void minimizeStorageDistributions(StorageDistribution newDist);
   bool hasDistribution(TOKEN_UNIT dist_sz);
+  bool hasStorageDistribution(StorageDistribution checkDist);
   bool isSearchComplete(StorageDistributionSet checklist, TIME_UNIT target_thr);
+  bool isInBackCone(StorageDistribution checkDist,
+                    std::map<Edge, TOKEN_UNIT> bufferLb);
+  bool isInForeCone(StorageDistribution checkDist);
+  void removeNonMaximum(StorageDistribution checkDist,
+                        std::map<Edge, TOKEN_UNIT> bufferLb);
+  void removeNonMinimum(StorageDistribution checkDist);
+  void updateKneeSet(models::Dataflow* const dataflow,
+                     StorageDistributionSet infeasibleSet,
+                     StorageDistributionSet feasibleSet,
+                     std::map<Edge, TOKEN_UNIT> bufferLb);
+  void addEdgeKnees(models::Dataflow* const dataflow,
+                    StorageDistributionSet infeasibleSet,
+                    StorageDistributionSet feasibleSet,
+                    std::map<Edge, TOKEN_UNIT> bufferLb);
+  void updateInfeasibleSet(StorageDistribution new_sd,
+                           std::map<Edge, TOKEN_UNIT> bufferLb); // add new SD to infeasible set of SDs for monotonic optimisation
+  void updateFeasibleSet(StorageDistribution new_sd); // add new SD to infeasible set of SDs for monotonic optimisation
   std::string printDistributions(TOKEN_UNIT dist_sz,
 				 models::Dataflow* const dataflow); /* prints info of all storage distributions 
 								       of given distribution size */
@@ -86,5 +107,13 @@ void initSearchParameters(models::Dataflow *dataflow,
                           std::map<Edge,
                           std::pair<TOKEN_UNIT, TOKEN_UNIT>> &minChannelSizes);
 std::string timeToString(TIME_UNIT t);
-
+StorageDistribution makeMinimalSD(StorageDistribution sd1,
+                                  StorageDistribution sd2);
+void handleInfeasiblePoint(models::Dataflow* const dataflow,
+                           StorageDistributionSet &infeasibleSet,
+                           StorageDistributionSet feasibleSet,
+                           StorageDistributionSet &kneeSet,
+                           StorageDistribution newSD,
+                           kperiodic_result_t deps,
+                           std::map<Edge, TOKEN_UNIT> &bufferLb);
 #endif /* BUFFER_SIZING_H_ */

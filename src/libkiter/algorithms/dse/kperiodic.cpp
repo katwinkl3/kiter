@@ -18,6 +18,7 @@
 #include <models/repetition_vector.h>
 #include "buffer_sizing.h"
 #include "kperiodic.h"
+#include "monotonic_optimisation.h"
 #include <chrono> // to take computation timings
 // #define WRITE_GRAPHS // uncomment to write dot files of explored graphs
 // Compute and return period and causal dependency cycles of given dataflow graph
@@ -193,14 +194,25 @@ kperiodic_result_t algorithms::compute_Kperiodic_throughput_and_cycles(models::D
 void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataflow,
                                                    parameters_list_t  parameters) {
   bool writeLogFiles = false;
+  bool isMonoOpt = false;
+  bool thrTargetSpecified = false;
+  TIME_UNIT thrTarget;
   if (parameters.find("LOG") != parameters.end()) {
     writeLogFiles = true;
+  }
+  if (parameters.find("M_OPT") != parameters.end()) { // use monotonic optimisation
+    isMonoOpt = true;
+  }
+  if (parameters.find("THR") != parameters.end()) {
+    thrTargetSpecified = true;
+  } else {
+    std::cout << "No target throughput specified (target throughput will be set to max throughput by default) --- specify target throughput with '-p THR=n' flag" << std::endl;
   }
   
   // graph to model bounded channel quantities
   models::Dataflow* dataflow_prime = new models::Dataflow(*dataflow);
   long int computation_counter = 0;
-
+  
   // Create channels in new graph to model bounded channel quantities
   {ForEachEdge(dataflow, c) {
       auto new_edge = dataflow_prime->addEdge(dataflow_prime->getEdgeTarget(c),
@@ -274,6 +286,20 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   // calculate max throughput and current throughput with lower bound distribution
   kperiodic_result_t result_max = compute_Kperiodic_throughput_and_cycles(dataflow, parameters);
   VERBOSE_DSE("Max throughput: " << result_max.throughput << std::endl);
+  if (!thrTargetSpecified) {
+    thrTarget = result_max.throughput;
+    VERBOSE_DSE("Target throughput set to max of " << thrTarget << std::endl);
+  } else { // target throughput specified
+    thrTarget = std::stold(parameters.find("THR")->second);
+    if (thrTarget <= result_max.throughput) {
+      VERBOSE_DSE("Target throughput set to " << thrTarget << std::endl);
+    } else { // invalid target throughput
+      std::cerr << "ERROR: Specified target throughput (" << thrTarget
+                << ") is larger than maximum throughput (" << result_max.throughput
+                << ")" << std::endl;
+      return;
+    }
+  }
   kperiodic_result_t result = compute_Kperiodic_throughput_and_cycles(dataflow_prime, parameters);
 
   /* a negative throughput indicates a deadlocked graph and so 
@@ -285,8 +311,17 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   }
 
   // add initial distribution to list of storage distributions
-  StorageDistributionSet checklist(initDist.getDistributionSize(),
-                                   initDist);
+  StorageDistributionSet checklist;
+  if (!isMonoOpt) {
+    checklist = StorageDistributionSet(initDist.getDistributionSize(),
+                                       initDist);
+  } else {
+    checklist = algorithms::monotonic_optimised_Kperiodic_throughput_dse(dataflow_prime,
+                                                                         initDist,
+                                                                         thrTarget,
+                                                                         parameters);
+  }
+
 
   /* Initialise set of minimal storage distributions
      (a set of pairs of throughput and storage distribution) 
@@ -306,23 +341,24 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   VERBOSE_DSE("\n");
   VERBOSE_DSE("DSE BEGIN:" << std::endl);
   
-  while (!minStorageDist.isSearchComplete(checklist, result_max.throughput)) {    
+  while (!minStorageDist.isSearchComplete(checklist, thrTarget)) {
     VERBOSE_DSE("Checking next storage distribution in checklist --- current checklist size: "
                 << checklist.getSize() << std::endl);
     StorageDistribution checkDist(checklist.getNextDistribution()); // copy distribution for checking (first in checklist)
+    std::cout << "next sd size: " << checkDist.getDistributionSize() << std::endl;
     checklist.removeStorageDistribution(checklist.getNextDistribution()); // remove said storage distribution from checklist
     
     // Update graph with storage distribution just removed from checklist
     VERBOSE_DSE(std::endl);
     VERBOSE_DSE("Exploring new storage distribution: " << std::endl);
     dataflow_prime->reset_computation(); // make graph writeable to alter channel size
+    std::cout << "Modelling buffer sizes" << std::endl;
     {ForEachEdge(dataflow_prime, c) {
         if (dataflow_prime->getEdgeId(c) > dataflow->getEdgesCount()) { // only modelled buffer preloads change
           dataflow_prime->setPreload(c, (checkDist.getChannelQuantity(c) -
                                          checkDist.getInitialTokens(c))); // always account for initial tokens in buffer
         }
       }}
-
     // UNCOMMENT TO WRITE XMLs OF EXPLORED GRAPHS
     // commons::writeSDF3File(dirName + debugXMLName + "dse_min_distribution_" +
     // 			   dataflow_prime->getName() + "_kiter" + std::to_string(computation_counter) +
@@ -396,7 +432,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     minStorageDist.addStorageDistribution(zeroDist);
   }
   VERBOSE_DSE("\n");
-  VERBOSE_DSE("DSE RESULTS [START] (target throughput: " << result_max.throughput
+  VERBOSE_DSE("DSE RESULTS [START] (target throughput: " << thrTarget
               << "):" << std::endl);
   VERBOSE_DSE("\n" << minStorageDist.printDistributions(dataflow_prime));
   VERBOSE_DSE("DSE RESULTS [END]" << std::endl);
