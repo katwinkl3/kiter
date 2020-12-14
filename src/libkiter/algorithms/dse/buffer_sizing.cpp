@@ -151,7 +151,6 @@ std::string StorageDistribution::printInfo(models::Dataflow* const dataflow) {
   sdInfo += "\n"; // double line return to mark end of channel quantities
   sdInfo += "\tDistribution size: " + std::to_string(this->getDistributionSize()) + "\n";
   sdInfo += "\tThroughput: " + timeToString(this->getThroughput()) + "\n";
-  std::cout << "test: " << this->getThroughput() << std::endl;
   
   return sdInfo;
 }
