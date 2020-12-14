@@ -55,7 +55,7 @@ StorageDistribution algorithms::selectNewSD(models::Dataflow* const dataflow,
         }
       }}
     if (!(feasibleSet.isInForeCone(newDist) || feasibleSet.hasStorageDistribution(newDist))) {
-      std::cout << "SELECT: new point not in S+:\n" << newDist.printInfo(dataflow) << std::endl;
+      // std::cout << "SELECT: new point not in S+:\n" << newDist.printInfo(dataflow) << std::endl;
       return newDist;
     }
   }
@@ -83,10 +83,10 @@ StorageDistribution algorithms::selectNewSD(models::Dataflow* const dataflow,
       (feasibleSet.isInForeCone(newDist) || feasibleSet.hasStorageDistribution(newDist))) {
     // we've gotten to the end of the optimization phase
     foundPoint = true;
-    std::cout << "SELECT: Cannot find new point, ending search" << std::endl;
+    // std::cout << "SELECT: Cannot find new point, ending search" << std::endl;
     return newDist;
   } else {
-    std::cout << "SELECT: new point found:\n" << newDist.printInfo(dataflow) << std::endl;
+    // std::cout << "SELECT: new point found:\n" << newDist.printInfo(dataflow) << std::endl;
     return newDist;
   }
 }
@@ -94,13 +94,14 @@ StorageDistribution algorithms::selectNewSD(models::Dataflow* const dataflow,
 StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* const dataflow,
                                                                                 StorageDistribution initDist,
                                                                                 TIME_UNIT targetThr,
+                                                                                long int &computation_counter,
                                                                                 parameters_list_t parameters) {
   TIME_UNIT thrTarget = targetThr;
-  long int computation_counter = 0;
   // TIME_UNIT thrCurrent = initDist.getThroughput();
   TIME_UNIT thrCurrent;
   StorageDistribution newDist(initDist);
   kperiodic_result_t result = compute_Kperiodic_throughput_and_cycles(dataflow, parameters);
+  computation_counter++;
   StorageDistributionSet infeasibleSet;
   StorageDistributionSet kneeSet;
   StorageDistributionSet feasibleSet;
@@ -150,6 +151,7 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
         }
       }}
     result = compute_Kperiodic_throughput_and_cycles(dataflow, parameters);
+    computation_counter++;
     if (result.throughput < 0) { // all deadlocked graphs are equal in terms of throughput
       newDist.setThroughput(0);
     } else {
@@ -197,6 +199,7 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
         }
       }}
     result = compute_Kperiodic_throughput_and_cycles(dataflow, parameters);
+    computation_counter++;
     if (result.throughput < 0) { // all deadlocked graphs are equal in terms of throughput
       checkDist.setThroughput(0);
     } else {
@@ -204,7 +207,7 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
     }
     VERBOSE_DSE(checkDist.printInfo(dataflow));
     thrCurrent = checkDist.getThroughput();
-    std::cout << "thrCurrent, thrTarget: " << thrCurrent << ", " << thrTarget << std::endl;
+    // std::cout << "thrCurrent, thrTarget: " << thrCurrent << ", " << thrTarget << std::endl;
     if (thrCurrent < thrTarget) {
       handleInfeasiblePoint(dataflow, infeasibleSet, feasibleSet, kneeSet,
                             checkDist, result, bufferLowerBounds);
@@ -237,6 +240,7 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
       }
     }}
   result = compute_Kperiodic_throughput_and_cycles(dataflow, parameters);
+  computation_counter++;
   if (result.throughput < 0) { // all deadlocked graphs are equal in terms of throughput
     currDist.setThroughput(0);
   } else {
@@ -259,5 +263,6 @@ StorageDistributionSet algorithms::monotonic_optimised_Kperiodic_throughput_dse(
   VERBOSE_DSE("Augmented knee set:\n" << augmentedKneeSet.printDistributions(dataflow)
               << std::endl);
   // return augmentedKneeSet;
+  std::cout << "M_OPT: no. computations: " << computation_counter << std::endl;
   return kneeSet;
 }

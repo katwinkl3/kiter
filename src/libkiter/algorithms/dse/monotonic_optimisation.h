@@ -13,7 +13,7 @@
 #include <algorithms/throughput/kperiodic.h>
 
 namespace models {
-	class Dataflow;
+  class Dataflow;
 }
 
 namespace algorithms {
@@ -32,6 +32,7 @@ namespace algorithms {
   StorageDistributionSet monotonic_optimised_Kperiodic_throughput_dse(models::Dataflow* const dataflow,
                                                                       StorageDistribution initDist,
                                                                       TIME_UNIT targetThr,
+                                                                      long int &computation_counter,
                                                                       parameters_list_t params);
         
 }

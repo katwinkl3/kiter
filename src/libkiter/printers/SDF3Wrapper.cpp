@@ -112,6 +112,7 @@ void                        readSDF3OutputSpec      (models::Dataflow *to, const
 	std::vector<TOKEN_UNIT>  periodic_cons  = stringlist2tokenlist (periodic_phases);
 
 
+
 	VERBOSE_ASSERT(periodic_cons.size() > 0, "Edges output rates must have a periodic pattern. ");
 
 	to->setEdgeOutInitPhases(c,init_cons);
@@ -129,6 +130,7 @@ void                        readSDF3InputSpec      (models::Dataflow *to, const 
 
 	std::vector<TOKEN_UNIT>  init_prod  = stringlist2tokenlist (init_phases);
 	std::vector<TOKEN_UNIT>  periodic_prod  = stringlist2tokenlist (periodic_phases);
+
 
 
 

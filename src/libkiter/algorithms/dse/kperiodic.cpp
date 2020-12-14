@@ -19,6 +19,7 @@
 #include "buffer_sizing.h"
 #include "kperiodic.h"
 #include "monotonic_optimisation.h"
+#include "base_monotonic_optimisation.h"
 #include <chrono> // to take computation timings
 // #define WRITE_GRAPHS // uncomment to write dot files of explored graphs
 // Compute and return period and causal dependency cycles of given dataflow graph
@@ -195,6 +196,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
                                                    parameters_list_t  parameters) {
   bool writeLogFiles = false;
   bool isMonoOpt = false;
+  bool isBaseMonoOpt = false;
   bool thrTargetSpecified = false;
   TIME_UNIT thrTarget;
   if (parameters.find("LOG") != parameters.end()) {
@@ -202,6 +204,9 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   }
   if (parameters.find("M_OPT") != parameters.end()) { // use monotonic optimisation
     isMonoOpt = true;
+  }
+  if (parameters.find("B_M_OPT") != parameters.end()) { // use base monotonic optimisation
+    isBaseMonoOpt = true;
   }
   if (parameters.find("THR") != parameters.end()) {
     thrTargetSpecified = true;
@@ -275,6 +280,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   std::string ppDirName = "pp_logs/"; // logs of pareto points
   std::string logDirName = "dse_logs/";
   std::string debugXMLName = "xmls/";
+  std::string methodName;
   #ifdef WRITE_GRAPHS
   std::string dotfileDirName = "dotfiles/";
   #endif
@@ -312,14 +318,35 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
 
   // add initial distribution to list of storage distributions
   StorageDistributionSet checklist;
-  if (!isMonoOpt) {
-    checklist = StorageDistributionSet(initDist.getDistributionSize(),
-                                       initDist);
-  } else {
+  std::chrono::duration<double, std::milli> cumulativeTime; // store timings
+  if (isMonoOpt) {
+    methodName = "_m_opt";
+    auto startTime = std::chrono::steady_clock::now();
     checklist = algorithms::monotonic_optimised_Kperiodic_throughput_dse(dataflow_prime,
                                                                          initDist,
                                                                          thrTarget,
+                                                                         computation_counter,
                                                                          parameters);
+    auto endTime = std::chrono::steady_clock::now();
+    std::chrono::duration<double, std::milli> execTime = endTime - startTime; // duration in ms
+    cumulativeTime += execTime;
+    std::cout << "M_OPT: time taken: " << cumulativeTime.count() << std::endl;
+  } else if (isBaseMonoOpt) {
+    methodName = "_base_m_opt";
+    auto startTime = std::chrono::steady_clock::now();
+    checklist = algorithms::base_monotonic_optimised_Kperiodic_throughput_dse(dataflow_prime,
+                                                                              initDist,
+                                                                              thrTarget,
+                                                                              computation_counter,
+                                                                              parameters);
+    auto endTime = std::chrono::steady_clock::now();
+    std::chrono::duration<double, std::milli> execTime = endTime - startTime; // duration in ms
+    cumulativeTime += execTime;
+    std::cout << "B_M_OPT: time taken: " << cumulativeTime.count() << std::endl;
+  } else {
+    methodName = "_kiter";
+    checklist = StorageDistributionSet(initDist.getDistributionSize(),
+                                       initDist);
   }
 
 
@@ -328,11 +355,10 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
      --- this will store the results of our DSE */
   StorageDistributionSet minStorageDist;
   
-  // initialise data logging file and timing variable
+  // initialise data logging file
   std::ofstream dseLog;
-  std::chrono::duration<double, std::milli> cumulativeTime;
   if (writeLogFiles) {
-    dseLog.open(dirName + logDirName + dataflow_prime->getGraphName() + "_dselog_kiter.csv");
+    dseLog.open(dirName + logDirName + dataflow_prime->getGraphName() + "_dselog" + methodName + ".csv");
     dseLog << "storage distribution size,throughput,channel quantities,computation duration,cumulative duration"
            << std::endl; // initialise headers
   }
@@ -444,12 +470,12 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   if (writeLogFiles) {
     dseLog.close();
     std::cout << "\nDSE log has been written to: "
-              << dirName + logDirName + dataflow_prime->getGraphName() + "_dselog_kiter.csv"
+              << dirName + logDirName + dataflow_prime->getGraphName() + "_dselog" + methodName + ".csv"
               << std::endl;
     minStorageDist.writeCSV(dirName + ppDirName + dataflow_prime->getGraphName() +
-                            "_pp_kiter.csv", dataflow_prime);
+                            "_pp" + methodName + ".csv", dataflow_prime);
     std::cout << "\nPareto points have been written to: "
-              << dirName + ppDirName + dataflow_prime->getGraphName() + "_pp_kiter.csv"
+              << dirName + ppDirName + dataflow_prime->getGraphName() + "_pp" + methodName + ".csv"
               << std::endl;
     #ifdef WRITE_GRAPHS
     minStorageDist.printGraphs(dataflow_prime,
