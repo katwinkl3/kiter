@@ -367,14 +367,12 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     VERBOSE_DSE("Checking next storage distribution in checklist --- current checklist size: "
                 << checklist.getSize() << std::endl);
     StorageDistribution checkDist(checklist.getNextDistribution()); // copy distribution for checking (first in checklist)
-    std::cout << "next sd size: " << checkDist.getDistributionSize() << std::endl;
     checklist.removeStorageDistribution(checklist.getNextDistribution()); // remove said storage distribution from checklist
     
     // Update graph with storage distribution just removed from checklist
     VERBOSE_DSE(std::endl);
     VERBOSE_DSE("Exploring new storage distribution: " << std::endl);
     dataflow_prime->reset_computation(); // make graph writeable to alter channel size
-    std::cout << "Modelling buffer sizes" << std::endl;
     {ForEachEdge(dataflow_prime, c) {
         if (dataflow_prime->getEdgeId(c) > dataflow->getEdgesCount()) { // only modelled buffer preloads change
           dataflow_prime->setPreload(c, (checkDist.getChannelQuantity(c) -
