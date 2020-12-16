@@ -14,13 +14,13 @@
 #include <models/Dataflow.h>
 #include <models/EventGraph.h>
 #include <algorithms/normalization.h>
-// #include <algorithms/throughput/kperiodic.h>
 #include <models/repetition_vector.h>
 #include "buffer_sizing.h"
 #include "kperiodic.h"
 #include "monotonic_optimisation.h"
 #include "base_monotonic_optimisation.h"
 #include <chrono> // to take computation timings
+
 // #define WRITE_GRAPHS // uncomment to write dot files of explored graphs
 // Compute and return period and causal dependency cycles of given dataflow graph
 kperiodic_result_t algorithms::compute_Kperiodic_throughput_and_cycles(models::Dataflow* const dataflow, parameters_list_t parameters) {
@@ -182,11 +182,6 @@ kperiodic_result_t algorithms::compute_Kperiodic_throughput_and_cycles(models::D
 
     VERBOSE_INFO("K-periodic schedule - total_ki=" << sumKi << " total_ni=" << sumNi );
     
-    // std::cout << "Current K-periodic throughput: " << result.throughput << std::endl;
-    // std::cout << "   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) << std::endl;
-    // TIME_UNIT res = result.throughput;
-    // std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
-    // std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 
     return result;
 }
@@ -199,7 +194,18 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   bool isBaseMonoOpt = false;
   bool thrTargetSpecified = false;
   TIME_UNIT thrTarget;
-  if (parameters.find("LOG") != parameters.end()) {
+  long int computation_counter = 0;
+  std::string dirName = "./data/";
+  std::string ppDirName = "pp_logs/"; // logs of pareto points
+  std::string logDirName = "dse_logs/";
+  std::string debugXMLName = "xmls/";
+  std::string methodName;
+#ifdef WRITE_GRAPHS
+  std::string dotfileDirName = "dotfiles/";
+#endif
+
+  // parse parameters for KDSE
+  if (parameters.find("LOG") != parameters.end()) { // log output of DSE (includes pareto points and all search points) NOTE: parent directories need to be created beforehand
     writeLogFiles = true;
   }
   if (parameters.find("M_OPT") != parameters.end()) { // use monotonic optimisation
@@ -208,17 +214,15 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   if (parameters.find("B_M_OPT") != parameters.end()) { // use base monotonic optimisation
     isBaseMonoOpt = true;
   }
-  if (parameters.find("THR") != parameters.end()) {
+  if (parameters.find("THR") != parameters.end()) { // specify target throughput of DSE
     thrTargetSpecified = true;
   } else {
     std::cout << "No target throughput specified (target throughput will be set to max throughput by default) --- specify target throughput with '-p THR=n' flag" << std::endl;
   }
   
-  // graph to model bounded channel quantities
+  // create new graph with modelled bounded channel quantities
   models::Dataflow* dataflow_prime = new models::Dataflow(*dataflow);
-  long int computation_counter = 0;
-  
-  // Create channels in new graph to model bounded channel quantities
+  // add feedback channels in new graph to model bounded channel quantities
   {ForEachEdge(dataflow, c) {
       auto new_edge = dataflow_prime->addEdge(dataflow_prime->getEdgeTarget(c),
                                               dataflow_prime->getEdgeSource(c));
@@ -267,7 +271,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   
   // initialise modelled graph with lower bound distribution
   {ForEachEdge(dataflow_prime, c) {
-      if (dataflow_prime->getEdgeId(c) <= dataflow->getEdgesCount()) { // original channels
+      if (dataflow_prime->getEdgeId(c) <= dataflow->getEdgesCount()) { // original channel IDs
         dataflow_prime->setPreload(c, initDist.getInitialTokens(c));
       } else {
         // subtract initial tokens from buffer size to model any initial tokens in buffer
@@ -276,14 +280,6 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
       }
   }}
 
-  std::string dirName = "./data/";
-  std::string ppDirName = "pp_logs/"; // logs of pareto points
-  std::string logDirName = "dse_logs/";
-  std::string debugXMLName = "xmls/";
-  std::string methodName;
-  #ifdef WRITE_GRAPHS
-  std::string dotfileDirName = "dotfiles/";
-  #endif
   // uncomment code block to get XMLs of lower bound distribution
   // commons::writeSDF3File(dirName + "dse_min_distribution_" +
   //                        dataflow_prime->getName() + "_kiter"
@@ -477,6 +473,9 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     std::cout << "\nPareto points have been written to: "
               << dirName + ppDirName + dataflow_prime->getGraphName() + "_pp" + methodName + ".csv"
               << std::endl;
+    std::cout << "\nNote that the parent directories of the log files need to be created first --- run: "
+              << "\"mkdir -p " + dirName + logDirName + "; mkdir -p " + dirName + ppDirName + "\""
+              << " to create parent directories" << std::endl;
     #ifdef WRITE_GRAPHS
     minStorageDist.printGraphs(dataflow_prime,
                                dirName + dotfileDirName);
