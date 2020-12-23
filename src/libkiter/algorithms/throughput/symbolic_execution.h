@@ -18,8 +18,7 @@ namespace models {
 namespace algorithms {
   void compute_asap_throughput(models::Dataflow* const dataflow,
                                parameters_list_t);
-  void printStatus(models::Dataflow* const dataflow,
-                   Vertex actor, PHASE_INDEX currentPhase);
+  void printStatus(models::Dataflow* const dataflow);
 }
 
 ADD_TRANSFORMATION(SymbExec,

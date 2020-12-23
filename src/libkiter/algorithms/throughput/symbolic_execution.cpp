@@ -32,11 +32,13 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
       std::cout << std::endl;
     }}
   // testing functions
+  printStatus(dataflow);
   {ForEachTask(dataflow, t) {
       if (actorMap[dataflow->getVertexId(t)].isReadyForExec(dataflow)) {
         std::cout << "Actor " << dataflow->getVertexName(t) << " ready for execution" << std::endl;
         std::cout << "executing..." << std::endl;
         actorMap[dataflow->getVertexId(t)].execute(dataflow);
+        printStatus(dataflow);
       } else {
         std::cout << "Actor " << dataflow->getVertexName(t) << " NOT ready for execution" << std::endl;
       }
@@ -44,27 +46,34 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
     }}
 }
 
-// prints current status of execution
-void algorithms::printStatus(models::Dataflow* const dataflow,
-                             Vertex actor, PHASE_INDEX currentPhase) {
-  std::cout << "Actor " << dataflow->getVertexName(actor) << std::endl;
-  std::cout << "rep factor (" << dataflow->getVertexName(actor)
-            << "): " << dataflow->getNi(actor) << std::endl;
-  {ForOutputEdges(dataflow, actor, e) {
-      std::cout << "initial tokens in output channel: " << dataflow->getPreload(e) << std::endl;
-      std::cout << "output port execution rates (phases = " << dataflow->getEdgeInPhasesCount(e) <<"): ";
-      {ForEachPhase(dataflow, actor, p) {
-            std::cout << dataflow->getEdgeInPhase(e, p) << " ";
-          }}
-      std::cout << std::endl;
-      std::cout << "Current phase token prod: " << dataflow->getEdgeInPhase(e, 1) << std::endl;
+// prints current status of dataflow graph
+void algorithms::printStatus(models::Dataflow* const dataflow) {
+  std::cout << "Token counts:" << std::endl;
+  {ForEachEdge(dataflow, e) {
+      std::cout << "\tChannel " << dataflow->getEdgeName(e) << " ("
+                << dataflow->getVertexName(dataflow->getEdgeSource(e))
+                << "->"
+                << dataflow->getVertexName(dataflow->getEdgeTarget(e))
+                << "): " << dataflow->getPreload(e) << std::endl;
     }}
-  {ForInputEdges(dataflow, actor, e) {
-      std::cout << "initial tokens in input channel: " << dataflow->getPreload(e) << std::endl;
-      std::cout << "input port execution rates: ";
-      {ForEachPhase(dataflow, actor, p) {
-            std::cout << dataflow->getEdgeOutPhase(e, p) << " ";
-          }}
-      std::cout << "Current phase token cons: " << dataflow->getEdgeOutPhase(e, 1) << std::endl;
-    }}
+  // std::cout << "Actor " << dataflow->getVertexName(actor) << std::endl;
+  // std::cout << "rep factor (" << dataflow->getVertexName(actor)
+  //           << "): " << dataflow->getNi(actor) << std::endl;
+  // {ForOutputEdges(dataflow, actor, e) {
+  //     std::cout << "initial tokens in output channel: " << dataflow->getPreload(e) << std::endl;
+  //     std::cout << "output port execution rates (phases = " << dataflow->getEdgeInPhasesCount(e) <<"): ";
+  //     {ForEachPhase(dataflow, actor, p) {
+  //           std::cout << dataflow->getEdgeInPhase(e, p) << " ";
+  //         }}
+  //     std::cout << std::endl;
+  //     std::cout << "Current phase token prod: " << dataflow->getEdgeInPhase(e, 1) << std::endl;
+  //   }}
+  // {ForInputEdges(dataflow, actor, e) {
+  //     std::cout << "initial tokens in input channel: " << dataflow->getPreload(e) << std::endl;
+  //     std::cout << "input port execution rates: ";
+  //     {ForEachPhase(dataflow, actor, p) {
+  //           std::cout << dataflow->getEdgeOutPhase(e, p) << " ";
+  //         }}
+  //     std::cout << "Current phase token cons: " << dataflow->getEdgeOutPhase(e, 1) << std::endl;
+  //   }}
 }
