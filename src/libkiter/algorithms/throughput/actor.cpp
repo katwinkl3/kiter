@@ -11,7 +11,6 @@
 Actor::Actor()
   :actor{},
    numExecs{0},
-   currentPhase(),
    consPhaseCount(),
    prodPhaseCount(),
    prodExecRate(),
@@ -23,7 +22,6 @@ Actor::Actor(models::Dataflow* const dataflow, Vertex a) {
   std::cout << "initialising actor " << dataflow->getVertexName(actor) << std::endl;
   {ForInputEdges(dataflow, actor, e) {
       std::cout << "input port execution rates (phases = " << dataflow->getEdgeOutPhasesCount(e) <<"): ";
-      currentPhase[e] = 0;
       consPhaseCount[e] = dataflow->getEdgeOutPhasesCount(e);
       {ForEachPhase(dataflow, actor, p) {
           std::cout << dataflow->getEdgeOutPhase(e, p) << " ";
@@ -33,7 +31,6 @@ Actor::Actor(models::Dataflow* const dataflow, Vertex a) {
     }}
   {ForOutputEdges(dataflow, actor, e) {
       std::cout << "output port execution rates (phases = " << dataflow->getEdgeInPhasesCount(e) <<"): ";
-      currentPhase[e] = 0;
       prodPhaseCount[e] = dataflow->getEdgeInPhasesCount(e);
       {ForEachPhase(dataflow, actor, p) {
           std::cout << dataflow->getEdgeInPhase(e, p) << "(p=" << p << ") ";
@@ -41,11 +38,6 @@ Actor::Actor(models::Dataflow* const dataflow, Vertex a) {
         }}
       std::cout << std::endl;
     }}
-}
-
-void Actor::setPhase(Edge e, PHASE_INDEX p) {
-  assert(p <= getPhaseCount(e));
-  this->currentPhase[e] = p;
 }
 
 EXEC_COUNT Actor::getPhaseCount(Edge e) {
@@ -61,9 +53,9 @@ EXEC_COUNT Actor::getPhaseCount(Edge e) {
   }
 }
 
+// Return phase of execution for given edge
 PHASE_INDEX Actor::getPhase(Edge e) {
-  assert(this->currentPhase.find(e) != this->currentPhase.end());
-  return this->currentPhase[e];
+  return (this->getNumExecutions() % getPhaseCount(e)) + 1;
 }
 
 TOKEN_UNIT Actor::getExecRate(Edge e) {
