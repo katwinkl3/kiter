@@ -35,19 +35,11 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
   {ForEachTask(dataflow, t) {
       if (actorMap[dataflow->getVertexId(t)].isReadyForExec(dataflow)) {
         std::cout << "Actor " << dataflow->getVertexName(t) << " ready for execution" << std::endl;
+        std::cout << "executing..." << std::endl;
+        actorMap[dataflow->getVertexId(t)].execute(dataflow);
       } else {
         std::cout << "Actor " << dataflow->getVertexName(t) << " NOT ready for execution" << std::endl;
       }
-      actorMap[dataflow->getVertexId(t)].advancePhase(dataflow);
-      std::cout << std::endl;
-    }}
-  {ForEachTask(dataflow, t) {
-      if (actorMap[dataflow->getVertexId(t)].isReadyForExec(dataflow)) {
-        std::cout << "Actor " << dataflow->getVertexName(t) << " ready for execution" << std::endl;
-      } else {
-        std::cout << "Actor " << dataflow->getVertexName(t) << " NOT ready for execution" << std::endl;
-      }
-      actorMap[dataflow->getVertexId(t)].advancePhase(dataflow);
       std::cout << std::endl;
     }}
 }

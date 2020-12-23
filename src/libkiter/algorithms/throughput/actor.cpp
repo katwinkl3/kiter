@@ -10,6 +10,7 @@
 
 Actor::Actor()
   :actor{},
+   numExecs{0},
    currentPhase(),
    consPhaseCount(),
    prodPhaseCount(),
@@ -18,6 +19,7 @@ Actor::Actor()
 
 Actor::Actor(models::Dataflow* const dataflow, Vertex a) {
   actor = a;
+  numExecs = 0;
   std::cout << "initialising actor " << dataflow->getVertexName(actor) << std::endl;
   {ForInputEdges(dataflow, actor, e) {
       std::cout << "input port execution rates (phases = " << dataflow->getEdgeOutPhasesCount(e) <<"): ";
@@ -80,6 +82,10 @@ TOKEN_UNIT Actor::getExecRate(Edge e) {
   }
 }
 
+EXEC_COUNT Actor::getNumExecutions() {
+  return this->numExecs;
+}
+
 // Advances phase for all ports of given channel
 void Actor::advancePhase(models::Dataflow* const dataflow) {
   {ForInputEdges(dataflow, this->actor, e) {
@@ -111,4 +117,17 @@ bool Actor::isReadyForExec(models::Dataflow* const dataflow) {
       }
     }}
   return isExecutable;
+}
+
+// Execute actor, consuming and producing tokens accordingly
+void Actor::execute(models::Dataflow* const dataflow) {
+  dataflow->reset_computation();
+  {ForInputEdges(dataflow, this->actor, e) {
+      dataflow->setPreload(e, dataflow->getPreload(e) - this->getExecRate(e));
+    }}
+  {ForOutputEdges(dataflow, this->actor, e) {
+      dataflow->setPreload(e, dataflow->getPreload(e) + this->getExecRate(e));
+    }}
+  this->advancePhase(dataflow);
+  this->numExecs++;
 }
