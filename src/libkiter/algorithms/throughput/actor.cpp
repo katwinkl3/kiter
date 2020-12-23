@@ -71,10 +71,8 @@ TOKEN_UNIT Actor::getExecRate(Edge e) {
          this->consExecRate.find(e) != this->consExecRate.end()); // given edge must be either input/output edge
   PHASE_INDEX curPhase = this->getPhase(e) + 1; // phase indexing starts from 1 but stored in Actor class as starting from 0
   if (this->prodExecRate.find(e) != this->prodExecRate.end()) {
-    std::cout << "\ttokens to produce: " <<  this->prodExecRate[e][curPhase] << std::endl;
     return this->prodExecRate[e][curPhase];
   } else if (this->consExecRate.find(e) != this->consExecRate.end()) {
-    std::cout << "\ttokens to consume: " << this->consExecRate[e][curPhase] << std::endl;
     return this->consExecRate[e][curPhase];
   } else {
     std::cout << "Specified edge not attached to given actor!" << std::endl;
@@ -130,4 +128,17 @@ void Actor::execute(models::Dataflow* const dataflow) {
     }}
   this->advancePhase(dataflow);
   this->numExecs++;
+}
+
+void Actor::printStatus(models::Dataflow* const dataflow) {
+  std::cout << "Actor " << dataflow->getVertexName(this->actor) << std::endl;
+  std::cout << "\tNumber of executions: " << this->getNumExecutions() << std::endl;
+  {ForInputEdges(dataflow, this->actor, e) {
+      std::cout << "\tTokens consumed from Channel " << dataflow->getEdgeName(e)
+                << ": " << this->getExecRate(e) << std::endl;
+    }}
+  {ForOutputEdges(dataflow, this->actor, e) {
+      std::cout << "\tTokens produced into Channel " << dataflow->getEdgeName(e)
+                << ": " << this->getExecRate(e) << std::endl;
+    }}
 }

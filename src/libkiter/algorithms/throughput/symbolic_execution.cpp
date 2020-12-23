@@ -39,8 +39,11 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
         std::cout << "executing..." << std::endl;
         actorMap[dataflow->getVertexId(t)].execute(dataflow);
         printStatus(dataflow);
+        actorMap[dataflow->getVertexId(t)].printStatus(dataflow);
       } else {
         std::cout << "Actor " << dataflow->getVertexName(t) << " NOT ready for execution" << std::endl;
+        printStatus(dataflow);
+        actorMap[dataflow->getVertexId(t)].printStatus(dataflow);
       }
       std::cout << std::endl;
     }}

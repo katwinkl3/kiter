@@ -24,7 +24,7 @@ class Actor {
   void advancePhase(models::Dataflow* const dataflow);
   bool isReadyForExec(models::Dataflow* const dataflow);
   void execute(models::Dataflow* const dataflow);
-
+  void printStatus(models::Dataflow* const dataflow);
  private:
   Vertex actor;
   EXEC_COUNT numExecs; // track number of executions
