@@ -59,24 +59,4 @@ void algorithms::printStatus(models::Dataflow* const dataflow) {
                 << dataflow->getVertexName(dataflow->getEdgeTarget(e))
                 << "): " << dataflow->getPreload(e) << std::endl;
     }}
-  // std::cout << "Actor " << dataflow->getVertexName(actor) << std::endl;
-  // std::cout << "rep factor (" << dataflow->getVertexName(actor)
-  //           << "): " << dataflow->getNi(actor) << std::endl;
-  // {ForOutputEdges(dataflow, actor, e) {
-  //     std::cout << "initial tokens in output channel: " << dataflow->getPreload(e) << std::endl;
-  //     std::cout << "output port execution rates (phases = " << dataflow->getEdgeInPhasesCount(e) <<"): ";
-  //     {ForEachPhase(dataflow, actor, p) {
-  //           std::cout << dataflow->getEdgeInPhase(e, p) << " ";
-  //         }}
-  //     std::cout << std::endl;
-  //     std::cout << "Current phase token prod: " << dataflow->getEdgeInPhase(e, 1) << std::endl;
-  //   }}
-  // {ForInputEdges(dataflow, actor, e) {
-  //     std::cout << "initial tokens in input channel: " << dataflow->getPreload(e) << std::endl;
-  //     std::cout << "input port execution rates: ";
-  //     {ForEachPhase(dataflow, actor, p) {
-  //           std::cout << dataflow->getEdgeOutPhase(e, p) << " ";
-  //         }}
-  //     std::cout << "Current phase token cons: " << dataflow->getEdgeOutPhase(e, 1) << std::endl;
-  //   }}
 }

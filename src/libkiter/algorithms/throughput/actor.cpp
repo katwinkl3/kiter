@@ -69,7 +69,7 @@ PHASE_INDEX Actor::getPhase(Edge e) {
 TOKEN_UNIT Actor::getExecRate(Edge e) {
   assert(this->prodExecRate.find(e) != this->prodExecRate.end() ||
          this->consExecRate.find(e) != this->consExecRate.end()); // given edge must be either input/output edge
-  PHASE_INDEX curPhase = this->getPhase(e) + 1; // phase indexing starts from 1 but stored in Actor class as starting from 0
+  PHASE_INDEX curPhase = (this->getNumExecutions() % getPhaseCount(e)) + 1; // phase indexing starts from 1 but stored in Actor class as starting from 0
   if (this->prodExecRate.find(e) != this->prodExecRate.end()) {
     return this->prodExecRate[e][curPhase];
   } else if (this->consExecRate.find(e) != this->consExecRate.end()) {
@@ -82,26 +82,6 @@ TOKEN_UNIT Actor::getExecRate(Edge e) {
 
 EXEC_COUNT Actor::getNumExecutions() {
   return this->numExecs;
-}
-
-// Advances phase for all ports of given channel
-void Actor::advancePhase(models::Dataflow* const dataflow) {
-  {ForInputEdges(dataflow, this->actor, e) {
-      PHASE_INDEX nextPhase = (getPhase(e) + 1) % getPhaseCount(e);
-      std::cout << "Current phase (input edge) is " << getPhase(e) << std::endl;
-      this->getExecRate(e);
-      std::cout << "Next phase (input edge) is " << nextPhase << std::endl;
-      this->setPhase(e, nextPhase);
-      this->getExecRate(e);
-    }}
-  {ForOutputEdges(dataflow, this->actor, e) {
-      PHASE_INDEX nextPhase = (getPhase(e) + 1) % getPhaseCount(e);
-      std::cout << "Current phase (output edge) is " << getPhase(e) << std::endl;
-      this->getExecRate(e);
-      std::cout << "Next phase (output edge) is " << nextPhase << std::endl;
-      this->setPhase(e, nextPhase);
-      this->getExecRate(e);
-    }}
 }
 
 // Given current state of graph, returns whether actor is ready to execute or not
@@ -126,7 +106,6 @@ void Actor::execute(models::Dataflow* const dataflow) {
   {ForOutputEdges(dataflow, this->actor, e) {
       dataflow->setPreload(e, dataflow->getPreload(e) + this->getExecRate(e));
     }}
-  this->advancePhase(dataflow);
   this->numExecs++;
 }
 
