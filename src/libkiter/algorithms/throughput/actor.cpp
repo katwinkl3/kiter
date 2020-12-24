@@ -89,12 +89,17 @@ bool Actor::isReadyForExec(models::Dataflow* const dataflow) {
   return isExecutable;
 }
 
-// Execute actor, consuming and producing tokens accordingly
-void Actor::execute(models::Dataflow* const dataflow) {
+// Begin actor's execution, consuming tokens from input channels
+void Actor::execStart(models::Dataflow* const dataflow) {
   dataflow->reset_computation();
   {ForInputEdges(dataflow, this->actor, e) {
       dataflow->setPreload(e, dataflow->getPreload(e) - this->getExecRate(e));
     }}
+}
+
+// End actor's execution, producing tokens into output channels
+void Actor::execEnd(models::Dataflow* const dataflow) {
+  dataflow->reset_computation();
   {ForOutputEdges(dataflow, this->actor, e) {
       dataflow->setPreload(e, dataflow->getPreload(e) + this->getExecRate(e));
     }}
