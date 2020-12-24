@@ -281,8 +281,8 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   }}
 
   // uncomment code block to get XMLs of lower bound distribution
-  // commons::writeSDF3File(dirName + "dse_min_distribution_" +
-  //                        dataflow_prime->getName() + "_kiter"
+  // printers::writeSDF3File(dirName + "dse_min_distribution_" +
+  //                        dataflow_prime->getGraphName() + "_kiter"
   //                        ".xml", dataflow_prime);
 
   // calculate max throughput and current throughput with lower bound distribution
@@ -381,7 +381,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
       }}
     // UNCOMMENT TO WRITE XMLs OF EXPLORED GRAPHS
     // commons::writeSDF3File(dirName + debugXMLName + "dse_min_distribution_" +
-    // 			   dataflow_prime->getName() + "_kiter" + std::to_string(computation_counter) +
+    // 			   dataflow_prime->getGraphName() + "_kiter" + std::to_string(computation_counter) +
     // 			   ".xml", dataflow_prime);
 
     // Compute throughput and storage deps
@@ -479,7 +479,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
                                dirName + dotfileDirName);
     std::cout << "\n" + std::to_string(minStorageDist.getSize()) + " "
               << "graphs of minimal storage distributions written to: "
-              << dirName + dotfileDirName + dataflow_prime->getName() + "_n.dot"
+              << dirName + dotfileDirName + dataflow_prime->getGraphName() + "_n.dot"
               << std::endl;
     #endif
   } else {
