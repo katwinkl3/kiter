@@ -63,8 +63,8 @@ benchmarks/ascenttestbench/
 #generated log
 /sdf.log
 
-sdf3-140724.zip
+sdf3-*.zip
 sdfg_buffersizing.zip
 sdfg_designflow_case_study.zip
 sdfg_throughput.zip
-tools/sdf3/
+tools/sdf3*/
