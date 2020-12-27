@@ -805,7 +805,7 @@
         </actorProperties>
         <actorProperties actor='Dup_11_11'>
             <processor type='cluster_0' default='true'>
-                <executionTime time='1.2288e+06'/>
+                <executionTime time='1228800'/>
             </processor>
         </actorProperties>
         <actorProperties actor='ImCast_char_int_12_12'>

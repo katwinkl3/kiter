@@ -691,17 +691,17 @@
     <csdfProperties>
         <actorProperties actor='audio_in_1_1'>
             <processor type='cluster_0' default='true'>
-                <executionTime time='1.44738e+07'/>
+                <executionTime time='14473800'/>
             </processor>
         </actorProperties>
         <actorProperties actor='audio_in_2_2'>
             <processor type='cluster_0' default='true'>
-                <executionTime time='1.78487e+07'/>
+                <executionTime time='17848700'/>
             </processor>
         </actorProperties>
         <actorProperties actor='audio_out_3_3'>
             <processor type='cluster_0' default='true'>
-                <executionTime time='1.49562e+07'/>
+                <executionTime time='14956200'/>
             </processor>
         </actorProperties>
         <actorProperties actor='Dup_5_4'>
@@ -711,47 +711,47 @@
         </actorProperties>
         <actorProperties actor='Dup_7_5'>
             <processor type='cluster_0' default='true'>
-                <executionTime time='3.84457e+06'/>
+                <executionTime time='3844570'/>
             </processor>
         </actorProperties>
         <actorProperties actor='Norm_factor_elem_optim_8_6'>
             <processor type='cluster_0' default='true'>
-                <executionTime time='1.66006e+06'/>
+                <executionTime time='1660060'/>
             </processor>
         </actorProperties>
         <actorProperties actor='Norm_factor_elem_optim_9_7'>
             <processor type='cluster_0' default='true'>
-                <executionTime time='1.45096e+06'/>
+                <executionTime time='1450960'/>
             </processor>
         </actorProperties>
         <actorProperties actor='Norm_factor_elem_optim_10_8'>
             <processor type='cluster_0' default='true'>
-                <executionTime time='1.98053e+06'/>
+                <executionTime time='1980530'/>
             </processor>
         </actorProperties>
         <actorProperties actor='Norm_factor_elem_optim_11_9'>
             <processor type='cluster_0' default='true'>
-                <executionTime time='1.95366e+06'/>
+                <executionTime time='1953660'/>
             </processor>
         </actorProperties>
         <actorProperties actor='Norm_factor_elem_optim_12_10'>
             <processor type='cluster_0' default='true'>
-                <executionTime time='1.47265e+06'/>
+                <executionTime time='1472650'/>
             </processor>
         </actorProperties>
         <actorProperties actor='Norm_factor_elem_optim_13_11'>
             <processor type='cluster_0' default='true'>
-                <executionTime time='1.96723e+06'/>
+                <executionTime time='1967230'/>
             </processor>
         </actorProperties>
         <actorProperties actor='Norm_factor_elem_optim_14_12'>
             <processor type='cluster_0' default='true'>
-                <executionTime time='1.3753e+06'/>
+                <executionTime time='137530'/>
             </processor>
         </actorProperties>
         <actorProperties actor='Norm_factor_elem_optim_15_13'>
             <processor type='cluster_0' default='true'>
-                <executionTime time='2.14934e+06'/>
+                <executionTime time='2149340'/>
             </processor>
         </actorProperties>
         <actorProperties actor='Sum_Invert_16_14'>
@@ -826,7 +826,7 @@
         </actorProperties>
         <actorProperties actor='Dup_33_28'>
             <processor type='cluster_0' default='true'>
-                <executionTime time='1.15223e+06'/>
+                <executionTime time='1152230'/>
             </processor>
         </actorProperties>
         <actorProperties actor='Dup_34_29'>
