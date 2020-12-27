@@ -5,15 +5,17 @@
 
 SHELL = /bin/bash
 
-SDF3_ARCHIVE := sdf3-140724.zip 
+#SDF3_VERSION=100927
+SDF3_VERSION=140724
 
-CPU_COUNT := $(shell cat /proc/cpuinfo |grep processor |wc -l)
+SDF3_ARCHIVE := sdf3-${SDF3_VERSION}.zip
+
 SDF3_BENCHMARK := ./benchmarks/sdf3bench/
 SDF3_MEM_BENCHMARK := ./benchmarks/sdf3mem/
 SDF3_CS_BENCHMARK := ./benchmarks/sdf3cs/
 SDF3_EXAMPLES := ./benchmarks/sdf3examples/
 ASCENT_TESTBENCH := ./benchmarks/ascenttestbench/
-SDF3_ROOT := `pwd`/tools/sdf3/
+SDF3_ROOT := `pwd`/tools/${SDF3_VERSION}/
 SDF3_BINARY_ROOT := ${SDF3_ROOT}/sdf3/build/release/Linux/bin/
 SDF3ANALYSIS_CSDF :=  timeout 180  ${SDF3_BINARY_ROOT}/sdf3analysis-csdf
 SDF3ANALYSIS_SDF := timeout 180   ${SDF3_BINARY_ROOT}/sdf3analysis-sdf
@@ -49,7 +51,7 @@ clean:
 
 cleanall: clean
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	rm  sdfg_buffersizing.zip           sdfg_throughput.zip  sdf3-140724.zip  sdfg_designflow_case_study.zip 
+	rm  -rf sdfg_buffersizing.zip           sdfg_throughput.zip  sdf3-*.zip  sdfg_designflow_case_study.zip  tools/sdf3*/ sdf.log benchmarks/sdf3*/ benchmarks/ascenttestbench/
 
 benchmark :  sdf.log  csdf.log csdf_sized.log
 	@echo "###########"" ENTER IN $@ : $^  #####################"
@@ -85,7 +87,7 @@ sdfg_throughput.zip :
 
 ${SDF3_ARCHIVE}:
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	wget http://www.es.ele.tue.nl/sdf3/download/files/releases/sdf3-140724.zip
+	wget http://www.es.ele.tue.nl/sdf3/download/files/releases/$@
 
 sdfg_buffersizing.zip :
 	@echo "###########"" ENTER IN $@ : $^  #####################"

@@ -38,19 +38,6 @@ Execution Time     is             0.625631
 
 The throughput value should be interpreted similarly to SDF3-ANALYSIS output Version "27 September 2010".
 
-## Prepare SDF3 with Docker
-
-There is a dockerfile available in the repo so you can install SDF3 even if your system is not compatible:
-```bash
-docker build -f DockerFileSDF3 -t bbodin/sdf3 ./
-```
-
-This can then be used to run SDF3 easily :
-```bash
-docker run -v $(pwd)/tmp/sdf3:/sdf -t bbodin/sdf3 ./build/release/Linux/bin/sdf3analysis-sdf --graph /sdf/sdf3mem/fig8.xml   --algo  buffersize
-```
-
-
 ## Run the benchmark
 
 To compare with SDF3 you may need to specify a new value for ```SDF3_BINARY_ROOT``` in the Makefile.
