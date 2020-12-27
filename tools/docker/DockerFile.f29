@@ -1,0 +1,8 @@
+FROM fedora:29
+
+RUN yum install -y glpk-devel=4.65-2.fc29 cmake=3.14.5-1.fc29 findutils-1:4.6.0-21.fc29 unzip-6.0-42.fc29   gcc-8.3.1-2.fc29 make-1:4.2.1-10.fc29 gcc-c++-8.3.1-2.fc29 libxml2-devel-2.9.8-5.fc29  boost-devel-1.66.0-14.fc29 git-2.20.1-1.fc29  wget-1.20.3-1.fc29 && yum clean all
+
+RUN mkdir /kiter/
+COPY . /kiter/
+WORKDIR /kiter/
+RUN make clean && make test

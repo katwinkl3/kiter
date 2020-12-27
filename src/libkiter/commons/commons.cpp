@@ -7,6 +7,7 @@
 
 #include <commons/commons.h>
 #include <commons/verbose.h>
+#include <tuple>
 
 
 
@@ -31,9 +32,73 @@ TIME_UNIT roundIt(TIME_UNIT val,TIME_UNIT p) {
 }
 
 template<>
-std::string toString< std::vector<unsigned int> >(const std::vector<unsigned int>& v)
+std::string toString< std::vector<TOKEN_UNIT> >(const std::vector<TOKEN_UNIT>& v)
 {
         return commons::join(v.begin(),v.end(),std::string(","));
+}
+
+
+template<>
+    std::string toString(const std::set<long  int, std::less<long  int>, std::allocator<long  int> >& t) {
+	 std::stringstream s;
+	 for (auto myt : t) {
+		 s << commons::toString(myt) + " ";
+	 }
+	 return s.str();
+}
+template<>
+    std::string toString(const std::set<long unsigned int, std::less<long unsigned int>, std::allocator<long unsigned int> >& t) {
+	 std::stringstream s;
+	 for (auto myt : t) {
+		 s << commons::toString(myt) + " ";
+	 }
+	 return s.str();
+}
+
+template<>
+std::string toString< std::vector < std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> > >(const std::vector < std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> >& v)
+{
+	 std::stringstream s;
+	for (auto myt : v) {
+		s << commons::toString(myt) + " ";
+	}
+	return s.str();
+}
+
+
+
+template<>
+std::string toString< std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> >(const std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX>& v)
+{
+        return "<" + commons::toString(std::get<0>(v)) +  "," +  commons::toString(std::get<1>(v)) +  "," +  commons::toString(std::get<2>(v)) +  "," + ">";
+}
+template<>
+std::string toString< std::pair<TIME_UNIT , ARRAY_INDEX> >(const std::pair<TIME_UNIT , ARRAY_INDEX>& v)
+{
+        return "<" + commons::toString(std::get<0>(v)) +  "," +  commons::toString(std::get<1>(v)) +  "," + ">";
+}
+
+template<>
+std::string toString< std::pair<unsigned long , unsigned long> >(const std::pair<unsigned long , unsigned long>& v)
+{
+        return "<" + commons::toString(std::get<0>(v)) +  "," +  commons::toString(std::get<1>(v)) +  "," + ">";
+}
+
+
+template<>
+std::string toString< std::vector<long double> >(const std::vector<long double>& v)
+{
+        return  "{" + commons::join(v.begin(),v.end(),std::string(","))+ "}";
+}
+template<>
+std::string toString< std::vector<unsigned int> >(const std::vector<unsigned int>& v)
+{
+        return  "{" + commons::join(v.begin(),v.end(),std::string(","))+ "}";
+}
+template<>
+std::string toString< std::vector<int> >(const std::vector<int>& v)
+{
+        return "{" + commons::join(v.begin(),v.end(),std::string(",")) + "}";
 }
 
 template<>
@@ -84,26 +149,13 @@ bool is_readable( const std::string & file )
  }
 
 
- std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
-     std::stringstream ss(s);
-     std::string item;
-     while(std::getline(ss, item, delim)) {
-         elems.push_back(item);
-     }
-     return elems;
- }
-
- std::vector<std::string> split(const std::string &s, char delim) {
-     std::vector<std::string> elems;
-     return split(s, delim, elems);
- }
 
  std::vector<std::string> splitSDF3List(const std::string &s) {
      std::vector<std::string> sub,ssub;
      std::vector<std::string> elems;
-     sub = split (s, ',');
+     sub = split <std::string> (s, ',');
      for (std::vector<std::string>::iterator it = sub.begin() ; it != sub.end() ; it++) {
-         ssub = split (*it, '*');
+         ssub = split<std::string> (*it, '*');
          if (ssub.size() == 1) {
              elems.push_back((ssub.at(0)));
          } else if (ssub.size() == 2) {

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf3 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" type="csdf" xsi:noNamespaceSchemaLocation="http://www.es.ele.tue.nl/sdf3/xsd/sdf3-csdf.xsd">
+ <applicationGraph name="example">
+  <csdf name="example" type="example">
+   <actor name="A" type="a">
+    <port name="in_channel_1" type="out" rate="2"/>
+   </actor>
+   <actor name="B" type="a">
+    <port name="in_channel_2" type="out" rate="1"/>
+   </actor>
+   <actor name="C" type="a">
+    <port name="out_channel_1" type="in" rate="2"/>
+    <port name="out_channel_2" type="in" rate="1"/>
+    <port name="in_channel_3" type="out" rate="1"/>
+   </actor>
+   <actor name="D" type="a">
+    <port name="out_channel_3" type="in" rate="1"/>
+    <port name="out_channel_4" type="in" rate="1"/>
+    <port name="in_channel_5" type="out" rate="1"/>
+   </actor>
+   <actor name="E" type="a">
+    <port name="in_channel_4" type="out" rate="1"/>
+   </actor>
+   <actor name="F" type="a">
+    <port name="out_channel_5" type="in" rate="1"/>
+   </actor>
+   <channel name="channel_1" srcActor="A" srcPort="in_channel_1" dstActor="C" dstPort="out_channel_1" size="0" initialTokens="0"/>
+   <channel name="channel_2" srcActor="B" srcPort="in_channel_2" dstActor="C" dstPort="out_channel_2" size="0" initialTokens="0"/>
+   <channel name="channel_3" srcActor="C" srcPort="in_channel_3" dstActor="D" dstPort="out_channel_3" size="0" initialTokens="0"/>
+   <channel name="channel_4" srcActor="E" srcPort="in_channel_4" dstActor="D" dstPort="out_channel_4" size="0" initialTokens="0"/>
+   <channel name="channel_5" srcActor="D" srcPort="in_channel_5" dstActor="F" dstPort="out_channel_5" size="0" initialTokens="0"/>
+  </csdf>
+  <csdfProperties>
+   <actorProperties actor="A">
+    <processor type="cluster_0" default="true">
+     <executionTime time="1"/>
+    </processor>
+   </actorProperties>
+   <actorProperties actor="B">
+    <processor type="cluster_0" default="true">
+     <executionTime time="1"/>
+    </processor>
+   </actorProperties>
+   <actorProperties actor="C">
+    <processor type="cluster_0" default="true">
+     <executionTime time="1"/>
+    </processor>
+   </actorProperties>
+   <actorProperties actor="D">
+    <processor type="cluster_0" default="true">
+     <executionTime time="1"/>
+    </processor>
+   </actorProperties>
+   <actorProperties actor="E">
+    <processor type="cluster_0" default="true">
+     <executionTime time="1"/>
+    </processor>
+   </actorProperties>
+   <actorProperties actor="F">
+    <processor type="cluster_0" default="true">
+     <executionTime time="1"/>
+    </processor>
+   </actorProperties>
+  </csdfProperties>
+ </applicationGraph>
+</sdf3>

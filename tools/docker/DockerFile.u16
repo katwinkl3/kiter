@@ -1,0 +1,14 @@
+FROM ubuntu:xenial
+
+
+
+################################### PACKAGE INSTALL  ##########################
+RUN apt-get update && apt-get install --no-install-recommends -y git=1:2.7.4-0ubuntu1.9 make=4.1-6 cmake=3.5.1-1ubuntu3 g++=4:5.3.1-1ubuntu1 libboost-all-dev=1.58.0.1ubuntu1 libxml2-dev=2.9.3+dfsg1-1ubuntu0.7 libglpk-dev=4.57-1build3 glpk-utils=4.57-1build3 && apt-get clean && rm -rf /var/lib/apt/lists/*
+################################################################################
+
+RUN mkdir /kiter/
+COPY . /kiter/
+
+WORKDIR /kiter/
+
+RUN make clean && make test

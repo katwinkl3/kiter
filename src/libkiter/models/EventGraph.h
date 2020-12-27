@@ -33,7 +33,7 @@
 
 #define TXT_NEW_EDGE_ERROR "NEW_EDGE_ERROR"
 
-
+#define VERBOSE_EVENTGRAPH_DEBUG(msg) {VERBOSE_CUSTOM_DEBUG("EventGraph",msg);}
 /**
  * This struct is the holy graal ...
  * ... otherwise boost use an epsilon of 0.005.
@@ -57,14 +57,15 @@ namespace models {
 struct SchedulingEvent {
 private :
     ARRAY_INDEX _t;
-    EXEC_COUNT  _p;
+    PHASE_INDEX _p;
     EXEC_COUNT  _n;
 public :
     ARRAY_INDEX inline  getTaskId() const {return this->_t;};
-    EXEC_COUNT  inline  getTaskPhase() const {return this->_p;};
+    PHASE_INDEX inline  getTaskPhase() const {return this->_p;};
     EXEC_COUNT  inline  getTaskOc() const {return this->_n;};
-    SchedulingEvent(ARRAY_INDEX t,EXEC_COUNT p,EXEC_COUNT n) : _t(t) , _p(p) , _n(n) {}
-    std::string toString() const {return commons::toString<ARRAY_INDEX>(_t) + ',' + commons::toString<EXEC_COUNT>(_p) + ',' + commons::toString<EXEC_COUNT>(_n);}
+    SchedulingEvent(ARRAY_INDEX t,PHASE_INDEX p,EXEC_COUNT n) : _t(t) , _p(p) , _n(n) {}
+    SchedulingEvent(ARRAY_INDEX t,EXEC_COUNT n) : _t(t) , _p(1) , _n(n) {}
+    std::string toString() const {return commons::toString<ARRAY_INDEX>(_t) + ',' + commons::toString<PHASE_INDEX>(_p) + ',' + commons::toString<EXEC_COUNT>(_n);}
     friend  bool operator==(const SchedulingEvent& lh, const SchedulingEvent& rh) ;
     friend  bool operator!=(const SchedulingEvent& lh, const SchedulingEvent& rh) ;
     friend  bool operator<(const SchedulingEvent& lh, const SchedulingEvent& rh) ;
@@ -83,7 +84,7 @@ inline bool operator!=(const SchedulingEvent& lh, const SchedulingEvent& rh) {re
 struct SchedulingEventConstraint {
     SchedulingEvent _s;
     SchedulingEvent _t;
-    TIME_UNIT       _w;
+  TIME_UNIT       _w; // Weight is TIME_UNIT and must keep it like that !
     TIME_UNIT       _d;
     ARRAY_INDEX     _id;
 
@@ -98,12 +99,12 @@ struct SchedulingEventConstraint {
 typedef boost::property < boost::vertex_index1_t,      unsigned int,   /* vertex_index1_t(task_id)        */
         boost::property < boost::vertex_potential_t,   unsigned int ,  /* vertex_potential_t(SCC INDEX)   */
         boost::property < boost::vertex_predecessor_t, unsigned int ,  /* EventGraphVertex                */
-        boost::property < boost::vertex_color_t,       EXEC_COUNT,     /*  vertex_color_t(task's phase)                */
+        boost::property < boost::vertex_color_t,       PHASE_INDEX,     /*  vertex_color_t(task's phase)                */
         boost::property < boost::vertex_index2_t,      EXEC_COUNT,    /* vertex_index2_t(occurence d'execution) */
         boost::property < boost::vertex_discover_time_t, TIME_UNIT    /* vertex_discover_time_t(execution time) */
         > > > > > > EventGraphVertexProperties;
 
-typedef boost::property < boost::edge_weight_t,TIME_UNIT, /* edge_weight_t(w)        */
+typedef boost::property < boost::edge_weight_t,TIME_UNIT, /* edge_weight_t(w)        */ // Weight is TIME_UNIT and must keep it like that !
         boost::property < boost::edge_index_t,ARRAY_INDEX,  /* edge_index_t(channel_id)        */
         boost::property < boost::edge_color_t,bool,  /* edge_color_t(strictness)        */
         boost::property < boost::edge_weight2_t, TIME_UNIT ,  /* edge_weight2_t (d) */
@@ -172,12 +173,21 @@ private :
     BoostEventGraph              g;
     EventGraphVertex             _root;
 private :
-    std::vector< std::vector <std::vector <EventGraphVertex> > > schedulingEvent2Vertex;
+    std::map< SchedulingEvent , EventGraphVertex > schedulingEvent2Vertex;
 public :
-    inline EventGraphVertex getEventGraphVertex(ARRAY_INDEX taskId, EXEC_COUNT phase, EXEC_COUNT execution) {
-        EventGraphVertex res= schedulingEvent2Vertex[taskId][(unsigned int) phase][(unsigned int) execution];
+    inline EventGraphVertex getEventGraphVertex(ARRAY_INDEX taskId, EXEC_COUNT execution) {
+    	return getEventGraphVertex(taskId, 1, execution) ;
+    }
+    inline EventGraphVertex getEventGraphVertex(ARRAY_INDEX taskId, PHASE_INDEX phase, EXEC_COUNT execution) {
+
+    	//VERBOSE_ASSERT(schedulingEvent2Vertex.size() > taskId, "Task id " << taskId << " is not within the EventGraph");
+    	//VERBOSE_ASSERT(schedulingEvent2Vertex[taskId].size() > phase, "Task phase " << phase << " is not within the EventGraph for task " << taskId);
+    	//VERBOSE_ASSERT(schedulingEvent2Vertex[taskId][(unsigned int) phase].size() > execution, "Task execution " << execution << " is not within the EventGraph for task " << taskId << " with phase " << phase);
+
+    	EventGraphVertex res= schedulingEvent2Vertex[SchedulingEvent(taskId, phase , execution )];
+
         VERBOSE_DEBUG_ASSERT(getTaskId(res),   taskId);
-        VERBOSE_DEBUG_ASSERT(getPhase(res),phase);
+        // VERBOSE_DEBUG_ASSERT(getPhase(res),phase); // This can be negative or null now
         VERBOSE_DEBUG_ASSERT(getExecution(res),execution);
         return res;
     }
@@ -237,7 +247,7 @@ public :
     inline void setStrictness(EventGraphEdge e, bool s)        { boost::put(boost::edge_color, this->getG(), e, s);}
     inline void setFlow(EventGraphEdge e, TIME_UNIT s)        { boost::put(boost::edge_flow, this->getG(), e, s);}
 private :
-    inline void setWeight(EventGraphEdge e, TIME_UNIT w)       { boost::put(boost::edge_weight, this->getG(), e, w);}
+    inline void setWeight(EventGraphEdge e, TIME_UNIT w)       { boost::put(boost::edge_weight, this->getG(), e, w);} // Weight is TIME_UNIT and must keep it like that !
     inline void setDuration(EventGraphEdge e, TIME_UNIT d)     { boost::put(boost::edge_weight2, this->getG(), e, d);}
 
 
@@ -254,7 +264,7 @@ public :
     inline  std::pair<EventGraphInEdgeIterator,EventGraphInEdgeIterator>    getInputs(EventGraphVertex t) { return boost::in_edges (t,this->getG());}
     inline  std::pair<EventGraphOutEdgeIterator,EventGraphOutEdgeIterator>    getOutputs(EventGraphVertex t) { return boost::out_edges (t,this->getG());}
     unsigned int  getTaskId(EventGraphVertex v)                       { return boost::get(boost::get(boost::vertex_index1, this->getG()), v);}
-    EXEC_COUNT  getPhase(EventGraphVertex v)                  { return boost::get(boost::get(boost::vertex_color, this->getG()), v);}
+    PHASE_INDEX  getPhase(EventGraphVertex v)                  { return boost::get(boost::get(boost::vertex_color, this->getG()), v);}
     EXEC_COUNT  getExecution(EventGraphVertex v)                  { return boost::get(boost::get(boost::vertex_index2, this->getG()), v);}
 
     void  setStartingTime(EventGraphVertex v, TIME_UNIT s)                  { return boost::put(boost::get(boost::vertex_discover_time, this->getG()), v,s );}
@@ -269,7 +279,7 @@ public :
     SchedulingEvent  getSchedulingEvent(EventGraphVertex v){ return SchedulingEvent(getTaskId(v),getPhase(v),getExecution(v));}
     ARRAY_INDEX getChannelId(EventGraphEdge e)                       { return boost::get(boost::get(boost::edge_index, this->getG()), e);}
     inline void setChannelId(EventGraphEdge e,ARRAY_INDEX id )                       {  boost::put(boost::edge_index, this->getG(), e, id);}
-    inline TIME_UNIT getWeight(EventGraphEdge e)                       { return boost::get(boost::get(boost::edge_weight, this->getG()), e);}
+    inline TIME_UNIT getWeight(EventGraphEdge e)                       { return boost::get(boost::get(boost::edge_weight, this->getG()), e);} // Weight is TIME_UNIT and must keep it like that !
     inline bool getStrictness(EventGraphEdge e)                       { return boost::get(boost::get(boost::edge_color, this->getG()), e);}
     inline TIME_UNIT getFlow(EventGraphEdge e)        { return boost::get(boost::edge_flow, this->getG(), e);}
 
@@ -287,26 +297,21 @@ public :
         boost::put(boost::vertex_index1, this->getG(), v, se.getTaskId());
         boost::put(boost::vertex_color , this->getG(), v, se.getTaskPhase());
         boost::put(boost::vertex_index2, this->getG(), v, se.getTaskOc());
-        if (schedulingEvent2Vertex.size() <= se.getTaskId()) schedulingEvent2Vertex.resize(se.getTaskId() + 1);
-        if (schedulingEvent2Vertex[se.getTaskId()].size() <= se.getTaskPhase()) schedulingEvent2Vertex[se.getTaskId()].resize((unsigned int) se.getTaskPhase() + 1);
-        if (schedulingEvent2Vertex[se.getTaskId()][(unsigned int) se.getTaskPhase()].size() <= se.getTaskOc()) schedulingEvent2Vertex[se.getTaskId()][(unsigned int) se.getTaskPhase()].resize((unsigned int) se.getTaskOc() + 1);
-        schedulingEvent2Vertex[se.getTaskId()][(unsigned int) se.getTaskPhase()][(unsigned int) se.getTaskOc()] = v;
+        schedulingEvent2Vertex[se] = v;
         return v;
     }
 
-    void addEventGroup(ARRAY_INDEX taskid, EXEC_COUNT phase_count, EXEC_COUNT start_ki, EXEC_COUNT end_ki) {
-        if (schedulingEvent2Vertex.size() <= taskid) schedulingEvent2Vertex.resize(taskid + 1);
-        if (schedulingEvent2Vertex[taskid].size() <= phase_count) schedulingEvent2Vertex[taskid].resize((unsigned int)  phase_count + 1);
+    void addEventGroup(ARRAY_INDEX taskid, PHASE_INDEX phase_count, EXEC_COUNT start_ki, EXEC_COUNT end_ki) {
 
-        for (EXEC_COUNT p = 1 ; p <= phase_count ; p++ ) {
-            if (schedulingEvent2Vertex[taskid][p].size() <= end_ki) schedulingEvent2Vertex[taskid][p].resize((unsigned int)  end_ki + 1);
-            std::vector<EventGraphVertex>& executions = schedulingEvent2Vertex[taskid][p];
-            for (EXEC_COUNT k = start_ki ; k <= end_ki ; k++ ) {
+        for (PHASE_INDEX p = 1 ; p <= phase_count ; p++ ) {
+             for (EXEC_COUNT k = start_ki ; k <= end_ki ; k++ ) {
+
                 EventGraphVertex v = boost::add_vertex(this->getG());
                 boost::put(boost::vertex_index1, this->getG(), v, taskid);
                 boost::put(boost::vertex_color, this->getG(), v, p);
                 boost::put(boost::vertex_index2, this->getG(), v, k);
-                executions[(unsigned int)k] = v;
+
+                schedulingEvent2Vertex[SchedulingEvent(taskid,p,k)] = v;
             }
         }
     }
@@ -351,66 +356,71 @@ public :
     struct EdgeProperties {
         int weight;
     };
-    bool  computeStartingTime (TIME_UNIT fr ) {
-        TIME_UNIT omega = 1 / fr;
-        VERBOSE_INFO("minimalDistances (" << omega << ")");
+    bool  computeStartingTimeWithOmega (TIME_UNIT omega ) {
 
-        const EXEC_COUNT nb_vertices = this->getEventCount();
+    	if (omega == std::numeric_limits<TIME_UNIT>::infinity()) {
+            {ForEachEvent(this,e)   {
+                this->setStartingTime(e , 0);
+            }}
+            return false;
+    	}
 
+    	VERBOSE_ASSERT (omega < std::numeric_limits<TIME_UNIT>::infinity(), "Cannot compute starting time with infinite period.");
+
+        VERBOSE_EVENTGRAPH_DEBUG("computeStartingTime omega = " << omega);
+
+        VERBOSE_EVENTGRAPH_DEBUG("computeStartingTime setFlow");
         {ForEachConstraint(this,e)   {
-            this->setFlow(e, ( this->getDuration(e)  - omega * this->getWeight(e)));
+            auto flow = ( this->getDuration(e)  - omega * this->getWeight(e));
+            VERBOSE_EVENTGRAPH_DEBUG(" Edge " << e << ":" << this->getConstraint(e).toString() << " Flow = " << flow);
+            this->setFlow(e, flow );
         }}
         // gets the weight property
         //boost::property_map<BoostEventGraph, boost::edge_flow_t>::type weight_pmap = get(boost::edge_flow_t(), g);
         //boost::property_map<BoostEventGraph, boost::vertex_discover_time_t>::type distance_pmap = get(boost::vertex_discover_time_t(), g);
 
+        VERBOSE_EVENTGRAPH_DEBUG("computeStartingTime initStartingTime");
         bool first = true;
+        //TIME_UNIT defaultmin = - std::numeric_limits<TIME_UNIT>::infinity();
+        TIME_UNIT defaultmin = 0;
+
         {ForEachEvent(this,e)   {
-            this->setStartingTime(e,(std::numeric_limits<TIME_UNIT>::min)());
+        	auto startingtime = defaultmin;
             if (first) {
                 first = false;
-                this->setStartingTime(e,0);
+                startingtime = 0;
             }
+            this->setStartingTime(e,startingtime);
+            VERBOSE_EVENTGRAPH_DEBUG(" Event " << e << ":" << this->getEvent(e).toString() << " Start = " << startingtime);
         }}
 
-        // init the predecessors (identity function)
-        std::vector<std::size_t> parent(nb_vertices);
-        for (EXEC_COUNT i = 0; i < nb_vertices; ++i) {
-            parent[i] = i;
-        }
-
-
-        for (EXEC_COUNT i = 0 ; i < this->getEventCount() ; i ++ )
+        VERBOSE_EVENTGRAPH_DEBUG("computeStartingTime getStartingTime with " <<  this->getEventCount() << " eventCount");
+        for (EXEC_COUNT i = 0 ; i < this->getEventCount() ; i ++ ) {
+        	bool updated = false;
             {ForEachEvent(this,event1)   {
-                {ForEachOutputs(this,event1,constraint){
+                VERBOSE_EVENTGRAPH_DEBUG("Look for " << event1 << " outputs");
+            	{ForEachOutputs(this,event1,constraint){
                     models::EventGraphVertex event2 =this->getTarget(constraint);
-                    if (this->getStartingTime(event2) - this->getStartingTime(event1) < this->getFlow(constraint)) {
-                        this->setStartingTime(event2, this->getFlow(constraint) + this->getStartingTime(event1));
+                    auto previous_start1 = this->getStartingTime(event1);
+                    auto previous_start2 = this->getStartingTime(event2);
+                    VERBOSE_EVENTGRAPH_DEBUG("  test " << event2 << " Start from " << previous_start2 << " to " << this->getFlow(constraint) << "+" <<  previous_start1);
+
+                    if (previous_start2 - previous_start1 < this->getFlow(constraint)) {
+                        this->setStartingTime(event2, this->getFlow(constraint) + previous_start1);
+                        VERBOSE_EVENTGRAPH_DEBUG("   Update " << event2 << " Start from " << previous_start2 << " to " << this->getFlow(constraint) << "+" <<  previous_start1);
+
+                        updated = true;
                     }
                 }}
             }}
+            if (!updated) {
+            	VERBOSE_EVENTGRAPH_DEBUG("  No nore updates.");
+            	break;
+            }
+        }
 
 
-        //// call to the algorithm
-        //bool rr = bellman_ford_shortest_paths(this->getG(),
-        //        nb_vertices,
-        //        weight_pmap,
-        //        boost::dummy_property_map(),
-        //        distance_pmap,
-        //        boost::closed_plus<TIME_UNIT>(),
-        //        std::less<TIME_UNIT>(),
-        //        boost::bellman_visitor<>());
-        //
-        //
-        //bool r = bellman_ford_shortest_paths(
-        //        this->getG(),
-        //        nb_vertices,
-        //        weight_map(weight_pmap).
-        //        distance_map(distance_pmap).
-        //        predecessor_map(&parent[0])
-        //);
-
-        //if ( rr !=r ) exit(0);
+        VERBOSE_EVENTGRAPH_DEBUG("computeStartingTime min_time ");
 
         TIME_UNIT min_time = (std::numeric_limits<TIME_UNIT>::max)();
 
@@ -418,17 +428,17 @@ public :
         {ForEachEvent(this,e)   {
             min_time = std::min (min_time , this->getStartingTime(e));
         }}
-        {ForEachEvent(this,e)   {
-            this->setStartingTime(e , this->getStartingTime(e)  - min_time);
-        }}
-        {ForEachConstraint(this,c)   {
-            VERBOSE_INFO("distance(" << this->getConstraint(c).toString() << ") = " << this->getFlow(c));
 
-        }}
-        VERBOSE_INFO("min_time = " << min_time);
+        VERBOSE_EVENTGRAPH_DEBUG(" min_time = " << min_time);
+
         {ForEachEvent(this,e)   {
-            VERBOSE_INFO("distance(" << this->getEvent(e).toString() << ") = " <<  this->getStartingTime(e) - min_time);
+        	auto old_start = this->getStartingTime(e);
+        	auto new_start = old_start  - min_time ;
+            VERBOSE_EVENTGRAPH_DEBUG("  Event " << e << ":"<< this->getEvent(e).toString() << " Adjusted Start from " << old_start << " to " << new_start );
+            this->setStartingTime(e , new_start);
         }}
+
+        VERBOSE_EVENTGRAPH_DEBUG("End of compute starts.");
         return true;
 
     }
@@ -455,7 +465,7 @@ public :
         {
             cr.first  += ew1[*itr];
             cr.second += ew2[*itr];
-            VERBOSE_DEBUG( "   (" << vim[boost::source(*itr, this->getG())] << "," <<
+            VERBOSE_EVENTGRAPH_DEBUG( "   (" << vim[boost::source(*itr, this->getG())] << "," <<
                     vim[boost::target(*itr, this->getG())] << ") ");
         }
         if (std::abs(cr.first / cr.second - max_cr) > TIME_UNIT_LIMITS::epsilon()) {VERBOSE_ERROR("Huge bug in MaxCRP solving function.");}
@@ -480,7 +490,7 @@ public :
         {
             cr.first  += ew1[*itr];
             cr.second += ew2[*itr];
-            VERBOSE_DEBUG( "   (" << vim[boost::source(*itr, this->getG())] << "," <<
+            VERBOSE_EVENTGRAPH_DEBUG( "   (" << vim[boost::source(*itr, this->getG())] << "," <<
                     vim[boost::target(*itr, this->getG())] << ") ");
         }
         if (std::abs(cr.first / cr.second - max_cr) > TIME_UNIT_LIMITS::epsilon()) {VERBOSE_ERROR("Huge bug in MinCRP solving function.");}
@@ -505,7 +515,7 @@ public :
         {
             cr.first  += ew1[*itr];
             cr.second += ew2[*itr];
-            VERBOSE_DEBUG( "   " << vim[boost::source(*itr, this->getG())] << " -> " <<
+            VERBOSE_EVENTGRAPH_DEBUG( "   " << vim[boost::source(*itr, this->getG())] << " -> " <<
                     vim[boost::target(*itr, this->getG())] << " : (" << ew1[*itr] << "," << ew2[*itr] << ")");
         }
         if (std::abs(cr.first / cr.second - max_cr) > TIME_UNIT_LIMITS::epsilon()) {VERBOSE_ERROR("Huge bug in MinCRP solving function.");}

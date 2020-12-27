@@ -3,25 +3,28 @@
 Kiter is an iterative algorithm based on K-periodic scheduling to compute the throughput of a CSDFG.
 
 Build status: [![Build Status](https://travis-ci.org/bbodin/kiter.svg?branch=master)](https://travis-ci.org/bbodin/kiter)
+[![GitHub Super-Linter](https://github.com/bbodin/kiter/workflows/Lint%20Code%20Base/badge.svg)](https://github.com/marketplace/actions/super-linter)
 
-
-## Compile it.
+## Compile it
 
 Just ```make``` should do the job.
 
-## Use it.
+## Use it
 
 The command is :
 
-```
+```bash
 ./release/bin/kiter -f <input-file> -a <algorithm>
 ```
+
+
 ```input-file``` is an SDF3-like XML file, and ```algorithm``` the algorithm to apply.
 
 Available algorithms are automatically listed if no algorithm provided :
-```
-[toky@zebulon kiter]$ ./release/bin/kiter -f AGB5CSDF/autogen1.xml 
- Unsupported algorithm (-a NAME), list of supported algorithms is 
+
+```bash
+[toky@zebulon kiter]$ ./release/bin/kiter -f AGB5CSDF/autogen1.xml
+ Unsupported algorithm (-a NAME), list of supported algorithms is
  - 1PeriodicThroughput : Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.
  - 2PeriodicThroughput : Optimal 1-Periodic Throughput evaluation of CSDF by K-Periodic scheduling method.
  - NKPeriodicThroughput : Optimal Throughput evaluation of CSDF by using N-periodic method.
@@ -38,7 +41,7 @@ Available algorithms are automatically listed if no algorithm provided :
 ### Example
 
 
-```
+```bash
 [toky@localhost kiter]$ ./release/bin/kiter -f benchmark/BlackScholes.xml -aKPeriodicThroughput
 Run KPeriodicThroughput
 Maximum throughput is 4.755863796e-09
@@ -46,19 +49,31 @@ Maximum period     is 210266745.000000
 KPeriodicThroughput duration=0.000546
 ```
 
-The throughput is computed using the same method as SDF3-ANALYSIS Version "27 September 2010".
+The throughput value should be interpreted similarly to SDF3-ANALYSIS output Version "27 September 2010".
+
+## Prepare SDF3 with Docker
+
+There is a dockerfile available in the repo so you can install SDF3 even if your system is not compatible:
+```bash
+docker build -f DockerFileSDF3 -t bbodin/sdf3 ./
+```
+
+This can then be used to run SDF3 easily :
+```bash
+docker run -v $(pwd)/tmp/sdf3:/sdf -t bbodin/sdf3 ./build/release/Linux/bin/sdf3analysis-sdf --graph /sdf/sdf3mem/fig8.xml   --algo  buffersize
+```
 
 
 ## Run the benchmark
 
-To compare with SDF3 you may need to specify a new value for ```SDF3_BINARY_ROOT``` in the Makefile. 
+To compare with SDF3 you may need to specify a new value for ```SDF3_BINARY_ROOT``` in the Makefile.
 Then ```make benchmark``` should do the job.
 
 ## Included benchmarks
 
 This repos also includes several benchmarks like AGB5CSDF and IB5CSDF.
 
-```
+```text
 AGB5CSDF:
 autogen1.xml  autogen2.xml  autogen3.xml  autogen4.xml  autogen5.xml
 
@@ -69,6 +84,11 @@ benchmark_sized:
 Black-scholes.xml  Echo.xml  H264.xml  JPEG2000.xml  Pdectect.xml
 ```
 
+## How to run bufferless scheduling for a particular mapping
+
+```bash
+./debug/bin/kiter  -f ./sdf3mem/mp3decoder.xml  -a randomMapping  -a PrintInfos -a bufferless -v5
+```
 
 ## Known dependencies
 * Boost
@@ -76,7 +96,7 @@ Black-scholes.xml  Echo.xml  H264.xml  JPEG2000.xml  Pdectect.xml
 
 ## Related publications
 
-```
+```TeX
 @inproceedings{DBLP:conf/dac/BodinKD16,
   author    = {Bruno Bodin and
                Alix Munier Kordon and
@@ -94,3 +114,44 @@ Black-scholes.xml  Echo.xml  H264.xml  JPEG2000.xml  Pdectect.xml
   bibsource = {dblp computer science bibliography, http://dblp.org}
 }
 ```
+
+
+## Current xperiments - Notes
+
+
+I am running the mapping using:
+```bash
+make clean && make all -j8 && ./release/bin/kiter -f ~/Dropbox/.../one_modem.xml  -a SoftwareControlledNoCBufferless  -v 5  2>&1
+```
+
+Then we can check the throughput with kiter:
+
+```bash
+./release/bin/kiter -f software_noc_5.xml -a KPeriodicThroughput
+Maximum throughput is 6.250000000e-02
+Maximum period     is   16.000000
+./release/bin/kiter -f software_noc_6.xml -a KPeriodicThroughput
+Maximum throughput is 5.882352941e-02
+Maximum period     is   17.000000
+```
+
+Or with SDF3:
+
+```bash
+./sdf3/sdf3/build/release/Linux/bin/sdf3analysis-csdf --graph software_noc_5.xml  --algo throughput
+thr(noname) = 0.0625
+analysis time: 1.568ms
+./sdf3/sdf3/build/release/Linux/bin/sdf3analysis-csdf --graph software_noc_6.xml  --algo throughput
+thr(noname) = 0.0588235
+analysis time: 1.608ms
+ ```
+
+
+## TODOs
+
+Add type for actors in XML and Dataflow
+Save input and output port names for reetrancy ?
+If MOP = 0 , don't print initial Token in XML
+For duration specify a processor type
+print a channel properties XML even if empty
+In the print mapping, if task are on the same mapping, spread then X,Y slightly

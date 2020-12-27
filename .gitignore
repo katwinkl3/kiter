@@ -31,19 +31,34 @@
 *~
 \#*\#
 
-# sdf3
-sdf3bench
-sdfg_throughput.zip
-script/
-sdf3-140724.zip
-sdf3/
-
-# result
-/*.log
-
-/debug
-/release
-
 # Eclipse files
-.cproject
-.project
+/.cproject
+/.project
+/.settings/
+
+# Build outputs
+/Release/
+/Debug/
+
+#Execution outputs
+/*.lp
+/*.xml
+
+# SDF3 Assets	
+benchmarks/sdf3bench/
+benchmarks/sdf3cs/
+benchmarks/sdf3examples/
+benchmarks/sdf3mem/
+
+# Temporary files
+*~
+.Rhistory
+.ipynb_checkpoints/
+
+# Ascent testbench
+benchmarks/ascenttestbench/
+
+
+
+#generated log
+/sdf.log

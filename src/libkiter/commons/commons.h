@@ -24,35 +24,29 @@
 #include <vector>
 #include <cstdlib>
 #include <boost/functional/hash.hpp>
-#include <boost/math/common_factor.hpp>
+#include <boost/integer/common_factor_ct.hpp>
 //#define CHECK_BOOST_BIMAP (BOOST_VERSION >= 103800)
 #define CHECK_BOOST_BIMAP false
 // REALLY STRANGE BUGFIX : For Andrea config (old boost version in fc10)
 #include <boost/graph/detail/edge.hpp>
 #include <boost/rational.hpp>
+#include <commons/basic_types.h>
+
 namespace boost {struct bidirectional_tag;}
 namespace std {
 bool operator<(const boost::detail::edge_desc_impl<boost::bidirectional_tag, unsigned int>& lh, const boost::detail::edge_desc_impl<boost::bidirectional_tag, unsigned int>& rh);
 }
 
-typedef unsigned      long int  EXEC_COUNT;
-typedef               long int  TOKEN_UNIT;
-typedef               long int  DATA_UNIT;
-typedef unsigned      long int  ARRAY_INDEX;
-typedef            long double  TIME_UNIT;
-typedef            long double  DATA_BY_TIME_UNIT;
 
 typedef         boost::rational<EXEC_COUNT> EXEC_COUNT_FRACT   ;
 typedef    boost::rational<TOKEN_UNIT>      TOKEN_FRACT        ;
-typedef    boost::rational<DATA_UNIT>       DATA_FRACT         ;
 
 
-
-typedef std::map<std::string,std::string> parameters_list_t;
 
 
 namespace commons
 {
+
 
 
  const std::string getFilename(const std::string s);
@@ -83,23 +77,15 @@ const char *fromString<const char*>(const std::string& str);
 
 
 
-template <class T>
-bool findInVector( std::vector<T> vect,  T v) {
-    for (typename std::vector<T>::iterator it = vect.begin() ; it != vect.end() ; it++) {
-        if (*it == v) return true;
+template <typename T>
+bool findInVector(const std::vector<T>& vect,  T v) {
+    for (T ov : vect) {
+        if (ov == v) return true;
     }
     return false;
 }
 
-template <class T>
-bool findInVector( std::vector<T> * vect,  T v) {
-    for (typename std::vector<T>::iterator it = vect->begin() ; it != vect->end() ; it++) {
-        if (*it == v) return true;
-    }
-    return false;
-}
-
-template<class T>
+template<typename T>
     std::string toString(const T& t)
 {
      std::ostringstream stream;
@@ -107,6 +93,55 @@ template<class T>
      return stream.str();
 }
 
+template<typename T, typename Q>
+    std::string toString(const std::pair<T,Q>& v)
+{
+	return "<" + commons::toString<T>(std::get<0>(v)) +  "," +  commons::toString<Q>(std::get<1>(v))  + ">";
+}
+
+template<typename T>
+    std::string toString(const std::vector<T>& t)
+{
+
+	 std::stringstream s;
+	 s << "{";
+	 bool first = true;
+	 for (auto myt : t) {
+		 if (!first) s << ",";
+		 s << commons::toString(myt);
+		 first = false;
+	 }
+	 s << "}";
+	 return s.str();
+}
+
+
+template<>
+    std::string toString(const std::set<long  int, std::less<long  int>, std::allocator<long  int> >& t) ;
+template<>
+    std::string toString(const std::set<long unsigned int, std::less<long unsigned int>, std::allocator<long unsigned int> >& t) ;
+
+template<>
+std::string toString< std::vector < std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> > >(const std::vector < std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> >& v);
+
+template<>
+std::string toString< std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX> >(const std::tuple<ARRAY_INDEX, ARRAY_INDEX, ARRAY_INDEX>& v);
+
+
+template<>
+std::string toString< std::pair<unsigned long , unsigned long> >(const std::pair<unsigned long , unsigned long>& v);
+template<>
+std::string toString< std::pair<TIME_UNIT , ARRAY_INDEX> >(const std::pair<TIME_UNIT , ARRAY_INDEX>& v);
+
+
+template<>
+std::string toString< std::vector<int> >(const std::vector<int>& v);
+template<>
+std::string toString< std::vector<ARRAY_INDEX> >(const std::vector<ARRAY_INDEX>& v);
+
+
+template<>
+std::string toString< std::vector<long double> >(const std::vector<long double>& v);
 
 template<>
 std::string toString< std::vector<unsigned int> >(const std::vector<unsigned int>& v);
@@ -123,10 +158,10 @@ Str join(It begin, const It end, const Str &sep)
   ostringstream_type result;
 
   if(begin!=end)
-    result << *begin++;
+    result << commons::toString(*begin++);
   while(begin!=end) {
     result << sep;
-    result << *begin++;
+    result << commons::toString(*begin++);
   }
   return result.str();
 }
@@ -171,7 +206,7 @@ template <typename entier,typename flottant>
 template <typename entier>
    inline entier ceil  ( entier v , entier c){ return (entier) std::ceil ((TIME_UNIT) v / (TIME_UNIT) c) * c; }
 template <typename entier>
-   inline entier floor ( entier v , entier c){ return (entier) std::floor((TIME_UNIT) v / (TIME_UNIT) c) * c; }
+   inline const entier floor ( entier v , entier c){ return (entier) std::floor((TIME_UNIT) v / (TIME_UNIT) c) * c; }
 template <typename entier>
    inline entier flooru  ( entier v , entier c){ return (entier) std::floor(commons::division(v,c)) * c; }
 template <typename entier>
@@ -204,8 +239,17 @@ inline std::string ConvertRGBtoHex(int r, int g, int b) {
  */
 TIME_UNIT roundIt(TIME_UNIT val,TIME_UNIT p);
 //
-std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
-std::vector<std::string> split(const std::string &s, char delim) ;
+
+template<typename T>
+ std::vector<T> split(const std::string &s, const char &delim) {
+	 std::vector<T> elems;
+	 std::stringstream ss(s);
+	 std::string item;
+	 while(std::getline(ss, item, delim)) {
+		 elems.push_back(commons::fromString<T>(item));
+	 }
+	 return elems;
+ }
 std::vector<std::string> splitSDF3List(const std::string &s);
 
 int fibo (int index);
