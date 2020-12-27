@@ -2,10 +2,10 @@
 
 ###
 ###  This script generates pictures for ASCENT paper.
-###  Usage is : sh tools/ascent.sh with Debug/bin/kiter available.
+###  Usage is : sh tools/ascent.sh with Release/bin/kiter available.
 
 OUTDIR=./ascent_pictures/
-KITER=../Debug/bin/kiter
+KITER=../Release/bin/kiter
 MOTIV=../benchmarks/NoCMotivation/sdf_mapping.xml
 
 mkdir -p ./${OUTDIR}/

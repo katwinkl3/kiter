@@ -79,7 +79,12 @@ int main (int argc, char **argv)
 
 		}
 		if (c == 'h') {
-			VERBOSE_INFO("-f FILENAME or -g GENERATOR, then -a ALGORITHM.");
+			std::cerr << "Command: kiter -f FILENAME or -g GENERATOR, then -a ALGORITHM." << std::endl;
+			std::cerr << " List of supported generator (-g) is " << std::endl;
+			KiterRegistry<generator_t>::print();
+			std::cerr << " List of supported algorithms (-a) is " << std::endl;
+			KiterRegistry<transformation_t>::print();
+			exit(0);
 		}
 	}
 
