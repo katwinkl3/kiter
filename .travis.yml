@@ -13,6 +13,11 @@ compiler:
 
 sudo: required
 
+cache:
+  directories:
+    - ./benchmarks
+    - ./tools/sdf3/
+     
 addons:
   homebrew:
     packages:
@@ -27,4 +32,7 @@ addons:
     - libboost-all-dev
 
 script:
+  - make sdf3_build
+  - cd tools/sdf3/sdf3 && make
+  - make unit_test
   - make test

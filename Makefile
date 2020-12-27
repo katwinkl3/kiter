@@ -45,7 +45,11 @@ release: ./Release/bin/kiter
 
 clean:
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	rm -Rf Release Debug *.lp *.mps *.png *.dot *.pdf *.xml *.lp
+	rm -Rf Release Debug *.lp *.mps *.png *.dot *.pdf *.xml *.lp ./tools/.ipynb_checkpoints
+
+cleanall: clean
+	@echo "###########"" ENTER IN $@ : $^  #####################"
+	rm  sdfg_buffersizing.zip           sdfg_throughput.zip  sdf3-140724.zip  sdfg_designflow_case_study.zip 
 
 benchmark :  sdf.log  csdf.log csdf_sized.log
 	@echo "###########"" ENTER IN $@ : $^  #####################"
@@ -100,8 +104,10 @@ ${SDF3_BINARY_ROOT} : ${SDF3_ARCHIVE}
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p ${SDF3_ROOT}
 	cp ${SDF3_ARCHIVE} ${SDF3_ROOT}/
-	cd ${SDF3_ROOT} && unzip -o ${SDF3_ARCHIVE}
-	cd "${SDF3_ROOT}/sdf3/" && make ## TODO : This line of code is not working with recursive Makefiles
+	unzip -o ${SDF3_ARCHIVE} -d ${SDF3_ROOT}
+	echo Please run \"cd ${SDF3_ROOT}/sdf3/ \&\& make\"
+#	make -C "${SDF3_ROOT}/sdf3/" SDF3ROOT=${SDF3_ROOT}/sdf3/
+#	cd "${SDF3_ROOT}/sdf3/" && make -C . ## TODO : This line of code is not working with recursive Makefiles
 
 ${SDF3_CS_BENCHMARK} : sdfg_designflow_case_study.zip
 	@echo "###########"" ENTER IN $@ : $^  #####################"
