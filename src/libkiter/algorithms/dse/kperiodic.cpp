@@ -183,7 +183,7 @@ kperiodic_result_t algorithms::compute_Kperiodic_throughput_and_cycles(models::D
     // std::cout << "Current K-periodic throughput: " << result.throughput << std::endl;
     // std::cout << "   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) << std::endl;
     // TIME_UNIT res = result.throughput;
-    // std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
+    // std::cout << "Maximum throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
     // std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 
     return result;

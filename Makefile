@@ -156,7 +156,7 @@ sdf.log:  ./Release/bin/kiter Makefile
 	echo === $$f === 1PeriodicThroughput  >> $@; ${KITER} -f $$f  -a 1PeriodicThroughput >> $@ ; \
 	echo === $$f === KPeriodicThroughput  >> $@; ${KITER} -f $$f  -a KPeriodicThroughput >> $@ ; \
 	echo === $$f === deGrooteThroughput  >> $@; ${KITER} -f $$f  -a deGrooteThroughput >> $@ ; \
-	if [ -d ${SDF3_BINARY_ROOT} ];then ${SDF3ANALYSIS_SDF}  --graph $$f  --algo throughput  >> $@ || true ; fi ;\
+	if [ -d ${SDF3_BINARY_ROOT} ];then echo === $$f === SDF3  >> $@; ${SDF3ANALYSIS_SDF}  --graph $$f  --algo throughput  >> $@ || true ; fi ;\
 	done
 
 %/bin/kiter: ${SOURCES}  %/Makefile

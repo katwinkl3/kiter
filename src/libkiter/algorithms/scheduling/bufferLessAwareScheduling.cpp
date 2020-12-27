@@ -113,7 +113,7 @@ scheduling_t algorithms::scheduling::bufferless_kperiodic_scheduling (models::Da
 
     VERBOSE_INFO("K-periodic schedule - total_ki=" << total_ki << " total_ni=" << total_ni );
     TIME_UNIT res = result.throughput;
-    std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
+    std::cout << "Maximum throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
     std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 
     models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
