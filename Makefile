@@ -12,6 +12,7 @@ SDF3_BENCHMARK := ./benchmarks/sdf3bench/
 SDF3_MEM_BENCHMARK := ./benchmarks/sdf3mem/
 SDF3_CS_BENCHMARK := ./benchmarks/sdf3cs/
 SDF3_EXAMPLES := ./benchmarks/sdf3examples/
+ASCENT_TESTBENCH := ./benchmarks/ascenttestbench/
 SDF3_ROOT := `pwd`/tools/sdf3/
 SDF3_BINARY_ROOT := ${SDF3_ROOT}/sdf3/build/release/Linux/bin/
 SDF3ANALYSIS_CSDF :=  timeout 180  ${SDF3_BINARY_ROOT}/sdf3analysis-csdf
@@ -130,6 +131,15 @@ ${SDF3_BENCHMARK} : sdfg_throughput.zip
 	cd ${SDF3_BENCHMARK} && unzip graphs/graphs3/graphs.zip; for f in graph*.xml ; do mv $$f three_$$f ; done
 	cd ${SDF3_BENCHMARK} && unzip graphs/graphs4/graphs.zip; for f in graph*.xml ; do mv $$f four_$$f ; done
 	cd ${SDF3_BENCHMARK} && rm graphs scripts sdfg_throughput.zip -rf
+
+${ASCENT_TESTBENCH} : ${SDF3_BENCHMARK}
+	@echo "###########"" ENTER IN $@ : $^  #####################"
+	mkdir -p $@
+	cp $</one_* $@/
+	for f in $@/*_buffer.xml; do mv -- "$$f" "$${f%_buffer.xml}.xml" ; done
+	sed -i.bak "s/.*_.*//" $@/*.xml
+	rm $@/*.bak
+
 
 sdf.log:  ./Release/bin/kiter Makefile 
 	@echo "###########"" ENTER IN $@ : $^  #####################"

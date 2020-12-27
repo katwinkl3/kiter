@@ -272,18 +272,19 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
   returnStream << std::endl;
 
 
-
+  ARRAY_INDEX routeur_count = noc.getNodes().size();
 
   // ******* NoC Devices
 
   for (const NetworkNode node : noc.getNodes()) {
-	  std::string label = commons::toString(node.id);
-	  double x = node.x;
-	  double y = node.y;
+	  double x = noc.getXSize() - node.x;
+	  double y = noc.getYSize() - node.y;
 	  if (node.type == NetworkNodeType::Core) {
-		  returnStream << node.id << "[label=\"Core\\n" << label << "\", fontsize=\"10\", shape=\"box\",  fixedsize=\"shape\", width=0.5, height=0.5, pos=\"" << x << "," << y << "!\", pin=TRUE, notranslate=TRUE];" << std::endl;
+		  std::string label = commons::toString(node.id - (routeur_count/2));
+		  returnStream << node.id << "[label=\"" << label << "\\l\", labelloc=\"t\", margin=0.03, fontsize=\"10\", shape=\"box\",  width=0.5, height=0.5, pos=\"" << x << "," << y << "!\", pin=TRUE, notranslate=TRUE];" << std::endl;
 	  } else if (node.type == NetworkNodeType::Router) {
-		  returnStream << node.id << "[label=\"" << label << "\", fontsize=\"5\", shape=\"box\",  fixedsize=\"shape\", width=0.2, height=0.2, pos=\"" << x << "," << y << "!\", pin=TRUE, notranslate=TRUE];" << std::endl;
+		  std::string label = commons::toString(node.id);
+		  returnStream << node.id << "[label=\"" << label << "\", margin=0.03, fontsize=\"5\", shape=\"box\",  width=0.2, height=0.2, pos=\"" << x << "," << y << "!\", pin=TRUE, notranslate=TRUE];" << std::endl;
 	  }
   }
 
@@ -360,8 +361,12 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 	  VERBOSE_DEBUG("task_id=" << task_id << " core_id = " <<  node_id);
 	  if (node_id >= 0 and dataflow->getNoC().hasNode(node_id) ) {
 		  const NetworkNode& core = dataflow->getNoC().getNode(node_id);
-		  double x = core.x;
-		  double y = core.y;
+		  //double x = core.x;
+		  //double y = core.y;
+
+		  double x = noc.getXSize() - core.x;
+		  double y = noc.getYSize() - core.y;
+
 		  taskSprites.push_back(TaskSprite(task_id,x,y,(core.type != NetworkNodeType::Core)));
 	  } else {
 		  double x = 0;
@@ -372,8 +377,8 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 			  node_id_t in_core_id = dataflow->getMapping(vtx);
 			  if (in_core_id >= 0) {
 				  const NetworkNode& core = dataflow->getNoC().getNode(in_core_id);
-				  x += core.x;
-				  y += core.y;
+				  x +=  noc.getXSize() -core.x;
+				  y +=  noc.getYSize() -core.y;
 			  }
 
 		  }}
@@ -384,8 +389,8 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 			  node_id_t out_core_id = dataflow->getMapping(outvtx);
 			  if (out_core_id >= 0) {
 				  const NetworkNode& outcore = dataflow->getNoC().getNode(out_core_id);
-				  x += outcore.x;
-				  y += outcore.y;
+				  x +=  noc.getXSize() -outcore.x;
+				  y +=  noc.getYSize() -outcore.y;
 			  }
 
 		  }}
@@ -478,11 +483,11 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 	  for (auto ts : updatedSprites) {
 
 	   if (ts.small) {
-		   returnStream <<  "task_" << ts.id << "[label=\"Task\\n" << ts.id << "\", style=\"filled\", color=\"red\", fontsize=\"2\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.1, height=0.1];" << std::endl;
+		   returnStream <<  "task_" << ts.id << "[label=\"" << ts.id << "\", style=\"filled\", color=\"red\", fontsize=\"5\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.1, height=0.1];" << std::endl;
 	   } else {
 		   Vertex v = dataflow->getVertexById(ts.id);
 		   std::string label = dataflow->getVertexName(v) ;
-		   returnStream <<  "task_" << ts.id << "[label=\"Task\\n" << label << "\", style=\"filled\", color=\"red\", fontsize=\"9\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.4, height=0.4];" << std::endl;
+		   returnStream <<  "task_" << ts.id << "[label=\"" << label << "\", style=\"filled\", color=\"red\", fontsize=\"9\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.4, height=0.4];" << std::endl;
 	   }
 	 }
    }
