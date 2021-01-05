@@ -46,10 +46,32 @@ TIME_UNIT State::getTimeElapsed() const {
   return timeElapsed;
 }
 
-// void State::updateState(models::Dataflow* const dataflow,
-//                         std::map<ARRAY_INDEX, Actor> actors) {
-  
-// }
+// set phase of actor
+void State::setPhase(Vertex a, PHASE_INDEX newPhase) {
+  this->actorPhases[a] = newPhase;
+}
+
+void State::setTokens(Edge e, TOKEN_UNIT newTokens) {
+  this->currentTokens[e] = newTokens;
+}
+
+void State::setRemExecTime(Vertex a, TIME_UNIT newTime) {
+  this->executingActors[a] = newTime;
+}
+
+void State::setTimeElapsed(TIME_UNIT time) {
+  this->timeElapsed = time;
+}
+
+void State::updateState(models::Dataflow* const dataflow,
+                        std::map<ARRAY_INDEX, Actor> actorMap) {
+  {ForEachTask(dataflow, t) {
+      setPhase(t, actorMap[dataflow->getVertexId(t)].getPhase());
+    }}
+  {ForEachEdge(dataflow, e) {
+      setTokens(e, dataflow->getPreload(e));
+    }}
+}
 
 bool State::operator==(const State& s) const {
   if (this->getTimeElapsed() != s.getTimeElapsed()) {

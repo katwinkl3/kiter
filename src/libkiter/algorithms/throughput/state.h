@@ -21,8 +21,12 @@ class State {
   TOKEN_UNIT getTokens(Edge e) const; // returns current tokens in edge
   TIME_UNIT getRemExecTime(Vertex a) const; // returns amount of time left for execution
   TIME_UNIT getTimeElapsed() const; // returns total elapsed time in state
-  /* void updateState(models::Dataflow* const dataflow, */
-  /*                  std::map<ARRAY_INDEX, Actor> actors); // updates state with current status of graph */
+  void setPhase(Vertex a, PHASE_INDEX newPhase);
+  void setTokens(Edge e, TOKEN_UNIT newTokens);
+  void setRemExecTime(Vertex a, TIME_UNIT newTime);
+  void setTimeElapsed(TIME_UNIT time);
+  void updateState(models::Dataflow* const dataflow,
+                   std::map<ARRAY_INDEX, Actor> actorMap); // updates state with current status of graph
   bool operator==(const State& s) const;
   
   /* bool addToVisitedStates(std::vector<State> &visitedStates); // checks list of visited states and adds to list if new state */
