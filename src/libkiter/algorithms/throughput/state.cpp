@@ -14,12 +14,14 @@ State::State()
    currentTokens(),
    timeElapsed{0} {}
 
-State::State(models::Dataflow* const dataflow) {
+// construct state using current graph and actor map information
+State::State(models::Dataflow* const dataflow,
+             std::map<ARRAY_INDEX, Actor> actorMap) {
   {ForEachEdge(dataflow, e) {
       currentTokens[e] = dataflow->getPreload(e);
     }}
   {ForEachTask(dataflow, t) {
-      actorPhases[t] = 1; // assume all actors start in first phase
+      actorPhases[t] = actorMap[dataflow->getVertexId(t)].getPhase();
     }}
   timeElapsed = 0;
 }

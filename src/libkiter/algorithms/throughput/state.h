@@ -5,6 +5,7 @@
  *      Author: jkmingwen
  */
 
+#include "actor.h"
 #include <models/Dataflow.h>
 
 namespace models {
@@ -14,7 +15,8 @@ namespace models {
 class State {
  public:
   State();
-  State(models::Dataflow* const dataflow);
+  State(models::Dataflow* const dataflow,
+        std::map<ARRAY_INDEX, Actor> actorMap);
   PHASE_INDEX getPhase(Vertex a) const; // returns current phase of actor
   TOKEN_UNIT getTokens(Edge e) const; // returns current tokens in edge
   TIME_UNIT getRemExecTime(Vertex a) const; // returns amount of time left for execution
