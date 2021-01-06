@@ -5,6 +5,9 @@
  *      Author: jkmingwen
  */
 
+#ifndef STATE_H_
+#define STATE_H_
+
 #include "actor.h"
 #include <models/Dataflow.h>
 
@@ -38,3 +41,4 @@ class State {
   TIME_UNIT timeElapsed; // track time elapsed given state
   
 };
+#endif /* STATE_H_ */

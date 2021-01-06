@@ -4,6 +4,8 @@
  *  Created on: 22 December 2020
  *      Author: jkmingwen
  */
+#ifndef ACTOR_H_
+#define ACTOR_H_
 
 #include <models/Dataflow.h>
 
@@ -34,3 +36,4 @@ class Actor {
   std::map<Edge, std::map<PHASE_INDEX, TOKEN_UNIT>> prodExecRate;
   std::map<Edge, std::map<PHASE_INDEX, TOKEN_UNIT>> consExecRate;
 };
+#endif /* ACTOR_H_ */
