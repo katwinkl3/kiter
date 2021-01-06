@@ -96,14 +96,14 @@ void print_function    (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC
 models::Scheduling period2Scheduling    (const models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , kperiodic_result_t & result) {
 
 	TIME_UNIT omega = 1.0 / result.throughput ;
-	VERBOSE_INFO("models::Scheduling period2Scheduling   omega = " << std::scientific << std::setprecision( 9 )  << omega  );
+	VERBOSE_INFO("models::Scheduling period2Scheduling   omega = "  << std::setprecision( 9 )  << omega  );
 	scheduling_t scheduling_result = period2scheduling    (dataflow, kvector ,  result.throughput) ;
 	return models::Scheduling(dataflow, omega, scheduling_result, result.critical_edges);
 }
 
 scheduling_t period2scheduling    (const models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , TIME_UNIT throughput) {
 
-	VERBOSE_INFO("scheduling_t period2scheduling  throughput = " << std::scientific << std::setprecision( 9 )  << throughput  );
+	VERBOSE_INFO("scheduling_t period2scheduling  throughput = "  << std::setprecision( 9 )  << throughput  );
 
 	scheduling_t scheduling_result;
 
@@ -716,7 +716,7 @@ void algorithms::compute_NKperiodic_throughput            (models::Dataflow* con
 	kperiodic_result_t result = KSchedule(dataflow,&kvector);
 
 	TIME_UNIT res = result.throughput;
-	std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
+	std::cout << "Maximum throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
 	std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 
 
@@ -736,7 +736,7 @@ void algorithms::compute_2Kperiodic_throughput            (models::Dataflow* con
 
 	kperiodic_result_t result = KSchedule(dataflow,&kvector);
 	TIME_UNIT res = result.throughput;
-	std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
+	std::cout << "Maximum throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
 	std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 
 
@@ -760,7 +760,7 @@ void algorithms::compute_1Kperiodic_throughput            (models::Dataflow* con
 		print_function    ( dataflow, kvector , result.throughput , false,false,true);
 	} else {
 		TIME_UNIT res = result.throughput;
-		std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
+		std::cout << "Maximum throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  res   << std::endl;
 		std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   << std::endl;
 	}
 
@@ -830,7 +830,7 @@ std::cout << dataflow->getFilename()
 				<< ";" << total_kikj
 				<< ";" << sumNi
 				<< ";" <<  sumNiNj
-						<< ";" << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  result.throughput   << std::endl;
+						<< ";"  << std::setw( 11 ) << std::setprecision( 9 ) <<  result.throughput   << std::endl;
 }
 
 /**
@@ -1043,7 +1043,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 		auto very_end = std::chrono::steady_clock::now();
 		double  duration = std::chrono::duration<double> (very_end-very_start).count() * 1000;
 
-		std::cout << "Maximum throughput is " << std::scientific << std::setw( 20 ) << std::setprecision( 9 ) <<     res    << std::endl;
+		std::cout << "Maximum throughput is "  << std::setw( 20 ) << std::setprecision( 9 ) <<     res    << std::endl;
 		std::cout << "Maximum period     is " << std::fixed      << std::setw( 20 ) << std::setprecision( 6 ) << 1.0/res    << std::endl;
 		std::cout << "Execution Time     is " << std::fixed      << std::setw( 20 ) << std::setprecision( 6 ) << duration   << std::endl;
 		}

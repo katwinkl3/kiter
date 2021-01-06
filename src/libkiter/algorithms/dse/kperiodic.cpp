@@ -183,6 +183,7 @@ kperiodic_result_t algorithms::compute_Kperiodic_throughput_and_cycles(models::D
     VERBOSE_INFO("K-periodic schedule - total_ki=" << sumKi << " total_ni=" << sumNi );
     
 
+
     return result;
 }
 

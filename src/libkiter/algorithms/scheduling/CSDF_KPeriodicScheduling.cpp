@@ -202,7 +202,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (const mo
     VERBOSE_INFO("K-periodic schedule - total_ki=" << sumKi << " total_ni=" << sumNi );
 
     TIME_UNIT res = result.throughput;
-    VERBOSE_INFO( "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  res );
+    VERBOSE_INFO( "Maximum throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  res );
     VERBOSE_INFO( "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   );
 
     VERBOSE_INFO("Run period2Scheduling");
@@ -229,7 +229,7 @@ void algorithms::scheduling::CSDF_1PeriodicScheduling (models::Dataflow*  datafl
    std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
    TIME_UNIT omega = 1/howard_res.first;
 
-   std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
+   std::cout << "Maximum throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
    std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
 
 }
@@ -249,7 +249,7 @@ void algorithms::scheduling::CSDF_NPeriodicScheduling (models::Dataflow*  datafl
    std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
    TIME_UNIT omega = 1/howard_res.first;
 
-   std::cout << "Maximum throughput is " << std::scientific << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
+   std::cout << "Maximum throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
    std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
 
 }

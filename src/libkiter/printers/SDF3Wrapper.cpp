@@ -315,6 +315,7 @@ void readSDF3VertexReentrancy (models::Dataflow *to,xmlNodePtr taskNode) {
 		}
 	}
 
+	// TODO : Reentrancy is not properly managed
 	VERBOSE_DEBUG("Set reetrancy On");
 	to->setReentrancyFactor(pVertex,1);
 

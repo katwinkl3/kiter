@@ -5,14 +5,17 @@
 
 SHELL = /bin/bash
 
-SDF3_ARCHIVE := sdf3-140724.zip 
+#SDF3_VERSION=100927
+SDF3_VERSION=140724
 
-CPU_COUNT := $(shell cat /proc/cpuinfo |grep processor |wc -l)
+SDF3_ARCHIVE := sdf3-${SDF3_VERSION}.zip
+
 SDF3_BENCHMARK := ./benchmarks/sdf3bench/
 SDF3_MEM_BENCHMARK := ./benchmarks/sdf3mem/
 SDF3_CS_BENCHMARK := ./benchmarks/sdf3cs/
 SDF3_EXAMPLES := ./benchmarks/sdf3examples/
-SDF3_ROOT := `pwd`/tools/sdf3/
+ASCENT_TESTBENCH := ./benchmarks/ascenttestbench/
+SDF3_ROOT := `pwd`/tools/sdf3_${SDF3_VERSION}/
 SDF3_BINARY_ROOT := ${SDF3_ROOT}/sdf3/build/release/Linux/bin/
 SDF3ANALYSIS_CSDF :=  timeout 180  ${SDF3_BINARY_ROOT}/sdf3analysis-csdf
 SDF3ANALYSIS_SDF := timeout 180   ${SDF3_BINARY_ROOT}/sdf3analysis-sdf
@@ -44,7 +47,11 @@ release: ./Release/bin/kiter
 
 clean:
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	rm -Rf Release Debug *.lp *.mps *.png *.dot *.pdf *.xml *.lp
+	rm -Rf Release Debug *.lp *.mps *.png *.dot *.pdf *.xml *.lp ./tools/.ipynb_checkpoints
+
+cleanall: clean
+	@echo "###########"" ENTER IN $@ : $^  #####################"
+	rm  -rf sdfg_buffersizing.zip           sdfg_throughput.zip  sdf3-*.zip  sdfg_designflow_case_study.zip  tools/sdf3*/ sdf.log benchmarks/sdf3*/ benchmarks/ascenttestbench/
 
 benchmark :  sdf.log  csdf.log csdf_sized.log
 	@echo "###########"" ENTER IN $@ : $^  #####################"
@@ -80,7 +87,7 @@ sdfg_throughput.zip :
 
 ${SDF3_ARCHIVE}:
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	wget http://www.es.ele.tue.nl/sdf3/download/files/releases/sdf3-140724.zip
+	wget http://www.es.ele.tue.nl/sdf3/download/files/releases/$@
 
 sdfg_buffersizing.zip :
 	@echo "###########"" ENTER IN $@ : $^  #####################"
@@ -99,8 +106,10 @@ ${SDF3_BINARY_ROOT} : ${SDF3_ARCHIVE}
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p ${SDF3_ROOT}
 	cp ${SDF3_ARCHIVE} ${SDF3_ROOT}/
-	cd ${SDF3_ROOT} && unzip -o ${SDF3_ARCHIVE}
-	cd "${SDF3_ROOT}/sdf3/" && make ## TODO : This line of code is not working with recursive Makefiles
+	unzip -o ${SDF3_ARCHIVE} -d ${SDF3_ROOT}
+	echo Please run \"cd ${SDF3_ROOT}/sdf3/ \&\& make\"
+#	make -C "${SDF3_ROOT}/sdf3/" SDF3ROOT=${SDF3_ROOT}/sdf3/
+#	cd "${SDF3_ROOT}/sdf3/" && make -C . ## TODO : This line of code is not working with recursive Makefiles
 
 ${SDF3_CS_BENCHMARK} : sdfg_designflow_case_study.zip
 	@echo "###########"" ENTER IN $@ : $^  #####################"
@@ -131,6 +140,15 @@ ${SDF3_BENCHMARK} : sdfg_throughput.zip
 	cd ${SDF3_BENCHMARK} && unzip graphs/graphs4/graphs.zip; for f in graph*.xml ; do mv $$f four_$$f ; done
 	cd ${SDF3_BENCHMARK} && rm graphs scripts sdfg_throughput.zip -rf
 
+${ASCENT_TESTBENCH} : ${SDF3_BENCHMARK}
+	@echo "###########"" ENTER IN $@ : $^  #####################"
+	mkdir -p $@
+	cp $</one_* $@/
+	for f in $@/*_buffer.xml; do mv -- "$$f" "$${f%_buffer.xml}.xml" ; done
+	sed -i.bak "s/.*_.*//" $@/*.xml
+	rm $@/*.bak
+
+
 sdf.log:  ./Release/bin/kiter Makefile 
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	rm -f $@
@@ -140,7 +158,7 @@ sdf.log:  ./Release/bin/kiter Makefile
 	echo === $$f === 1PeriodicThroughput  >> $@; ${KITER} -f $$f  -a 1PeriodicThroughput >> $@ ; \
 	echo === $$f === KPeriodicThroughput  >> $@; ${KITER} -f $$f  -a KPeriodicThroughput >> $@ ; \
 	echo === $$f === deGrooteThroughput  >> $@; ${KITER} -f $$f  -a deGrooteThroughput >> $@ ; \
-	if [ -d ${SDF3_BINARY_ROOT} ];then ${SDF3ANALYSIS_SDF}  --graph $$f  --algo throughput  >> $@ || true ; fi ;\
+	if [ -d ${SDF3_BINARY_ROOT} ];then echo === $$f === SDF3  >> $@; ${SDF3ANALYSIS_SDF}  --graph $$f  --algo throughput  >> $@ || true ; fi ;\
 	done
 
 %/bin/kiter: ${SOURCES}  %/Makefile
