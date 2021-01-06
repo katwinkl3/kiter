@@ -37,7 +37,7 @@ TOKEN_UNIT State::getTokens(Edge e) const {
 }
 
 // returns amount of time left for execution
-TIME_UNIT State::getRemExecTime(Vertex a) const {
+std::list<TIME_UNIT> State::getRemExecTime(Vertex a) const {
   return executingActors.at(a);
 }
 
@@ -55,8 +55,15 @@ void State::setTokens(Edge e, TOKEN_UNIT newTokens) {
   this->currentTokens[e] = newTokens;
 }
 
-void State::setRemExecTime(Vertex a, TIME_UNIT newTime) {
-  this->executingActors[a] = newTime;
+void State::addRemExecTime(Vertex a, TIME_UNIT newTime) {
+  this->executingActors[a].push_back(newTime);
+}
+
+// reduce execution times for given actor by the given time step
+void State::advanceRemExecTime(Vertex a, TIME_UNIT timeStep) {
+  for (auto &it : this->executingActors[a]) {
+    it = it - timeStep;
+  }
 }
 
 void State::setTimeElapsed(TIME_UNIT time) {
