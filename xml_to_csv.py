@@ -50,8 +50,7 @@ with open(fileName, 'w') as f:
                     quantity = c.getAttribute("sz")
                     channelQuants.append(quantity)
                     distSz += int(quantity)
-                    f.write("%s,%s,\"%s\"\n"
-                            % (distSz, thr, ",".join(channelQuants)))
+                    f.write("%s,%s,\"%s\"\n" % (distSz, thr, ",".join(channelQuants)))
 # no need to explicitly close file when using 'with' keyword
 
 print("Pareto point log written to: " + fileName)
