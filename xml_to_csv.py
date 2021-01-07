@@ -1,6 +1,5 @@
-import sys
 import os.path
-import string
+import sys
 from xml.dom import minidom
 
 # This script parses an XML file from SDF3 and writes a CSV file with the
@@ -19,7 +18,7 @@ if len(sys.argv) > 3:
     dirName = sys.argv[3] + "/"  # specify subdirectory for output log
 else:
     dirName = "./data/"  # default subdirectory
-    
+
 
 # Find feedback loops
 channels = graph.getElementsByTagName("channel")
@@ -27,7 +26,7 @@ feedbackChannels = []
 for channel in channels:
     if channel.getAttribute("srcActor") == channel.getAttribute("dstActor"):
         feedbackChannels.append(channel.getAttribute("name"))
-        
+
 # Get file name from XML results file
 nameExt = os.path.split(sys.argv[2])[1]  # return filename with extension
 name = os.path.splitext(nameExt)[0]  # remove extension
@@ -51,9 +50,8 @@ with open(fileName, 'w') as f:
                     quantity = c.getAttribute("sz")
                     channelQuants.append(quantity)
                     distSz += int(quantity)
-            f.write("%s,%s,\"%s\"\n" % (distSz,
-                                        thr,
-                                        ",".join(channelQuants)))
+                    f.write("%s,%s,\"%s\"\n"
+                            % (distSz, thr, ",".join(channelQuants)))
 # no need to explicitly close file when using 'with' keyword
 
 print("Pareto point log written to: " + fileName)
