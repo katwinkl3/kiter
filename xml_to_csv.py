@@ -32,7 +32,7 @@ nameExt = os.path.split(sys.argv[2])[1]  # return filename with extension
 name = os.path.splitext(nameExt)[0]  # remove extension
 fileName = dirName + name + ".csv"  # specify filename
 
-with open(fileName, 'w') as f:
+with open(fileName, "w") as f:
     # start with column headers
     f.write("storage distribution size,throughput,channel quantities\n")
     distributions = doc.getElementsByTagName("distributionsSet")
@@ -50,7 +50,7 @@ with open(fileName, 'w') as f:
                     quantity = c.getAttribute("sz")
                     channelQuants.append(quantity)
                     distSz += int(quantity)
-                    f.write("%s,%s,\"%s\"\n" % (distSz, thr, ",".join(channelQuants)))
+            f.write('%s,%s,"%s"\n' % (distSz, thr, ",".join(channelQuants)))
 # no need to explicitly close file when using 'with' keyword
 
 print("Pareto point log written to: " + fileName)
