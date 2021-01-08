@@ -13,6 +13,7 @@ State::State()
   :executingActors(),
    actorPhases(),
    currentTokens(),
+   actors(),
    timeElapsed{0} {}
 
 // construct state using current graph and actor map information
@@ -23,6 +24,7 @@ State::State(models::Dataflow* const dataflow,
     }}
   {ForEachTask(dataflow, t) {
       actorPhases[t] = actorMap[dataflow->getVertexId(t)].getPhase();
+      actors.push_back(t);
     }}
   timeElapsed = 0;
 }
@@ -79,6 +81,29 @@ void State::updateState(models::Dataflow* const dataflow,
   {ForEachEdge(dataflow, e) {
       setTokens(e, dataflow->getPreload(e));
     }}
+}
+
+TIME_UNIT State::advanceTime() {
+  TIME_UNIT timeElapsed = LONG_MAX;
+  for (auto &i : this->actors) {
+    if (!this->executingActors[i].empty()) {
+      timeElapsed = std::min(timeElapsed, this->executingActors[i].front());
+    }
+  }
+  // check for cases where time shouldn't advance/deadlock
+  if (timeElapsed == 0) {
+    return timeElapsed; // there exists actors that need to end execution
+  }
+  if (timeElapsed == LONG_MAX) {
+    return timeElapsed; // deadlock reached (no actors about to execute)
+  }
+  // advance time for all actors
+  for (auto &it : this->executingActors) {
+    this->advanceRemExecTime(it.first, timeElapsed);
+  }
+  this->timeElapsed += timeElapsed;
+
+  return timeElapsed;
 }
 
 bool State::operator==(const State& s) const {
