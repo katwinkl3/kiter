@@ -7,6 +7,7 @@
 
 #include "state.h"
 #include <models/Dataflow.h>
+#include <algorithm>
 
 State::State()
   :executingActors(),
@@ -99,6 +100,25 @@ bool State::operator==(const State& s) const {
       return false;
     }
   }
-  
+
+  return true;
+}
+
+StateList::StateList() {
+
+}
+
+StateList::StateList(State s) {
+  this->visitedStates.push_back(s);
+}
+
+bool StateList::addState(State s) {
+  this->repeatedState = std::find(this->visitedStates.begin(),
+                                  this->visitedStates.end(),
+                                  s);
+  if (this->repeatedState != this->visitedStates.end()) {
+    return false;
+  }
+  this->visitedStates.push_back(s);
   return true;
 }

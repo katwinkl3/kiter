@@ -34,7 +34,7 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
     }}
   State prevState(dataflow, actorMap);
   State currState(dataflow, actorMap);
-  std::cout << "testing state equality (expecting 1): " << std::to_string(prevState == currState) << std::endl;
+
   // testing functions
   printStatus(dataflow);
   {ForEachTask(dataflow, t) {
@@ -53,7 +53,6 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
       std::cout << std::endl;
     }}
   currState.updateState(dataflow, actorMap);
-  std::cout << "testing state equality (expecting 0): " << std::to_string(prevState == currState) << std::endl;
 }
 
 // prints current status of dataflow graph

@@ -32,14 +32,25 @@ class State {
   void updateState(models::Dataflow* const dataflow,
                    std::map<ARRAY_INDEX, Actor> actorMap); // updates state with current status of graph
   bool operator==(const State& s) const;
-  
+
   /* bool addToVisitedStates(std::vector<State> &visitedStates); // checks list of visited states and adds to list if new state */
-  
+
  private:
   std::map<Vertex, std::list<TIME_UNIT>> executingActors; // track actor's currently executing and the time before completing execution
   std::map<Vertex, PHASE_INDEX> actorPhases; // track the current phases of each actor
   std::map<Edge, TOKEN_UNIT> currentTokens; // track number of tokens in each channel
   TIME_UNIT timeElapsed; // track time elapsed given state
-  
+
+};
+
+class StateList {
+public:
+  StateList();
+  StateList(State s);
+  bool addState(State s);
+
+private:
+  std::list<State> visitedStates;
+  std::list<State>::iterator repeatedState;
 };
 #endif /* STATE_H_ */
