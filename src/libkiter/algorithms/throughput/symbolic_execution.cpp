@@ -34,7 +34,7 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
     }}
   State prevState(dataflow, actorMap);
   State currState(dataflow, actorMap);
-
+  prevState.print(dataflow);
   // testing functions
   printStatus(dataflow);
   {ForEachTask(dataflow, t) {
@@ -53,6 +53,7 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
       std::cout << std::endl;
     }}
   currState.updateState(dataflow, actorMap);
+  currState.print(dataflow);
 }
 
 // prints current status of dataflow graph

@@ -129,6 +129,30 @@ bool State::operator==(const State& s) const {
   return true;
 }
 
+void State::print(models::Dataflow* const dataflow) {
+  std::cout << "Printing state status:" << std::endl;
+  std::cout << "\tActor phases:" << std::endl;
+  for (auto const &it : this->actorPhases) {
+    std::cout << "\t\tPhase of Actor " << dataflow->getVertexName(it.first)
+              << ": " << this->getPhase(it.first) << std::endl;
+  }
+  std::cout << "\tChannel token counts:" << std::endl;
+  for (auto const &it : this->currentTokens) {
+    std::cout << "\t\tChannel " << dataflow->getEdgeName(it.first) << ": "
+              << this->getTokens(it.first) << std::endl;
+  }
+  std::cout << "\tPrinting execution queues:" << std::endl;
+  for (auto const &it : this->executingActors) {
+    std::cout << "\t\tExecution queue for Actor " << dataflow->getVertexName(it.first)
+              << ": " << std::endl;
+    for (auto const &q : it.second) {
+      std::cout << "\t\t  ";
+      std::cout << q << " ";
+    }
+    std::cout << std::endl;
+  }
+}
+
 StateList::StateList() {
 
 }
