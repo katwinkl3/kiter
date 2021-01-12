@@ -15,6 +15,8 @@ namespace models {
   class Dataflow;
 }
 
+class Actor;
+
 class State {
  public:
   State();

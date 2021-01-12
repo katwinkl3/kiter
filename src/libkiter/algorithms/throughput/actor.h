@@ -7,11 +7,14 @@
 #ifndef ACTOR_H_
 #define ACTOR_H_
 
+#include "state.h"
 #include <models/Dataflow.h>
 
 namespace models {
   class Dataflow;
 }
+
+class State;
 
 class Actor {
  public:
