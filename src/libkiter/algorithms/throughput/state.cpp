@@ -58,7 +58,7 @@ void State::setTokens(Edge e, TOKEN_UNIT newTokens) {
   this->currentTokens[e] = newTokens;
 }
 
-void State::addRemExecTime(Vertex a, TIME_UNIT newTime) {
+void State::addExecution(Vertex a, TIME_UNIT newTime) {
   this->executingActors[a].push_back(newTime);
 }
 
@@ -73,6 +73,7 @@ void State::setTimeElapsed(TIME_UNIT time) {
   this->timeElapsed = time;
 }
 
+// update phase count for each actor and token counts per channel
 void State::updateState(models::Dataflow* const dataflow,
                         std::map<ARRAY_INDEX, Actor> actorMap) {
   {ForEachTask(dataflow, t) {

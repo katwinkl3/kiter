@@ -26,7 +26,7 @@ class State {
   TIME_UNIT getTimeElapsed() const; // returns total elapsed time in state
   void setPhase(Vertex a, PHASE_INDEX newPhase);
   void setTokens(Edge e, TOKEN_UNIT newTokens);
-  void addRemExecTime(Vertex a, TIME_UNIT newTime);
+  void addExecution(Vertex a, TIME_UNIT newTime);
   void advanceRemExecTime(Vertex a, TIME_UNIT timeStep);
   void setTimeElapsed(TIME_UNIT time);
   void updateState(models::Dataflow* const dataflow,
