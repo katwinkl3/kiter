@@ -44,13 +44,14 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
   // testing functions
   printStatus(dataflow);
   {ForEachTask(dataflow, t) {
-      while (actorMap[dataflow->getVertexId(t)].isReadyForExec(dataflow)) {
+      while (actorMap[dataflow->getVertexId(t)].isReadyForExec(currState)) {
         actorMap[dataflow->getVertexId(t)].execStart(dataflow);
         currState.addExecution(t,
                                dataflow->getVertexDuration(t, actorMap[dataflow->getVertexId(t)].getPhase())); // use phase to mimic num execution
+        currState.updateState(dataflow, actorMap);
       }
     }}
-  currState.updateState(dataflow, actorMap);
+  // currState.updateState(dataflow, actorMap);
   std::cout << "Printing Current State Status" << std::endl;
   currState.print(dataflow);
   std::cout << "Printing Actor Statuses:" << std::endl;

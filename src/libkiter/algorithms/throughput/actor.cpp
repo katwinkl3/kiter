@@ -84,15 +84,15 @@ EXEC_COUNT Actor::getNumExecutions() {
 }
 
 // Given current state of graph, returns whether actor is ready to execute or not
-bool Actor::isReadyForExec(models::Dataflow* const dataflow) {
+bool Actor::isReadyForExec(State s) {
   // Execution conditions (for given phase):
   // (1) enough room in output channel, (2) enough tokens in input channel, (3) not currently executing
   bool isExecutable = true;
-  {ForInputEdges(dataflow, this->actor, e) { // check if input channel has enough tokens for execution
-      if (dataflow->getPreload(e) < this->getExecRate(e)) {
-        isExecutable = false;
-      }
-    }}
+  for (auto const &e : this->consPhaseCount) {
+    if (s.getTokens(e.first) < this->getExecRate(e.first)) {
+      isExecutable = false;
+    }
+  }
   return isExecutable;
 }
 

@@ -26,7 +26,7 @@ class Actor {
   PHASE_INDEX getPhase();
   TOKEN_UNIT getExecRate(Edge e);
   EXEC_COUNT getNumExecutions();
-  bool isReadyForExec(models::Dataflow* const dataflow);
+  bool isReadyForExec(State s);
   void execStart(models::Dataflow* const dataflow);
   void execEnd(models::Dataflow* const dataflow);
   void printStatus(models::Dataflow* const dataflow);
