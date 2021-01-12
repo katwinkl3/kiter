@@ -102,6 +102,7 @@ void Actor::execStart(models::Dataflow* const dataflow) {
   {ForInputEdges(dataflow, this->actor, e) {
       dataflow->setPreload(e, dataflow->getPreload(e) - this->getExecRate(e));
     }}
+  this->numExecs++;
 }
 
 // End actor's execution, producing tokens into output channels
@@ -110,7 +111,6 @@ void Actor::execEnd(models::Dataflow* const dataflow) {
   {ForOutputEdges(dataflow, this->actor, e) {
       dataflow->setPreload(e, dataflow->getPreload(e) + this->getExecRate(e));
     }}
-  this->numExecs++;
 }
 
 void Actor::printStatus(models::Dataflow* const dataflow) {
