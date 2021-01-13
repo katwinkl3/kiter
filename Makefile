@@ -22,6 +22,7 @@ KITER := timeout 180 ./Release/bin/kiter
 
 SOURCES=$(shell find src tests)
 
+WGET=sleep 20 && wget --tries=1
 
 ifeq (,"${TRAVIS}")
 ifeq (,$(shell find "${SDF3_BINARY_ROOT}/sdf3analysis-csdf" 2> /dev/null))
@@ -94,17 +95,17 @@ csdf_IB5CSDF.log:  ./Release/bin/kiter Makefile
 ${SDF3_ROOT}/sdfg_throughput.zip :
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p ${SDF3_ROOT}
-	wget --tries=1 "http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_throughput.zip" -O $@
+	${WGET} "http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_throughput.zip" -O $@
 
 ${SDF3_ROOT}/sdfg_buffersizing.zip :
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p ${SDF3_ROOT}
-	wget --tries=1 "http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_buffersizing.zip" -O $@
+	${WGET} "http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_buffersizing.zip" -O $@
 
 ${SDF3_ROOT}/sdfg_designflow_case_study.zip:
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p ${SDF3_ROOT}
-	wget --tries=1 "http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_designflow_case_study.zip" -O $@
+	${WGET} "http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_designflow_case_study.zip" -O $@
 
 sdf3_benchmarks : ${SDF3_BENCHMARK} ${SDF3_MEM_BENCHMARK}  ${SDF3_CS_BENCHMARK} ${SDF3_EXAMPLES}
 	@echo "###########"" ENTER IN $@ : $^  #####################"
@@ -132,7 +133,7 @@ ${SDF3_EXAMPLES} :
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p $@
 	for example in h263decoder h263encoder mp3decoder_granule_parallelism mp3decoder_block_parallelism mp3playback satellite samplerate modem  ; do \
-	sleep 3; wget --tries=1 "http://www.es.ele.tue.nl/sdf3/download/files/examples/$$example.xml" -O ${SDF3_EXAMPLES}/$$example.xml ; done
+	${WGET} "http://www.es.ele.tue.nl/sdf3/download/files/examples/$$example.xml" -O ${SDF3_EXAMPLES}/$$example.xml ; done
 
 ${SDF3_BENCHMARK} : ${SDF3_ROOT}/sdfg_throughput.zip
 	@echo "###########"" ENTER IN $@ : $^  #####################"
@@ -182,4 +183,4 @@ unit_test: ./Debug/Makefile
 
 
 .PHONY:  sdf3 all infos  debug release clean benchmark ubuntu_test test  unit_test
-.PRECIOUS: %/Makefile
+.PRECIOUS: %/Makefile tools/sdf3/%.zip
