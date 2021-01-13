@@ -31,6 +31,7 @@
 #include <map>
 #include <stdexcept>
 #include <commons/verbose.h>
+#include <commons/commons.h>
 
 /*** FIX FOR ECLIPSE ****/
 #ifndef __DBL_MAX__

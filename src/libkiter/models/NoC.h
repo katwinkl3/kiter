@@ -8,9 +8,11 @@
 #ifndef SRC_LIBKITER_MODELS_NOC_H_
 #define SRC_LIBKITER_MODELS_NOC_H_
 
+
+#include <commons/verbose.h>
 #include <map>
 #include <vector>
-#include <commons/verbose.h>
+#include <iostream>
 
 typedef unsigned long          bank_id_t;
 typedef          long          noc_id_t;

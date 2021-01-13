@@ -22,7 +22,6 @@ bool operator<(const boost::detail::edge_desc_impl<boost::bidirectional_tag, uns
 namespace commons {
 
 
-const std::string getFilename(const std::string s) { return s.substr(s.find_last_of("/\\")+1);}
 
 TIME_UNIT roundIt(TIME_UNIT val,TIME_UNIT p) {
   std::stringstream s;

@@ -1521,7 +1521,7 @@ TOKEN_UNIT compute_local_flow (models::Dataflow* to, std::vector< ARRAY_INDEX >&
 	{
 		Vertex vi     = to->getVertexById(vid);
 		EXEC_COUNT ni = to->getNi(vi);
-		gcd_value = boost::integer::gcd (gcd_value , ni) ;
+		gcd_value = std::gcd (gcd_value , ni) ;
 	}
 
 	//Find the total flow
@@ -1571,7 +1571,7 @@ static bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::v
 		Vertex vi     = to->getVertexById(vid);
 		mergeVtxDuration = std::max(mergeVtxDuration, to->getVertexDuration(vi));
 		EXEC_COUNT ni = to->getNi(vi);
-		gcd_value = boost::integer::gcd (gcd_value , ni) ;
+		gcd_value = std::gcd (gcd_value , ni) ;
 	}
 
 
@@ -2163,10 +2163,10 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 				<< " Delay=" << delay << ""
 				<< " Ni=" << to->getNi(task_vtx) << ""
 				<< " starts=[ " << ss.str() << "]");
-		*LCM = boost::integer::lcm(*LCM, to->getNi(task_vtx));
+		*LCM = std::lcm(*LCM, to->getNi(task_vtx));
 
 	}
-	*LCM = boost::integer::lcm(*LCM, (EXEC_COUNT)*HP);
+	*LCM = std::lcm(*LCM, (EXEC_COUNT)*HP);
 
 }
 

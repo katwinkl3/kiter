@@ -244,7 +244,7 @@ scheduling_t algorithms::scheduling::bufferless_scheduling (models::Dataflow* co
 		const TOKEN_UNIT  mop      =  commons::floor(dataflow->getPreload(c),dataflow->getFineGCD(c));
 
 		// TODO : I am not sure about this part,
-        const TOKEN_UNIT  gcdk      = boost::integer::gcd( kvector[source]  * (Zi), kvector[target] * (Zj));
+        const TOKEN_UNIT  gcdk      = std::gcd( kvector[source]  * (Zi), kvector[target] * (Zj));
 
 		TOKEN_UNIT wai    = 0;  /* wai data write at start ai  */
 		TOKEN_UNIT cwai   = 0;  /* cwai cumul data write at start ai   */
@@ -528,8 +528,8 @@ void algorithms::scheduling::sdf_bufferless_scheduling (models::Dataflow* const 
         const TOKEN_UNIT  in_b        = dataflow->getEdgeIn(c);
         const TOKEN_UNIT  ou_b        = dataflow->getEdgeOut(c);
 
-        const TOKEN_UNIT  gcdb      = boost::integer::gcd((in_b),(ou_b));
-        const TOKEN_UNIT  gcdk      = boost::integer::gcd( kvector[source]  * (in_b), kvector[target] * (ou_b));
+        const TOKEN_UNIT  gcdb      = std::gcd((in_b),(ou_b));
+        const TOKEN_UNIT  gcdk      = std::gcd( kvector[source]  * (in_b), kvector[target] * (ou_b));
 
         const TOKEN_UNIT  mop      =  commons::floor(dataflow->getPreload(c),gcdb);
 

@@ -201,10 +201,10 @@
 
 
            for (EXEC_COUNT kj = 1 ; kj <= max_kj ; kj++) {
-               lambda_p = boost::gcd(lambda_p , dataflow->getEdgeOutPhase(e,kj));
+               lambda_p = std::gcd(lambda_p , dataflow->getEdgeOutPhase(e,kj));
            }
            for (EXEC_COUNT ki = 1 ; ki <= max_ki ; ki++) {
-               lambda_c = boost::gcd(lambda_c , dataflow->getEdgeInPhase(e,ki));
+               lambda_c = std::gcd(lambda_c , dataflow->getEdgeInPhase(e,ki));
            }
 
            lambda_prod[e]      = lambda_p;
@@ -374,10 +374,10 @@
            const EXEC_COUNT max_kj = dataflow->getEdgeOutPhasesCount(e);
 
            for (EXEC_COUNT kj = 1 ; kj <= max_kj ; kj++) {
-               lambda_p = boost::gcd(lambda_p , dataflow->getEdgeOutPhase(e,kj));
+               lambda_p = std::gcd(lambda_p , dataflow->getEdgeOutPhase(e,kj));
            }
            for (EXEC_COUNT ki = 1 ; ki <= max_ki ; ki++) {
-               lambda_c = boost::gcd(lambda_c , dataflow->getEdgeInPhase(e,ki));
+               lambda_c = std::gcd(lambda_c , dataflow->getEdgeInPhase(e,ki));
            }
 
            lambda_prod[e]      = lambda_p;
@@ -664,7 +664,7 @@ void algorithms::compute_periodic_fixed_memory   (models::Dataflow* const  dataf
 
           const TOKEN_UNIT  mop      =  commons::floor(dataflow->getPreload(c),dataflow->getFineGCD(c));
 
-          const TOKEN_UNIT  gcdz      = boost::integer::gcd((Zi),(Zj));
+          const TOKEN_UNIT  gcdz      = std::gcd((Zi),(Zj));
 
           VERBOSE_DEBUG("Mu_i = " << mu_i);
           VERBOSE_DEBUG("Mu_j = " << mu_j);
@@ -830,7 +830,7 @@ void algorithms::compute_periodic_fixed_memory   (models::Dataflow* const  dataf
               const TOKEN_UNIT  Zi        = dataflow->getEdgeIn(c);
               const TOKEN_UNIT  Zj        = dataflow->getEdgeOut(c);
 
-              const TOKEN_UNIT  gcdz      = boost::integer::gcd((Zi),(Zj));
+              const TOKEN_UNIT  gcdz      = std::gcd((Zi),(Zj));
 
 
               TOKEN_UNIT wai    = 0;  /* wai data write at start ai  */

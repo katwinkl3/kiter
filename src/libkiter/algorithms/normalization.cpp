@@ -7,11 +7,9 @@
 
 #include <models/Dataflow.h>
 #include <algorithms/normalization.h>
-#include <boost/rational.hpp>
 
 
 using namespace models;
-using boost::rational;
 
 
 
@@ -251,7 +249,7 @@ std::map<Vertex,TOKEN_UNIT> * algorithms::rationalNormalize(models::Dataflow *fr
     Vertex targetfirst     = from->getEdgeTarget(firstc);
     TOKEN_UNIT infirst   = from->getEdgeIn(firstc);
     TOKEN_UNIT outfirst  = from->getEdgeOut(firstc);
-    alphas[firstc]       = TOKEN_FRACT(1,boost::gcd(infirst,outfirst)); // 1 / gcd , the minimum value
+    alphas[firstc]       = TOKEN_FRACT(1,std::gcd(infirst,outfirst)); // 1 / gcd , the minimum value
 
     // ** set to view source and target, remove in to view list
     prochains_a_voir.insert(sourcefirst);
@@ -287,9 +285,9 @@ std::map<Vertex,TOKEN_UNIT> * algorithms::rationalNormalize(models::Dataflow *fr
                 TOKEN_FRACT ZI_CUR   = (A * V);
                 VERBOSE_DEBUG(" - ZI_CUR = " << ZI_CUR << "=" << A << "*" << V);
                 VERBOSE_DEBUG(" - ZI_REF = " << ZI_REF);
-                if (ZI_REF == 0) ZI_REF = ZI_CUR;
+                if (ZI_REF == TOKEN_FRACT(0)) ZI_REF = ZI_CUR;
                 VERBOSE_DEBUG(" - ZI_REF = " << ZI_REF);
-                if ((ZI_REF <= 0) || (ZI_CUR <= 0)) {
+                if ((ZI_REF <= TOKEN_FRACT(0)) || (ZI_CUR <= TOKEN_FRACT(0))) {
                     VERBOSE_ERROR("Error in normalization process ZI_REF=" << ZI_REF << " ZI_CUR=" << ZI_CUR << " A=" << A << " V=" << V << " (A * V)=" << (A * V));
                 }
 
@@ -317,7 +315,7 @@ std::map<Vertex,TOKEN_UNIT> * algorithms::rationalNormalize(models::Dataflow *fr
                  if (alphas.find(pEdge) == alphas.end())  { // channel not set : we set it !
                      VERBOSE_DEBUG(" - need to be set");
                      TOKEN_UNIT  V    =  (from->getEdgeSource(pEdge) == t)  ? in : out ; // V * alpha = Zi
-                     alphas[pEdge] =  ZI_REF / V;
+                     alphas[pEdge] =  ZI_REF / TOKEN_FRACT(V);
                      VERBOSE_DEBUG(" - ZI_" <<   from->getVertexName(t)  <<  " = " << ZI_REF << " Alpha = " << alphas[pEdge]);
                  } else {
                      VERBOSE_DEBUG(" - already set");
@@ -340,7 +338,7 @@ std::map<Vertex,TOKEN_UNIT> * algorithms::rationalNormalize(models::Dataflow *fr
                   VERBOSE_DEBUG("K = " << K);
                   VERBOSE_DEBUG("Zi = " << ZI_REF << " became " << (ZI_REF * K));
                   ZI_REF = ZI_REF * K;
-                  if ( ZI_REF <= 0) return NULL;
+                  if ( ZI_REF <= TOKEN_FRACT(0)) return NULL;
                   VERBOSE_ASSERT( ZI_REF > 0 , "Error in normalization process");
             }
         }}
@@ -380,7 +378,7 @@ std::map<Vertex,TOKEN_UNIT> * algorithms::rationalNormalize(models::Dataflow *fr
                  if (total_a_voir.find(target) != total_a_voir.end()) {
                      TOKEN_UNIT infirst   = from->getEdgeIn(pEdge);
                      TOKEN_UNIT outfirst  = from->getEdgeOut(pEdge);
-                     alphas[pEdge]       = TOKEN_FRACT(1,boost::gcd(infirst,outfirst)); // 1 / gcd , the minimum value
+                     alphas[pEdge]       = TOKEN_FRACT(1,std::gcd(infirst,outfirst)); // 1 / gcd , the minimum value
 
                      // ** set to view source and target, remove in to view list
                      prochains_a_voir.insert(source);
@@ -410,8 +408,8 @@ std::map<Vertex,TOKEN_UNIT> * algorithms::rationalNormalize(models::Dataflow *fr
                     TOKEN_FRACT alphac  = alphas[pEdge];
                     VERBOSE_ASSERT(in > 0,TXT_NEVER_HAPPEND);
                     VERBOSE_ASSERT(out > 0,TXT_NEVER_HAPPEND);
-                    if (alphac  <= 0) return NULL;
-                    VERBOSE_ASSERT(alphac  > 0,TXT_NEVER_HAPPEND);
+                    if (alphac  <= TOKEN_FRACT(0)) return NULL;
+                    VERBOSE_ASSERT(alphac  > TOKEN_FRACT(0),TXT_NEVER_HAPPEND);
                     TOKEN_FRACT Zi      = alphac * in;
                     TOKEN_FRACT Zj      = alphac * out;
                     VERBOSE_DEBUG(" Zi = " << alphac << " * " << in << " = " << Zi);

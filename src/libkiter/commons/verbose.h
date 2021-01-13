@@ -9,7 +9,8 @@
 #ifndef VERBOSE_H_
 #define VERBOSE_H_
 
-#include <commons/commons.h>
+#include <set>
+#include <iostream>
 
 #define TXT_NO_IMPLEMENTATION "FIXME"
 #define TXT_NEVER_HAPPEND     "Internal error"
@@ -70,8 +71,9 @@ void myterminate(int);
 #define GREEN_COLOR  (commons::VERBOSE_COLOR?"\033[1;32m":"")
 #define BLUE_COLOR   (commons::VERBOSE_COLOR?"\033[1;34m":"")
 #define RESET_COLOR  (commons::VERBOSE_COLOR?"\033[0m":"")
-
-#define __SHOW_LEVEL "[ "<< __RELEASE__ <<"  " << commons::getFilename(__FILE__) << ":" << __LINE__ << "]" << RESET_COLOR << " "
+#include <string>
+const inline std::string _verbosegetFilename(const std::string s) { return s.substr(s.find_last_of("/\\")+1);}
+#define __SHOW_LEVEL "[ "<< __RELEASE__ <<"  " << _verbosegetFilename(__FILE__) << ":" << __LINE__ << "]" << RESET_COLOR << " "
 
 #ifdef __RELEASE_MODE__
 #define EXIT_ON_FAILURE()  /*int* toto = NULL; *toto = 1;*/ exit(EXIT_FAILURE)

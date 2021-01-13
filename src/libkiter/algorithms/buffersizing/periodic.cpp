@@ -81,7 +81,7 @@ TOKEN_UNIT algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  d
 
 		const TOKEN_UNIT  mop      =  commons::floor(dataflow->getPreload(c),dataflow->getFineGCD(c));
 
-		const TOKEN_UNIT  gcdz      = boost::integer::gcd((Zi),(Zj));
+		const TOKEN_UNIT  gcdz      = std::gcd((Zi),(Zj));
 
 		VERBOSE_DEBUG("Mu_i = " << mu_i);
 		VERBOSE_DEBUG("Mu_j = " << mu_j);
@@ -283,7 +283,7 @@ TOKEN_UNIT algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  d
 			const TOKEN_UNIT  Zi        = dataflow->getEdgeIn(c);
 			const TOKEN_UNIT  Zj        = dataflow->getEdgeOut(c);
 
-			const TOKEN_UNIT  gcdz      = boost::integer::gcd((Zi),(Zj));
+			const TOKEN_UNIT  gcdz      = std::gcd((Zi),(Zj));
 
 
 			TOKEN_UNIT wai    = 0;  /* wai data write at start ai  */

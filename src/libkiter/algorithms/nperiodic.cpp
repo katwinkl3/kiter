@@ -465,8 +465,8 @@ void algorithms::KPeriodic_memory   (models::Dataflow* const  dataflow,  std::ma
         const TOKEN_UNIT  in_b        = dataflow->getEdgeIn(c);
         const TOKEN_UNIT  ou_b        = dataflow->getEdgeOut(c);
 
-        const TOKEN_UNIT  gcdb      = boost::integer::gcd((in_b),(ou_b));
-        const TOKEN_UNIT  gcdk      = boost::integer::gcd( kvector[source]  * (in_b), kvector[target] * (ou_b));
+        const TOKEN_UNIT  gcdb      = std::gcd((in_b),(ou_b));
+        const TOKEN_UNIT  gcdk      = std::gcd( kvector[source]  * (in_b), kvector[target] * (ou_b));
 
         const TOKEN_UNIT  mop      =  commons::floor(dataflow->getPreload(c),gcdb);
 
@@ -648,7 +648,7 @@ void algorithms::KPeriodic_memory   (models::Dataflow* const  dataflow,  std::ma
 
             const TOKEN_UNIT  in_b        = dataflow->getEdgeIn(c);
             const TOKEN_UNIT  ou_b        = dataflow->getEdgeOut(c);
-            const TOKEN_UNIT  gcdk      = boost::integer::gcd( kvector[source]  * (in_b), kvector[target] * (ou_b));
+            const TOKEN_UNIT  gcdk      = std::gcd( kvector[source]  * (in_b), kvector[target] * (ou_b));
 
 
             TOKEN_UNIT feedbackmopmax =  commons::ceil(g.getValue(feedback_mo_name),1);

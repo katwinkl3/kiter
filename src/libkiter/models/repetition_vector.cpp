@@ -59,7 +59,7 @@ bool calcFractionsConnectedActors(const models::Dataflow *from, std::map<Vertex,
     	EXEC_COUNT_FRACT knownFractionB = fractions[b];
 
     	// Compare known and calculated firing rate of 'b'
-    	if (knownFractionB != EXEC_COUNT_FRACT(0,1)
+    	if (knownFractionB != EXEC_COUNT_FRACT(0)
     			&& fractionB != knownFractionB)  {
     		// Inconsistent graph, set all fractions to 0
     		fractions.clear();
@@ -93,7 +93,7 @@ bool calcRepetitionVector(models::Dataflow *from,std::map<Vertex,EXEC_COUNT_FRAC
 
     // Find lowest common multiple (lcm) of all denominators
     {ForEachVertex(from,v) {
-    	l = boost::integer::lcm(l,fractions[v].denominator());
+    	l = std::lcm(l,fractions[v].denominator());
     }}
 
     // Zero vector?
@@ -113,7 +113,7 @@ bool calcRepetitionVector(models::Dataflow *from,std::map<Vertex,EXEC_COUNT_FRAC
     EXEC_COUNT g = repetitionVector.begin()->second;
 
     {ForEachVertex(from,v) {
-    	g = boost::integer::gcd(g, repetitionVector[v]);
+    	g = std::gcd(g, repetitionVector[v]);
     }}
 
     VERBOSE_ASSERT(g > 0, TXT_NEVER_HAPPEND);
@@ -131,7 +131,7 @@ bool calcRepetitionVector(models::Dataflow *from,std::map<Vertex,EXEC_COUNT_FRAC
     // Workaround for repetition vector issues
     EXEC_COUNT subrate = ratePeriod;
     {ForEachVertex(from,v) {
-    	subrate =  boost::integer::gcd(subrate, repetitionVector[v] / from->getPhasesQuantity(v));
+    	subrate =  std::gcd(subrate, repetitionVector[v] / from->getPhasesQuantity(v));
     }}
     VERBOSE_INFO("SubRate = " << subrate);
 
@@ -167,8 +167,8 @@ bool computeRepetitionVector(models::Dataflow *from) {
     // Compute period of repetition for rate vectors (dangerous way ...)
 
     {ForEachEdge(from,c) {
-    	ratePeriod = boost::integer::lcm(ratePeriod,from->getEdgeInPhasesCount(c));
-    	ratePeriod = boost::integer::lcm(ratePeriod,from->getEdgeOutPhasesCount(c));
+    	ratePeriod = std::lcm(ratePeriod,from->getEdgeInPhasesCount(c));
+    	ratePeriod = std::lcm(ratePeriod,from->getEdgeOutPhasesCount(c));
     }}
     VERBOSE_ASSERT(ratePeriod > 0 , TXT_NEVER_HAPPEND);
     VERBOSE_INFO("Rate Period = " << ratePeriod);

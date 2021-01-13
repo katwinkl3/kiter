@@ -7,6 +7,8 @@
 
 #include <execinfo.h>
 #include <commons/verbose.h>
+#include <iostream>
+#include <set>
 
 namespace commons {
     int VERBOSE_MODE    = MIN_LEVEL;

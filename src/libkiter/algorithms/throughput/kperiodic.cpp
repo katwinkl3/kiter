@@ -515,7 +515,7 @@ void algorithms::generateKPeriodicConstraint(const models::Dataflow * const data
 	const TOKEN_UNIT  Wc        =  dataflow->getEdgeIn(c) * maxki;
 	const TOKEN_UNIT  Rc        =  dataflow->getEdgeOut(c) * maxkj;
 
-	const TOKEN_UNIT  gcdz       = boost::integer::gcd<TOKEN_UNIT>((Wc),(Rc));
+	const TOKEN_UNIT  gcdz       = std::gcd<TOKEN_UNIT>((Wc),(Rc));
 	const TOKEN_UNIT  stepa      = dataflow->getFineGCD(c);
 
 	TOKEN_UNIT normdapkm1 = 0;
@@ -670,7 +670,7 @@ bool algorithms::updateVectorWithLocalNi(const models::Dataflow *  const dataflo
 	EXEC_COUNT gcdNi = 0;
 	for (critical_circuit_t::iterator it = cc->begin() ; it != cc->end(); it++ ) {
 		Vertex source = dataflow->getEdgeSource(*it);
-		gcdNi = boost::integer::gcd<EXEC_COUNT>(gcdNi,dataflow->getNi(source)  / dataflow->getPhasesQuantity(source) );
+		gcdNi = std::gcd<EXEC_COUNT>(gcdNi,dataflow->getNi(source)  / dataflow->getPhasesQuantity(source) );
 	}
 
 	VERBOSE_INFO("      updateVectorWithLocalNi -  gcdNi = " << commons::toString(gcdNi) );
@@ -682,7 +682,7 @@ bool algorithms::updateVectorWithLocalNi(const models::Dataflow *  const dataflo
 		EXEC_COUNT Ni =  dataflow->getNi(source) / dataflow->getPhasesQuantity(source);
 		EXEC_COUNT Nj =  dataflow->getNi(target) / dataflow->getPhasesQuantity(target);
 
-		EXEC_COUNT newki = boost::integer::lcm<EXEC_COUNT>( kvector->at(source),  Ni / gcdNi);
+		EXEC_COUNT newki = std::lcm<EXEC_COUNT>( kvector->at(source),  Ni / gcdNi);
 
 		if (newki != kvector->at(source) ) changed = true;
 

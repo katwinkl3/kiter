@@ -164,7 +164,7 @@ models::Dataflow * RandomGenerator::generate (int seed) {
 			TOKEN_UNIT nweight_in = normalized_weights[src_id];
 			TOKEN_UNIT nweight_out = normalized_weights[dst_id];
 
-			TOKEN_UNIT gcdz   =  boost::integer::gcd(nweight_in,nweight_out);
+			TOKEN_UNIT gcdz   =  std::gcd(nweight_in,nweight_out);
 			TOKEN_UNIT max_factor =  (TOKEN_UNIT) std::round ( std::min ( _configuration.max_weight / (nweight_in / gcdz) , _configuration.max_weight / (nweight_out / gcdz) ) ) ;
 
 			std::uniform_int_distribution<TOKEN_UNIT> factor_distribution(1, max_factor);

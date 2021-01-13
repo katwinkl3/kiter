@@ -9,6 +9,9 @@
 #ifndef COMMONS_H_
 #define COMMONS_H_
 
+#include <commons/verbose.h>
+
+#include <numeric>
 #include <algorithm>
 #include <sstream>
 #include <fstream>
@@ -24,13 +27,9 @@
 #include <vector>
 #include <cstdlib>
 #include <boost/functional/hash.hpp>
-#include <boost/integer/common_factor_ct.hpp>
-//#define CHECK_BOOST_BIMAP (BOOST_VERSION >= 103800)
-#define CHECK_BOOST_BIMAP false
-// REALLY STRANGE BUGFIX : For Andrea config (old boost version in fc10)
 #include <boost/graph/detail/edge.hpp>
-#include <boost/rational.hpp>
 #include <commons/basic_types.h>
+
 
 namespace boost {struct bidirectional_tag;}
 namespace std {
@@ -38,8 +37,265 @@ bool operator<(const boost::detail::edge_desc_impl<boost::bidirectional_tag, uns
 }
 
 
-typedef         boost::rational<EXEC_COUNT> EXEC_COUNT_FRACT   ;
-typedef    boost::rational<TOKEN_UNIT>      TOKEN_FRACT        ;
+// Naively inspired from https://en.cppreference.com/w/cpp/language/operators
+template <typename V>
+class Fraction {
+    V n, d;
+public:
+	Fraction(V n = 0, V d = 1) : n(n/std::gcd(n, d)), d(d/std::gcd(n, d)) { }
+    V numerator() const { return n; }
+    V denominator() const { return d; }
+
+    // COMPARE WITH FRAC ==, < >
+
+    bool operator>(const Fraction& rhs) const {
+        return (not this->operator ==(rhs)) and (not this->operator <(rhs));
+    }
+
+    bool operator==(const Fraction& rhs) const {
+        return this->numerator() == rhs.numerator() && this->denominator() == rhs.denominator();
+    }
+
+
+    // This operator from boost source.
+    bool operator<(const Fraction& r) const {
+    	// Avoid repeated construction
+        const V  zero(0);
+
+    	    // This should really be a class-wide invariant.  The reason for these
+    	    // checks is that for 2's complement systems, INT_MIN has no corresponding
+    	    // positive, so negating it during normalization keeps it INT_MIN, which
+    	    // is bad for later calculations that assume a positive denominator.
+
+        VERBOSE_ASSERT(this->d > zero, "Internal error.") ;
+        VERBOSE_ASSERT(r.d > zero, "Internal error.") ;
+
+    	    // Determine relative order by expanding each value to its simple continued
+    	    // fraction representation using the Euclidian GCD algorithm.
+    	    struct { V  n, d, q, r; }
+    	     ts = { this->n, this->d, (this->n / this->d),
+    	     (this->n % this->d) },
+    	     rs = { r.n, r.d, static_cast<V>(r.n / r.d),
+    	     (r.n % r.d) };
+    	    unsigned  reverse = 0u;
+
+    	    // Normalize negative moduli by repeatedly adding the (positive) denominator
+    	    // and decrementing the quotient.  Later cycles should have all positive
+    	    // values, so this only has to be done for the first cycle.  (The rules of
+    	    // C++ require a nonnegative quotient & remainder for a nonnegative dividend
+    	    // & positive divisor.)
+    	    while ( ts.r < zero )  { ts.r += ts.d; --ts.q; }
+    	    while ( rs.r < zero )  { rs.r += rs.d; --rs.q; }
+
+    	    // Loop through and compare each variable's continued-fraction components
+    	    for ( ;; )
+    	    {
+    	        // The quotients of the current cycle are the continued-fraction
+    	        // components.  Comparing two c.f. is comparing their sequences,
+    	        // stopping at the first difference.
+    	        if ( ts.q != rs.q )
+    	        {
+    	            // Since reciprocation changes the relative order of two variables,
+    	            // and c.f. use reciprocals, the less/greater-than test reverses
+    	            // after each index.  (Start w/ non-reversed @ whole-number place.)
+    	            return reverse ? ts.q > rs.q : ts.q < rs.q;
+    	        }
+
+    	        // Prepare the next cycle
+    	        reverse ^= 1u;
+
+    	        if ( (ts.r == zero) || (rs.r == zero) )
+    	        {
+    	            // At least one variable's c.f. expansion has ended
+    	            break;
+    	        }
+
+    	        ts.n = ts.d;         ts.d = ts.r;
+    	        ts.q = ts.n / ts.d;  ts.r = ts.n % ts.d;
+    	        rs.n = rs.d;         rs.d = rs.r;
+    	        rs.q = rs.n / rs.d;  rs.r = rs.n % rs.d;
+    	    }
+
+    	    // Compare infinity-valued components for otherwise equal sequences
+    	    if ( ts.r == rs.r )
+    	    {
+    	        // Both remainders are zero, so the next (and subsequent) c.f.
+    	        // components for both sequences are infinity.  Therefore, the sequences
+    	        // and their corresponding values are equal.
+    	        return false;
+    	    }
+    	    else
+    	    {
+
+    	        // Exactly one of the remainders is zero, so all following c.f.
+    	        // components of that variable are infinity, while the other variable
+    	        // has a finite next c.f. component.  So that other variable has the
+    	        // lesser value (modulo the reversal flag!).
+    	        return ( ts.r != zero ) != static_cast<bool>( reverse );
+    	    }
+    }
+
+
+    // COMPARE WITH V ==, < >
+
+    bool operator>(const V& rhs) const {
+        return (not this->operator ==(rhs)) and (not this->operator <(rhs));
+    }
+
+    bool operator==(const V& i) const {
+    	return (this->denominator() == 1) and (this->n == i);
+    }
+    bool operator<(const V& i) const {
+
+       	// Avoid repeated construction
+       	const V zero = 0;
+
+       	// Break value into mixed-fraction form, w/ always-nonnegative remainder
+       	BOOST_ASSERT(this->d > zero);
+       	V  q = this->n / this->d, r = this->n % this->d;
+       	while(r < zero)  { r += this->d; --q; }
+
+       	// Compare with just the quotient, since the remainder always bumps the
+       	// value up.  [Since q = floor(n/d), and if n/d < i then q < i, if n/d == i
+       	// then q == i, if n/d == i + r/d then q == i, and if n/d >= i + 1 then
+       	// q >= i + 1 > i; therefore n/d < i iff q < i.]
+       	return q < i;
+       }
+
+    // OPERATION WITH FRAC * /
+
+
+    Fraction& operator*=(const Fraction& rhs) {
+            V new_n = n * rhs.n/std::gcd(n * rhs.n, d * rhs.d);
+            d = d * rhs.d/std::gcd(n * rhs.n, d * rhs.d);
+            n = new_n;
+            return *this;
+    }
+
+
+    // This operator from boost source.
+    Fraction& operator/=(const Fraction& r) {
+           // Avoid repeated construction
+           const V  zero(0);
+
+           // Protect against self-modification
+               V r_num = r.n;
+               V r_den = r.d;
+
+
+               VERBOSE_ASSERT(r_num != zero, "Cannot divide by zero.") ;
+               // Trap division by zero
+
+               if (this->n == zero)
+                   return *this;
+
+               // Avoid overflow and preserve normalization
+               V gcd1 = std::gcd(this->n, r_num);
+               V gcd2 = std::gcd(r_den, this->d);
+               this->n = (this->n/gcd1) * (r_den/gcd2);
+               this->d = (this->d/gcd2) * (r_num/gcd1);
+
+               if (this->d < zero) {
+            	   this->n = -this->n;
+            	   this->d = -this->d;
+               }
+               return *this;
+        }
+
+
+    // OPERATION WITH V /
+
+    // This operator from boost source.
+    Fraction& operator/=(const V& i) {
+        // Avoid repeated construction
+        const V  zero(0);
+
+        VERBOSE_ASSERT(i != zero, "Cannot divide by zero.") ;
+        if(this->n == zero) return *this;
+
+        // Avoid overflow and preserve normalization
+        V const gcd = std::gcd(this->n, i);
+        this->n /= gcd;
+        this->d *= i / gcd;
+
+        if(this->d < zero) {
+        	this->n = -this->n;
+        	this->d = -this->d;
+        }
+
+        return *this;
+     }
+
+
+
+
+
+
+};
+
+template<typename V>
+std::ostream& operator<<(std::ostream& out, const Fraction<V>& f)
+{
+   return out << f.numerator() << '/' << f.denominator() ;
+}
+
+
+template<typename V>
+bool operator<=(const Fraction<V>& lhs, const V& rhs)
+{
+    return not (lhs > rhs);
+}
+
+template<typename V>
+bool operator>(const Fraction<V>& lhs, const V& rhs)
+{
+    return lhs > rhs;
+}
+
+
+template<typename V>
+bool operator<=(const Fraction<V>& lhs, const Fraction<V>&  rhs)
+{
+    return not (lhs > rhs);
+}
+
+
+
+template<typename V>
+bool operator!=(const Fraction<V>& lhs, const V& rhs)
+{
+    return !((lhs.numerator() == rhs) && (lhs.denominator() == 1));
+}
+
+
+template<typename V>
+bool operator!=(const Fraction<V>& lhs, const Fraction<V>&  rhs)
+{
+    return !((lhs.numerator() == rhs.numerator()) && (lhs.denominator() == rhs.denominator()));
+}
+
+
+template<typename V>
+Fraction<V> operator/(Fraction<V> lhs, const Fraction<V>& rhs)
+{
+    return lhs /= rhs;
+}
+
+template<typename V>
+Fraction<V> operator*(Fraction<V> lhs, const Fraction<V>& rhs)
+{
+    return lhs *= rhs;
+}
+
+template<typename V>
+Fraction<V> operator*(Fraction<V> lhs, const V& rhs)
+{
+    return lhs *= Fraction<V>(rhs);
+}
+
+
+typedef         Fraction<EXEC_COUNT> EXEC_COUNT_FRACT   ;
+typedef    Fraction<TOKEN_UNIT>      TOKEN_FRACT        ;
 
 
 

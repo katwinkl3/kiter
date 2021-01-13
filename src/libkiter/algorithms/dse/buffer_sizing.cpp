@@ -9,7 +9,6 @@
 #include <printers/stdout.h> // to print DOT files
 #include <iostream>
 #include <fstream>
-#include <boost/integer/common_factor_ct.hpp>
 
 
 StorageDistribution::StorageDistribution()
@@ -789,9 +788,9 @@ void findMinimumStepSz(models::Dataflow *dataflow,
       TOKEN_UNIT minStepSz;
       minStepSz = dataflow->getEdgeInVector(c)[0]; // initialise with first value
       for (EXEC_COUNT i = 0; i < dataflow->getEdgeInPhasesCount(c); i++)
-        minStepSz = boost::integer::gcd(minStepSz, dataflow->getEdgeInVector(c)[i]);
+        minStepSz = std::gcd(minStepSz, dataflow->getEdgeInVector(c)[i]);
       for (EXEC_COUNT i = 0; i < dataflow->getEdgeOutPhasesCount(c); i++)
-        minStepSz = boost::integer::gcd(minStepSz, dataflow->getEdgeOutVector(c)[i]);
+        minStepSz = std::gcd(minStepSz, dataflow->getEdgeOutVector(c)[i]);
       minStepSizes[c] = minStepSz;
       VERBOSE_DSE("Min. step size for channel " << dataflow->getEdgeName(c)
                   << ": " << minStepSz << std::endl);
@@ -808,7 +807,7 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
   {ForEachEdge(dataflow, c) {
       // initialise channel size to maximum int size
       minChannelSizes[c].second = INT_MAX; // NOTE (should use ULONG_MAX but it's a really large value)
-      TOKEN_UNIT ratePeriod = (TOKEN_UNIT) boost::integer::gcd(dataflow->getEdgeInPhasesCount(c),
+      TOKEN_UNIT ratePeriod = (TOKEN_UNIT) std::gcd(dataflow->getEdgeInPhasesCount(c),
                                                             dataflow->getEdgeOutPhasesCount(c));
       
       for (TOKEN_UNIT i = 0; i < ratePeriod; i++) {
@@ -820,13 +819,13 @@ void findMinimumChannelSz(models::Dataflow *dataflow,
                     << tokensConsumed << ", " << tokensInitial << std::endl);
         TOKEN_UNIT lowerBound;
 
-        if (boost::integer::gcd(tokensProduced, tokensConsumed)) {
+        if (std::gcd(tokensProduced, tokensConsumed)) {
           lowerBound = tokensProduced + tokensConsumed -
-            boost::integer::gcd(tokensProduced, tokensConsumed) +
-            tokensInitial % boost::integer::gcd(tokensProduced, tokensConsumed);
+            std::gcd(tokensProduced, tokensConsumed) +
+            tokensInitial % std::gcd(tokensProduced, tokensConsumed);
         } else {
           lowerBound = tokensProduced + tokensConsumed -
-            boost::integer::gcd(tokensProduced, tokensConsumed);
+            std::gcd(tokensProduced, tokensConsumed);
         }
         lowerBound = (lowerBound > tokensInitial ? lowerBound : tokensInitial);
         
@@ -905,19 +904,19 @@ void handleInfeasiblePoint(models::Dataflow* const dataflow,
   std::set<Edge> dependencies = deps.critical_edges;
   int nDeps = 0;
   for (auto edge : edges) {
-    if (dataflow->getEdgeId(edge) > (edges.size() / 2)) {
+    if (dataflow->getEdgeId(edge) > (ARRAY_INDEX) (edges.size() / 2)) {
       if (dependencies.find(edge) != dependencies.end()) {
         nDeps++;
       }
     }
   }
   // std::cout << "Number of dependencies: " << nDeps << std::endl;
-  if (nDeps == (edges.size() / 2)) {
+  if (nDeps == (ARRAY_INDEX) (edges.size() / 2)) {
     // std::cout << "No need to update lower bounds as no non-critical channels" << std::endl;
   } else {
     // std::cout << "Updating lower bounds..." << std::endl;
     for (auto edge : edges) {
-      if (dataflow->getEdgeId(edge) > (edges.size() / 2)) { // only consider edges modelling bounded buffers
+      if (dataflow->getEdgeId(edge) > (ARRAY_INDEX) (edges.size() / 2)) { // only consider edges modelling bounded buffers
         if (dependencies.find(edge) != dependencies.end()) { // for edges with storage dependencies
           if (bufferLb[edge] < checkSD.getChannelQuantity(edge)) { // never decrease bounds
             // std::cout << "Increasing Lb of " << dataflow->getEdgeName(edge)

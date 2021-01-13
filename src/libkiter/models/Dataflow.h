@@ -912,12 +912,12 @@ public :
 
 
     for (PHASE_INDEX k = 1 ; k <= this->getEdgeInPhasesCount(c) ; k++) {
-        channelGCD = boost::integer::gcd(channelGCD,getEdgeInPhase(c,k));
+        channelGCD = std::gcd(channelGCD,getEdgeInPhase(c,k));
     }
 
 
     for (PHASE_INDEX k = 1 ; k <= this->getEdgeOutPhasesCount(c) ; k++) {
-        channelGCD = boost::integer::gcd(channelGCD,getEdgeOutPhase(c,k));
+        channelGCD = std::gcd(channelGCD,getEdgeOutPhase(c,k));
     }
     return channelGCD;
 

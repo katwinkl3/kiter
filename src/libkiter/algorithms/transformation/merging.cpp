@@ -63,7 +63,7 @@ bool algorithms::transformation::basic_mergeCSDFFromSchedule(models::Dataflow* t
 	{
 		Vertex vi     = to->getVertexById(vid);
 		EXEC_COUNT ni = to->getNi(vi);
-		gcd_value = boost::integer::gcd (gcd_value , ni) ;
+		gcd_value = std::gcd (gcd_value , ni) ;
 	}
 
 
@@ -329,7 +329,7 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 		Vertex v = to->getVertexById(vid);
 
 		EXEC_COUNT ni = to->getNi(v);
-		gcd_value = boost::integer::gcd (gcd_value , ni) ;
+		gcd_value = std::gcd (gcd_value , ni) ;
 
 		for (auto it : to->in_edges(v)) {
 			edge_infos ne(to, *it);

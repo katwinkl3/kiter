@@ -6,7 +6,7 @@
  */
 
 #include <models/NoC.h>
-
+#include <set>
 
 		NoC::NoC (int XSIZE, int YSIZE) : _XSIZE(XSIZE), _YSIZE(YSIZE) {
 			VERBOSE_INFO( "start NoC with dim=" << XSIZE << "x" << YSIZE  );
