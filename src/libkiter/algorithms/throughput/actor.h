@@ -28,8 +28,9 @@ class Actor {
   TOKEN_UNIT getExecRate(Edge e, PHASE_INDEX p);
   EXEC_COUNT getNumExecutions();
   bool isReadyForExec(State s);
-  void execStart(models::Dataflow* const dataflow);
-  void execEnd(models::Dataflow* const dataflow);
+  bool isReadyToEndExec(State s);
+  void execStart(models::Dataflow* const dataflow, State &s);
+  void execEnd(models::Dataflow* const dataflow, State &s);
   void printStatus(models::Dataflow* const dataflow);
  private:
   Vertex actor;

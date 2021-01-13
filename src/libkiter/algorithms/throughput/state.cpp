@@ -39,9 +39,19 @@ TOKEN_UNIT State::getTokens(Edge e) const {
   return currentTokens.at(e);
 }
 
-// returns amount of time left for execution
-std::list<TIME_UNIT> State::getRemExecTime(Vertex a) const {
+// returns list of amount of time left for executions for actor
+std::list<std::pair<TIME_UNIT, PHASE_INDEX>> State::getRemExecTime(Vertex a) const {
   return executingActors.at(a);
+}
+
+// returns entire execution queue
+std::map<Vertex, std::list<std::pair<TIME_UNIT, PHASE_INDEX>>> State::getExecQueue() {
+  return this->executingActors;
+}
+
+// remove first execution of given actor from its execution queue
+void State::removeFrontExec(Vertex a) {
+  this->executingActors[a].pop_front();
 }
 
 // returns total elapsed time in state
@@ -58,14 +68,14 @@ void State::setTokens(Edge e, TOKEN_UNIT newTokens) {
   this->currentTokens[e] = newTokens;
 }
 
-void State::addExecution(Vertex a, TIME_UNIT newTime) {
-  this->executingActors[a].push_back(newTime);
+void State::addExecution(Vertex a, std::pair<TIME_UNIT, PHASE_INDEX> newExec) {
+  this->executingActors[a].push_back(newExec);
 }
 
 // reduce execution times for given actor by the given time step
 void State::advanceRemExecTime(Vertex a, TIME_UNIT timeStep) {
   for (auto &it : this->executingActors[a]) {
-    it = it - timeStep;
+    it.first = it.first - timeStep;
   }
 }
 
@@ -88,7 +98,7 @@ TIME_UNIT State::advanceTime() {
   TIME_UNIT timeElapsed = LONG_MAX;
   for (auto &i : this->actors) {
     if (!this->executingActors[i].empty()) {
-      timeElapsed = std::min(timeElapsed, this->executingActors[i].front());
+      timeElapsed = std::min(timeElapsed, this->executingActors[i].front().first);
     }
   }
   // check for cases where time shouldn't advance/deadlock
@@ -148,7 +158,7 @@ void State::print(models::Dataflow* const dataflow) {
               << ": " << std::endl;
     for (auto const &q : it.second) {
       std::cout << "\t\t  ";
-      std::cout << q << " ";
+      std::cout << q.first << " ";
     }
     std::cout << std::endl;
   }

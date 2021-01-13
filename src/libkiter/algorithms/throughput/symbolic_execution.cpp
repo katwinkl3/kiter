@@ -34,25 +34,38 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
     }}
   State prevState(dataflow, actorMap);
   State currState(dataflow, actorMap);
-  std::cout << "Printing Previous State Status" << std::endl;
+  std::cout << "Printing initial state status" << std::endl;
   prevState.print(dataflow);
-  std::cout << "Printing Actor Statuses:" << std::endl;
+  std::cout << "Printing actor statuses:" << std::endl;
   printStatus(dataflow);
   {ForEachTask(dataflow, t) {
       actorMap[dataflow->getVertexId(t)].printStatus(dataflow);
     }}
   // testing functions
+  // start actor firing
   printStatus(dataflow);
   {ForEachTask(dataflow, t) {
       while (actorMap[dataflow->getVertexId(t)].isReadyForExec(currState)) {
-        actorMap[dataflow->getVertexId(t)].execStart(dataflow);
-        currState.addExecution(t,
-                               dataflow->getVertexDuration(t, actorMap[dataflow->getVertexId(t)].getPhase())); // use phase to mimic num execution
+        actorMap[dataflow->getVertexId(t)].execStart(dataflow, currState);
         currState.updateState(dataflow, actorMap);
       }
     }}
-  // currState.updateState(dataflow, actorMap);
+  currState.advanceTime();
   std::cout << "Printing Current State Status" << std::endl;
+  currState.print(dataflow);
+  std::cout << "Printing Actor Statuses:" << std::endl;
+  {ForEachTask(dataflow, t) {
+      actorMap[dataflow->getVertexId(t)].printStatus(dataflow);
+    }}
+  printStatus(dataflow);
+  // end actor firing
+  {ForEachTask(dataflow, t) {
+      while (actorMap[dataflow->getVertexId(t)].isReadyToEndExec(currState)) {
+        actorMap[dataflow->getVertexId(t)].execEnd(dataflow, currState);
+        currState.updateState(dataflow, actorMap);
+      }
+    }}
+  std::cout << "Printing current state status after ending firing" << std::endl;
   currState.print(dataflow);
   std::cout << "Printing Actor Statuses:" << std::endl;
   {ForEachTask(dataflow, t) {

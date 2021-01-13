@@ -109,21 +109,42 @@ bool Actor::isReadyForExec(State s) {
   return isExecutable;
 }
 
+// Given current state of graph, returns whether actor is ready to end execution or not
+bool Actor::isReadyToEndExec(State s) {
+  bool isEndable = true;
+  if (s.getExecQueue()[this->actor].empty() ||
+      s.getExecQueue()[this->actor].front().first != 0) {
+    isEndable = false;
+  }
+  return isEndable;
+}
+
 // Begin actor's execution, consuming tokens from input channels
-void Actor::execStart(models::Dataflow* const dataflow) {
+void Actor::execStart(models::Dataflow* const dataflow, State &s) {
   dataflow->reset_computation();
   {ForInputEdges(dataflow, this->actor, e) {
       dataflow->setPreload(e, dataflow->getPreload(e) - this->getExecRate(e));
     }}
+  std::pair<TIME_UNIT, PHASE_INDEX> newExec(dataflow->getVertexDuration(this->actor,
+                                                                        this->getPhase()),
+                                            this->getPhase());
+  s.addExecution(this->actor, newExec);
   this->numExecs++;
 }
 
 // End actor's execution, producing tokens into output channels
-void Actor::execEnd(models::Dataflow* const dataflow) {
+void Actor::execEnd(models::Dataflow* const dataflow, State &s) {
+  PHASE_INDEX currentPhase;
   dataflow->reset_computation();
   {ForOutputEdges(dataflow, this->actor, e) {
-      dataflow->setPreload(e, dataflow->getPreload(e) + this->getExecRate(e));
+      currentPhase = s.getRemExecTime(this->actor).front().second;
+      std::cout << "ending execution for phase "
+                << currentPhase << ", producing "
+                << this->getExecRate(e, currentPhase) << " tokens"
+                << std::endl;
+      dataflow->setPreload(e, dataflow->getPreload(e) + this->getExecRate(e, currentPhase));
     }}
+  s.removeFrontExec(this->actor);
 }
 
 void Actor::printStatus(models::Dataflow* const dataflow) {
