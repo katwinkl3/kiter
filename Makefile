@@ -123,18 +123,21 @@ ${SDF3_CS_BENCHMARK} : ${SDF3_ROOT}/sdfg_designflow_case_study.zip
 	mkdir -p $@
 	cp $< $@/
 	cd $@ && unzip $<
+	sed -i.bak "s/xsi:noNamespaceSchemaLocation=\"http:..www.es.ele.tue.nl.sdf3.xsd.sdf3-sdf.xsd\"//g" $@/*.xml
 
 ${SDF3_MEM_BENCHMARK} : ${SDF3_ROOT}/sdfg_buffersizing.zip
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p $@
 	cp $< $@/
 	cd $@ && unzip $<
+	sed -i.bak "s/xsi:noNamespaceSchemaLocation=\"http:..www.es.ele.tue.nl.sdf3.xsd.sdf3-sdf.xsd\"//g" $@/*.xml
 
 ${SDF3_EXAMPLES} :
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p $@
 	for example in h263decoder h263encoder mp3decoder_granule_parallelism mp3decoder_block_parallelism mp3playback satellite samplerate modem  ; do \
 	${WGET} "http://www.es.ele.tue.nl/sdf3/download/files/examples/$$example.xml" -O ${SDF3_EXAMPLES}/$$example.xml ; done
+	sed -i.bak "s/xsi:noNamespaceSchemaLocation=\"http:..www.es.ele.tue.nl.sdf3.xsd.sdf3-sdf.xsd\"//g" $@/*.xml
 
 ${SDF3_BENCHMARK} : ${SDF3_ROOT}/sdfg_throughput.zip
 	@echo "###########"" ENTER IN $@ : $^  #####################"
