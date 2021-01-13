@@ -176,7 +176,7 @@ sdf.log:  ./Release/bin/kiter Makefile
 	@mkdir -p $*
 	@pushd $* && cmake -D CMAKE_BUILD_TYPE=$* .. && popd
 
-unit_test: ./Debug/Makefile
+unit_test: ./Debug/Makefile ./Debug/bin/kiter
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	make -C Debug/ test
 
