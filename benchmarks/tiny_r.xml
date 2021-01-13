@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf3 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" type="csdf" xsi:noNamespaceSchemaLocation="http://www.es.ele.tue.nl/sdf3/xsd/sdf3-csdf.xsd">
+ <applicationGraph name="Tiny">
+  <csdf name="Tiny" type="Tiny">
+   <actor name="a" type="a">
+    <port name="out_2" type="in" rate="3,0"/>
+    <port name="in_1" type="out" rate="2,1"/>
+    <port name="in_Ra" type="out" rate="1,1"/>
+    <port name="out_Ra" type="in" rate="1,1"/>
+   </actor>
+   <actor name="b" type="a">
+    <port name="out_1" type="in" rate="1,1,1"/>
+    <port name="in_2" type="out" rate="1,1,1"/>
+    <port name="in_Rb" type="out" rate="1,1,1"/>
+    <port name="out_Rb" type="in" rate="1,1,1"/>
+   </actor>
+   <channel name="ab" srcActor="a" srcPort="in_1" dstActor="b" dstPort="out_1" size="1"/>
+   <channel name="ba" srcActor="b" srcPort="in_2" dstActor="a" dstPort="out_2" size="1" initialTokens="8"/>
+   <channel name="Ra" srcActor="a" srcPort="in_Ra" dstActor="a" dstPort="out_Ra" size="1" initialTokens="1"/>
+   <channel name="Rb" srcActor="b" srcPort="in_Rb" dstActor="b" dstPort="out_Rb" size="1" initialTokens="1"/>
+  </csdf>
+  <csdfProperties>
+   <actorProperties actor="a">
+    <processor type="cluster_0" default="true">
+     <executionTime time="1,1"/>
+    </processor>
+   </actorProperties>
+   <actorProperties actor="b">
+    <processor type="cluster_0" default="true">
+     <executionTime time="1,1,1"/>
+    </processor>
+   </actorProperties>
+   <channelProperties channel="ab"/>
+   <channelProperties channel="ba"/>
+  </csdfProperties>
+ </applicationGraph>
+</sdf3>
+
