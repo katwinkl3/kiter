@@ -31,11 +31,6 @@ endif
 endif	
 
 
-
-all : info
-	@echo "###########"" ENTER IN $@ : $^  #####################"
-sdf3: ${SDF3_BINARY_ROOT}
-
 info :
 	@echo "-------------------------------------------"
 	@echo SDF3_ROOT is [${SDF3_ROOT}]
@@ -49,6 +44,12 @@ info :
 	@echo "make sdf3_benchmarks: Download SDF3 benchmarks."
 	@echo "make sdf3: Download and Compile SDF3 (required for Travis CI)."	
 	@echo "-------------------------------------------"
+
+all : release
+	@echo "###########"" ENTER IN $@ : $^  #####################"
+
+sdf3: ${SDF3_BINARY_ROOT}
+
 
 debug: ./Debug/bin/kiter
 	@echo "###########"" ENTER IN $@ : $^  #####################"
