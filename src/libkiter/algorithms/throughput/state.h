@@ -55,6 +55,7 @@ public:
   StateList();
   StateList(State s);
   bool addState(State s);
+  std::list<State>::iterator getRepeatedState();
 
 private:
   std::list<State> visitedStates;

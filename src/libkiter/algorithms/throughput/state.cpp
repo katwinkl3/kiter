@@ -182,3 +182,7 @@ bool StateList::addState(State s) {
   this->visitedStates.push_back(s);
   return true;
 }
+
+std::list<State>::iterator StateList::getRepeatedState() {
+  return this->repeatedState;
+}
