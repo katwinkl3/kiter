@@ -35,10 +35,10 @@ if [ -e "${SDF3_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" ]; then
     echo "Binary found, we assume it is done.";
 else
     unzip -o "${TARGET}/${SDF3_ARCHIVE}" -d "${SDF3_ROOT}";
-    pushd "${SDF3_ROOT}/sdf3/" && make && popd
+    pushd "${SDF3_ROOT}/sdf3/" && make && popd || exit 1
 fi;
 
-cd "${ORIGIN}"
+cd "${ORIGIN}" || exit 1
 
 if [ -e "${SDF3_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" ]; then
     echo "Script finished and binary is found.";
