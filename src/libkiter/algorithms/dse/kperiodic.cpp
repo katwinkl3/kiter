@@ -20,6 +20,7 @@
 #include "monotonic_optimisation.h"
 #include "base_monotonic_optimisation.h"
 #include <chrono> // to take computation timings
+#include <boost/filesystem.hpp>
 
 // #define WRITE_GRAPHS // uncomment to write dot files of explored graphs
 // Compute and return period and causal dependency cycles of given dataflow graph
@@ -190,37 +191,60 @@ kperiodic_result_t algorithms::compute_Kperiodic_throughput_and_cycles(models::D
 
 void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataflow,
                                                    parameters_list_t  parameters) {
-  bool writeLogFiles = false;
-  bool isMonoOpt = false;
-  bool isBaseMonoOpt = false;
-  bool thrTargetSpecified = false;
+
+
+
+	  bool writeLogFiles = false;
+	  bool isMonoOpt = false;
+	  bool isBaseMonoOpt = false;
+	  bool thrTargetSpecified = false;
+	  std::string dirName = "./data/"; // default
+
+	  // parse parameters for KDSE
+	  if (parameters.find("LOGDIR") != parameters.end()) { // log output of DSE (includes pareto points and all search points)
+	    writeLogFiles = true;
+	    dirName = parameters["LOGDIR"];
+	  }
+
+	  // parse parameters for KDSE
+	  // TODO : I would remove this now, only using LOGDIR
+	  if (parameters.find("LOG") != parameters.end()) { // log output of DSE (includes pareto points and all search points) NOTE: parent directories need to be created beforehand
+	    writeLogFiles = true;
+	  }
+	  if (parameters.find("M_OPT") != parameters.end()) { // use monotonic optimisation
+	    isMonoOpt = true;
+	  }
+	  if (parameters.find("B_M_OPT") != parameters.end()) { // use base monotonic optimisation
+	    isBaseMonoOpt = true;
+	  }
+	  if (parameters.find("THR") != parameters.end()) { // specify target throughput of DSE
+	    thrTargetSpecified = true;
+	  } else {
+	    std::cout << "No target throughput specified (target throughput will be set to max throughput by default) --- specify target throughput with '-p THR=n' flag" << std::endl;
+	  }
+
+
+
+
   TIME_UNIT thrTarget;
   long int computation_counter = 0;
-  std::string dirName = "./data/";
-  std::string ppDirName = "pp_logs/"; // logs of pareto points
-  std::string logDirName = "dse_logs/";
-  std::string debugXMLName = "xmls/";
+  std::string ppDirName = dirName + "/pp_logs/"; // logs of pareto points
+  std::string logDirName = dirName + "/dse_logs/";
+  std::string debugXMLName = dirName + "/xmls/";
+
+  VERBOSE_ASSERT(boost::filesystem::is_directory(dirName), "Please create the log directory " << dirName);  // true, directory exists
+  boost::filesystem::create_directory(ppDirName);
+  boost::filesystem::create_directory(logDirName);
+  // boost::filesystem::create_directory(debugXMLName);
+
+
+
   std::string methodName;
 #ifdef WRITE_GRAPHS
-  std::string dotfileDirName = "dotfiles/";
+  std::string dotfileDirName = dirName +  "/dotfiles/";
+  boost::filesystem::create_directory(dotfileDirName);
 #endif
 
-  // parse parameters for KDSE
-  if (parameters.find("LOG") != parameters.end()) { // log output of DSE (includes pareto points and all search points) NOTE: parent directories need to be created beforehand
-    writeLogFiles = true;
-  }
-  if (parameters.find("M_OPT") != parameters.end()) { // use monotonic optimisation
-    isMonoOpt = true;
-  }
-  if (parameters.find("B_M_OPT") != parameters.end()) { // use base monotonic optimisation
-    isBaseMonoOpt = true;
-  }
-  if (parameters.find("THR") != parameters.end()) { // specify target throughput of DSE
-    thrTargetSpecified = true;
-  } else {
-    std::cout << "No target throughput specified (target throughput will be set to max throughput by default) --- specify target throughput with '-p THR=n' flag" << std::endl;
-  }
-  
   // create new graph with modelled bounded channel quantities
   models::Dataflow* dataflow_prime = new models::Dataflow(*dataflow);
   // add feedback channels in new graph to model bounded channel quantities
@@ -355,7 +379,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   // initialise data logging file
   std::ofstream dseLog;
   if (writeLogFiles) {
-    dseLog.open(dirName + logDirName + dataflow_prime->getGraphName() + "_dselog" + methodName + ".csv");
+    dseLog.open(logDirName + dataflow_prime->getGraphName() + "_dselog" + methodName + ".csv");
     dseLog << "storage distribution size,throughput,channel quantities,computation duration,cumulative duration"
            << std::endl; // initialise headers
   }
@@ -381,7 +405,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
         }
       }}
     // UNCOMMENT TO WRITE XMLs OF EXPLORED GRAPHS
-    // commons::writeSDF3File(dirName + debugXMLName + "dse_min_distribution_" +
+    // commons::writeSDF3File(debugXMLName + "dse_min_distribution_" +
     // 			   dataflow_prime->getGraphName() + "_kiter" + std::to_string(computation_counter) +
     // 			   ".xml", dataflow_prime);
 
@@ -465,16 +489,14 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   if (writeLogFiles) {
     dseLog.close();
     std::cout << "\nDSE log has been written to: "
-              << dirName + logDirName + dataflow_prime->getGraphName() + "_dselog" + methodName + ".csv"
+              << logDirName + dataflow_prime->getGraphName() + "_dselog" + methodName + ".csv"
               << std::endl;
-    minStorageDist.writeCSV(dirName + ppDirName + dataflow_prime->getGraphName() +
+    minStorageDist.writeCSV(ppDirName + dataflow_prime->getGraphName() +
                             "_pp" + methodName + ".csv", dataflow_prime);
     std::cout << "\nPareto points have been written to: "
-              << dirName + ppDirName + dataflow_prime->getGraphName() + "_pp" + methodName + ".csv"
+              << ppDirName + dataflow_prime->getGraphName() + "_pp" + methodName + ".csv"
               << std::endl;
-    std::cout << "\nNote that the parent directories of the log files need to be created first --- run: "
-              << "\"mkdir -p " + dirName + logDirName + "; mkdir -p " + dirName + ppDirName + "\""
-              << " to create parent directories" << std::endl;
+
     #ifdef WRITE_GRAPHS
     minStorageDist.printGraphs(dataflow_prime,
                                dirName + dotfileDirName);
@@ -484,7 +506,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
               << std::endl;
     #endif
   } else {
-    std::cout << "\nNote that you can use flag '-p LOG=true' to write logs of DSE"
+    std::cout << "\nNote that you can use flag '-p LOG=true' or '-p LOGDIR=/whereyougo/' to write logs of DSE"
               << std::endl;
   }
 }

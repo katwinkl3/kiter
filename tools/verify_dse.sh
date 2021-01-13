@@ -1,41 +1,65 @@
 #!/usr/bin/bash
 
-SDF3_BINARY_ROOT=./sdf3/sdf3/build/release/Linux/bin/
-# SDF3ANALYSIS_CSDF="timeout 180 ${SDF3_BINARY_ROOT}/sdf3analysis-csdf"
-SDF3ANALYSIS_SDF="timeout 180 ${SDF3_BINARY_ROOT}/sdf3analysis-sdf"
-KITER="timeout 180 ./Release/bin/kiter"
-LOG_DIR=./data/dse_verification/
+set -x
+
+KITER_ROOT_DIR="./"
+
+XML2CSV="${KITER_ROOT_DIR}/tools/xml_to_csv.py"
+SDF3_BINARY_ROOT="${KITER_ROOT_DIR}/tools/sdf3/sdf3/build/release/Linux/bin/"
+SDF3ANALYSIS_CSDF="timeout --foreground 180 ${SDF3_BINARY_ROOT}/sdf3analysis-csdf"
+SDF3ANALYSIS_SDF="timeout --foreground 180 ${SDF3_BINARY_ROOT}/sdf3analysis-sdf"
+KITER="timeout --foreground 180 ${KITER_ROOT_DIR}/Release/bin/kiter"
+
+
+LOG_DIR=${KITER_ROOT_DIR}/logs/dse_verification/
 SDF3_LOG=${LOG_DIR}/sdf3_pp_logs
 KITER_LOG=${LOG_DIR}/kiter_pp_logs
-BENCH_DIR=./benchmarks/sdf3mem/ # set to directory containing benchmarks
+BENCH_DIR=${KITER_ROOT_DIR}/benchmarks/sdf3mem/ # set to directory containing benchmarks
 
 # make directories to store logs for verification
 mkdir -p ${LOG_DIR} ${SDF3_LOG} ${KITER_LOG}
 
-# assumes that the benchmarks are all SDFs (rather than CSDFs) - use $SDF3ANALYSIS_CSDF for CSDF benchmarks
-for BENCHMARK in "${BENCH_DIR}"/*.xml; do
-    GRAPH=${BENCHMARK##*/}
-    GRAPH_NAME=${GRAPH%.xml}
-    echo "running DSEs on ${GRAPH_NAME}...";
-    # generate respective pareto logs
-    echo "${KITER}" -f "${BENCH_DIR}"/"${GRAPH_NAME}".xml -a KPeriodicThroughputwithDSE -p LOG=t;
-    ${KITER} -f "${BENCH_DIR}"/"${GRAPH_NAME}".xml -a KPeriodicThroughputwithDSE -p LOG=t;
-    mv ./data/pp_logs/"${GRAPH_NAME}"_pp_kiter.csv ${KITER_LOG}
-    ${SDF3ANALYSIS_SDF} --graph "${BENCH_DIR}/${GRAPH_NAME}".xml --algo buffersize > "${LOG_DIR}/${GRAPH_NAME}"_pp_sdf3.xml;
-    # convert SDF3 DSE output to CSV (from XML):
-    python xml_to_csv.py "${BENCH_DIR}/${GRAPH_NAME}.xml" "${LOG_DIR}/${GRAPH_NAME}_pp_sdf3.xml" "${SDF3_LOG}";
-    echo "DSE complete"
-done
+
+BENCHMARK_LIST=$@
+#BENCHMARK_LIST=$(find "${BENCH_DIR}"/*.xml)
+
+
+echo "Arguments: ${BENCHMARK_LIST}"
+
+
+
 
 # compare logs
 TOTAL_TESTS=0
 PASSED=0
-for BENCHMARK in "${BENCH_DIR}"/*.xml; do
+
+# assumes that the benchmarks are all SDFs (rather than CSDFs) - use $SDF3ANALYSIS_CSDF for CSDF benchmarks
+for BENCHMARK in ${BENCHMARK_LIST}; do
+
+    
     GRAPH=${BENCHMARK##*/}
     GRAPH_NAME=${GRAPH%.xml}
+    echo "running DSEs on ${GRAPH_NAME}...";
+    # generate respective pareto logs
+    echo "${KITER}" -f "${BENCHMARK}" -a KPeriodicThroughputwithDSE -p LOGDIR=${LOG_DIR};
+    ${KITER} -f "${BENCHMARK}" -a KPeriodicThroughputwithDSE -p LOGDIR=${LOG_DIR};
+    mv "${LOG_DIR}"/pp_logs/*.csv "${KITER_LOG}/${GRAPH_NAME}"_pp_kiter.csv
+    if head -n 3 "${BENCHMARK}" | grep csdf ; then
+	${SDF3ANALYSIS_CSDF} --graph "${BENCHMARK}" --algo buffersize > tmp.xml;
+	grep -v "analysis time" tmp.xml >  "${LOG_DIR}/${GRAPH_NAME}"_pp_sdf3.xml
+	rm tmp.xml
+    else 
+	${SDF3ANALYSIS_SDF} --graph "${BENCHMARK}" --algo buffersize > "${LOG_DIR}/${GRAPH_NAME}"_pp_sdf3.xml;
+    fi
+    # convert SDF3 DSE output to CSV (from XML):
+    ${XML2CSV} "${BENCHMARK}" "${LOG_DIR}/${GRAPH_NAME}_pp_sdf3.xml" "${SDF3_LOG}";
+    echo "DSE complete"
+
+    
     SDF3_RES="${SDF3_LOG}/${GRAPH_NAME}_pp_sdf3.csv"
     KITER_RES="${KITER_LOG}/${GRAPH_NAME}_pp_kiter.csv"
 
+    
     if [ -f "${SDF3_RES}" ] && [ -f "${KITER_RES}" ]; then
         TOTAL_TESTS=$((TOTAL_TESTS + 1))
         printf "Checking %s" "${GRAPH_NAME}..."
@@ -46,6 +70,8 @@ for BENCHMARK in "${BENCH_DIR}"/*.xml; do
             echo "      Run 'diff -y <(sort $KITER_RES) <(sort $SDF3_RES)' to see differences"
             # diff -y <(sort $KITER_RES) <(sort $SDF3_RES)
         fi
+    else
+	echo "***** One of them failed."
     fi
 done
 

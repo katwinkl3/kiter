@@ -74,7 +74,7 @@ TARGET_LINK_LIBRARIES   (kiter_lp PUBLIC   kiter_commons )
 if(GLPK_FOUND)
     message(STATUS "GLPK FOUND")
     target_include_directories(kiter_lp PRIVATE ${GLPK_INCLUDE_DIR})
-    TARGET_LINK_LIBRARIES   (kiter_lp         ${GLPK_LIBRARIES})
+    TARGET_LINK_LIBRARIES   (kiter_lp  PUBLIC   kiter_commons     ${GLPK_LIBRARIES})
 endif(GLPK_FOUND)
 
 if(GUROBI_FOUND)
@@ -95,7 +95,9 @@ TARGET_LINK_LIBRARIES  (kiter_printers   PUBLIC kiter_commons kiter_models)
 
 
 ADD_LIBRARY			   (kiter_algorithms SHARED  ${algorithms_sources})
-TARGET_LINK_LIBRARIES  (kiter_algorithms PUBLIC kiter_commons kiter_models kiter_printers kiter_lp)
+TARGET_LINK_LIBRARIES  (kiter_algorithms PUBLIC kiter_commons kiter_models kiter_printers kiter_lp 
+							${Boost_FILESYSTEM_LIBRARY} 
+ 							${Boost_SYSTEM_LIBRARY})
 
 
 file(WRITE null.cpp "")
@@ -105,7 +107,7 @@ TARGET_LINK_LIBRARIES  (libkiter PUBLIC
 				kiter_lp 
 				kiter_models 
 				kiter_printers
-           			kiter_algorithms
+           		kiter_algorithms
 				kiter_generators)
 set_property(TARGET libkiter PROPERTY FRAMEWORK ON)
 
