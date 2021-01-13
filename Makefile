@@ -57,7 +57,7 @@ release: ./Release/bin/kiter
 
 clean:
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	rm -Rf Release Debug *.lp *.mps *.png *.dot *.pdf *.xml *.lp ./tools/.ipynb_checkpoints
+	rm -rf Release Debug *.lp *.mps *.png *.dot *.pdf *.xml *.lp ./tools/.ipynb_checkpoints
 
 cleanall: clean
 	@echo "###########"" ENTER IN $@ : $^  #####################"
@@ -147,7 +147,7 @@ ${SDF3_BENCHMARK} : sdfg_throughput.zip
 	cd ${SDF3_BENCHMARK} && unzip graphs/graphs2/graphs.zip; for f in graph*.xml ; do mv $$f two_$$f ; done
 	cd ${SDF3_BENCHMARK} && unzip graphs/graphs3/graphs.zip; for f in graph*.xml ; do mv $$f three_$$f ; done
 	cd ${SDF3_BENCHMARK} && unzip graphs/graphs4/graphs.zip; for f in graph*.xml ; do mv $$f four_$$f ; done
-	cd ${SDF3_BENCHMARK} && rm graphs scripts sdfg_throughput.zip -rf
+	cd ${SDF3_BENCHMARK} && rm -rf graphs scripts sdfg_throughput.zip
 
 ${ASCENT_TESTBENCH} : ${SDF3_BENCHMARK}
 	@echo "###########"" ENTER IN $@ : $^  #####################"
