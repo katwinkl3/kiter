@@ -1,11 +1,11 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 set -x
 
 KITER_ROOT_DIR="./"
 
 XML2CSV="${KITER_ROOT_DIR}/tools/xml_to_csv.py"
-SDF3_BINARY_ROOT="${KITER_ROOT_DIR}/tools/sdf3/sdf3/build/release/Linux/bin/"
+SDF3_BINARY_ROOT="${KITER_ROOT_DIR}/tools/sdf3/sdf3_140724/sdf3/build/release/Linux/bin/"
 SDF3ANALYSIS_CSDF="timeout --foreground 180 ${SDF3_BINARY_ROOT}/sdf3analysis-csdf"
 SDF3ANALYSIS_SDF="timeout --foreground 180 ${SDF3_BINARY_ROOT}/sdf3analysis-sdf"
 KITER="timeout --foreground 180 ${KITER_ROOT_DIR}/Release/bin/kiter"
@@ -14,17 +14,20 @@ KITER="timeout --foreground 180 ${KITER_ROOT_DIR}/Release/bin/kiter"
 LOG_DIR=${KITER_ROOT_DIR}/logs/dse_verification/
 SDF3_LOG=${LOG_DIR}/sdf3_pp_logs
 KITER_LOG=${LOG_DIR}/kiter_pp_logs
-BENCH_DIR=${KITER_ROOT_DIR}/benchmarks/sdf3mem/ # set to directory containing benchmarks
+
 
 # make directories to store logs for verification
 mkdir -p ${LOG_DIR} ${SDF3_LOG} ${KITER_LOG}
 
-
-BENCHMARK_LIST=$@
+#BENCH_DIR=${KITER_ROOT_DIR}/benchmarks/sdf3mem/ # set to directory containing benchmarks
 #BENCHMARK_LIST=$(find "${BENCH_DIR}"/*.xml)
 
+echo "Arguments: $*"
+BENCHMARK_ARRAY=( "$@" )
 
-echo "Arguments: ${BENCHMARK_LIST}"
+
+
+
 
 
 
@@ -34,9 +37,7 @@ TOTAL_TESTS=0
 PASSED=0
 
 # assumes that the benchmarks are all SDFs (rather than CSDFs) - use $SDF3ANALYSIS_CSDF for CSDF benchmarks
-for BENCHMARK in ${BENCHMARK_LIST}; do
-
-    
+for BENCHMARK in "${BENCHMARK_ARRAY[@]}"; do
     GRAPH=${BENCHMARK##*/}
     GRAPH_NAME=${GRAPH%.xml}
     echo "running DSEs on ${GRAPH_NAME}...";

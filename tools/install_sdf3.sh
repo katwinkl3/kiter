@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 set -x
 
@@ -34,11 +34,11 @@ SDF3_ROOT="${TARGET}/sdf3_${SDF3_VERSION}/"
 if [ -e "${SDF3_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" ]; then
     echo "Binary found, we assume it is done.";
 else
-    unzip -o ${TARGET}/${SDF3_ARCHIVE} -d ${SDF3_ROOT};
-    pushd ${SDF3_ROOT}/sdf3/ && make && popd
+    unzip -o "${TARGET}/${SDF3_ARCHIVE}" -d "${SDF3_ROOT}";
+    pushd "${SDF3_ROOT}/sdf3/" && make && popd
 fi;
 
-cd ${ORIGIN}
+cd "${ORIGIN}"
 
 if [ -e "${SDF3_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" ]; then
     echo "Script finished and binary is found.";
