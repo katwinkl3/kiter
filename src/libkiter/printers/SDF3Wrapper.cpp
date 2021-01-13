@@ -790,7 +790,8 @@ std::string  generateSDF3XML         (const models::Dataflow* dataflow)  {
 	xmlTextWriterWriteAttribute	(writer,(const xmlChar*)"xmlns:xsi", (const xmlChar*)"http://www.w3.org/2001/XMLSchema-instance");
 	xmlTextWriterWriteAttribute (writer,(const xmlChar*)"version",(const xmlChar*)"1.0");
 	xmlTextWriterWriteAttribute (writer,(const xmlChar*)"type", (const xmlChar*)"csdf");
-	xmlTextWriterWriteAttribute (writer,(const xmlChar*)"xsi:noNamespaceSchemaLocation",(const xmlChar*) "http://www.es.ele.tue.nl/sdf3/xsd/sdf3-csdf.xsd");
+	// NOTE: I removed this attribute as the XML reader of SDF3 locks if the URL is note available, and I've got banned making too many requests.
+	// xmlTextWriterWriteAttribute (writer,(const xmlChar*)"xsi:noNamespaceSchemaLocation",(const xmlChar*) "http://www.es.ele.tue.nl/sdf3/xsd/sdf3-csdf.xsd");
 	{
 		xmlTextWriterSetIndent(writer,2); xmlTextWriterStartElement(writer,(const xmlChar*) "applicationGraph");
 
