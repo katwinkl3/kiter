@@ -34,6 +34,7 @@ addons:
     - libboost-all-dev
 
 script:
+  - mkdir -p ./tools/sdf3/
   - ./tools/install_sdf3.sh ./tools/sdf3/
   - make sdf3_benchmarks
   - make unit_test

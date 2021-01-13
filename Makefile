@@ -95,10 +95,6 @@ sdfg_throughput.zip :
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	wget http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_throughput.zip
 
-${SDF3_ARCHIVE}:
-	@echo "###########"" ENTER IN $@ : $^  #####################"
-	wget http://www.es.ele.tue.nl/sdf3/download/files/releases/$@
-
 sdfg_buffersizing.zip :
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	wget http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_buffersizing.zip
