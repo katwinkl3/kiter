@@ -23,6 +23,7 @@ addons:
   homebrew:
     packages:
     - glpk
+    update: true
   apt:
     sources:
     - ubuntu-toolchain-r-test
