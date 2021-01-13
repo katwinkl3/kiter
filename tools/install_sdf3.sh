@@ -24,7 +24,7 @@ SDF3_ARCHIVE=sdf3-${SDF3_VERSION}.zip
 if [ -e "${TARGET}/${SDF3_ARCHIVE}" ]; then
     echo "Archive already downloaded.";
 else    
-    wget http://www.es.ele.tue.nl/sdf3/download/files/releases/${SDF3_ARCHIVE} -O "${TARGET}/${SDF3_ARCHIVE}";
+    wget --tries=1 http://www.es.ele.tue.nl/sdf3/download/files/releases/${SDF3_ARCHIVE} -O "${TARGET}/${SDF3_ARCHIVE}";
 fi
 
 ## UNZIP AND COMPILE
