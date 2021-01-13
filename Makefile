@@ -61,7 +61,7 @@ clean:
 
 cleanall: clean
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	rm  -rf sdfg_buffersizing.zip           sdfg_throughput.zip  sdf3-*.zip  sdfg_designflow_case_study.zip  tools/sdf3*/ sdf.log benchmarks/sdf3*/ benchmarks/ascenttestbench/
+	rm  -rf logs/ tools/sdf3*/ sdf.log benchmarks/sdf3*/ benchmarks/ascenttestbench/
 
 benchmark :  sdf.log  csdf.log csdf_sized.log
 	@echo "###########"" ENTER IN $@ : $^  #####################"
@@ -91,17 +91,20 @@ csdf_IB5CSDF.log:  ./Release/bin/kiter Makefile
 	@echo "==============================================================================================="
 	for f in  benchmarks/IB5CSDF/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput   >> $@  ; if [ -d ${SDF3_BINARY_ROOT} ];then  ${SDF3ANALYSIS_CSDF}  --graph $$f  --algo throughput  >> $@ || true; fi  ; done 
 
-sdfg_throughput.zip :
+${SDF3_ROOT}/sdfg_throughput.zip :
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	wget http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_throughput.zip
+	mkdir -p ${SDF3_ROOT}
+	wget "http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_throughput.zip" -O $@
 
-sdfg_buffersizing.zip :
+${SDF3_ROOT}/sdfg_buffersizing.zip :
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	wget http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_buffersizing.zip
+	mkdir -p ${SDF3_ROOT}
+	wget "http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_buffersizing.zip" -O $@
 
-sdfg_designflow_case_study.zip:
+${SDF3_ROOT}/sdfg_designflow_case_study.zip:
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	wget http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_designflow_case_study.zip
+	mkdir -p ${SDF3_ROOT}
+	wget "http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_designflow_case_study.zip" -O $@
 
 sdf3_benchmarks : ${SDF3_BENCHMARK} ${SDF3_MEM_BENCHMARK}  ${SDF3_CS_BENCHMARK} ${SDF3_EXAMPLES}
 	@echo "###########"" ENTER IN $@ : $^  #####################"
@@ -112,21 +115,14 @@ ${SDF3_BINARY_ROOT} : ./tools/install_sdf3.sh
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	@echo "Please run manually '$< ${SDF3_ROOT}' before running the Makefile"
 	exit 1
-##
-#	mkdir -p ${SDF3_ROOT}
-#	cp ${SDF3_ARCHIVE} ${SDF3_ROOT}/
-#	unzip -o ${SDF3_ARCHIVE} -d ${SDF3_ROOT}
-#	@echo Please run \"cd ${SDF3_ROOT}/sdf3/ \&\& make\"
-#	make -C "${SDF3_ROOT}/sdf3/" SDF3ROOT=${SDF3_ROOT}/sdf3/
-#	cd "${SDF3_ROOT}/sdf3/" && make -C . ## TODO : This line of code is not working with recursive Makefiles
 
-${SDF3_CS_BENCHMARK} : sdfg_designflow_case_study.zip
+${SDF3_CS_BENCHMARK} : ${SDF3_ROOT}/sdfg_designflow_case_study.zip
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p $@
 	cp $< $@/
 	cd $@ && unzip $<
 
-${SDF3_MEM_BENCHMARK} : sdfg_buffersizing.zip
+${SDF3_MEM_BENCHMARK} : ${SDF3_ROOT}/sdfg_buffersizing.zip
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p $@
 	cp $< $@/
@@ -136,9 +132,9 @@ ${SDF3_EXAMPLES} :
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p $@
 	for example in h263decoder h263encoder mp3decoder_granule_parallelism mp3decoder_block_parallelism mp3playback satellite samplerate modem  ; do \
-	wget -nc "http://www.es.ele.tue.nl/sdf3/download/files/examples/$$example.xml" -O ${SDF3_EXAMPLES}/$$example.xml ; done
+	sleep 3; wget -nc "http://www.es.ele.tue.nl/sdf3/download/files/examples/$$example.xml" -O ${SDF3_EXAMPLES}/$$example.xml ; done
 
-${SDF3_BENCHMARK} : sdfg_throughput.zip
+${SDF3_BENCHMARK} : ${SDF3_ROOT}/sdfg_throughput.zip
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	mkdir -p $@
 	cp $< $@/
@@ -179,10 +175,11 @@ sdf.log:  ./Release/bin/kiter Makefile
 	@mkdir -p $*
 	@pushd $* && cmake -D CMAKE_BUILD_TYPE=$* .. && popd
 
-unit_test: ./Debug/bin/kiter
+unit_test: ./Debug/Makefile
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	make -C Debug/ test
 
 
 
-.PHONY :  sdf3 all infos  debug release clean benchmark ubuntu_test test  unit_test
+.PHONY:  sdf3 all infos  debug release clean benchmark ubuntu_test test  unit_test
+.PRECIOUS: %/Makefile
