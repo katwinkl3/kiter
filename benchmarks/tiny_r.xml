@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<sdf3 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" type="csdf" xsi:noNamespaceSchemaLocation="http://www.es.ele.tue.nl/sdf3/xsd/sdf3-csdf.xsd">
+<sdf3 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" type="csdf" >
  <applicationGraph name="Tiny">
   <csdf name="Tiny" type="Tiny">
    <actor name="a" type="a">

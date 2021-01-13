@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sdf3 type="sdf" version="1.0"
 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-xsi:noNamespaceSchemaLocation="http://www.es.ele.tue.nl/sdf3/xsd/sdf3-csdf.xsd">
+>
 <applicationGraph name='noise'>
 <sdf name='noise' type='noise'>
 <actor name='0x28b8420' type='12345'>

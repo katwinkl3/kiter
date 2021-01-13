@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sdf3 type="csdf" version="1.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="http://www.es.ele.tue.nl/sdf3/xsd/sdf3-csdf.xsd">
+    >
 <applicationGraph name='ViolaJones_Methode1'>
     <csdf name='ViolaJones_Methode1' type='ViolaJones_Methode1'>
         <actor name='StreamReader_1' type='a'>
