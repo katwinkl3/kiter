@@ -1,31 +1,24 @@
 language: cpp
+jobs:
+  include:
+  - os: linux
+    dist: bionic
+    compiler: gcc
+  - os: osx
+    osx_image: xcode10.3
+    compiler: clang
+    before_cache:
+       - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then brew cleanup; fi
 
-os:
-  - linux
-  - osx
-
-dist: bionic
-osx_image: xcode10.3
-
-compiler:
-  - gcc
-  - clang
 
 cache:
-  ccache: true
   directories:
     - ./benchmarks
     - ./tools/sdf3*/
     - $HOME/Library/Caches/Homebrew
     - /usr/local/Homebrew
 
-before_cache:
-  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then brew cleanup; fi
-  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then find /usr/local/Homebrew \! -regex ".+\.git.+" -delete; fi
 
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update        ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install ccache; fi
 addons:
   homebrew:
     packages:
