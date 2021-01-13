@@ -24,6 +24,7 @@ class Actor {
   EXEC_COUNT getPhaseCount(Edge e);
   PHASE_INDEX getPhase(Edge e); // returns current phase using edge (allows for different number of phases for each port)
   PHASE_INDEX getPhase();
+  EXEC_COUNT getRepVec();
   TOKEN_UNIT getExecRate(Edge e);
   TOKEN_UNIT getExecRate(Edge e, PHASE_INDEX p);
   EXEC_COUNT getNumExecutions();
@@ -36,6 +37,7 @@ class Actor {
   Vertex actor;
   EXEC_COUNT numExecs; // track number of executions
   PHASE_INDEX phaseCount; // number of phases of execution
+  EXEC_COUNT repVector;
   std::map<Edge, EXEC_COUNT> consPhaseCount; // number of consumption phases of execution
   std::map<Edge, EXEC_COUNT> prodPhaseCount; // number of production phases of execution
   std::map<Edge, std::map<PHASE_INDEX, TOKEN_UNIT>> prodExecRate;

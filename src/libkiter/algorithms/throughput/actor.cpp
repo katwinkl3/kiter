@@ -12,6 +12,7 @@ Actor::Actor()
   :actor{},
    numExecs{0},
    phaseCount{0},
+   repVector{0},
    consPhaseCount(),
    prodPhaseCount(),
    prodExecRate(),
@@ -21,6 +22,7 @@ Actor::Actor(models::Dataflow* const dataflow, Vertex a) {
   actor = a;
   numExecs = 0;
   phaseCount = dataflow->getPhasesQuantity(actor);
+  repVector = dataflow->getNi(actor);
   std::cout << "initialising actor " << dataflow->getVertexName(actor) << std::endl;
   {ForInputEdges(dataflow, actor, e) {
       std::cout << "input port execution rates (phases = " << dataflow->getEdgeOutPhasesCount(e) <<"): ";
@@ -63,6 +65,10 @@ PHASE_INDEX Actor::getPhase(Edge e) {
 // Return phase of execution for actor (assumes that all ports have equal number of phases)
 PHASE_INDEX Actor::getPhase() {
   return (this->getNumExecutions() % this->phaseCount) + 1;
+}
+
+EXEC_COUNT Actor::getRepVec() {
+  return this->repVector;
 }
 
 TOKEN_UNIT Actor::getExecRate(Edge e) {
