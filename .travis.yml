@@ -15,7 +15,11 @@ cache:
   directories:
     - ./benchmarks
     - ./tools/sdf3*/
-     
+    - $HOME/Library/Caches/Homebrew
+
+before_cache:
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then brew cleanup; fi
+
 addons:
   homebrew:
     packages:
