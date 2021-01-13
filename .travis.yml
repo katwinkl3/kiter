@@ -7,6 +7,7 @@ jobs:
   - os: osx
     osx_image: xcode10.3
     compiler: clang
+    env: HOMEBREW_NO_AUTO_UPDATE=1
     before_cache:
        - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then brew cleanup; fi
 
@@ -14,16 +15,14 @@ jobs:
 cache:
   directories:
     - ./benchmarks
-    - ./tools/sdf3*/
+    - ./tools/sdf3
     - $HOME/Library/Caches/Homebrew
-    - /usr/local/Homebrew
 
 
 addons:
   homebrew:
     packages:
     - glpk
-    update: true
   apt:
     sources:
     - ubuntu-toolchain-r-test
