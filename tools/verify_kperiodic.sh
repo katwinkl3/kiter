@@ -16,7 +16,7 @@ KITER_LOG=${LOG_DIR}/kiter
 
 
 # make directories to store logs for verification
-mkdir -p ${LOG_DIR} ${SDF3_LOG} ${KITER_LOG}
+mkdir -p "${LOG_DIR}" "${SDF3_LOG}" "${KITER_LOG}"
 
 echo "Arguments: $*"
 BENCHMARK_ARRAY=( "$@" )
@@ -35,10 +35,10 @@ for BENCHMARK in "${BENCHMARK_ARRAY[@]}"; do
     ${KITER} -f "${BENCHMARK}" -a KPeriodicThroughput | grep "Maximum throughput" | sed -E "s/.*is\s+(.*)\s*/\1/"  >  "${KITER_LOG}/${GRAPH_NAME}".txt
     
     if head -n 3 "${BENCHMARK}" | grep -q csdf ; then
-	echo ${SDF3ANALYSIS_CSDF} --graph "${BENCHMARK}" --algo throughput
+	echo "${SDF3ANALYSIS_CSDF}" --graph "${BENCHMARK}" --algo throughput
 	${SDF3ANALYSIS_CSDF} --graph "${BENCHMARK}" --algo throughput > tmp.txt;
     else 
-	echo ${SDF3ANALYSIS_SDF} --graph "${BENCHMARK}" --algo throughput
+	echo "${SDF3ANALYSIS_SDF}" --graph "${BENCHMARK}" --algo throughput
 	${SDF3ANALYSIS_SDF} --graph "${BENCHMARK}" --algo throughput >  tmp.txt;
     fi
     
