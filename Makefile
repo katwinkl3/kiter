@@ -1,30 +1,39 @@
 
 ###
 ### Be aware of the timeout command in case of experiments !
+### We also assume that ./tools/install_sdf3.sh has been already executed
 ###
+
+
 
 SHELL = /bin/bash
 
-#SDF3_VERSION=100927
-SDF3_VERSION=140724
-
-SDF3_ARCHIVE := sdf3-${SDF3_VERSION}.zip
 
 SDF3_BENCHMARK := ./benchmarks/sdf3bench/
 SDF3_MEM_BENCHMARK := ./benchmarks/sdf3mem/
 SDF3_CS_BENCHMARK := ./benchmarks/sdf3cs/
 SDF3_EXAMPLES := ./benchmarks/sdf3examples/
 ASCENT_TESTBENCH := ./benchmarks/ascenttestbench/
-SDF3_ROOT := `pwd`/tools/sdf3_${SDF3_VERSION}/
-SDF3_BINARY_ROOT := ${SDF3_ROOT}/sdf3/build/release/Linux/bin/
+SDF3_ROOT := $(shell pwd)/tools/sdf3/
+SDF3_BINARY_ROOT := ${SDF3_ROOT}/sdf3_140724/sdf3/build/release/Linux/bin/
 SDF3ANALYSIS_CSDF :=  timeout 180  ${SDF3_BINARY_ROOT}/sdf3analysis-csdf
 SDF3ANALYSIS_SDF := timeout 180   ${SDF3_BINARY_ROOT}/sdf3analysis-sdf
 KITER := timeout 180 ./Release/bin/kiter
 
 SOURCES=$(shell find src tests)
 
-all : release
+
+ifeq (,"${TRAVIS}")
+ifeq (,$(shell find "${SDF3_BINARY_ROOT}/sdf3analysis-csdf" 2> /dev/null))
+$(error Could not find SDF3 binary required for Travis.)
+endif
+endif	
+
+
+
+all : info
 	@echo "###########"" ENTER IN $@ : $^  #####################"
+sdf3: ${SDF3_BINARY_ROOT}
 
 info :
 	@echo "-------------------------------------------"
@@ -36,7 +45,8 @@ info :
 	@echo "make unit_test: Run Kiter unit tests"
 	@echo "make ubuntu_test: Run kiter with Ubuntu Docker"
 	@echo "make test: Run Kiter user-level test"
-	@echo "make sdf3_build: Download SDF3 source and benchmarks and compile it."
+	@echo "make sdf3_benchmarks: Download SDF3 benchmarks."
+	@echo "make sdf3: Download and Compile SDF3 (required for Travis CI)."	
 	@echo "-------------------------------------------"
 
 debug: ./Debug/bin/kiter
@@ -79,7 +89,7 @@ csdf_IB5CSDF.log:  ./Release/bin/kiter Makefile
 	rm -f $@
 	@echo "==============================================================================================="
 	@echo "==============================================================================================="
-	for f in  benchmarks/IB5CSDF/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput   >> $@  ; if [ -x ${SDF3_BINARY_ROOT} ];then  ${SDF3ANALYSIS_CSDF}  --graph $$f  --algo throughput  >> $@ || true; fi  ; done 
+	for f in  benchmarks/IB5CSDF/*.xml ; do echo === $$f >> $@;echo === $$f ; ${KITER} -f $$f -a PeriodicThroughput  -a 1PeriodicThroughput -a KPeriodicThroughput   >> $@  ; if [ -d ${SDF3_BINARY_ROOT} ];then  ${SDF3ANALYSIS_CSDF}  --graph $$f  --algo throughput  >> $@ || true; fi  ; done 
 
 sdfg_throughput.zip :
 	@echo "###########"" ENTER IN $@ : $^  #####################"
@@ -97,17 +107,20 @@ sdfg_designflow_case_study.zip:
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	wget http://www.es.ele.tue.nl/sdf3/download/files/benchmarks/sdfg_designflow_case_study.zip
 
-sdf3_build : ${SDF3_BENCHMARK} ${SDF3_MEM_BENCHMARK}  ${SDF3_CS_BENCHMARK} ${SDF3_EXAMPLES} ${SDF3_BINARY_ROOT} 
+sdf3_benchmarks : ${SDF3_BENCHMARK} ${SDF3_MEM_BENCHMARK}  ${SDF3_CS_BENCHMARK} ${SDF3_EXAMPLES}
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 
 
 
-${SDF3_BINARY_ROOT} : ${SDF3_ARCHIVE}
+${SDF3_BINARY_ROOT} : ./tools/install_sdf3.sh
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	mkdir -p ${SDF3_ROOT}
-	cp ${SDF3_ARCHIVE} ${SDF3_ROOT}/
-	unzip -o ${SDF3_ARCHIVE} -d ${SDF3_ROOT}
-	echo Please run \"cd ${SDF3_ROOT}/sdf3/ \&\& make\"
+	@echo "Please run manually '$< ${SDF3_ROOT}' before running the Makefile"
+	exit 1
+##
+#	mkdir -p ${SDF3_ROOT}
+#	cp ${SDF3_ARCHIVE} ${SDF3_ROOT}/
+#	unzip -o ${SDF3_ARCHIVE} -d ${SDF3_ROOT}
+#	@echo Please run \"cd ${SDF3_ROOT}/sdf3/ \&\& make\"
 #	make -C "${SDF3_ROOT}/sdf3/" SDF3ROOT=${SDF3_ROOT}/sdf3/
 #	cd "${SDF3_ROOT}/sdf3/" && make -C . ## TODO : This line of code is not working with recursive Makefiles
 
@@ -176,4 +189,4 @@ unit_test: ./Debug/bin/kiter
 
 
 
-.PHONY :  all infos  debug release clean benchmark ubuntu_test test  unit_test
+.PHONY :  sdf3 all infos  debug release clean benchmark ubuntu_test test  unit_test
