@@ -25,6 +25,7 @@ class Actor {
   PHASE_INDEX getPhase(Edge e); // returns current phase using edge (allows for different number of phases for each port)
   PHASE_INDEX getPhase();
   TOKEN_UNIT getExecRate(Edge e);
+  TOKEN_UNIT getExecRate(Edge e, PHASE_INDEX p);
   EXEC_COUNT getNumExecutions();
   bool isReadyForExec(State s);
   void execStart(models::Dataflow* const dataflow);

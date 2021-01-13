@@ -79,6 +79,19 @@ TOKEN_UNIT Actor::getExecRate(Edge e) {
   }
 }
 
+TOKEN_UNIT Actor::getExecRate(Edge e, PHASE_INDEX p) {
+  assert(this->prodExecRate.find(e) != this->prodExecRate.end() ||
+         this->consExecRate.find(e) != this->consExecRate.end()); // given edge must be either input/output edge
+  if (this->prodExecRate.find(e) != this->prodExecRate.end()) {
+    return this->prodExecRate[e][p];
+  } else if (this->consExecRate.find(e) != this->consExecRate.end()) {
+    return this->consExecRate[e][p];
+  } else {
+    std::cout << "Specified edge not attached to given actor!" << std::endl;
+    return 0;
+  }
+}
+
 EXEC_COUNT Actor::getNumExecutions() {
   return this->numExecs;
 }
