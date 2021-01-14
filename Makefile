@@ -78,6 +78,8 @@ test: ./Release/bin/kiter
 	for f in  benchmarks/IB5CSDF/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
 	${KITER} -f benchmarks/sample.xml -a KPeriodicThroughput -pA=1 -pB=1 -pC=1
 	${KITER} -f benchmarks/sample.xml -a KPeriodicThroughput -pA=2 -pB=1 -pC=2
+	./tools/verify_kperiodic.sh benchmarks/21.xml benchmarks/expansion_paper_norm_sdf.xml benchmarks/expansion_paper_sdf.xml benchmarks/faustTest.xml benchmarks/multrate.xml benchmarks/new_benchmark.xml benchmarks/sample.xml benchmarks/simpler_benchmark.xml benchmarks/tiny_r.xml benchmarks/tiny.xml
+	./tools/verify_dse.sh benchmarks/21.xml benchmarks/expansion_paper_norm_sdf.xml benchmarks/expansion_paper_sdf.xml benchmarks/faustTest.xml benchmarks/new_benchmark.xml benchmarks/sample.xml benchmarks/simpler_benchmark.xml benchmarks/tiny_r.xml benchmarks/tiny.xml
 
 csdf_benchmarks.log:  ./Release/bin/kiter Makefile 
 	@echo "###########"" ENTER IN $@ : $^  #####################"

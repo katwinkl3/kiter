@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+#set -x
 
 KITER_ROOT_DIR="./"
 
@@ -45,7 +45,7 @@ for BENCHMARK in "${BENCHMARK_ARRAY[@]}"; do
     echo "${KITER}" -f "${BENCHMARK}" -a KPeriodicThroughputwithDSE -p LOGDIR=${LOG_DIR};
     ${KITER} -f "${BENCHMARK}" -a KPeriodicThroughputwithDSE -p LOGDIR=${LOG_DIR};
     mv "${LOG_DIR}"/pp_logs/*.csv "${KITER_LOG}/${GRAPH_NAME}"_pp_kiter.csv
-    if head -n 3 "${BENCHMARK}" | grep csdf ; then
+    if head -n 3 "${BENCHMARK}" | grep csdf > /dev/null; then
 	${SDF3ANALYSIS_CSDF} --graph "${BENCHMARK}" --algo buffersize > tmp.xml;
 	grep -v "analysis time" tmp.xml >  "${LOG_DIR}/${GRAPH_NAME}"_pp_sdf3.xml
 	rm tmp.xml
