@@ -125,7 +125,7 @@ ${SDF3_CS_BENCHMARK} : ${SDF3_ROOT}/sdfg_designflow_case_study.zip
 	mkdir -p $@
 	cp $< $@/
 	cd $@ && unzip $<
-	sed -i.bak "s/xsi:noNamespaceSchemaLocation=\"http:..www.es.ele.tue.nl.sdf3.xsd.sdf3-sdf.xsd\"//g" $@/*.xml
+	sed -i.bak "s/xsi:noNamespaceSchemaLocation=\"http:..www.es.ele.tue.nl.sdf3.xsd.sdf3-sdf.xsd\"//g" $@/designflow_case_study/*.xml
 
 ${SDF3_MEM_BENCHMARK} : ${SDF3_ROOT}/sdfg_buffersizing.zip
 	@echo "###########"" ENTER IN $@ : $^  #####################"
