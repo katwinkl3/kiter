@@ -43,13 +43,15 @@ for BENCHMARK in "${BENCHMARK_ARRAY[@]}"; do
     echo "running DSEs on ${GRAPH_NAME}...";
     # generate respective pareto logs
     echo "${KITER}" -f "${BENCHMARK}" -a KPeriodicThroughputwithDSE -p LOGDIR=${LOG_DIR};
-    ${KITER} -f "${BENCHMARK}" -a KPeriodicThroughputwithDSE -p LOGDIR=${LOG_DIR};
+    ${KITER} -f "${BENCHMARK}" -a KPeriodicThroughputwithDSE -p LOGDIR=${LOG_DIR} > /dev/null;
     mv "${LOG_DIR}"/pp_logs/*.csv "${KITER_LOG}/${GRAPH_NAME}"_pp_kiter.csv
     if head -n 3 "${BENCHMARK}" | grep csdf > /dev/null; then
+	echo "${SDF3ANALYSIS_CSDF} --graph \"${BENCHMARK}\" --algo buffersize"
 	${SDF3ANALYSIS_CSDF} --graph "${BENCHMARK}" --algo buffersize > tmp.xml;
 	grep -v "analysis time" tmp.xml >  "${LOG_DIR}/${GRAPH_NAME}"_pp_sdf3.xml
 	rm tmp.xml
-    else 
+    else
+	echo "${SDF3ANALYSIS_SDF} --graph \"${BENCHMARK}\" --algo buffersize"
 	${SDF3ANALYSIS_SDF} --graph "${BENCHMARK}" --algo buffersize > "${LOG_DIR}/${GRAPH_NAME}"_pp_sdf3.xml;
     fi
     # convert SDF3 DSE output to CSV (from XML):
