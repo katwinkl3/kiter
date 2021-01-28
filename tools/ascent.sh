@@ -18,6 +18,6 @@ cp bufferless_noc_schedule_example_2_ModelNoCConflictFreeCommunication_noc.dot m
 cp bufferless_noc_schedule_example_6_end_noc.dot final.dot
 
 
-dot ./mapping.dot -Kneato -Tpdf -o ./mapping.pdf
-dot modelnoc.dot -Kneato -Tpdf -o ./modelnoc.pdf
-dot final.dot -Kneato -Tpdf -o ./final.pdf
+dot ./mapping.dot -Kneato -Tpdf -o ./mapping.pdf -Gmargin=0 
+dot modelnoc.dot -Kneato -Tpdf -o ./modelnoc.pdf -Gmargin=0 
+dot final.dot -Kneato -Tpdf -o ./final.pdf -Gmargin=0 

@@ -60,8 +60,13 @@ std::string algorithms::print_schedule (models::EventGraph* eg, models::Dataflow
 	returnStream << "\\begin{scheduling}{" << dataflow->getVerticesCount() <<  "}{" << 0 <<  "}{3.2}{5}" << std::endl;
 
 	{ForEachVertex(dataflow,v) {
-		returnStream << "\\taskname{"  << dataflow->getVertexId(v) <<  "}{"  << dataflow->getVertexName(v) <<  "}" << "% ki=" << kvector[v]   << " Ni=" << dataflow->getNi(v)  << std::endl;
+		std::string latexName = dataflow->getVertexName(v);
+		std::replace( latexName.begin(), latexName.end(), '_', '-');
+		returnStream << "\\taskname{"  << dataflow->getVertexId(v) <<  "}{"  <<latexName <<  "}"
+				<< "% ki=" << kvector[v]   << " Ni=" << dataflow->getNi(v)  << std::endl;
 	}}
+
+	returnStream << "% \\addexecution[premier]{index}{Name}{duration }{start}{period}" << std::endl;
 
 	{ForEachEvent(eg,e) {
 		models::SchedulingEvent se = eg->getEvent(e);
@@ -72,8 +77,13 @@ std::string algorithms::print_schedule (models::EventGraph* eg, models::Dataflow
 		TIME_UNIT duration = dataflow->getVertexDuration(v,tp);
 		TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
 		//if (start + duration <= SCHEDULING_SIZE){
-		returnStream << kvector[v]  << " *  " << dataflow->getPhasesQuantity(v) <<  " * " <<  omega <<  "/" <<  dataflow->getNi(v)  << std::endl;
-		returnStream << "\\addexecution[premier]{"  << ti <<  "}{$"  << dataflow->getVertexName(v) <<  "_"  << tp <<  "$}{duration = "  << duration <<  "}{ start="  << start <<  "}{ period="  << period <<  "}"  << std::endl;
+		//returnStream << kvector[v]  << " *  " << dataflow->getPhasesQuantity(v) <<  " * " <<  omega <<  "/" <<  dataflow->getNi(v)  << std::endl;
+		returnStream << "\\addexecution[premier]{"  << ti <<  "}"
+				<< "{}"
+				<< "{"  << duration <<  "}"
+				<< "{"  << start    <<  "}"
+				<< "{"  << period   <<  "}"
+				<< " % " << kvector[v]  << " *  " << dataflow->getPhasesQuantity(v) <<  " * " <<  omega <<  "/" <<  dataflow->getNi(v)  << std::endl;
 		//}
 	}}
 

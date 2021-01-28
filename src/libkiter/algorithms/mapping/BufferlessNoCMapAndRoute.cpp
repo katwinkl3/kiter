@@ -115,6 +115,7 @@
 	int mesh_row = (int)ceil(sqrt((double) dataflow->getVerticesCount()));
 	if(mesh_row <= 2)
 		mesh_row = 2;
+
 	NoC noc (mesh_row, mesh_row); //Init NoC
 	dataflow->setNoC(noc);
 
