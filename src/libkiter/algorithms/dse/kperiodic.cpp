@@ -220,7 +220,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
 	  if (parameters.find("THR") != parameters.end()) { // specify target throughput of DSE
 	    thrTargetSpecified = true;
 	  } else {
-	    std::cout << "No target throughput specified (target throughput will be set to max throughput by default) --- specify target throughput with '-p THR=n' flag" << std::endl;
+	    VERBOSE_WARNING("No target throughput specified (target throughput will be set to max throughput by default) --- specify target throughput with '-p THR=n' flag");
 	  }
 
 
@@ -232,7 +232,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   std::string logDirName = dirName + "/dse_logs/";
   std::string debugXMLName = dirName + "/xmls/";
 
-  VERBOSE_ASSERT(boost::filesystem::is_directory(dirName), "Please create the log directory " << dirName);  // true, directory exists
+  VERBOSE_ASSERT(boost::filesystem::is_directory(dirName), "Please create the log directory " << dirName << " or specify a different one with the LOGDIR parameter.");  // true, directory exists
   boost::filesystem::create_directory(ppDirName);
   boost::filesystem::create_directory(logDirName);
   // boost::filesystem::create_directory(debugXMLName);
