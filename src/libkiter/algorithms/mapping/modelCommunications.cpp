@@ -46,8 +46,10 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 	auto outrate = d->getEdgeOut(c);
 	auto preload = d->getPreload(c);  // preload is M0
 
-	if (source == target) //ignore this case
+	if (source == target) {
 		return new_vertices;
+	}
+
 
 	bool flag = true;
 	ARRAY_INDEX original_edge_id = d->getEdgeId(c);
@@ -69,7 +71,6 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 		d->setMapping(middle,e); // This artifical task is mapped to a NetworkEdge
 		new_vertices.push_back(middle);
 
-		////PLLLEASE DONT CHANGE THE "mid-" value in the name"
 		std::stringstream ss;
 		ss << "link-" << original_edge_id << "_" << e;
 

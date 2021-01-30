@@ -17,6 +17,7 @@
 #include <algorithms/normalization.h>
 #include "kperiodic.h"
 #include <algorithms/schedulings.h>
+#include <algorithm>
 
 
 
@@ -57,34 +58,95 @@ std::string algorithms::print_schedule (models::EventGraph* eg, models::Dataflow
 
 	TIME_UNIT omega = 1 / res ;
 	eg->computeStartingTimeWithOmega (omega);
-	returnStream << "\\begin{scheduling}{" << dataflow->getVerticesCount() <<  "}{" << 0 <<  "}{3.2}{5}" << std::endl;
 
-	{ForEachVertex(dataflow,v) {
-		std::string latexName = dataflow->getVertexName(v);
-		std::replace( latexName.begin(), latexName.end(), '_', '-');
-		returnStream << "\\taskname{"  << dataflow->getVertexId(v) <<  "}{"  <<latexName <<  "}"
-				<< "% ki=" << kvector[v]   << " Ni=" << dataflow->getNi(v)  << std::endl;
+	EXEC_COUNT TOTAL_REPEAT = 2;
+
+	TIME_UNIT maxtime = 0;
+
+	std::vector<std::pair<EXEC_COUNT, TIME_UNIT>> ordered_edges;
+
+
+
+	{ForEachEvent(eg,e) {
+			models::SchedulingEvent se = eg->getEvent(e);
+			EXEC_COUNT ti = se.getTaskId();
+			EXEC_COUNT tp = se.getTaskPhase();
+			TIME_UNIT start = eg->getStartingTime(e);
+			Vertex v = dataflow->getVertexById(ti);
+			TIME_UNIT duration = dataflow->getVertexDuration(v,tp);
+			TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
+			EXEC_COUNT repeat = dataflow->getNi(v) * TOTAL_REPEAT;
+			maxtime = std::max ( maxtime, start + period * repeat);
+			ordered_edges.push_back(std::pair<EXEC_COUNT, TIME_UNIT>(ti,start));
 	}}
 
-	returnStream << "% \\addexecution[premier]{index}{Name}{duration }{start}{period}" << std::endl;
+	std::sort(ordered_edges.begin(), ordered_edges.end(), [=](std::pair<EXEC_COUNT, TIME_UNIT>& a, std::pair<EXEC_COUNT, TIME_UNIT>& b){
+		return (a.second < b.second) or (not (a.second > b.second) and (a.first < b.first));
+
+	});
+
+	std::map<EXEC_COUNT,EXEC_COUNT> new_task_ids;
+	for (std::pair<EXEC_COUNT, TIME_UNIT> tpair : ordered_edges) {
+		auto ti = tpair.first;
+		if (new_task_ids.find(ti) == new_task_ids.end()){
+			new_task_ids[ti] = new_task_ids.size();
+		}
+	}
+
+	TIME_UNIT scale = maxtime / 7.0;
+	returnStream << "\\tikzset{" << std::endl;
+	returnStream << "    anyblock/.style={blank, rectangle,draw=black,  text centered}," << std::endl;
+	returnStream << "    initblock/.style={anyblock,top color=blue!70, bottom color=blue!30, thick}," << std::endl;
+	returnStream << "    repeatblock/.style={anyblock,top color=blue!50, bottom color=blue!00, thick}," << std::endl;
+	returnStream << "} " << std::endl;
+
+	returnStream << "\\begin{scheduling}{" << dataflow->getVerticesCount() <<  "}{" << 0 <<  "}{" << scale <<  "}{" << maxtime <<  "}" << std::endl;
+
+	{ForEachVertex(dataflow,v) {
+		EXEC_COUNT tid = dataflow->getVertexId(v);
+		std::string latexName = dataflow->getVertexName(v);
+		std::replace( latexName.begin(), latexName.end(), '_', '-');
+		if (new_task_ids.count(tid)) {
+			returnStream << "\\taskname{"  << new_task_ids[tid] <<  "}{"  <<latexName <<  "}"
+				<< "% ki=" << kvector[v]   << " Ni=" << dataflow->getNi(v)  << std::endl;
+		}
+	}}
+
+	returnStream << "% \\addexecution[initblock]{index}{Name}{duration }{start}" << std::endl;
+	returnStream << "% \\addperiodictask[repeatblock]{index}{Name}{duration }{start}{period}{repeat}" << std::endl;
+
+
+
 
 	{ForEachEvent(eg,e) {
 		models::SchedulingEvent se = eg->getEvent(e);
-		EXEC_COUNT ti = se.getTaskId();
+		EXEC_COUNT tid = se.getTaskId();
 		EXEC_COUNT tp = se.getTaskPhase();
 		TIME_UNIT start = eg->getStartingTime(e);
-		Vertex v = dataflow->getVertexById(ti);
+		Vertex v = dataflow->getVertexById(tid);
 		TIME_UNIT duration = dataflow->getVertexDuration(v,tp);
 		TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
-		//if (start + duration <= SCHEDULING_SIZE){
-		//returnStream << kvector[v]  << " *  " << dataflow->getPhasesQuantity(v) <<  " * " <<  omega <<  "/" <<  dataflow->getNi(v)  << std::endl;
-		returnStream << "\\addexecution[premier]{"  << ti <<  "}"
-				<< "{}"
-				<< "{"  << duration <<  "}"
-				<< "{"  << start    <<  "}"
-				<< "{"  << period   <<  "}"
-				<< " % " << kvector[v]  << " *  " << dataflow->getPhasesQuantity(v) <<  " * " <<  omega <<  "/" <<  dataflow->getNi(v)  << std::endl;
-		//}
+		EXEC_COUNT repeat = (EXEC_COUNT) std::floor ( (maxtime - start - period) / period ) ;
+
+
+		if (new_task_ids.count(tid)) {
+
+			returnStream << "\\addexecution[initblock]{"  << new_task_ids[tid] <<  "}"
+					<< "{}"
+					<< "{"  << duration <<  "}"
+					<< "{"  << start    <<  "}"
+					<< " % " << kvector[v]  << " *  " << dataflow->getPhasesQuantity(v) <<  " * " <<  omega <<  "/" <<  dataflow->getNi(v)  << std::endl;
+
+			returnStream << "\\addperiodictask[repeatblock]{"  << new_task_ids[tid] <<  "}"
+					<< "{}"
+					<< "{"  << duration <<  "}"
+					<< "{"  << start + period    <<  "}"
+					<< "{"  << period   <<  "}"
+					<< "{"  << repeat - 1  <<  "}"
+					<< " % " << kvector[v]  << " *  " << dataflow->getPhasesQuantity(v) <<  " * " <<  omega <<  "/" <<  dataflow->getNi(v)  << std::endl;
+
+
+		}
 	}}
 
 	returnStream << "\\end{scheduling}"  << std::endl;
@@ -167,7 +229,8 @@ void algorithms::print_kperiodic_scheduling    (models::Dataflow* const  dataflo
 
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 
-	VERBOSE_INFO("Please note you can specify the values of K.");
+	VERBOSE_INFO("Please note you can specify the values of K (like -pA=1 -pB=2).");
+	VERBOSE_INFO("You can also output the XML with -pXML=1, the dependency graph wth -pDEP=1, and the scheduling with -pSCHED=1.");
 	// STEP 1 - generate 1-periodic schedule
 	std::map<Vertex,EXEC_COUNT> kvector;
 	{ForEachVertex(dataflow,v) {
@@ -178,8 +241,14 @@ void algorithms::print_kperiodic_scheduling    (models::Dataflow* const  dataflo
 		}
 	}}
 	kperiodic_result_t result = KSchedule(dataflow,&kvector);
-	print_function    ( dataflow, kvector , result.throughput , true, true, true);
 	VERBOSE_INFO("   Critical circuit is " << cc2string(dataflow,&(result.critical_edges)) <<  "");
+
+
+	bool do_xml = param_list.count("XML");
+	bool do_dep = param_list.count("DEP");
+	bool do_sched = param_list.count("SCHED");
+
+	print_function    ( dataflow, kvector , result.throughput , do_xml, do_dep, do_sched);
 
 }
 
