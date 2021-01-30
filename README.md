@@ -83,8 +83,8 @@ BlackScholes.xml        Echo.xml        H264.xml        JPEG2000.xml        PDec
 
 ## TODOs (to check)
 
-Add type for actors in XML and Dataflow
-Save input and output port names for reetrancy ?
-For duration specify a processor type
-print a channel properties XML even if empty
-In the print mapping, if task are on the same mapping, spread then X,Y slightly
+ - Add type for actors in XML and Dataflow
+ - Save input and output port names for reetrancy ?
+ - For duration specify a processor type
+ - print a channel properties XML even if empty
+ - In the print mapping, if task are on the same mapping, spread then X,Y slightly
