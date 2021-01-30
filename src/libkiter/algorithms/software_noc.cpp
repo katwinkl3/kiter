@@ -2221,7 +2221,6 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	if (param_list.count("yscale") == 1) yscale = std::stod(param_list["yscale"]);
 
 
-//software_noc_bufferless_skipinit(dataflow);
 
 	updateNetworkOnChipModel(dataflow);
 	NoCGraph *  noc = createNoCGraph (&(dataflow->getNoC()));

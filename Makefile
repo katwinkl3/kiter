@@ -44,7 +44,7 @@ info :
 	@echo "make sdf3: Download and Compile SDF3 (required for Travis CI)."	
 	@echo "-------------------------------------------"
 
-all : release
+all : release debug
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 
 sdf3: ${SDF3_BINARY_ROOT}

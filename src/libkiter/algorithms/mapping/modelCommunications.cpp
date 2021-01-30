@@ -267,6 +267,15 @@ void algorithms::ModelNoCConflictFreeCommunication(models::Dataflow* const  data
 	vid_to_nocEid vid_to_conflict_map; //used to index newly added nodes into the conflict table, so as to remove it easily
 
 	std::vector<ARRAY_INDEX> edges_to_process;
+
+	for (auto v : dataflow->vertices()) {
+
+		ARRAY_INDEX tid = dataflow->getVertexId(v);
+		auto current_mapping =  (dataflow->getMapping(v));
+
+		VERBOSE_ASSERT(current_mapping >= 0, "UNSUPPORTED CASE, EVERY TASK NEED TO BE MAPPED AND THE TASK " << tid << " IS NOT!");
+
+	}
 	{ForEachChannel(dataflow,c) {
 		edges_to_process.push_back(dataflow->getEdgeId(c));
 	}}

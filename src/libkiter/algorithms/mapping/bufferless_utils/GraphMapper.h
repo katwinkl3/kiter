@@ -83,6 +83,7 @@ public:
 			for(int i = 0; i < noc->getMeshSize(); i++)
 				available_cores.push_back(i);
 		}
+		VERBOSE_INFO ( "available_cores " << commons::toString(available_cores) ) ;
 
 		noc->clear();
 
