@@ -2,6 +2,12 @@
 
 set -x
 
+
+if [ "$#" -ne 1 ]; then
+    echo -ne "Error\nUsage: $0 TARGET\n"
+    exit 1
+fi
+
 #SDF3_VERSION=100927
 SDF3_VERSION=140724
 
@@ -41,6 +47,28 @@ fi;
 cd "${ORIGIN}" || exit 1
 
 if [ -e "${SDF3_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" ]; then
+    echo "Script finished and binary is found.";
+else
+    echo "Error, sdf3analysis-csdf not found.";
+    exit 1;
+fi;
+
+
+## UNZIP, PATCH AND COMPILE THE CUSTOM VERSION
+
+SDF3_CUSTOM_ROOT="${TARGET}/sdf3_custom/"
+
+if [ -e "${SDF3_CUSTOM_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" ]; then
+    echo "Binary found, we assume it is done.";
+else
+    unzip -o "${TARGET}/${SDF3_ARCHIVE}" -d "${SDF3_CUSTOM_ROOT}";
+    pushd "${SDF3_CUSTOM_ROOT}/" && patch --verbose -p1 < ../../sdf3.patch && popd || exit 1
+    pushd "${SDF3_CUSTOM_ROOT}/sdf3/" && make && popd || exit 1
+fi;
+
+cd "${ORIGIN}" || exit 1
+
+if [ -e "${SDF3_CUSTOM_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" ]; then
     echo "Script finished and binary is found.";
 else
     echo "Error at the end of the script.";
