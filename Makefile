@@ -8,7 +8,6 @@
 
 SHELL = /bin/bash
 
-
 SDF3_BENCHMARK := ./benchmarks/sdf3bench/
 SDF3_MEM_BENCHMARK := ./benchmarks/sdf3mem/
 SDF3_CS_BENCHMARK := ./benchmarks/sdf3cs/
@@ -63,7 +62,7 @@ clean:
 
 cleanall: clean
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	rm  -rf logs/ tools/sdf3*/ sdf.log benchmarks/sdf3*/ benchmarks/ascenttestbench/
+	rm  -rf ./logs/ tools/sdf3*/ sdf.log benchmarks/sdf3*/ benchmarks/ascenttestbench/
 
 benchmark :  sdf.log  csdf.log csdf_sized.log
 	@echo "###########"" ENTER IN $@ : $^  #####################"
@@ -74,12 +73,19 @@ ubuntu_test:
 
 test: ./Release/bin/kiter 
 	@echo "###########"" ENTER IN $@ : $^  #####################"
+#Bodin2013 and Bodin2016
 	for f in  benchmarks/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
 	for f in  benchmarks/IB5CSDF/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
 	${KITER} -f benchmarks/sample.xml -a KPeriodicThroughput -pA=1 -pB=1 -pC=1
 	${KITER} -f benchmarks/sample.xml -a KPeriodicThroughput -pA=2 -pB=1 -pC=2
 	./tools/verify_kperiodic.sh benchmarks/21.xml benchmarks/expansion_paper_norm_sdf.xml benchmarks/expansion_paper_sdf.xml benchmarks/faustTest.xml benchmarks/multrate.xml benchmarks/new_benchmark.xml benchmarks/sample.xml benchmarks/simpler_benchmark.xml benchmarks/tiny_r.xml benchmarks/tiny.xml
+# KDSE
 	./tools/verify_dse.sh benchmarks/21.xml benchmarks/expansion_paper_norm_sdf.xml benchmarks/expansion_paper_sdf.xml benchmarks/faustTest.xml benchmarks/new_benchmark.xml benchmarks/sample.xml benchmarks/simpler_benchmark.xml benchmarks/tiny_r.xml benchmarks/tiny.xml
+
+# KDSE
+	mdkir -p ./logs
+	rm -rf ./logs/*
+	./tools/kdse_run_benchmarks.sh ./logs/ 30 # Limit to 30 sec for CI
 
 csdf_benchmarks.log:  ./Release/bin/kiter Makefile 
 	@echo "###########"" ENTER IN $@ : $^  #####################"

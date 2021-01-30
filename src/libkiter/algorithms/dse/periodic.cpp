@@ -7,6 +7,7 @@
 
 #include "periodic.h"
 #include <map>
+#include <chrono> // to take computation timings
 #include <queue>
 #include <commons/commons.h>
 #include <algorithms/buffersizing/periodic.h>
@@ -14,6 +15,15 @@
 
 void algorithms::compute_csdf_dse_periodic   (models::Dataflow* const  dataflow, parameters_list_t params) {
 
+
+	 bool writeLogFiles = false;
+	 std::string dirName = "./data/";
+	 // parse parameters for KDSE
+	 if (params.find("LOGDIR") != params.end()) { // log output of DSE (includes pareto points and all search points)
+		 writeLogFiles = true;
+		 dirName = params["LOGDIR"];
+	 }
+	  std::string logDirName = dirName + "/dse_logs/";
 
     VERBOSE_INFO("Please note you can specify the INTEGERSOLVING.");
     bool INTEGERSOLVING = params.find("INTEGERSOLVING")!= params.end();
@@ -42,6 +52,15 @@ void algorithms::compute_csdf_dse_periodic   (models::Dataflow* const  dataflow,
     std::queue<std::pair<TIME_UNIT,TIME_UNIT>> range_to_explore;
     range_to_explore.push(std::pair<TIME_UNIT,TIME_UNIT>(0,FREQUENCY));
 
+    std::chrono::duration<double, std::milli> cumulativeTime; // store timings
+    std::ofstream dseLog;
+     if (writeLogFiles) {
+       dseLog.open(logDirName + dataflow->getGraphName() + "_dselog_periodic.csv");
+       dseLog << "storage distribution size,throughput,channel quantities,computation duration,cumulative duration"
+              << std::endl; // initialise headers
+     }
+
+
     while (not range_to_explore.empty()) {
 
     	auto current_pair = range_to_explore.front();
@@ -55,11 +74,37 @@ void algorithms::compute_csdf_dse_periodic   (models::Dataflow* const  dataflow,
 
     	TIME_UNIT distance = freq_right - freq_left;
     	if (distance < MAX_GRANULARITY) continue;
-    	if (not space.count(freq_left))
-    	space[freq_left] = algorithms::periodic_memory_sizing_csdf( dataflow,  period_left,  INTEGERSOLVING , false);
-    	if (not space.count(freq_right))
-    	space[freq_right] = algorithms::periodic_memory_sizing_csdf( dataflow,  period_right,  INTEGERSOLVING , false);
+    	if (not space.count(freq_left)) {
+    	    auto startTime = std::chrono::steady_clock::now();
+    		space[freq_left] = algorithms::periodic_memory_sizing_csdf( dataflow,  period_left,  INTEGERSOLVING , false);
+    	    auto endTime = std::chrono::steady_clock::now();
+    	    std::chrono::duration<double, std::milli> execTime = endTime - startTime; // duration in ms
+    	    cumulativeTime += execTime;
 
+    	    if (writeLogFiles and space[freq_left] > 0) {
+        	    dseLog << space[freq_left] << ","
+        				<< freq_left << ","
+    					<<"" << ","
+    					<< execTime.count() << ","
+    					<< cumulativeTime.count() << std::endl;
+    	    }
+    	}
+    	if (not space.count(freq_right)){
+
+    	    auto startTime = std::chrono::steady_clock::now();
+    		space[freq_right] = algorithms::periodic_memory_sizing_csdf( dataflow,  period_right,  INTEGERSOLVING , false);
+    	    auto endTime = std::chrono::steady_clock::now();
+    	    std::chrono::duration<double, std::milli> execTime = endTime - startTime; // duration in ms
+    	    cumulativeTime += execTime;
+
+    	    if (writeLogFiles and space[freq_right] > 0) {
+            	    dseLog << space[freq_right] << ","
+            				<< freq_right << ","
+        					<<"" << ","
+        					<< execTime.count() << ","
+        					<< cumulativeTime.count() << std::endl;
+        	    }
+    	}
     	TOKEN_UNIT size_left = space[freq_left];
     	TOKEN_UNIT size_right = space[freq_right];
 
@@ -88,6 +133,11 @@ void algorithms::compute_csdf_dse_periodic   (models::Dataflow* const  dataflow,
     for (auto item : pareto) {
     	TIME_UNIT P =item.second;
     	TOKEN_UNIT S = item.first;
+    	if (S > 0)
     	std::cout << P << "\t" << S << std::endl ;
+    }
+
+    if (writeLogFiles) {
+       dseLog.close();
     }
 }

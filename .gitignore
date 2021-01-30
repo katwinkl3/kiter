@@ -69,3 +69,5 @@ sdfg_designflow_case_study.zip
 sdfg_throughput.zip
 tools/sdf3*/
 /logs/
+/*.png
+__pycache__
