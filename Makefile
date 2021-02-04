@@ -74,18 +74,20 @@ ubuntu_test:
 test: ./Release/bin/kiter 
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 #Bodin2013 and Bodin2016
-	for f in  benchmarks/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
-	for f in  benchmarks/IB5CSDF/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
+	mkdir -p ./logs
+	rm -rf ./logs/*
+	for f in  benchmarks/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput >> ./logs/1KBenchmarks.log  ; done
+	for f in  benchmarks/IB5CSDF/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput >> ./logs/1KBenchmarks.log  ; done
 	${KITER} -f benchmarks/sample.xml -a KPeriodicThroughput -pA=1 -pB=1 -pC=1
 	${KITER} -f benchmarks/sample.xml -a KPeriodicThroughput -pA=2 -pB=1 -pC=2
-	./tools/verify_kperiodic.sh benchmarks/21.xml benchmarks/expansion_paper_norm_sdf.xml benchmarks/expansion_paper_sdf.xml benchmarks/faustTest.xml benchmarks/multrate.xml benchmarks/new_benchmark.xml benchmarks/sample.xml benchmarks/simpler_benchmark.xml benchmarks/tiny_r.xml benchmarks/tiny.xml
-# KDSE
-	./tools/verify_dse.sh benchmarks/21.xml benchmarks/expansion_paper_norm_sdf.xml benchmarks/expansion_paper_sdf.xml benchmarks/faustTest.xml benchmarks/new_benchmark.xml benchmarks/sample.xml benchmarks/simpler_benchmark.xml benchmarks/tiny_r.xml benchmarks/tiny.xml
 
-# KDSE
-	mdkir -p ./logs
-	rm -rf ./logs/*
-	./tools/kdse_run_benchmarks.sh ./logs/ 30 # Limit to 30 sec for CI
+# test:  Verify Kperiodic
+	./tools/verify_kperiodic.sh benchmarks/21.xml benchmarks/expansion_paper_norm_sdf.xml benchmarks/expansion_paper_sdf.xml benchmarks/faustTest.xml benchmarks/multrate.xml benchmarks/new_benchmark.xml benchmarks/sample.xml benchmarks/simpler_benchmark.xml benchmarks/tiny_r.xml benchmarks/tiny.xml > ./logs/verifykperiodic.log
+# test:  Verify KDSE
+	./tools/verify_dse.sh benchmarks/21.xml benchmarks/expansion_paper_norm_sdf.xml benchmarks/expansion_paper_sdf.xml benchmarks/faustTest.xml benchmarks/new_benchmark.xml benchmarks/sample.xml benchmarks/simpler_benchmark.xml benchmarks/tiny_r.xml benchmarks/tiny.xml > ./logs/verifydse.log
+
+# test:  KDSE
+	./tools/kdse_run_benchmarks.sh ./logs/ 30 > ./logs/kdse_run_benchmarks.log  # Limit to 30 sec for CI
 
 csdf_benchmarks.log:  ./Release/bin/kiter Makefile 
 	@echo "###########"" ENTER IN $@ : $^  #####################"

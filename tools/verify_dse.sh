@@ -66,11 +66,11 @@ for BENCHMARK in "${BENCHMARK_ARRAY[@]}"; do
     if [ -f "${SDF3_RES}" ] && [ -f "${KITER_RES}" ]; then
         TOTAL_TESTS=$((TOTAL_TESTS + 1))
         printf "Checking %s" "${GRAPH_NAME}..."
-        if diff -q <(sort "$KITER_RES") <(sort "$SDF3_RES"); then # sort results to avoid mismatches due to ordering
+        if diff -q <(sort "$KITER_RES") <(sort "$SDF3_RES") > /dev/null; then # sort results to avoid mismatches due to ordering
             PASSED=$((PASSED + 1))
             echo "results match!"
         else
-            echo "      Run 'diff -y <(sort $KITER_RES) <(sort $SDF3_RES)' to see differences"
+            echo "failed! Run 'diff -y <(sort $KITER_RES) <(sort $SDF3_RES)' to see differences"
             # diff -y <(sort $KITER_RES) <(sort $SDF3_RES)
         fi
     else

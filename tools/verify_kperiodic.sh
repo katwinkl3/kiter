@@ -3,11 +3,11 @@
 #set -x
 
 KITER_ROOT_DIR="./"
-
+TIMEOUT="timeout --foreground 60"
 SDF3_BINARY_ROOT="${KITER_ROOT_DIR}/tools/sdf3/sdf3_140724/sdf3/build/release/Linux/bin/"
-SDF3ANALYSIS_CSDF="timeout --foreground 180 ${SDF3_BINARY_ROOT}/sdf3analysis-csdf"
-SDF3ANALYSIS_SDF="timeout --foreground 180 ${SDF3_BINARY_ROOT}/sdf3analysis-sdf"
-KITER="timeout --foreground 180 ${KITER_ROOT_DIR}/Release/bin/kiter"
+SDF3ANALYSIS_CSDF="${TIMEOUT} ${SDF3_BINARY_ROOT}/sdf3analysis-csdf"
+SDF3ANALYSIS_SDF="${TIMEOUT} ${SDF3_BINARY_ROOT}/sdf3analysis-sdf"
+KITER="${TIMEOUT} ${KITER_ROOT_DIR}/Release/bin/kiter"
 
 
 LOG_DIR=${KITER_ROOT_DIR}/logs/kperiodic_verification/
@@ -56,7 +56,9 @@ for BENCHMARK in "${BENCHMARK_ARRAY[@]}"; do
     if [ -f "${SDF3_RES}" ] && [ -f "${KITER_RES}" ]; then
         TOTAL_TESTS=$((TOTAL_TESTS + 1))
         printf "Checking %s" "${GRAPH_NAME}..."
-        if diff -q "$KITER_RES"  "$SDF3_RES"; then
+	equation="sqrt((`cat $KITER_RES` -  `cat $SDF3_RES` )^2) < 0.0001"
+	res=`echo $equation | bc -l`
+        if [ "$res" -eq "1" ]; then
             PASSED=$((PASSED + 1))
             echo "results match!"
         else
