@@ -275,52 +275,6 @@ void readSDF3VertexTimings (models::Dataflow *to,xmlNodePtr taskNode) {
 }
 
 
-void readSDF3VertexReentrancy (models::Dataflow *to,xmlNodePtr taskNode) {
-
-	std::string taskName,max_reen = "";
-	Vertex pVertex;
-
-	// get Vertex name
-	for (xmlAttrPtr cur_attr = taskNode->properties; cur_attr; cur_attr = cur_attr->next) {
-		if (strcmp((const char*)cur_attr->name,"actor") == 0) {
-			taskName = (const char*)cur_attr->children->content ;
-			break;
-		}
-	}
-
-	VERBOSE_ASSERT(taskName.size() > 0,TXT_XML_ERROR);
-
-	// get Vertex
-	pVertex = to->getVertexByName(taskName);
-
-
-	//
-	for (xmlNodePtr cur_node = taskNode->children; cur_node; cur_node = cur_node->next) {
-		if (cur_node->type == XML_ELEMENT_NODE) {
-			if (strcmp((const char*)cur_node->name,"memory") == 0) {
-
-				for (xmlNodePtr cur_node2 = cur_node   ->children; cur_node2; cur_node2 = cur_node2->next) {
-					if (cur_node2->type == XML_ELEMENT_NODE) {
-						if (strcmp((const char*)cur_node2->name,"stateSize") == 0) {
-							for (xmlAttrPtr cur_attr = cur_node2->properties; cur_attr; cur_attr = cur_attr->next) {
-								if (strcmp((const char*)cur_attr->name,"max") == 0) {
-									max_reen = (const char*)cur_attr->children->content ;
-									break;
-								}
-							}
-						}
-					}
-				}
-			} // end of memory slot
-		}
-	}
-
-	// TODO : Reentrancy is not properly managed
-	VERBOSE_DEBUG("Set reetrancy On");
-	to->setReentrancyFactor(pVertex,1);
-
-}
-
 bool onlyOneRate(std::string rates) {
 	std::vector<std::string>  init_periodic = commons::split <std::string> (rates, INIT_PERIODIC_SEPARATOR);
 	if (init_periodic.size() > 1) {
@@ -465,12 +419,18 @@ bool checkReentrancy( xmlNodePtr csdf, xmlNodePtr cur_node) {
 
 models::Dataflow* wrapSDF3Dataflow (xmlDocPtr doc) {
 
+
+	VERBOSE_DEBUG("Start wrapSDF3Dataflow");
+
+
 	xmlNodePtr AG= NULL,csdf= NULL,csdfproperties = NULL;
 	models::Dataflow *to = new models::Dataflow(0);
 	xmlNodePtr sdf3 = xmlDocGetRootElement(doc);
 
 	// Check file is correct
 	//--------------------------------
+
+	VERBOSE_DEBUG("Check file is correct");
 
 	if (sdf3 == NULL) {
 		FAILED("Document XML invalide");
@@ -492,6 +452,8 @@ models::Dataflow* wrapSDF3Dataflow (xmlDocPtr doc) {
 
 	if (!AG) {
 		FAILED("Document XML invalide");
+	} else {
+		VERBOSE_DEBUG("Found ApplicationGraph node.");
 	}
 
 
@@ -505,6 +467,7 @@ models::Dataflow* wrapSDF3Dataflow (xmlDocPtr doc) {
 		}
 	}
 
+	VERBOSE_DEBUG("App name is: " << to->getAppName());
 
 	// get the sdf/csdf node and the sdfProperties/csdfproperties node
 	//--------------------------------------------------------------------------------
@@ -522,6 +485,7 @@ models::Dataflow* wrapSDF3Dataflow (xmlDocPtr doc) {
 	if (csdfproperties == NULL) { FAILED("Document XML invalide, csdfproperties not found");}
 
 
+
 	for (xmlAttrPtr cur_attr = csdf->properties; cur_attr; cur_attr = cur_attr->next) {
 		if (strcmp((const char*)cur_attr->name,"name") == 0) {
 			to->setGraphName((const char*)cur_attr->children->content);
@@ -530,6 +494,9 @@ models::Dataflow* wrapSDF3Dataflow (xmlDocPtr doc) {
 			to->setGraphType((const char*)cur_attr->children->content);
 		}
 	}
+
+	VERBOSE_DEBUG("Parsing the tasks");
+
 
 	// Generate Vertex list with names and zero reentrancy
 	//--------------------------------------------------------------------------------
@@ -560,6 +527,8 @@ models::Dataflow* wrapSDF3Dataflow (xmlDocPtr doc) {
 	// Generate Edge list with names, in and out vertices, tokensize and preload
 	// If the edge is seen as a reentrancy edge, only set reentrancy to the task
 	//--------------------------------------------------------------------------------
+
+	VERBOSE_DEBUG("Parsing the channels");
 
 	for (xmlNodePtr cur_node = csdf->children; cur_node; cur_node = cur_node->next) {
 		if (cur_node->type == XML_ELEMENT_NODE) {
@@ -619,6 +588,9 @@ models::Dataflow* wrapSDF3Dataflow (xmlDocPtr doc) {
 	}
 
 
+	VERBOSE_DEBUG("Parsing the timings");
+
+
 	// get task timings
 	//--------------------------------------------------------------------------------
 	for (xmlNodePtr cur_node = csdfproperties->children; cur_node; cur_node = cur_node->next) {
@@ -630,16 +602,8 @@ models::Dataflow* wrapSDF3Dataflow (xmlDocPtr doc) {
 		}
 	}
 
-	// get task reentrancy again
-	//--------------------------------------------------------------------------------
-	for (xmlNodePtr cur_node = csdfproperties->children; cur_node; cur_node = cur_node->next) {
-		if (cur_node->type == XML_ELEMENT_NODE) {
+	VERBOSE_DEBUG("Parsing the rates");
 
-			if (std::string((const char*)cur_node->name) == std::string("actorProperties")) {
-				readSDF3VertexReentrancy(to,cur_node); //fail function
-			}
-		}
-	}
 
 	// get task phase count and productions
 	//--------------------------------------------------------------------------------
@@ -771,6 +735,7 @@ void writeChannel (xmlTextWriterPtr writer, const models::Dataflow* dataflow, co
 std::string  generateSDF3XML         (const models::Dataflow* dataflow)  {
 
 
+	VERBOSE_DEBUG("Start generateSDF3XML");
 
 
 
