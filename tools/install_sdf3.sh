@@ -24,6 +24,7 @@ else
 fi
 
 ## DOWNLOAD SOURCE CODE
+echo "77eadba886cf8c02b7c6831bd62cb675  ${TARGET}/sdf3-140724.zip" > "${TARGET}"/sdf3-140724.zip.md5
 
 SDF3_ARCHIVE=sdf3-${SDF3_VERSION}.zip
     
@@ -38,9 +39,12 @@ fi
 
 SDF3_ROOT="${TARGET}/sdf3_${SDF3_VERSION}/"
 
-if [ -e "${SDF3_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" ]; then
+
+
+if "${SDF3_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" 2>&1 | grep -q version; then
     echo "Binary found, we assume it is done.";
 else
+    rm -rf "${SDF3_ROOT}";
     unzip -o "${TARGET}/${SDF3_ARCHIVE}" -d "${SDF3_ROOT}";
     if [[ "$OSTYPE" == "darwin"* ]]; then
 	sed -i.bak "s/-fno-tree-fre//g" "${SDF3_ROOT}/sdf3/etc/Makefile.inc"
@@ -50,7 +54,7 @@ fi;
 
 cd "${ORIGIN}" || exit 1
 
-if [ -e "${SDF3_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" ]; then
+if "${SDF3_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" 2>&1 | grep -q version; then
     echo "Script finished and binary is found.";
 else
     echo "Error, sdf3analysis-csdf not found.";
@@ -61,10 +65,11 @@ fi;
 ## UNZIP, PATCH AND COMPILE THE CUSTOM VERSION
 
 SDF3_CUSTOM_ROOT="${TARGET}/sdf3_custom/"
-
-if [ -e "${SDF3_CUSTOM_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" ]; then
+export SDF3LOGDIR=./logs 
+if "${SDF3_CUSTOM_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" 2>&1 | grep -q version; then
     echo "Binary found, we assume it is done.";
 else
+    rm -rf "${SDF3_CUSTOM_ROOT}";
     unzip -o "${TARGET}/${SDF3_ARCHIVE}" -d "${SDF3_CUSTOM_ROOT}";
     pushd "${SDF3_CUSTOM_ROOT}/" && patch --verbose -p1 < ../../sdf3.patch && popd || exit 1
     if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -75,7 +80,7 @@ fi;
 
 cd "${ORIGIN}" || exit 1
 
-if [ -e "${SDF3_CUSTOM_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" ]; then
+if "${SDF3_CUSTOM_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" 2>&1 | grep -q version; then
     echo "Script finished and binary is found.";
 else
     echo "Error at the end of the script.";
