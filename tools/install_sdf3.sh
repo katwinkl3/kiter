@@ -42,6 +42,9 @@ if [ -e "${SDF3_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" ]; then
     echo "Binary found, we assume it is done.";
 else
     unzip -o "${TARGET}/${SDF3_ARCHIVE}" -d "${SDF3_ROOT}";
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+	sed -i.bak "s/-fno-tree-fre//g" ${SDF3_ROOT}/sdf3/etc/Makefile.inc
+    fi;
     pushd "${SDF3_ROOT}/sdf3/" && make && popd || exit 1
 fi;
 
@@ -64,6 +67,9 @@ if [ -e "${SDF3_CUSTOM_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" ]; 
 else
     unzip -o "${TARGET}/${SDF3_ARCHIVE}" -d "${SDF3_CUSTOM_ROOT}";
     pushd "${SDF3_CUSTOM_ROOT}/" && patch --verbose -p1 < ../../sdf3.patch && popd || exit 1
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+	sed -i.bak "s/-fno-tree-fre//g" ${SDF3_CUSTOM_ROOT}/sdf3/etc/Makefile.inc
+    fi;
     pushd "${SDF3_CUSTOM_ROOT}/sdf3/" && make && popd || exit 1
 fi;
 
