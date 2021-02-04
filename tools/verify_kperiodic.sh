@@ -56,8 +56,8 @@ for BENCHMARK in "${BENCHMARK_ARRAY[@]}"; do
     if [ -f "${SDF3_RES}" ] && [ -f "${KITER_RES}" ]; then
         TOTAL_TESTS=$((TOTAL_TESTS + 1))
         printf "Checking %s" "${GRAPH_NAME}..."
-	equation="sqrt((`cat $KITER_RES` -  `cat $SDF3_RES` )^2) < 0.0001"
-	res=`echo $equation | bc -l`
+	equation="sqrt(($(cat $KITER_RES) -  $(cat $SDF3_RES) )^2) < 0.0001"
+	res=$(echo $equation | bc -l)
         if [ "$res" -eq "1" ]; then
             PASSED=$((PASSED + 1))
             echo "results match!"

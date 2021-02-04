@@ -30,7 +30,7 @@ SDF3_ARCHIVE=sdf3-${SDF3_VERSION}.zip
 if md5sum --status -c "${TARGET}/${SDF3_ARCHIVE}.md5"; then
     echo "Archive already downloaded.";
 else
-    rm -f ${TARGET}/${SDF3_ARCHIVE}
+    rm -f "${TARGET}/${SDF3_ARCHIVE}"
     wget --tries=1 http://www.es.ele.tue.nl/sdf3/download/files/releases/${SDF3_ARCHIVE} -O "${TARGET}/${SDF3_ARCHIVE}";
 fi
 
@@ -43,7 +43,7 @@ if [ -e "${SDF3_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" ]; then
 else
     unzip -o "${TARGET}/${SDF3_ARCHIVE}" -d "${SDF3_ROOT}";
     if [[ "$OSTYPE" == "darwin"* ]]; then
-	sed -i.bak "s/-fno-tree-fre//g" ${SDF3_ROOT}/sdf3/etc/Makefile.inc
+	sed -i.bak "s/-fno-tree-fre//g" "${SDF3_ROOT}/sdf3/etc/Makefile.inc"
     fi;
     pushd "${SDF3_ROOT}/sdf3/" && make && popd || exit 1
 fi;
