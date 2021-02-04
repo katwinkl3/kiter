@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 # This script runs the benchmarks used in the paper on K-periodic driven DSE.
 
 MAX_TIME=2m
