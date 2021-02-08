@@ -252,7 +252,7 @@ void DFSUtil_PgmOrder(Vertex v, std::vector<bool>& visited, models::Dataflow* to
 
 std::string vertexVector2str(std::vector<Vertex>& traversal, models::Dataflow* to)
 {
-	 std::stringstream s;
+	std::stringstream s;
 	for(unsigned int trav_i = 0; trav_i < traversal.size(); trav_i++)
 		s << to->getVertexId(traversal[trav_i]) << " ";
 	return s.str();
@@ -494,111 +494,6 @@ int new_findPaths(int src, NoCGraph* noc, int core_considered, std::vector<int>&
 }
 
 
-void new_mapping(Vertex vtx, std::vector<int>& core_mapping, NoCGraph* noc, models::Dataflow* d, std::vector<int>& avail_cores, std::map<int, route_t>& routes)
-{
-	const int start_core = avail_cores[0];
-	auto index = d->getVertexId(vtx);
-	if((int)avail_cores.size() == noc->size())
-	{
-		core_mapping[index] = start_core;
-		std::remove(avail_cores.begin(), avail_cores.end(), start_core);
-		avail_cores.resize( avail_cores.size() - 1);
-		return;
-	}
-
-	float best_contention_l1 = -1;
-	std::map<int, route_t> best_store_path;
-	std::vector<int> best_util;
-	int core_allocated = -1;
-
-	for (auto core_considered : avail_cores)
-	{
-		std::cout << "core_considered=" << core_considered << "\n";
-		int cont_l1 = -1;
-		std::vector<int> curr_util = noc->getLinkUtil();
-		std::map<int, route_t> store_path; //variable to store the route to be utilized by the (src,dest) core
-		unsigned int counter = 0;
-		unsigned int pathlen = 0;
-
-
-		{ForInputEdges(d, vtx, e){	//Find the core index
-			Vertex source_vtx = d->getEdgeSource(e);
-			auto source = d->getVertexId(source_vtx);
-			int src_core = core_mapping[source];
-			//int storepath_id = noc->getMapIndex((int)source, (int)index);
-			if(src_core != -1)
-				pathlen += noc->getPathLength(src_core, core_considered);
-		}}
-
-		{ForOutputEdges(d, vtx, e){
-			Vertex target_vtx = d->getEdgeTarget(e);
-			auto target = d->getVertexId(target_vtx);
-			int tgt_core = core_mapping[target];
-			//int storepath_id = noc->getMapIndex((int)index, (int)target);
-			if(tgt_core != -1)
-				pathlen += noc->getPathLength(core_considered, tgt_core);
-		}}
-
-
-		if(best_contention_l1 != -1 && (float)pathlen > best_contention_l1) //reducing search space
-			continue;
-
-		{ForInputEdges(d, vtx, e){	//Find the core index
-			Vertex source_vtx = d->getEdgeSource(e);
-			auto source = d->getVertexId(source_vtx);
-			int src_core = core_mapping[source];
-			int storepath_id = noc->getMapIndex((int)source, (int)index);
-			if(src_core != -1)
-			{
-				counter++;
-				auto temp_cont_l1 = new_findPaths(src_core, noc, core_considered, curr_util, store_path, storepath_id);
-				cont_l1 = std::max( temp_cont_l1, cont_l1 );
-			}
-		}}
-
-		{ForOutputEdges(d, vtx, e){
-			Vertex target_vtx = d->getEdgeTarget(e);
-			auto target = d->getVertexId(target_vtx);
-			int tgt_core = core_mapping[target];
-			int storepath_id = noc->getMapIndex((int)index, (int)target);
-			if(tgt_core != -1)
-			{
-				counter++;
-				auto temp_cont_l1 = new_findPaths(core_considered, noc, tgt_core, curr_util, store_path, storepath_id);
-				cont_l1 = std::max( temp_cont_l1, cont_l1 );
-			}
-		}}
-
-		float cost = (float)cont_l1;
-		if(counter > 0 )
-			cost += (float)pathlen/(float)counter;
-
-
-		std::cout << "cost=" << cost << "\n";
-
-		if(best_contention_l1 == -1 || cost < best_contention_l1)
-		{
-			best_contention_l1 = cost;
-			best_store_path = store_path;
-			core_allocated = core_considered;
-			best_util = curr_util;
-		}
-	}
-
-	core_mapping[index] = core_allocated;
-	std::remove(avail_cores.begin(), avail_cores.end(), core_allocated);
-	avail_cores.resize(avail_cores.size()-1);
-	noc->setLinkUtil(best_util);
-
-	for(auto it: best_store_path)
-	{
-		if(routes.find(it.first) != routes.end())
-			VERBOSE_INFO ( "already one route is stored fro this");
-		routes[it.first] = it.second;
-	}
-	std::cout << "allocating to " << core_allocated << "\n";
-}
-
 
 int dijkstra_findPaths(int src, NoCGraph* noc, int core_considered, std::vector<int>& curr_util, std::map<int, route_t>& store_path, int storepath_id)
 {
@@ -643,6 +538,7 @@ void dijkstra_mapping(Vertex vtx, std::vector<int>& core_mapping, NoCGraph* noc,
 	//in the list of avaiable cores
 	for (auto core_considered : avail_cores)
 	{
+		VERBOSE_DEBUG("dijk core_considered=" << core_considered);//std::cout <<  << "\n";
 		//std::cout << "dijk core_considered=" << core_considered << "\n";
 		int cont_l1 = -1;
 		std::vector<int> curr_util = noc->getLinkUtil(); //get the utilization of every link in the NoC
@@ -704,6 +600,7 @@ void dijkstra_mapping(Vertex vtx, std::vector<int>& core_mapping, NoCGraph* noc,
 			cost += (float)pathlen/(float)counter;
 
 
+		VERBOSE_DEBUG("cost=" << cost);
 		//std::cout << "cost=" << cost << "\n";
 
 		if(best_contention_l1 == -1 || cost < best_contention_l1)
@@ -1027,14 +924,7 @@ void taskAndNoCMapping(const models::Dataflow* input, models::Dataflow* to, Vert
 	//list of cores that are available
 	std::vector<int> available_cores;//{5, 6, 10, 9, 8, 4, 0, 1, 2, 3, 7, 11, 15, 14, 13, 12};
 	ARRAY_INDEX origV = input->getVerticesCount();
-/*
-	if(origV <= 4)
-	{
-		std::vector<int> temp_vec{0, 1, 3, 2};
-		available_cores = temp_vec;
-	}
-	else
-*/
+
 	if(origV <= 16)
 	{
 		std::vector<int> temp_vec{5, 6, 10, 9, 8, 4, 0, 1, 2, 3, 7, 11, 15, 14, 13, 12};
@@ -1045,6 +935,9 @@ void taskAndNoCMapping(const models::Dataflow* input, models::Dataflow* to, Vert
 		for(int i = 0; i < noc->getMeshSize(); i++)
 			available_cores.push_back(i);
 	}
+
+
+	VERBOSE_INFO ( "available_cores " << commons::toString(available_cores) ) ;
 
 	noc->clear();
 
@@ -1066,9 +959,9 @@ void taskAndNoCMapping(const models::Dataflow* input, models::Dataflow* to, Vert
 			//if( noc->getMeshSize() <= 9*9)
 			//	mapping(top, core_mapping, noc, input, available_cores, routes);
 			//else
-				//hwconstrainted_mapping(top, core_mapping, noc, input, available_cores, routes);
-				dijkstra_mapping(top, core_mapping, noc, input, available_cores, routes);
-				//new_mapping(top, core_mapping, noc, input, available_cores, routes);
+			//hwconstrainted_mapping(top, core_mapping, noc, input, available_cores, routes);
+			dijkstra_mapping(top, core_mapping, noc, input, available_cores, routes);
+			//new_mapping(top, core_mapping, noc, input, available_cores, routes);
 
 		}
 		visited[to->getVertexId(top)] = true;
@@ -1104,14 +997,14 @@ void taskAndNoCMapping(const models::Dataflow* input, models::Dataflow* to, Vert
 		mapping(top, core_mapping, noc, input, available_cores, routes);
 	}*/
 
-/*
+	/*
 	for(ARRAY_INDEX s = 1; s <= (ARRAY_INDEX)(V-1); s++)
 	{
 		prog_order[s] = prog_order[s] + 1 - 1;
 		auto top = to->getVertexById(s);
 		mapping(top, core_mapping, noc, input, available_cores, routes);
 	}
-*/
+	 */
 	VERBOSE_INFO ( "srjkvr-mapping " << commons::toString(core_mapping) ) ;
 	std::cout << "SRJKVR";
 	for(ARRAY_INDEX i = 1; i < core_mapping.size()-1; i++)
@@ -1662,7 +1555,7 @@ static bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::v
 
 
 		//getEdgesPhaseVector(to, v1, cfgVtx, v2, myin, myout, preload_v1, preload_v2, e_v1, e_v2);
-// void getEdgesPhaseVector(models::Dataflow* d, Vertex& v1, Vertex cfg, Vertex& v2, std::vector<TOKEN_UNIT>& in, std::vector<TOKEN_UNIT>& out, TOKEN_UNIT& preload_v1, TOKEN_UNIT& preload_v2, EDGE_TYPE& e_v1, EDGE_TYPE& e_v2)
+		// void getEdgesPhaseVector(models::Dataflow* d, Vertex& v1, Vertex cfg, Vertex& v2, std::vector<TOKEN_UNIT>& in, std::vector<TOKEN_UNIT>& out, TOKEN_UNIT& preload_v1, TOKEN_UNIT& preload_v2, EDGE_TYPE& e_v1, EDGE_TYPE& e_v2)
 
 
 
@@ -1830,10 +1723,10 @@ bool resolveSrcConflicts(models::Dataflow* d, Vertex src, std::vector<ARRAY_INDE
 			in_flow += edgein;
 			preload += d->getPreload(outE);
 			VERBOSE_INFO ( "states=" << in_flow << ",preload=" << preload );
-                        if(mygcd == 0)
-                                mygcd = edgein;
-                        else
-                                mygcd = gcdExtended(edgein, mygcd, &a, &b);
+			if(mygcd == 0)
+				mygcd = edgein;
+			else
+				mygcd = gcdExtended(edgein, mygcd, &a, &b);
 
 			{ForOutputEdges(d,next_node,inE)     {
 				if(next_node != d->getEdgeTarget(inE))
@@ -2270,7 +2163,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 			VERBOSE_INFO ("    - " << edge );
 		}
 	}
-	std::cout << "done route\n";
+	std::cout << "done route size = " << routes.size() << "\n";
 	//printTasks(to);
 
 
@@ -2346,7 +2239,7 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		VERBOSE_ASSERT(omega != std::numeric_limits<TIME_UNIT>::infinity(), "Infinite period, this dataflow does not schedule anymoe, resolveSrcConflicts failed.");
 		to->reset_computation();
 	}
-	*/
+	 */
 
 	VERBOSE_INFO ( "done source conflict resolve" );
 
@@ -2404,14 +2297,14 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		auto start_id = routes[it.first][0];
 		auto cf_it = conflictEdges.find((unsigned int)start_id);
 		if(cf_it != conflictEdges.end())
-	 		conflictEdges.erase(cf_it);
+			conflictEdges.erase(cf_it);
 
 #ifdef WITH_DEST_CONFLICT
 		auto mysize = routes[it.first].size() - 1;
 		auto end_id = routes[it.first][mysize];
 		auto cf_it2 = conflictEdges.find((unsigned int)end_id);
 		if(cf_it2 != conflictEdges.end())
-	 		conflictEdges.erase(cf_it2);
+			conflictEdges.erase(cf_it2);
 #endif
 	}
 
@@ -2479,23 +2372,23 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 		ARRAY_INDEX tid = item.first;
 		Vertex v = to->getVertexById(item.first);
 		std::string  tname = to->getVertexName(v);
-			TIME_UNIT period = item.second.first;
-			std::vector<TIME_UNIT> &starts = item.second.second;
-			std::string line = "";
+		TIME_UNIT period = item.second.first;
+		std::vector<TIME_UNIT> &starts = item.second.second;
+		std::string line = "";
 
-			for (TIME_UNIT time = 0 ; time < 50 ; time ++) {
-				bool execute = false;
-				for (ARRAY_INDEX sidx = 0 ; sidx < starts.size() ; sidx++) {
-					TIME_UNIT s = starts[sidx];
-					TIME_UNIT duration = to->getVertexDuration(v, 1 + (sidx % to->getPhasesQuantity(v))); // TODO : unsupported init phases
-					TIME_UNIT normalize = (time > s) ? (time - s) - ((time - s) / period) : (time - s);
-					bool execute_here = ((0  <= normalize ) and (normalize < duration ));
-					execute = execute or execute_here;
-				}
-				line += execute ? "#" : " ";
+		for (TIME_UNIT time = 0 ; time < 50 ; time ++) {
+			bool execute = false;
+			for (ARRAY_INDEX sidx = 0 ; sidx < starts.size() ; sidx++) {
+				TIME_UNIT s = starts[sidx];
+				TIME_UNIT duration = to->getVertexDuration(v, 1 + (sidx % to->getPhasesQuantity(v))); // TODO : unsupported init phases
+				TIME_UNIT normalize = (time > s) ? (time - s) - ((time - s) / period) : (time - s);
+				bool execute_here = ((0  <= normalize ) and (normalize < duration ));
+				execute = execute or execute_here;
 			}
-			VERBOSE_INFO("Task " << std::setw(5) << tid << " | " << line );
+			line += execute ? "#" : " ";
 		}
+		VERBOSE_INFO("Task " << std::setw(5) << tid << " | " << line );
+	}
 
 }
 

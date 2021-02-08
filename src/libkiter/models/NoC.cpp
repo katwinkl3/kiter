@@ -9,7 +9,7 @@
 #include <set>
 
 		NoC::NoC (int XSIZE, int YSIZE) : _XSIZE(XSIZE), _YSIZE(YSIZE) {
-			VERBOSE_INFO( "start NoC with dim=" << XSIZE << "x" << YSIZE  );
+			VERBOSE_DEBUG( "start NoC with dim=" << XSIZE << "x" << YSIZE  );
 
 			int NodeCount = XSIZE * YSIZE * 2;
 
@@ -76,7 +76,7 @@
 
 				}
 			}
-			VERBOSE_INFO( "dim=" << XSIZE << "x" << YSIZE << ",edges=" << _vedges.size() << ",medges=" << _medges.size() );
+			VERBOSE_DEBUG( "dim=" << XSIZE << "x" << YSIZE << ",edges=" << _vedges.size() << ",medges=" << _medges.size() );
 
 			VERBOSE_DEBUG("Start auto-check of NoC model");
 

@@ -271,6 +271,7 @@ static std::map<int, route_t> graphProcessing(const models::Dataflow* const data
 
 	// Result: routes is the route between every task of the graph.
 
+	std::cout << "done route size = " << routes.size() << "\n";
 
 
 	VERBOSE_INFO("End of graphProcessing.");
