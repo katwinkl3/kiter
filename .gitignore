@@ -71,3 +71,4 @@ tools/sdf3*/
 /logs/
 /*.png
 __pycache__
+/ascent_pictures/

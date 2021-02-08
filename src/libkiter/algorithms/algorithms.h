@@ -20,6 +20,8 @@
 #include <algorithms/mappings.h>
 #include <algorithms/throughput/kperiodic.h>
 #include <algorithms/throughput/degroote.h>
+#include <algorithms/throughput/degroote.h>
+#include <algorithms/experiments.h>
 
 
 

@@ -7,7 +7,7 @@
 #include <commons/verbose.h>
 #include <commons/commons.h>
 
-#define BOOST_TEST_MODULE TemplateTest
+#define BOOST_TEST_MODULE CommonTest
 #include "helpers/test_classes.h"
 
 
@@ -30,8 +30,8 @@ BOOST_AUTO_TEST_CASE( euclide_algorithm )
 	auto res2 = commons::extended_euclide(8, 19, 1) ;
 
 
-	VERBOSE_ASSERT_EQUALS( res2.first  , -7 );
-	VERBOSE_ASSERT_EQUALS( res2.second , 3 );
+	VERBOSE_ASSERT_EQUALS( res2.first  , -7);
+	VERBOSE_ASSERT_EQUALS( res2.second ,  3);
 
 }
 
