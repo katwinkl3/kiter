@@ -10,6 +10,7 @@
 
 #include <boost/test/included/unit_test.hpp>
 #include <commons/verbose.h>
+
 #include "sample.h"
 class WITHOUT_VERBOSE {
 	public:
@@ -46,6 +47,7 @@ class WITH_SAMPLE : public WITH_VERBOSE {
     	BOOST_TEST_MESSAGE( "WITH_SAMPLE Teardown Done" );
 	}
 };
+
 
 
 #endif /* TESTS_TEST_HELPER_H_ */
