@@ -165,7 +165,7 @@ ${ASCENT_TESTBENCH} : ${SDF3_BENCHMARK}
 	mkdir -p $@
 	cp $</one_* $@/
 	for f in $@/*_buffer.xml; do mv -- "$$f" "$${f%_buffer.xml}.xml" ; done
-	sed -i.bak "s/.*_.*//" $@/*.xml
+	sed -i.bak "s/.*=\"_.*//" $@/*.xml
 	rm $@/*.bak
 
 
