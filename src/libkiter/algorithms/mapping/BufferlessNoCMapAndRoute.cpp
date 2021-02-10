@@ -207,6 +207,7 @@ static std::map<int, route_t> graphProcessing(const models::Dataflow* const data
 
 	auto start = to->addVertex();
 	to->setVertexName(start, "start");
+
 	bool input_task_found = false;
 	bool top_is_set = false;
 	Vertex top;
