@@ -6,7 +6,8 @@
   "ignore": [
       "**/*.xml",
       "**/*.py",      
-      "**/*.cpp"
+      "**/*.cpp",
+      "**/*.hpp"
   ],
   "absolute": true
 }
