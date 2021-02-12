@@ -97,7 +97,7 @@ long generate_pipeline (int iter) {
 
 BOOST_FIXTURE_TEST_SUITE( performance_test_suite, WITH_VERBOSE)
 
-#define MAX_ITER 40000
+#define MAX_ITER 4000
 BOOST_AUTO_TEST_CASE( generate_pipeline_test )
 {
 
