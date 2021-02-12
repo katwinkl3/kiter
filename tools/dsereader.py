@@ -3,225 +3,225 @@
 
 import os
 import psutil
-import math 
+import math
 import sys
 import time
 import pandas as pd
 import matplotlib.pyplot as plt
 
 
+methods = {"kiter": "red",
+           "periodic": "green",
+           "sdf3": "black"}
 
 
-methods = {"kiter" : "red",
-           "periodic" : "green",
-           "sdf3" : "black"}
+def load_app_dse(logdir, appname, method, cols=["throughput", "cumulative duration"]):
 
-
-
-
-def load_app_dse (logdir, appname, method, cols = ["throughput", "cumulative duration"]):
-    
     filename = f"{logdir}/{appname}_dselog_{method}.csv"
 
-    try :
-        df = pd.read_csv(filename, usecols = cols)
+    try:
+        df = pd.read_csv(filename, usecols=cols)
         return df
     except pd.errors.EmptyDataError:
         return pd.DataFrame()
-    
 
 
-def plot_dse (df, dsename = None, dsecolor = None):
-    
-    if len(df) == 0 :
+def plot_dse(df, dsename=None, dsecolor=None):
+
+    if len(df) == 0:
         return 0
-    
+
     x = df["cumulative duration"]
     y = df["throughput"]
-    
-    if len(y) == 0 :
+
+    if len(y) == 0:
         return 0
 
-    steplines = plt.step(x,y, where = "post", color =  dsecolor, linewidth=0.4, alpha=0.5, label = dsename) #  'C0o'
+    steplines = plt.step(x, y, where="post", color=dsecolor,
+                         linewidth=0.4, alpha=0.5, label=dsename)  # 'C0o'
     current_color = steplines[0].get_color()
-    
+
     df["cummaxth"] = df["throughput"].cummax()
     dfgb = df.groupby("cummaxth")
 
     x2 = dfgb.min()["cumulative duration"]
     y2 = dfgb.max()["throughput"]
-    
-    markerline, stemlines, baseline = plt.stem(x2, y2,current_color, use_line_collection = True, basefmt =' ')
+
+    markerline, stemlines, baseline = plt.stem(
+        x2, y2, current_color, use_line_collection=True, basefmt=' ')
     plt.setp(stemlines, 'linewidth', 2)
     plt.setp(markerline, 'color', current_color)
 
     return y2.max()
-    
-def plot_pareto (df, dsename = None, dsecolor = None):
-    
-    if len(df) == 0 :
+
+
+def plot_pareto(df, dsename=None, dsecolor=None):
+
+    if len(df) == 0:
         return 0
-    
+
     # remove null throughput
-    pareto = df[ df["throughput"] > 0 ]
-    
+    pareto = df[df["throughput"] > 0]
+
     # sort by sd
     pareto = pareto.sort_values("storage distribution size")
-    
+
     # update th to max possible (assume ordered by sd)
     pareto["throughput"] = pareto["throughput"].cummax()
-    
-    # Take the max th for each sd 
+
+    # Take the max th for each sd
     pareto = pareto.groupby("storage distribution size").max().reset_index()
-    
-    # Take the min sd for each th 
+
+    # Take the min sd for each th
     pareto = pareto.groupby("throughput").min().reset_index()
 
     # Add period
     pareto["period"] = 1 / pareto["throughput"]
     df["period"] = 1 / df["throughput"]
-    
-    x,y = pareto["storage distribution size"], pareto["period"] 
-    if len(y) == 0 :
+
+    x, y = pareto["storage distribution size"], pareto["period"]
+    if len(y) == 0:
         return 0
 
-    scatterpoints = plt.scatter (df["storage distribution size"], df["period"] , alpha = 0.1, label = None)
-    steplines = plt.step(x,y, where = "post", color =  dsecolor, linewidth=1, alpha=1, label = dsename) #  'C0o'
+    scatterpoints = plt.scatter(
+        df["storage distribution size"], df["period"], alpha=0.1, label=None)
+    steplines = plt.step(x, y, where="post", color=dsecolor,
+                         linewidth=1, alpha=1, label=dsename)  # 'C0o'
     current_color = steplines[0].get_color()
-    steppoints = plt.plot(x,y, 'C2o', alpha=0.5, label = None) 
+    steppoints = plt.plot(x, y, 'C2o', alpha=0.5, label=None)
     plt.setp(steppoints, 'color', current_color)
     plt.setp(scatterpoints, 'color', current_color)
 
     return y.max()
- 
-    
-def plot_app_dse (logdir, appname):
+
+
+def plot_app_dse(logdir, appname):
 
     total_time = time.time()
     ymax = 0
-    for method,color in methods.items() :
-        
+    for method, color in methods.items():
+
         start_time = time.time()
         print("Load", appname, method)
-        df = load_app_dse (logdir, appname, method)
-        print ("Loaded after", time.time() -  start_time,"sec.")
-    
+        df = load_app_dse(logdir, appname, method)
+        print("Loaded after", time.time() - start_time, "sec.")
+
         start_time = time.time()
-        print("Plot", appname, method)    
-        ymax = max ( ymax , plot_dse (df, method, color) )
-        print ("Plotted after", time.time() -  start_time,"sec.")        
-    
+        print("Plot", appname, method)
+        ymax = max(ymax, plot_dse(df, method, color))
+        print("Plotted after", time.time() - start_time, "sec.")
 
     plt.xlabel("Execution time (ms)")
     plt.ylabel("Throughput (Hz)")
-    plt.title (f"{appname}")
+    plt.title(f"{appname}")
     plt.legend(loc='upper left',
-           ncol=2,  borderaxespad=0.5)
+               ncol=2,  borderaxespad=0.5)
     if ymax:
-        plt.ylim(bottom=0, top = 1.3 * ymax)
+        plt.ylim(bottom=0, top=1.3 * ymax)
 
-    print("Finished in",time.time() - total_time,"sec.")
+    print("Finished in", time.time() - total_time, "sec.")
     print("")
-    
-def plot_app_pareto (logdir, appname):
+
+
+def plot_app_pareto(logdir, appname):
 
     total_time = time.time()
     ymax = 0
 
-    for method,color in methods.items() :
-        
+    for method, color in methods.items():
+
         start_time = time.time()
         print("Load", appname, method)
-        df = load_app_dse (logdir, appname, method,   cols = ["throughput","storage distribution size"])
-        print ("Loaded after", time.time() -  start_time,"sec.")
-    
+        df = load_app_dse(logdir, appname, method,   cols=[
+                          "throughput", "storage distribution size"])
+        print("Loaded after", time.time() - start_time, "sec.")
+
         start_time = time.time()
-        print("Plot", appname, method)    
-        ymax = max ( ymax , plot_pareto (df, method, color) )
-        print ("Plotted after", time.time() -  start_time,"sec.")        
-    
+        print("Plot", appname, method)
+        ymax = max(ymax, plot_pareto(df, method, color))
+        print("Plotted after", time.time() - start_time, "sec.")
 
     plt.xlabel("Storage Distribution")
     plt.ylabel("Period (sec)")
-    plt.title (f"{appname}")
+    plt.title(f"{appname}")
     plt.legend(loc='upper left',
-           ncol=2,  borderaxespad=0.5)
+               ncol=2,  borderaxespad=0.5)
     if ymax:
-        plt.ylim(bottom=0, top = 1.3 * ymax)
+        plt.ylim(bottom=0, top=1.3 * ymax)
 
-    print("Finished in",time.time() - total_time,"sec.")
+    print("Finished in", time.time() - total_time, "sec.")
     print("")
 
-def plot_all (logdir, graphs, plotfunc = plot_app_dse, outputname = None):
+
+def plot_all(logdir, graphs, plotfunc=plot_app_dse, outputname=None):
     total = len(graphs)
-    subx = max(1,int(math.sqrt(total)))
+    subx = max(1, int(math.sqrt(total)))
     suby = int(total / subx)
     assert(subx >= 1)
     while subx * suby < total:
         suby += 1
 
-    print (f"Produce subplot of {subx} x {suby}")     
+    print(f"Produce subplot of {subx} x {suby}")
     fig = plt.figure(figsize=(suby*5, subx*5))
-    
+
     fig.subplots_adjust(hspace=0.4, wspace=0.4)
-    for i,name in zip(range(1, len(graphs) + 1),graphs):
+    for i, name in zip(range(1, len(graphs) + 1), graphs):
         ax = fig.add_subplot(subx, suby, i)
         plotfunc(logdir, name)
-        
-    print ("Tight the layout...")
-    fig.tight_layout()    
 
-    if outputname :
-        print ("Save the file:", outputname)
+    print("Tight the layout...")
+    fig.tight_layout()
+
+    if outputname:
+        print("Save the file:", outputname)
         plt.savefig(outputname)
 
     plt.clf()
     plt.cla()   # Clear axis
-    
-def plot_all_pareto (logdir, graphs, outputname = None):
-    plot_all (logdir, graphs, plotfunc = plot_app_pareto, outputname = outputname)
 
-def plot_all_dse (logdir, graphs, outputname = None):
-    plot_all (logdir, graphs, plotfunc = plot_app_dse, outputname = outputname)
- 
 
-        
+def plot_all_pareto(logdir, graphs, outputname=None):
+    plot_all(logdir, graphs, plotfunc=plot_app_pareto, outputname=outputname)
+
+
+def plot_all_dse(logdir, graphs, outputname=None):
+    plot_all(logdir, graphs, plotfunc=plot_app_dse, outputname=outputname)
+
+
 if __name__ == "__main__":
     import glob
     import argparse
 
     parser = argparse.ArgumentParser(description='Generate DSE Plots')
-    parser.add_argument('graphs', metavar='G', type=str, nargs='*', 
+    parser.add_argument('graphs', metavar='G', type=str, nargs='*',
                         help='Names of graphs to process')
-    parser.add_argument('--logdir', type=str, 
-                        help='location of log dirs', required = True)
-    parser.add_argument('--opareto', type=str, 
-                        help='location of the output dse plot file', required = False)
-    parser.add_argument('--odse', type=str, 
-                        help='location of the output pareto plot file', required = False)
+    parser.add_argument('--logdir', type=str,
+                        help='location of log dirs', required=True)
+    parser.add_argument('--opareto', type=str,
+                        help='location of the output dse plot file', required=False)
+    parser.add_argument('--odse', type=str,
+                        help='location of the output pareto plot file', required=False)
     args = parser.parse_args()
-
-    
 
     logdir = args.logdir
     graphs = args.graphs
 
-    if len(graphs) == 0 :
-        graphs = list(set([ x.split("/")[-1].split("_dselog")[0] for x in glob.glob(logdir + "/*")]))
+    if len(graphs) == 0:
+        graphs = list(set([x.split("/")[-1].split("_dselog")[0]
+                           for x in glob.glob(logdir + "/*")]))
     print("Process graphs:", graphs)
-    
+
     process = psutil.Process(os.getpid())
     startmem = process.memory_info().rss
 
     if args.odse:
         print("Generate DSE output")
-        plot_all_dse (logdir = logdir, graphs = graphs, outputname = args.odse)
-        
+        plot_all_dse(logdir=logdir, graphs=graphs, outputname=args.odse)
+
     if args.opareto:
         print("Generate pareto output")
-        plot_all_pareto (logdir = logdir, graphs = graphs, outputname = args.opareto)
-        
-    endmem = process.memory_info().rss
-    print ("Memory usage from",int(startmem/ (2**20)), " MB to",int(endmem / (2**20)), "MB")
+        plot_all_pareto(logdir=logdir, graphs=graphs, outputname=args.opareto)
 
-    
+    endmem = process.memory_info().rss
+    print("Memory usage from", int(startmem / (2**20)),
+          " MB to", int(endmem / (2**20)), "MB")
