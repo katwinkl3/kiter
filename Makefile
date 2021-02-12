@@ -41,7 +41,7 @@ info :
 	@echo "make ubuntu_test: Run kiter with Ubuntu Docker"
 	@echo "make test: Run Kiter user-level test"
 	@echo "make sdf3_benchmarks: Download SDF3 benchmarks."
-	@echo "make sdf3: Download and Compile SDF3 (required for Travis CI)."	
+	@echo "make sdf3: Download and Compile SDF3 (required for comparative tests)."	
 	@echo "-------------------------------------------"
 
 all : release debug

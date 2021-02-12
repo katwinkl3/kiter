@@ -32,7 +32,7 @@ if md5sum --status -c "${TARGET}/${SDF3_ARCHIVE}.md5"; then
     echo "Archive already downloaded.";
 else
     rm -f "${TARGET}/${SDF3_ARCHIVE}"
-    wget --tries=1 http://www.es.ele.tue.nl/sdf3/download/files/releases/${SDF3_ARCHIVE} -O "${TARGET}/${SDF3_ARCHIVE}";
+    wget --tries=1 http://www.es.ele.tue.nl/sdf3/download/files/releases/"${SDF3_ARCHIVE}" -O "${TARGET}/${SDF3_ARCHIVE}";
 fi
 
 ## UNZIP AND COMPILE
@@ -73,7 +73,7 @@ else
     unzip -o "${TARGET}/${SDF3_ARCHIVE}" -d "${SDF3_CUSTOM_ROOT}";
     pushd "${SDF3_CUSTOM_ROOT}/" && patch --verbose -p1 < ../../sdf3.patch && popd || exit 1
     if [[ "$OSTYPE" == "darwin"* ]]; then
-	sed -i.bak "s/-fno-tree-fre//g" ${SDF3_CUSTOM_ROOT}/sdf3/etc/Makefile.inc
+	sed -i.bak "s/-fno-tree-fre//g" "${SDF3_CUSTOM_ROOT}/sdf3/etc/Makefile.inc"
     fi;
     pushd "${SDF3_CUSTOM_ROOT}/sdf3/" && make && popd || exit 1
 fi;

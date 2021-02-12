@@ -49,20 +49,22 @@ for BENCHMARK in "${BENCHMARK_ARRAY[@]}"; do
     echo "Throughput complete"
 
     
-    SDF3_RES="${SDF3_LOG}/${GRAPH_NAME}.txt"
-    KITER_RES="${KITER_LOG}/${GRAPH_NAME}.txt"
+    SDF3_RES_FILE="${SDF3_LOG}/${GRAPH_NAME}.txt"
+    KITER_RES_FILE="${KITER_LOG}/${GRAPH_NAME}.txt"
 
     
     if [ -f "${SDF3_RES}" ] && [ -f "${KITER_RES}" ]; then
         TOTAL_TESTS=$((TOTAL_TESTS + 1))
         printf "Checking %s" "${GRAPH_NAME}..."
-	equation="sqrt(($(cat $KITER_RES) -  $(cat $SDF3_RES) )^2) < 0.0001"
-	res=$(echo $equation | bc -l)
+	KITER_RES=$(cat "${KITER_RES_FILE}")
+	SDF3_RES=$(cat "${SDF3_RES_FILE}")
+	equation="sqrt((${KITER_RES} -  ${SDF3_RES})^2) < 0.0001"
+	res=$(echo "$equation" | bc -l)
         if [ "$res" -eq "1" ]; then
             PASSED=$((PASSED + 1))
             echo "results match!"
         else
-            echo "      Run 'diff $KITER_RES $SDF3_RES' to see differences"
+            echo "      Run 'diff \"$KITER_RES_FILE\" \"$SDF3_RES_FILE\"' to see differences"
         fi
     else
 	echo "***** One of them failed."
