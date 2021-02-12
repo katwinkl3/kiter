@@ -4,15 +4,12 @@
 import os
 import psutil
 import math
-import sys
 import time
 import pandas as pd
 import matplotlib.pyplot as plt
 
 
-methods = {"kiter": "red",
-           "periodic": "green",
-           "sdf3": "black"}
+methods = {"kiter": "red", "periodic": "green", "sdf3": "black"}
 
 
 def load_app_dse(logdir, appname, method, cols=["throughput", "cumulative duration"]):
@@ -37,8 +34,9 @@ def plot_dse(df, dsename=None, dsecolor=None):
     if len(y) == 0:
         return 0
 
-    steplines = plt.step(x, y, where="post", color=dsecolor,
-                         linewidth=0.4, alpha=0.5, label=dsename)  # 'C0o'
+    steplines = plt.step(
+        x, y, where="post", color=dsecolor, linewidth=0.4, alpha=0.5, label=dsename
+    )  # 'C0o'
     current_color = steplines[0].get_color()
 
     df["cummaxth"] = df["throughput"].cummax()
@@ -48,9 +46,10 @@ def plot_dse(df, dsename=None, dsecolor=None):
     y2 = dfgb.max()["throughput"]
 
     markerline, stemlines, baseline = plt.stem(
-        x2, y2, current_color, use_line_collection=True, basefmt=' ')
-    plt.setp(stemlines, 'linewidth', 2)
-    plt.setp(markerline, 'color', current_color)
+        x2, y2, current_color, use_line_collection=True, basefmt=" "
+    )
+    plt.setp(stemlines, "linewidth", 2)
+    plt.setp(markerline, "color", current_color)
 
     return y2.max()
 
@@ -84,13 +83,15 @@ def plot_pareto(df, dsename=None, dsecolor=None):
         return 0
 
     scatterpoints = plt.scatter(
-        df["storage distribution size"], df["period"], alpha=0.1, label=None)
-    steplines = plt.step(x, y, where="post", color=dsecolor,
-                         linewidth=1, alpha=1, label=dsename)  # 'C0o'
+        df["storage distribution size"], df["period"], alpha=0.1, label=None
+    )
+    steplines = plt.step(
+        x, y, where="post", color=dsecolor, linewidth=1, alpha=1, label=dsename
+    )  # 'C0o'
     current_color = steplines[0].get_color()
-    steppoints = plt.plot(x, y, 'C2o', alpha=0.5, label=None)
-    plt.setp(steppoints, 'color', current_color)
-    plt.setp(scatterpoints, 'color', current_color)
+    steppoints = plt.plot(x, y, "C2o", alpha=0.5, label=None)
+    plt.setp(steppoints, "color", current_color)
+    plt.setp(scatterpoints, "color", current_color)
 
     return y.max()
 
@@ -114,8 +115,7 @@ def plot_app_dse(logdir, appname):
     plt.xlabel("Execution time (ms)")
     plt.ylabel("Throughput (Hz)")
     plt.title(f"{appname}")
-    plt.legend(loc='upper left',
-               ncol=2,  borderaxespad=0.5)
+    plt.legend(loc="upper left", ncol=2, borderaxespad=0.5)
     if ymax:
         plt.ylim(bottom=0, top=1.3 * ymax)
 
@@ -132,8 +132,9 @@ def plot_app_pareto(logdir, appname):
 
         start_time = time.time()
         print("Load", appname, method)
-        df = load_app_dse(logdir, appname, method,   cols=[
-                          "throughput", "storage distribution size"])
+        df = load_app_dse(
+            logdir, appname, method, cols=["throughput", "storage distribution size"]
+        )
         print("Loaded after", time.time() - start_time, "sec.")
 
         start_time = time.time()
@@ -144,8 +145,7 @@ def plot_app_pareto(logdir, appname):
     plt.xlabel("Storage Distribution")
     plt.ylabel("Period (sec)")
     plt.title(f"{appname}")
-    plt.legend(loc='upper left',
-               ncol=2,  borderaxespad=0.5)
+    plt.legend(loc="upper left", ncol=2, borderaxespad=0.5)
     if ymax:
         plt.ylim(bottom=0, top=1.3 * ymax)
 
@@ -157,16 +157,16 @@ def plot_all(logdir, graphs, plotfunc=plot_app_dse, outputname=None):
     total = len(graphs)
     subx = max(1, int(math.sqrt(total)))
     suby = int(total / subx)
-    assert(subx >= 1)
+    assert subx >= 1
     while subx * suby < total:
         suby += 1
 
     print(f"Produce subplot of {subx} x {suby}")
-    fig = plt.figure(figsize=(suby*5, subx*5))
+    fig = plt.figure(figsize=(suby * 5, subx * 5))
 
     fig.subplots_adjust(hspace=0.4, wspace=0.4)
     for i, name in zip(range(1, len(graphs) + 1), graphs):
-        ax = fig.add_subplot(subx, suby, i)
+        _ = fig.add_subplot(subx, suby, i)
         plotfunc(logdir, name)
 
     print("Tight the layout...")
@@ -177,7 +177,7 @@ def plot_all(logdir, graphs, plotfunc=plot_app_dse, outputname=None):
         plt.savefig(outputname)
 
     plt.clf()
-    plt.cla()   # Clear axis
+    plt.cla()  # Clear axis
 
 
 def plot_all_pareto(logdir, graphs, outputname=None):
@@ -192,23 +192,36 @@ if __name__ == "__main__":
     import glob
     import argparse
 
-    parser = argparse.ArgumentParser(description='Generate DSE Plots')
-    parser.add_argument('graphs', metavar='G', type=str, nargs='*',
-                        help='Names of graphs to process')
-    parser.add_argument('--logdir', type=str,
-                        help='location of log dirs', required=True)
-    parser.add_argument('--opareto', type=str,
-                        help='location of the output dse plot file', required=False)
-    parser.add_argument('--odse', type=str,
-                        help='location of the output pareto plot file', required=False)
+    parser = argparse.ArgumentParser(description="Generate DSE Plots")
+    parser.add_argument(
+        "graphs", metavar="G", type=str, nargs="*", help="Names of graphs to process"
+    )
+    parser.add_argument(
+        "--logdir", type=str, help="location of log dirs", required=True
+    )
+    parser.add_argument(
+        "--opareto",
+        type=str,
+        help="location of the output dse plot file",
+        required=False,
+    )
+    parser.add_argument(
+        "--odse",
+        type=str,
+        help="location of the output pareto plot file",
+        required=False,
+    )
     args = parser.parse_args()
 
     logdir = args.logdir
     graphs = args.graphs
 
     if len(graphs) == 0:
-        graphs = list(set([x.split("/")[-1].split("_dselog")[0]
-                           for x in glob.glob(logdir + "/*")]))
+        graphs = list(
+            set(
+                [x.split("/")[-1].split("_dselog")[0] for x in glob.glob(logdir + "/*")]
+            )
+        )
     print("Process graphs:", graphs)
 
     process = psutil.Process(os.getpid())
@@ -223,5 +236,10 @@ if __name__ == "__main__":
         plot_all_pareto(logdir=logdir, graphs=graphs, outputname=args.opareto)
 
     endmem = process.memory_info().rss
-    print("Memory usage from", int(startmem / (2**20)),
-          " MB to", int(endmem / (2**20)), "MB")
+    print(
+        "Memory usage from",
+        int(startmem / (2 ** 20)),
+        " MB to",
+        int(endmem / (2 ** 20)),
+        "MB",
+    )

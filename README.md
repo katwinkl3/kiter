@@ -27,15 +27,16 @@ There are a few requirements to compile Kiter, instructions follow.
 * LibXml2
 * (GLPK)
 
+
 ### OSX
 
-`homebrew install gplk` 
+`homebrew install gplk`
 
 ### Ubuntu
 
 `apt-get install git make cmake gcc g++ libboost-all-dev libxml2-dev libglpk-dev glpk-utils`
 
-### Fedora 
+### Fedora
 
 `yum install -y glpk-devel cmake findutils unzip gcc make gcc-c++ libxml2-devel  boost-devel git  wget`
 
