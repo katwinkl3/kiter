@@ -7,17 +7,10 @@ jobs:
   - os: osx
     osx_image: xcode10.3
     compiler: clang
-    env: HOMEBREW_NO_AUTO_UPDATE=1
-    before_cache:
-       - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then brew cleanup; fi
-
 
 cache:
   directories:
     - ./benchmarks
-    - ./tools/sdf3
-    - $HOME/Library/Caches/Homebrew
-
 
 addons:
   homebrew:
@@ -33,8 +26,6 @@ addons:
     - libboost-all-dev
 
 script:
-  - mkdir -p ./tools/sdf3/
-  - ./tools/install_sdf3.sh ./tools/sdf3/
   - make sdf3_benchmarks
   - CTEST_OUTPUT_ON_FAILURE=1 make unit_test
   - make test
