@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
-import psutil
 import math
+import os
 import time
-import pandas as pd
-import matplotlib.pyplot as plt
 
+import matplotlib.pyplot as plt
+import pandas as pd
+import psutil
 
 methods = {"kiter": "red", "periodic": "green", "sdf3": "black"}
 
@@ -189,8 +189,8 @@ def plot_all_dse(logdir, graphs, outputname=None):
 
 
 if __name__ == "__main__":
-    import glob
     import argparse
+    import glob
 
     parser = argparse.ArgumentParser(description="Generate DSE Plots")
     parser.add_argument(
