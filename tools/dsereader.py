@@ -8,11 +8,14 @@ import time
 import matplotlib.pyplot as plt
 import pandas as pd
 import psutil
+import seaborn as sns
+
+sns.set_theme()
 
 methods = {"kiter": "red", "periodic": "green", "sdf3": "black"}
 
 
-def load_app_dse(logdir, appname, method, cols=["throughput", "cumulative duration"]):
+def load_app_dse(logdir, appname, method, cols=["throughput", "cumulative duration", "storage distribution size"]):
 
     filename = f"{logdir}/{appname}_dselog_{method}.csv"
 
@@ -22,6 +25,20 @@ def load_app_dse(logdir, appname, method, cols=["throughput", "cumulative durati
     except pd.errors.EmptyDataError:
         return pd.DataFrame()
 
+def extract_pareto (df) :
+    # sort by sd
+    pareto = df[df["throughput"] > 0].sort_values("storage distribution size").copy()
+    
+    # update th to max possible (assume ordered by sd)
+    pareto["throughput"] = pareto["throughput"].cummax()
+    
+    # Take the max th for each sd
+    pareto = pareto.groupby("storage distribution size").max().reset_index()
+
+    # Take the min sd for each th
+    pareto = pareto.groupby("throughput").min().reset_index()
+
+    return pareto
 
 def plot_dse(df, dsename=None, dsecolor=None):
 
@@ -45,11 +62,17 @@ def plot_dse(df, dsename=None, dsecolor=None):
     x2 = dfgb.min()["cumulative duration"]
     y2 = dfgb.max()["throughput"]
 
+
+    pareto = extract_pareto(df)
+    x2, y2 = pareto["cumulative duration"], pareto["throughput"]
+    
+    
     markerline, stemlines, baseline = plt.stem(
         x2, y2, current_color, use_line_collection=True, basefmt=" "
     )
-    plt.setp(stemlines, "linewidth", 2)
+    plt.setp(stemlines, "linewidth", 0.5)
     plt.setp(markerline, "color", current_color)
+    plt.setp(markerline, "markersize", 1)
 
     return y2.max()
 
@@ -59,20 +82,7 @@ def plot_pareto(df, dsename=None, dsecolor=None):
     if len(df) == 0:
         return 0
 
-    # remove null throughput
-    pareto = df[df["throughput"] > 0]
-
-    # sort by sd
-    pareto = pareto.sort_values("storage distribution size")
-
-    # update th to max possible (assume ordered by sd)
-    pareto["throughput"] = pareto["throughput"].cummax()
-
-    # Take the max th for each sd
-    pareto = pareto.groupby("storage distribution size").max().reset_index()
-
-    # Take the min sd for each th
-    pareto = pareto.groupby("throughput").min().reset_index()
+    pareto = extract_pareto(df)
 
     # Add period
     pareto["period"] = 1 / pareto["throughput"]
@@ -82,16 +92,20 @@ def plot_pareto(df, dsename=None, dsecolor=None):
     if len(y) == 0:
         return 0
 
+    markersize=3
+    linewidth=1
+    
     scatterpoints = plt.scatter(
-        df["storage distribution size"], df["period"], alpha=0.1, label=None
+        df["storage distribution size"], df["period"], s=markersize, alpha=0.1, label=None
     )
     steplines = plt.step(
-        x, y, where="post", color=dsecolor, linewidth=1, alpha=1, label=dsename
+        x, y, where="post", color=dsecolor, linewidth=linewidth, alpha=1, label=dsename
     )  # 'C0o'
     current_color = steplines[0].get_color()
-    steppoints = plt.plot(x, y, "C2o", alpha=0.5, label=None)
+    steppoints = plt.plot(x, y, "C2o", markersize=markersize, alpha=0.5, label=None)
     plt.setp(steppoints, "color", current_color)
     plt.setp(scatterpoints, "color", current_color)
+
 
     return y.max()
 
