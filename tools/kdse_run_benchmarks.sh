@@ -21,6 +21,23 @@ if [ "$#" -ge 2 ]; then
 fi
 
 
+if [ ! -x ${SDF3} ]; then
+    echo -ne "Error SDF3 is missing: ${SDF3} Not found.\n"
+    exit 1
+fi
+
+if [ ! -x ${CSDF3} ]; then
+    echo -ne "Error CSDF3 is missing: ${CSDF3} Not found.\n"
+    exit 1
+fi
+
+if [ ! -x ${KITER} ]; then
+    echo -ne "Error Kiter is missing: ${KITER} Not found.\n"
+    exit 1
+fi
+
+
+
 LOGDIR=$1
 
 
