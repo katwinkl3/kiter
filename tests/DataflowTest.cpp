@@ -168,11 +168,18 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE( test_suite_sample_dataflow , WITH_SAMPLE)
 
-BOOST_AUTO_TEST_CASE( test_sample )
+BOOST_AUTO_TEST_CASE( test_pipeline_sample )
 {
 
-    BOOST_REQUIRE_EQUAL( sample->getVerticesCount(), 3 );
-    BOOST_REQUIRE_EQUAL( sample->getEdgesCount(), 2 );
+    BOOST_REQUIRE_EQUAL( pipeline_sample->getVerticesCount(), 3 );
+    BOOST_REQUIRE_EQUAL( pipeline_sample->getEdgesCount(), 2 );
+
+}
+BOOST_AUTO_TEST_CASE( test_pipelie_sample )
+{
+
+    BOOST_REQUIRE_EQUAL( cycle_sample->getVerticesCount(), 3 );
+    BOOST_REQUIRE_EQUAL( cycle_sample->getEdgesCount(), 3 );
 
 }
 

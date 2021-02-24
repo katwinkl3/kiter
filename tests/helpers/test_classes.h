@@ -37,13 +37,16 @@ class WITH_VERBOSE {
 class WITH_SAMPLE : public WITH_VERBOSE {
 	public :
 
-	models::Dataflow * sample ;
+	models::Dataflow * pipeline_sample ;
+	models::Dataflow * cycle_sample ;
 	WITH_SAMPLE () {
-		sample = generateSample () ;
+		pipeline_sample = generateSamplePipeline () ;
+		cycle_sample = generateSampleCycle () ;
     	BOOST_TEST_MESSAGE( "WITH_SAMPLE Setup Done" );
 	}
 	~WITH_SAMPLE () {
-		delete sample;
+		delete pipeline_sample;
+		delete cycle_sample;
     	BOOST_TEST_MESSAGE( "WITH_SAMPLE Teardown Done" );
 	}
 };
