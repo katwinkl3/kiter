@@ -164,7 +164,7 @@ bool add_precedences_constraints (commons::GLPSol &g, commons::idx_t OMEGA_COL, 
 				TIME_UNIT omega_coef =  ((TIME_UNIT) alphamax) / ( (TIME_UNIT) N_t * (TIME_UNIT) NoKPeriodic_i_a );
 				int rowid = g.addRow(pred_row_name,commons::bound_s(commons::LOW_BOUND, (double) ltai ));
 
-				VERBOSE_EXTRA_DEBUG("      omega_coef =  " << omega_coef );
+				VERBOSE_EXTRA_DEBUG("      omega_coef =  " << ((TIME_UNIT) alphamax) << "/(" <<  (TIME_UNIT) N_t  << "*" <<  (TIME_UNIT) NoKPeriodic_i_a  << ") = " << omega_coef );
 
 				g.fastAddCoef(rowid ,OMEGA_COL    , (double) - omega_coef      );
 				if ( sajcolid != saicolid) {
@@ -435,7 +435,7 @@ models::Scheduling  algorithms::scheduling::CSDF_RealPeriodicScheduling_LP    (c
     			std::string colam1_name = START_COL_STR(name,a-1,1);
     			std::string cola_name   = START_COL_STR(name,a,1);
     			std::string omega_name  = OMEGA_COL_STR();
-    			EXEC_COUNT execution_count = dataflow->getPhasesQuantity(t) * dataflow->getNi(t);
+    			EXEC_COUNT execution_count = dataflow->getNi(t);
 
     			std::string row_name = "Fully_periodic_"  + name + "_" + cola_name;
 
