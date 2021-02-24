@@ -516,8 +516,8 @@ void algorithms::scheduling::CSDF_Real1PeriodicScheduling_LP (models::Dataflow* 
 	models::Scheduling res = CSDF_RealPeriodicScheduling_LP    (dataflow);
 
    TIME_UNIT omega = res.getGraphPeriod();
-   std::cout << "Maximum throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
-   std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
+   std::cout << "SPeriodic(LP) throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
+   std::cout << "SPeriodic(LP) period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
 
 }
 
@@ -527,8 +527,8 @@ void algorithms::scheduling::CSDF_Real1PeriodicScheduling_LP (models::Dataflow* 
 	models::Scheduling res = CSDF_KPeriodicScheduling_LP    (dataflow, generate1PeriodicVector(dataflow));
 
     TIME_UNIT omega = res.getGraphPeriod();
-    std::cout << "Maximum throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
-    std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
+    std::cout << "1Periodic(LP) throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
+    std::cout << "1Periodic(LP) period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
 
 }
 
@@ -538,8 +538,8 @@ void algorithms::scheduling::CSDF_Real1PeriodicScheduling_LP (models::Dataflow* 
 	models::Scheduling res = CSDF_KPeriodicScheduling_LP    (dataflow, generateNPeriodicVector(dataflow));
 
     TIME_UNIT omega = res.getGraphPeriod();
-    std::cout << "Maximum throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
-    std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
+    std::cout << "NPeriodic(LP) throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
+    std::cout << "NPeriodic(LP) period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
 
 }
 

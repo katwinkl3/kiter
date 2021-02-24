@@ -32,7 +32,7 @@ for BENCHMARK in "${BENCHMARK_ARRAY[@]}"; do
     echo "running Throughput on ${GRAPH_NAME}...";
     # generate respective pareto logs
     echo "${KITER}" -f "${BENCHMARK}" -a KPeriodicThroughput;
-    ${KITER} -f "${BENCHMARK}" -a KPeriodicThroughput | grep "Maximum throughput" | sed -E "s/.*is\s+(.*)\s*/\1/"  >  "${KITER_LOG}/${GRAPH_NAME}".txt
+    ${KITER} -f "${BENCHMARK}" -a KPeriodicThroughput | grep " throughput" | sed -E "s/.*is\s+(.*)\s*/\1/"  >  "${KITER_LOG}/${GRAPH_NAME}".txt
     
     if head -n 3 "${BENCHMARK}" | grep -q csdf ; then
 	echo "${SDF3ANALYSIS_CSDF}" --graph "${BENCHMARK}" --algo throughput
