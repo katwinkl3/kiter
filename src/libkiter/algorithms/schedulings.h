@@ -38,9 +38,6 @@ void BufferlessNoCScheduling(models::Dataflow* const  dataflow, parameters_list_
 		void bufferlessKPeriodicScheduling (models::Dataflow* const  dataflow, parameters_list_t params) ;
 
 
-		void CSDF_RPeriodicScheduling (models::Dataflow*  dataflow, parameters_list_t );
-
-
 
 		models::Scheduling CSDF_KPeriodicScheduling       (const models::Dataflow* const dataflow) ;
 		const periodicity_vector_t generate1PeriodicVector(const models::Dataflow* dataflow);
@@ -61,10 +58,6 @@ void BufferlessNoCScheduling(models::Dataflow* const  dataflow, parameters_list_
 
 
 // Recent stuff
-
-ADD_TRANSFORMATION(RPeriodic,
-transformation_t({ "RPeriodic" , "Fully periodic scheduling for CSDF", algorithms::scheduling::CSDF_RPeriodicScheduling}));
-
 
 ADD_TRANSFORMATION(REALLP1,
 transformation_t({ "REALLP1" , "Fully periodic scheduling for CSDF inefficient way", algorithms::scheduling::CSDF_Real1PeriodicScheduling_LP}));
