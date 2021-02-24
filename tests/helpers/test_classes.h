@@ -34,7 +34,7 @@ class WITH_VERBOSE {
     }
 };
 
-class WITH_SAMPLE : public WITH_VERBOSE {
+class WITH_SAMPLE {
 	public :
 
 	models::Dataflow * pipeline_sample ;
