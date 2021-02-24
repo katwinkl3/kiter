@@ -23,10 +23,10 @@ models::EventGraph* algorithms::generate_csdf_strictly_periodic_event_graph(cons
 		tid2event.insert({tid, models::SchedulingEvent(dataflow->getVertexId(t))});
 		eg->addEvent(tid2event.at(tid));
 
-		auto w = 1 /  dataflow->getNi(t) ; // We assume GetNi returns phit*qt
+		TIME_UNIT w = 1.0 /  dataflow->getNi(t) ; // We assume GetNi returns phit*qt
 		auto exec_times = dataflow->getVertexPhaseDuration(t);
 		TIME_UNIT d = *std::max_element(exec_times.begin(), exec_times.end());
-		models::SchedulingEventConstraint sec (tid2event.at(tid), tid2event.at(tid), - w, d, tid);
+		models::SchedulingEventConstraint sec (tid2event.at(tid), tid2event.at(tid),  w, d, tid);
 		eg->addEventConstraint(sec);
 
 	}
@@ -126,12 +126,22 @@ models::EventGraph* algorithms::generate_csdf_strictly_periodic_event_graph(cons
 	return eg;
 }
 
-void algorithms::compute_SPeriodic_throughput    (models::Dataflow*  dataflow, parameters_list_t ) {
+void algorithms::compute_SPeriodic_throughput    (models::Dataflow*  dataflow, parameters_list_t params) {
 	VERBOSE_ASSERT(computeRepetitionVector(dataflow), "Repetition vector failed.");
 	models::EventGraph* eg = algorithms::generate_csdf_strictly_periodic_event_graph(dataflow);
-	std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MaxCycleRatio();
+	std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
 
-	auto res = howard_res.first ;
+	TIME_UNIT res = howard_res.first ;
+
+	if (params.count("PRINTEG")) {
+		std::cout << eg->printXML() << std::endl;
+	}
+
+	if (params.count("PRINTCC")) {
+		std::cout << "MCRP: " << howard_res.first << std::endl;
+		std::cout << "Critical cycle: " <<commons::toString(howard_res.second) << std::endl;
+	}
+
 
 	std::cout << "SPeriodic throughput is "  << std::setw( 20 ) << std::setprecision( 9 ) <<     res    << std::endl;
 	std::cout << "SPeriodic period     is " << std::fixed      << std::setw( 20 ) << std::setprecision( 6 ) << 1.0/res    << std::endl;
