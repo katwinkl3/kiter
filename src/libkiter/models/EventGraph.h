@@ -65,6 +65,7 @@ public :
     EXEC_COUNT  inline  getTaskOc() const {return this->_n;};
     SchedulingEvent(ARRAY_INDEX t,PHASE_INDEX p,EXEC_COUNT n) : _t(t) , _p(p) , _n(n) {}
     SchedulingEvent(ARRAY_INDEX t,EXEC_COUNT n) : _t(t) , _p(1) , _n(n) {}
+    SchedulingEvent(ARRAY_INDEX t) : _t(t) , _p(1) , _n(1) {}
     std::string toString() const {return commons::toString<ARRAY_INDEX>(_t) + ',' + commons::toString<PHASE_INDEX>(_p) + ',' + commons::toString<EXEC_COUNT>(_n);}
     friend  bool operator==(const SchedulingEvent& lh, const SchedulingEvent& rh) ;
     friend  bool operator!=(const SchedulingEvent& lh, const SchedulingEvent& rh) ;
