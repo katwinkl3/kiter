@@ -27,12 +27,17 @@ PASSED=0
 
 # assumes that the benchmarks are all SDFs (rather than CSDFs) - use $SDF3ANALYSIS_CSDF for CSDF benchmarks
 for BENCHMARK in "${BENCHMARK_ARRAY[@]}"; do
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
     GRAPH=${BENCHMARK##*/}
     GRAPH_NAME=${GRAPH%.xml}
+    
+    SDF3_RES_FILE="${SDF3_LOG}/${GRAPH_NAME}.txt"
+    KITER_RES_FILE="${KITER_LOG}/${GRAPH_NAME}.txt"
+    
     echo "running Throughput on ${GRAPH_NAME}...";
     # generate respective pareto logs
     echo "${KITER}" -f "${BENCHMARK}" -a KPeriodicThroughput;
-    ${KITER} -f "${BENCHMARK}" -a KPeriodicThroughput | grep " throughput" | sed -E "s/.*is\s+(.*)\s*/\1/"  >  "${KITER_LOG}/${GRAPH_NAME}".txt
+    ${KITER} -f "${BENCHMARK}" -a KPeriodicThroughput | grep " throughput" | sed -E "s/.*is\s+(.*)\s*/\1/"  >  "${KITER_RES_FILE}"
     
     if head -n 3 "${BENCHMARK}" | grep -q csdf ; then
 	echo "${SDF3ANALYSIS_CSDF}" --graph "${BENCHMARK}" --algo throughput
@@ -42,19 +47,16 @@ for BENCHMARK in "${BENCHMARK_ARRAY[@]}"; do
 	${SDF3ANALYSIS_SDF} --graph "${BENCHMARK}" --algo throughput >  tmp.txt;
     fi
     
-    grep "thr" tmp.txt | sed -E "s/.*=\s+(.*)\s*/\1/"  >  "${SDF3_LOG}/${GRAPH_NAME}".txt
+    grep "thr" tmp.txt | sed -E "s/.*=\s+(.*)\s*/\1/"  >  "${SDF3_RES_FILE}" 
     rm tmp.txt
 	
     # convert SDF3 DSE output to CSV (from XML):
     echo "Throughput complete"
 
     
-    SDF3_RES_FILE="${SDF3_LOG}/${GRAPH_NAME}.txt"
-    KITER_RES_FILE="${KITER_LOG}/${GRAPH_NAME}.txt"
 
     
-    if [ -f "${SDF3_RES}" ] && [ -f "${KITER_RES}" ]; then
-        TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    if [ -f "${SDF3_RES_FILE}" ] && [ -f "${KITER_RES_FILE}" ]; then
         printf "Checking %s" "${GRAPH_NAME}..."
 	KITER_RES=$(cat "${KITER_RES_FILE}")
 	SDF3_RES=$(cat "${SDF3_RES_FILE}")
@@ -72,7 +74,7 @@ for BENCHMARK in "${BENCHMARK_ARRAY[@]}"; do
 done
 
 if [ $PASSED -eq $TOTAL_TESTS ]; then
-    echo "All tests passed; Throughput produce identical results!"
+    echo "$PASSED/$TOTAL_TESTS tests passed; Throughput produce identical results!"
 else
     echo "$PASSED/$TOTAL_TESTS matching Throughput results"
 fi
