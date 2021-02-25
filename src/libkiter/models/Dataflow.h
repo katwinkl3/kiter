@@ -666,7 +666,7 @@ public :
                                        			reset_computation();boost::put(boost::edge_tokensize, this->getG(), c.e, ts);}
     inline  EXEC_COUNT          getEdgeOutPhasesCount   (const Edge c) const   {
     	EXEC_COUNT tmp =  boost::get(get(boost::edge_outputs, this->getG()), c.e).size();
-    	VERBOSE_DEBUG_ASSERT(this->getPhasesQuantity(this->getEdgeTarget(c)) == tmp, "Edge output spec does ot match task spec");
+    	VERBOSE_DEBUG_ASSERT(this->getPhasesQuantity(this->getEdgeTarget(c)) == tmp, "Edge (" << this->getEdgeName(c) << ") output spec (" << tmp << ") does not match task spec(" << this->getPhasesQuantity(this->getEdgeTarget(c)) << ")");
     	return tmp;
     }
     inline  EXEC_COUNT          getEdgeInPhasesCount   (const Edge c) const   {
