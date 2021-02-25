@@ -1122,9 +1122,10 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 		auto very_end = std::chrono::steady_clock::now();
 		double  duration = std::chrono::duration<double> (very_end-very_start).count() * 1000;
 
-		std::cout << "KPeriodic throughput is "  << std::setw( 20 ) << std::setprecision( 9 ) <<     res    << std::endl;
-		std::cout << "KPeriodic period     is " << std::fixed      << std::setw( 20 ) << std::setprecision( 6 ) << 1.0/res    << std::endl;
-		std::cout << "KPeriodic Execution Time     is " << std::fixed      << std::setw( 20 ) << std::setprecision( 6 ) << duration   << std::endl;
+		std::cout << "KPeriodic Throughput is "  << std::setw( 20 ) << std::setprecision( 9 ) <<     res    << std::endl;
+		std::cout << "KPeriodic Period is " << std::fixed      << std::setw( 20 ) << std::setprecision( 6 ) << 1.0/res    << std::endl;
+		std::cout << "KPeriodic Execution Time is " << std::fixed      << std::setw( 20 ) << std::setprecision( 6 ) << duration   << std::endl;
+		std::cout << "KPeriodic Scheduling Size is " << std::fixed      << std::setw( 20 ) << std::setprecision( 6 ) << total_ki   << std::endl;
 		}
 
 }

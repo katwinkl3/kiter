@@ -654,13 +654,35 @@ void printers::printXML    (models::Dataflow* const  dataflow, parameters_list_t
 
 }
 
-static EXEC_COUNT computeComplexity(models::Dataflow* const  dataflow) {
+static EXEC_COUNT sum_nt(models::Dataflow* const  dataflow) {
 	bool consistent = dataflow->is_consistent();
 	if (!consistent) { return 0; }
 
 	EXEC_COUNT total = 0;
 	{ForEachTask(dataflow,t) {
 		total += dataflow->getNi(t) ;
+	}}
+
+	return total;
+}
+static EXEC_COUNT sum_phit(models::Dataflow* const  dataflow) {
+	bool consistent = dataflow->is_consistent();
+	if (!consistent) { return 0; }
+
+	EXEC_COUNT total = 0;
+	{ForEachTask(dataflow,t) {
+		total += dataflow->getPhasesQuantity(t) ;
+	}}
+
+	return total;
+}
+static EXEC_COUNT sum_qt(models::Dataflow* const  dataflow) {
+	bool consistent = dataflow->is_consistent();
+	if (!consistent) { return 0; }
+
+	EXEC_COUNT total = 0;
+	{ForEachTask(dataflow,t) {
+		total += dataflow->getNi(t) / dataflow->getPhasesQuantity(t);
 	}}
 
 	return total;
@@ -710,12 +732,12 @@ void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list
 	std::cout << "Graph name     = " <<  dataflow->getGraphName() << std::endl;
 	std::cout << "Graph type     = " <<  dataflow->getGraphType() << std::endl;
 	std::cout << "Task count     = " <<  dataflow->getVerticesCount() << std::endl;
-	std::cout << "Channels total = " <<  dataflow->getEdgesCount() << std::endl;
-
-	EXEC_COUNT complexity = computeComplexity(dataflow) ;
+	std::cout << "Channel count = " <<  dataflow->getEdgesCount() << std::endl;
 
 	if (consistent) {
-		std::cout << "Complexity     = " <<  complexity << std::endl;
+		std::cout << "Sum(qt) = " <<  sum_qt(dataflow) << std::endl;
+		std::cout << "Sum(phit) = " <<  sum_phit(dataflow) << std::endl;
+		std::cout << "Sum(Nt=qt*phit) (complexity) = " <<  sum_nt(dataflow) << std::endl;
 	} else {
 		std::cout << "This dataflow graph is not consistent!" << std::endl;
 	}

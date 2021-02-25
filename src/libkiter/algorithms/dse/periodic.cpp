@@ -25,15 +25,14 @@ void algorithms::compute_csdf_dse_speriodic   (models::Dataflow* const  dataflow
 	};
 
     bool writeLogFiles = false;
-   	 std::string dirName = "./data/";
+   	 std::string logDirName = "./data/";
    	 // parse parameters for KDSE
    	 if (params.find("LOGDIR") != params.end()) { // log output of DSE (includes pareto points and all search points)
    		 writeLogFiles = true;
-   		 dirName = params["LOGDIR"];
+   		logDirName = params["LOGDIR"];
    	 } else {
    		 VERBOSE_WARNING("LOGDIR not specified");
    	 }
-   	  std::string logDirName = dirName + "/dse_logs/";
 
    	  std::ostream* dseout = &std::cout;
 
@@ -44,6 +43,7 @@ void algorithms::compute_csdf_dse_speriodic   (models::Dataflow* const  dataflow
    	  }
 
       algorithms::compute_csdf_dse_from_function (dataflow,sizing_fun, *dseout);
+
 
 	  if (writeLogFiles) {
 		  dseLog.close();
@@ -62,15 +62,14 @@ void algorithms::compute_csdf_dse_periodic   (models::Dataflow* const  dataflow,
 
 
 	 bool writeLogFiles = false;
-	 std::string dirName = "./data/";
+	 std::string logDirName = "./data/";
 	 // parse parameters for KDSE
 	 if (params.find("LOGDIR") != params.end()) { // log output of DSE (includes pareto points and all search points)
 		 writeLogFiles = true;
-		 dirName = params["LOGDIR"];
+		 logDirName = params["LOGDIR"];
 	 } else {
 		 VERBOSE_WARNING("LOGDIR not specified");
 	 }
-	  std::string logDirName = dirName + "/dse_logs/";
 
 	  std::ostream* dseout = &std::cout;
 
