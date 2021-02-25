@@ -1086,9 +1086,9 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 	VERBOSE_INFO( "K-periodic schedule - iterations count is " << iteration_count << "  final size is " << eg->getEventCount() << " events and " << eg->getConstraintsCount() << " constraints.");
 	delete eg;
 
-	EXEC_COUNT total_ki = 0;
+	EXEC_COUNT total_kiphit = 0;
 	{ForEachVertex(dataflow,t) {
-		total_ki += kvector[t];
+		total_kiphit += kvector[t] * dataflow->getPhasesQuantity(t);
 	}}
 
 
@@ -1125,7 +1125,7 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 		std::cout << "KPeriodic Throughput is "  << std::setw( 20 ) << std::setprecision( 9 ) <<     res    << std::endl;
 		std::cout << "KPeriodic Period is " << std::fixed      << std::setw( 20 ) << std::setprecision( 6 ) << 1.0/res    << std::endl;
 		std::cout << "KPeriodic Execution Time is " << std::fixed      << std::setw( 20 ) << std::setprecision( 6 ) << duration   << std::endl;
-		std::cout << "KPeriodic Scheduling Size is " << std::fixed      << std::setw( 20 ) << std::setprecision( 6 ) << total_ki   << std::endl;
+		std::cout << "KPeriodic Scheduling Size is " << std::fixed      << std::setw( 20 ) << std::setprecision( 6 ) << total_kiphit   << std::endl;
 		}
 
 }
