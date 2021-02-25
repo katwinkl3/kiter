@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE( test_cycle_generation )
 
 }
 
-BOOST_AUTO_TEST_CASE( test_MaxCycleRatio )
+BOOST_AUTO_TEST_CASE( test_MinCycleRatio )
 {
 
 	computeRepetitionVector(cycle_sample);
@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE( test_MaxCycleRatio )
 	models::EventGraph* eg = algorithms::generate_csdf_strictly_periodic_event_graph(cycle_sample);
 	std::cout << eg->printXML() << std::endl;
 	std::cout << "Looking for (Period:24) or (Thr:0.0416667)" << std::endl;
-	BOOST_CHECK_EQUAL ( 1 / eg->MaxCycleRatio().first , 24 );
+	BOOST_CHECK_CLOSE ( 1 / eg->MinCycleRatio().first , 24, 0.0001 );
 	delete eg;
 
 }
