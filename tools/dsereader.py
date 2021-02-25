@@ -12,7 +12,7 @@ import seaborn as sns
 
 sns.set_theme()
 
-methods = {"kiter": "red", "periodic": "green", "sdf3": "black"}
+methods = {"kiter": "red", "speriodic": "yellow",  "periodic": "green", "sdf3": "black"}
 
 
 def load_app_dse(logdir, appname, method, cols=["throughput", "cumulative duration", "storage distribution size"]):

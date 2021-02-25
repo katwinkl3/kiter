@@ -48,6 +48,7 @@ for graph in bipartite samplerate modem satellite fig8 h263decoder; do
     echo "Run ${graph}"
     ${COMMAND_PREFIX} ${KITER} -f ${SDF3_BENCH_DIR}${graph}.xml -a KPeriodicThroughputwithDSE -p LOGDIR="${LOGDIR}"  > /dev/null 2> /dev/null
     ${COMMAND_PREFIX} ${KITER} -f ${SDF3_BENCH_DIR}${graph}.xml -a PeriodicDSE -p LOGDIR="${LOGDIR}"  > /dev/null 2> /dev/null
+    ${COMMAND_PREFIX} ${KITER} -f ${SDF3_BENCH_DIR}${graph}.xml -a SPeriodicDSE -p LOGDIR="${LOGDIR}"  > /dev/null 2> /dev/null
     SDF3LOGDIR="${LOGDIR}" ${COMMAND_PREFIX} ${SDF3} --graph ${SDF3_BENCH_DIR}${graph}.xml --algo buffersize  > /dev/null 2> /dev/null
 done
 
@@ -55,6 +56,7 @@ for graph in BlackScholes Echo PDectect H264 JPEG2000; do
     echo "Run ${graph}"
     ${COMMAND_PREFIX} ${KITER} -f ${KITER_BENCH_DIR}${graph}.xml -a KPeriodicThroughputwithDSE -p LOGDIR="${LOGDIR}" > /dev/null 2> /dev/null
     ${COMMAND_PREFIX} ${KITER} -f ${KITER_BENCH_DIR}${graph}.xml -a PeriodicDSE -p LOGDIR="${LOGDIR}"  > /dev/null 2> /dev/null
+    ${COMMAND_PREFIX} ${KITER} -f ${KITER_BENCH_DIR}${graph}.xml -a SPeriodicDSE -p LOGDIR="${LOGDIR}"  > /dev/null 2> /dev/null
     SDF3LOGDIR="${LOGDIR}" ${COMMAND_PREFIX} ${CSDF3} --graph ${KITER_BENCH_DIR}${graph}.xml --algo buffersize > /dev/null 2> /dev/null
 done
 

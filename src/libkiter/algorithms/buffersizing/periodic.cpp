@@ -11,8 +11,10 @@
 #include <lp/glpsol.h>
 #include <models/Dataflow.h>
 #include <models/EventGraph.h>
+#include <algorithms/buffersizing.h>
 #include <algorithms/normalization.h>
 #include <algorithms/buffersizing/periodic.h>
+#include <algorithms/throughput/kperiodic.h>
 
 
 
@@ -23,11 +25,37 @@ void algorithms::compute_csdf_1periodic_memory   (models::Dataflow* const  dataf
     bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
     bool      gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
 
-	TOKEN_UNIT size = periodic_memory_sizing_csdf( dataflow, period, solve_ilp, gen_only);
 
-	 std::cout << "1Periodic size is " << size << std::endl;
+	  /// BEGIN $$$$$$$$$$$$$$$ This part compute a period if none provided
+	  std::map<Vertex,EXEC_COUNT> kvector = algorithms::scheduling::generate1PeriodicVector(dataflow);
+
+	  	kperiodic_result_t result = algorithms::KSchedule(dataflow,&kvector);
+
+	  	TIME_UNIT MIN_PERIOD = 1 / result.throughput;
+
+	  	if (MIN_PERIOD) {
+	  	   	VERBOSE_ASSERT (MIN_PERIOD <= period, "The period must be possible");
+	  	   	if (period == 0) {
+	  	   	period = MIN_PERIOD;
+	  	   		VERBOSE_WARNING("PERIOD set to " << period);
+	  	   	}
+	  	} else {
+	  		VERBOSE_ERROR ("Cannot compute the maximum period...");
+	  	}
+
+	  /// END $$$$$$$$$$$$$$$ This part compute a period if none provided
+
+	BufferSizingResult sizing_res = periodic_memory_sizing_csdf( dataflow, period, solve_ilp, gen_only);
+	if (sizing_res.is_valid()) {
+		std::cout << "Total buffer size : " << sizing_res.total_size()
+				  << " + 2 * " << dataflow->getVerticesCount() << " = "
+				  <<  sizing_res.total_size() + 2 * dataflow->getVerticesCount() << std::endl ;
+		 std::cout << "1Periodic size is " <<  sizing_res.total_size() << std::endl;
+	} else {
+		std::cout << "No solution" << std::endl;
+	}
 }
-TOKEN_UNIT algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  dataflow, TIME_UNIT PERIOD, bool INTEGERSOLVING, bool ilp_solving) {
+BufferSizingResult algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  dataflow, TIME_UNIT PERIOD, bool ilp_solving, bool gen_only) {
 
 	commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
 	if (ilp_solving) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
@@ -256,9 +284,9 @@ TOKEN_UNIT algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  d
 	// ilp_params.linear_method = commons::DUAL_LINEAR_METHOD;
 	//
 	// bool sol = g.solve(ilp_params);
-	if (ilp_solving)  {
+	if (gen_only)  {
 		g.writeMPSProblem();
-		return 0;
+		return BufferSizingResult(false);
 	}
 	bool sol = g.solveWith();
 

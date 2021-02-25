@@ -232,11 +232,12 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   std::string logDirName = dirName + "/dse_logs/";
   std::string debugXMLName = dirName + "/xmls/";
 
-  VERBOSE_ASSERT(boost::filesystem::is_directory(dirName), "Please create the log directory " << dirName << " or specify a different one with the LOGDIR parameter.");  // true, directory exists
-  boost::filesystem::create_directory(ppDirName);
-  boost::filesystem::create_directory(logDirName);
-  // boost::filesystem::create_directory(debugXMLName);
-
+  if (writeLogFiles) {
+	  VERBOSE_ASSERT(boost::filesystem::is_directory(dirName), "Please create the log directory " << dirName << " or specify a different one with the LOGDIR parameter.");  // true, directory exists
+	  boost::filesystem::create_directory(ppDirName);
+	  boost::filesystem::create_directory(logDirName);
+	  // boost::filesystem::create_directory(debugXMLName);
+  }
 
 
   std::string methodName;
@@ -382,6 +383,9 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
     dseLog.open(logDirName + dataflow_prime->getGraphName() + "_dselog" + methodName + ".csv");
     dseLog << "storage distribution size,throughput,channel quantities,computation duration,cumulative duration"
            << std::endl; // initialise headers
+  } else {
+	    std::cout << "storage distribution size,throughput,channel quantities,computation duration,cumulative duration"
+	           << std::endl; // initialise headers
   }
   
   // Start search algorithm
@@ -431,6 +435,12 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
              << checkDist.print_quantities_csv(dataflow_prime) << ","
              << execTime.count() << ","
              << cumulativeTime.count() << std::endl;
+    } else {
+        std::cout << checkDist.getDistributionSize() << ","
+               << checkDist.getThroughput() << ","
+               << checkDist.print_quantities_csv(dataflow_prime) << ","
+               << execTime.count() << ","
+               << cumulativeTime.count() << std::endl;
     }
 
     // Add storage distribution and computed throughput to set of minimal storage distributions
