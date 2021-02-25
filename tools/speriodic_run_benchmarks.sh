@@ -74,7 +74,7 @@ done
 ########## PRODUCE TABLES AND FIGURES #####################################
 
 
-./tools/dsereader.py --logdir ./logs/dse_logs/  level_2_bench5 level_3_bench11 level_3_bench18 level_5_bench2 level_6_bench8 --opareto randombench_pareto.png 
-./tools/dsereader.py --logdir ./logs/dse_logs/  Black-scholes echo MotionJPEG2000_CODEC_cad_V3 ViolaJones_Methode1 encoderH264  --opareto kiterbench_pareto.png
+./tools/dsereader.py --logdir ${LOGDIR} level_2_bench5 level_3_bench11 level_3_bench18 level_5_bench2 level_6_bench8 --opareto randombench_pareto.png 
+./tools/dsereader.py --logdir ${LOGDIR} Black-scholes echo MotionJPEG2000_CODEC_cad_V3 ViolaJones_Methode1 encoderH264  --opareto kiterbench_pareto.png
 
-./tools/generate_speriodic_table.py ./logs/speriodic_benchmark_throughput.log > speriodic_throughput.tex
+./tools/generate_speriodic_table.py ${THLOG} > speriodic_throughput.tex
