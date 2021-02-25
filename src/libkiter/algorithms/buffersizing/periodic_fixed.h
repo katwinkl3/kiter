@@ -24,7 +24,7 @@ namespace algorithms {
     bool generateMinMaxOffsets(models::Dataflow * const dataflow,TIME_UNIT OMEGA, std::map<Vertex,std::vector<TIME_UNIT> > & res);
     bool generateWiggersOffsets(models::Dataflow * const dataflow,TIME_UNIT OMEGA, std::map<Vertex,std::vector<TIME_UNIT> > & res);
 
-    void compute_periodic_fixed_memory                          (models::Dataflow* const  dataflow, std::map<Vertex,std::vector<TIME_UNIT> > & res, parameters_list_t params);
+    void compute_periodic_fixed_memory                          (models::Dataflow* const  dataflow, std::map<Vertex,std::vector<TIME_UNIT> > & res,  TIME_UNIT PERIOD , bool ilp_solving , bool gen_only);
 
     void compute_burst_memory                                   (models::Dataflow* const  dataflow, parameters_list_t params);
     void compute_average_memory                                 (models::Dataflow* const  dataflow, parameters_list_t params);

@@ -47,47 +47,64 @@
     }
 
    void algorithms::compute_burst_memory                                   (models::Dataflow* const  dataflow, parameters_list_t params) {
-       std::map<Vertex,std::vector<TIME_UNIT> > offsets;
+	   std::map<Vertex,std::vector<TIME_UNIT> > offsets;
        generateBurstOffsets(dataflow,offsets);
 
        VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-       TIME_UNIT PERIOD = 0 ;
-      	if (params.find("PERIOD")!= params.end() ) PERIOD =  commons::fromString<TIME_UNIT>(params["PERIOD"]);
-      	VERBOSE_ASSERT (PERIOD > 0, "The PERIOD must be defined");
-         checkOffsets(dataflow,PERIOD,offsets);
-       compute_periodic_fixed_memory(dataflow, offsets,params);
+
+
+       TIME_UNIT period    = commons::get_parameter<TIME_UNIT>(params, "PERIOD", 0.0) ;
+       bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
+       bool      gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
+
+       VERBOSE_ASSERT (period > 0, "The PERIOD must be defined");
+
+
+       checkOffsets(dataflow,period,offsets);
+       compute_periodic_fixed_memory(dataflow, offsets,period, solve_ilp, gen_only);
    }
    void algorithms::compute_average_memory                                   (models::Dataflow* const  dataflow, parameters_list_t params) {
-       std::map<Vertex,std::vector<TIME_UNIT> > offsets;
-       TIME_UNIT PERIOD = 0 ;
-      	if (params.find("PERIOD")!= params.end() ) PERIOD =  commons::fromString<TIME_UNIT>(params["PERIOD"]);
-      	VERBOSE_ASSERT (PERIOD > 0, "The PERIOD must be defined");
-         generateAverageOffsets(dataflow,PERIOD,offsets);
-       checkOffsets(dataflow,PERIOD,offsets);
-       compute_periodic_fixed_memory(dataflow, offsets,params);
+
+	   std::map<Vertex,std::vector<TIME_UNIT> > offsets;
+
+	   VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+
+
+	   TIME_UNIT period    = commons::get_parameter<TIME_UNIT>(params, "PERIOD", 0.0) ;
+	   bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
+	    bool      gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
+
+	   VERBOSE_ASSERT (period > 0, "The PERIOD must be defined");
+
+
+	   generateAverageOffsets(dataflow,period,offsets);
+	   checkOffsets(dataflow,period,offsets);
+	   compute_periodic_fixed_memory(dataflow, offsets,period, solve_ilp, gen_only);
    }
 
    void algorithms::compute_minmax_memory                                   (models::Dataflow* const  dataflow, parameters_list_t params) {
        std::map<Vertex,std::vector<TIME_UNIT> > offsets;
        VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-       TIME_UNIT PERIOD = 0 ;
-      	if (params.find("PERIOD")!= params.end() ) PERIOD =  commons::fromString<TIME_UNIT>(params["PERIOD"]);
-      	VERBOSE_ASSERT (PERIOD > 0, "The PERIOD must be defined");
-         generateMinMaxOffsets(dataflow,PERIOD,offsets);
-       checkOffsets(dataflow,PERIOD,offsets);
-       VERBOSE_INFO("Begin main linear program");
-       compute_periodic_fixed_memory(dataflow, offsets,params);
+
+	   TIME_UNIT period    = commons::get_parameter<TIME_UNIT>(params, "PERIOD", 0.0) ;
+	   bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
+	    bool      gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
+
+	   generateMinMaxOffsets(dataflow,period,offsets);
+       checkOffsets(dataflow,period,offsets);
+	   compute_periodic_fixed_memory(dataflow, offsets,period, solve_ilp, gen_only);
    }
 
    void algorithms::compute_wiggers_memory                                   (models::Dataflow* const  dataflow, parameters_list_t params) {
        std::map<Vertex,std::vector<TIME_UNIT> > offsets;
-       TIME_UNIT PERIOD = 0 ;
-      	if (params.find("PERIOD")!= params.end() ) PERIOD =  commons::fromString<TIME_UNIT>(params["PERIOD"]);
-      	VERBOSE_ASSERT (PERIOD > 0, "The PERIOD must be defined");
 
-       generateWiggersOffsets(dataflow,PERIOD,offsets);
-       checkOffsets(dataflow,PERIOD,offsets);
-       compute_periodic_fixed_memory(dataflow, offsets,params);
+	   TIME_UNIT period    = commons::get_parameter<TIME_UNIT>(params, "PERIOD", 0.0) ;
+	   bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
+	    bool      gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
+
+       generateWiggersOffsets(dataflow,period,offsets);
+       checkOffsets(dataflow,period,offsets);
+	   compute_periodic_fixed_memory(dataflow, offsets,period, solve_ilp, gen_only);
    }
 
 
@@ -605,308 +622,312 @@
 
 
 
-void algorithms::compute_periodic_fixed_memory   (models::Dataflow* const  dataflow, std::map<Vertex,std::vector<TIME_UNIT> > & offsets,  parameters_list_t params) {
+   void algorithms::compute_periodic_fixed_memory   (models::Dataflow* const  dataflow, std::map<Vertex,std::vector<TIME_UNIT> > & offsets,  TIME_UNIT PERIOD , bool ilp_solving , bool gen_only) {
 
 
-	commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
+   	commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
+   	if (ilp_solving) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
 
-    VERBOSE_INFO("Please note you can specify the INTEGERSOLVING parameters.");
-	if (params.find("INTEGERSOLVING")!= params.end() ) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
+   	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
+   	VERBOSE_ASSERT (PERIOD > 0, "The period must be defined");
+   	VERBOSE_ASSERT (PERIOD != std::numeric_limits<TIME_UNIT>::infinity(), "The period must be defined");
+   	VERBOSE_ASSERT(dataflow->is_consistent(),"inconsistent graph");
 
-	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
+   	TIME_UNIT FREQUENCY = 1.0 / PERIOD;
 
-    // STEP 0 - CSDF Graph should be normalized
-    VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-    // STEP 1 - Compute normalized period
-    TIME_UNIT PERIOD = 0 ;
-	if (params.find("PERIOD")!= params.end() ) PERIOD =  commons::fromString<TIME_UNIT>(params["PERIOD"]);
-	VERBOSE_ASSERT (PERIOD > 0, "The PERIOD must be defined");
-    TIME_UNIT FREQUENCY = 1.0 / PERIOD;
+      	// STEP 0 - CSDF Graph should be normalized
+      	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
-    //##################################################################
-    // Linear program generation
-    //##################################################################
-    const std::string problemName =  "PeriodicSizingFixed_" + dataflow->getGraphName() + "_" + commons::toString(FREQUENCY) + "_" + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "INT" : "");
-    commons::GLPSol g = commons::GLPSol(problemName,commons::MIN_OBJ);
 
+   	//##################################################################
+   	// Linear program generation
+   	//##################################################################
+   	const std::string problemName =  "PeriodicSizingFixed_" + dataflow->getGraphName() + "_" + commons::toString(FREQUENCY) + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "_INT" : "");
+   	commons::GLPSol g = commons::GLPSol(problemName,commons::MIN_OBJ);
 
-    // Starting times
-    //******************************************************************
-    {ForEachVertex(dataflow,pVertex) {
-        std::string name = dataflow->getVertexName(pVertex);
-        g.addColumn("s_" + name,commons::KIND_CONTINUE,commons::bound_s(commons::LOW_BOUND,0),0);
-    }}
 
+       // Starting times
+       //******************************************************************
+       {ForEachVertex(dataflow,pVertex) {
+           std::string name = dataflow->getVertexName(pVertex);
+           g.addColumn("s_" + name,commons::KIND_CONTINUE,commons::bound_s(commons::LOW_BOUND,0),0);
+       }}
 
 
 
 
 
-    // Constraints
-    //******************************************************************
 
-    {ForEachEdge(dataflow,c) {
-          const Vertex source   = dataflow->getEdgeSource(c);
-          const Vertex target   = dataflow->getEdgeTarget(c);
+       // Constraints
+       //******************************************************************
 
-          const std::string  buffername= dataflow->getEdgeName(c);
-          const std::string  feedbackbuffername= "feedback_" + dataflow->getEdgeName(c);
-          const std::string  feedback_mo_name   = "Mop_" + feedbackbuffername;
-          const std::string  mo_name   = "Mop_" + buffername;
-          const std::string  sourceStr = dataflow->getVertexName(source);
-          const std::string  targetStr = dataflow->getVertexName(target);
+       {ForEachEdge(dataflow,c) {
+             const Vertex source   = dataflow->getEdgeSource(c);
+             const Vertex target   = dataflow->getEdgeTarget(c);
 
-          const TIME_UNIT  mu_i        = (TIME_UNIT) (PERIOD * dataflow->getPhasesQuantity(source)) / (TIME_UNIT) ( dataflow->getNi(source));
-          const TIME_UNIT  mu_j        = (TIME_UNIT) (PERIOD * dataflow->getPhasesQuantity(target)) / (TIME_UNIT) ( dataflow->getNi(target));
+             const std::string  buffername= dataflow->getEdgeName(c);
+             const std::string  feedbackbuffername= "feedback_" + dataflow->getEdgeName(c);
+             const std::string  feedback_mo_name   = "Mop_" + feedbackbuffername;
+             const std::string  mo_name   = "Mop_" + buffername;
+             const std::string  sourceStr = dataflow->getVertexName(source);
+             const std::string  targetStr = dataflow->getVertexName(target);
 
-          const TOKEN_UNIT  Zi        = dataflow->getEdgeIn(c);
-          const TOKEN_UNIT  Zj        = dataflow->getEdgeOut(c);
+             const TIME_UNIT  mu_i        = (TIME_UNIT) (PERIOD * dataflow->getPhasesQuantity(source)) / (TIME_UNIT) ( dataflow->getNi(source));
+             const TIME_UNIT  mu_j        = (TIME_UNIT) (PERIOD * dataflow->getPhasesQuantity(target)) / (TIME_UNIT) ( dataflow->getNi(target));
 
-          const TOKEN_UNIT  mop      =  commons::floor(dataflow->getPreload(c),dataflow->getFineGCD(c));
+             const TOKEN_UNIT  Zi        = dataflow->getEdgeIn(c);
+             const TOKEN_UNIT  Zj        = dataflow->getEdgeOut(c);
 
-          const TOKEN_UNIT  gcdz      = std::gcd((Zi),(Zj));
+             const TOKEN_UNIT  mop      =  commons::floor(dataflow->getPreload(c),dataflow->getFineGCD(c));
 
-          VERBOSE_DEBUG("Mu_i = " << mu_i);
-          VERBOSE_DEBUG("Mu_j = " << mu_j);
+             const TOKEN_UNIT  gcdz      = std::gcd((Zi),(Zj));
 
-          TOKEN_UNIT wai    = 0;  /* wai data write at start ai  */
-          TOKEN_UNIT cwai   = 0;  /* cwai cumul data write at start ai   */
-          TOKEN_UNIT cwaim1 = 0;  /* cwai cumul data write at start ai-1 */
+             VERBOSE_DEBUG("Mu_i = " << mu_i);
+             VERBOSE_DEBUG("Mu_j = " << mu_j);
 
-          TOKEN_UNIT raj    = 0;   /* raj data read at start aj  */
-          TOKEN_UNIT craj   = 0;   /* craj cumul data read at start aj   */
-          TOKEN_UNIT crajm1 = 0;   /* craj cumul data read at start aj-1 */
+             TOKEN_UNIT wai    = 0;  /* wai data write at start ai  */
+             TOKEN_UNIT cwai   = 0;  /* cwai cumul data write at start ai   */
+             TOKEN_UNIT cwaim1 = 0;  /* cwai cumul data write at start ai-1 */
 
-          // Feedback Buffer marking (in objectif, its Theta pondered)
-          g.addColumn("loopbackfix",CONTINUE_OR_INTEGER,commons::bound_s(commons::FIX_BOUND,dataflow->getVerticesCount()),2);
-          g.addColumn(mo_name,CONTINUE_OR_INTEGER,commons::bound_s(commons::FIX_BOUND,dataflow->getPreload(c)),(double)dataflow->getTokenSize(c));
-          g.addColumn(feedback_mo_name,CONTINUE_OR_INTEGER,commons::bound_s(commons::LOW_BOUND,0),(double)dataflow->getTokenSize(c));
+             TOKEN_UNIT raj    = 0;   /* raj data read at start aj  */
+             TOKEN_UNIT craj   = 0;   /* craj cumul data read at start aj   */
+             TOKEN_UNIT crajm1 = 0;   /* craj cumul data read at start aj-1 */
 
-          // init value for ai = 0
-          wai    = 0;
-          cwai   = 0;
-          cwaim1 = 0;
+             // Feedback Buffer marking (in objectif, its Theta pondered)
+             g.addColumn("loopbackfix",CONTINUE_OR_INTEGER,commons::bound_s(commons::FIX_BOUND,dataflow->getVerticesCount()),2);
+             g.addColumn(mo_name,CONTINUE_OR_INTEGER,commons::bound_s(commons::FIX_BOUND,dataflow->getPreload(c)),(double)dataflow->getTokenSize(c));
+             g.addColumn(feedback_mo_name,CONTINUE_OR_INTEGER,commons::bound_s(commons::LOW_BOUND,0),(double)dataflow->getTokenSize(c));
 
-          for(EXEC_COUNT ai = 1; ai <= dataflow->getPhasesQuantity(source) ; ai++) {
+             // init value for ai = 0
+             wai    = 0;
+             cwai   = 0;
+             cwaim1 = 0;
 
-              const TIME_UNIT       ltai    = dataflow->getVertexDuration(source,ai);
-              const TIME_UNIT       offsetai= offsets[source][(int)(ai-1)];
+             for(EXEC_COUNT ai = 1; ai <= dataflow->getPhasesQuantity(source) ; ai++) {
 
-              // update wai and cwai (new execution of ti)
-              wai = dataflow->getEdgeInPhase(c,ai);
-              cwai += wai;
+                 const TIME_UNIT       ltai    = dataflow->getVertexDuration(source,ai);
+                 const TIME_UNIT       offsetai= offsets[source][(int)(ai-1)];
 
-              // init value for aj = 0
-              raj    = 0;
-              craj   = 0;
-              crajm1 = 0;
+                 // update wai and cwai (new execution of ti)
+                 wai = dataflow->getEdgeInPhase(c,ai);
+                 cwai += wai;
 
-              for(EXEC_COUNT  aj = 1; aj <= dataflow->getPhasesQuantity(target) ; aj++) {
+                 // init value for aj = 0
+                 raj    = 0;
+                 craj   = 0;
+                 crajm1 = 0;
 
-                  const TIME_UNIT       ltaj    = dataflow->getVertexDuration(target,aj);
-                  const TIME_UNIT       offsetaj= offsets[target][(int)(aj-1)];
+                 for(EXEC_COUNT  aj = 1; aj <= dataflow->getPhasesQuantity(target) ; aj++) {
 
-                  // update raj and craj (new execution of tj)
-                  raj = dataflow->getEdgeOutPhase(c,aj);
-                  craj += raj;
-
-                  // *** Normal Buffer constraint computation
-                  const TOKEN_UNIT  Ha        =   std::max((TOKEN_UNIT)0, wai - raj);
-                  const TOKEN_UNIT  alphamin  =   commons::ceil(Ha + craj - cwai - mop,gcdz);
-                  const TOKEN_UNIT  alphamax  =   commons::floor(  craj - cwaim1 - mop - 1 ,gcdz);
-
-
-                  if (alphamin <= alphamax) { // check if contraint exist
-                       const std::string pred_row_name = "precedence_" + buffername + "_" + commons::toString<EXEC_COUNT>(ai) + "_" + commons::toString<EXEC_COUNT>(aj);
-                       TIME_UNIT coef = offsetai - offsetaj + ltai + (TIME_UNIT) alphamax * (TIME_UNIT) ( mu_i /  (TIME_UNIT) Zi);
-                       VERBOSE_DEBUG("LP : s_" <<  targetStr  << " - " << "s_"  <<  sourceStr  << " >= " << offsetai << " - " <<  offsetaj << " + " <<  ltai << " + " << (TIME_UNIT) alphamax << " * (" << mu_i << "/" << Zi <<  ")");
-                       VERBOSE_DEBUG("     s_" <<  targetStr  << " - " << "s_"  <<  sourceStr  << " >= " << coef);
-
-                       g.addRow(pred_row_name,commons::bound_s(commons::LOW_BOUND, (double) coef));
-                       if ((source != target)) {
-                                g.addCoef(pred_row_name ,"s_" + targetStr    ,  1        );
-                                g.addCoef(pred_row_name ,"s_" + sourceStr    , -1        );
-                       }
-                  }
-
-                  // *** Feedback Buffer constraint computation
-                  if ( std::min (wai,raj) > 0) { // best know constraint test for the moment (should be improve)
-                      const std::string pred_row_name = "precedence_" + feedbackbuffername + "_" +
-                              commons::toString<EXEC_COUNT>(aj) + "_" + commons::toString<EXEC_COUNT>(ai);
-                      const std::string local_mo_name = feedback_mo_name  + "_" + commons::toString<EXEC_COUNT>(ai) + "_" + commons::toString<EXEC_COUNT>(aj) ;
-
-                      //TOKEN_UNIT      quot = commons::floor(- crajm1 + cwai  - gcdz,gcdz);
-                      //TOKEN_UNIT      rem =  TOKEN_UNIT - quot;
-                      //TIME_UNIT       coef     =  ltaj  + (TIME_UNIT) ( mu_j /  (TIME_UNIT) Zj) * quot;
-                      TIME_UNIT       coef     =  ltaj - offsetai + offsetaj  ;
-                      //VERBOSE_DEBUG(" add feedback coef, " << ltaj << " + " << (TIME_UNIT)  (quot - gcdz) << " * " << mu_j << "=" << coef);
-
-                        g.addColumn(local_mo_name,CONTINUE_OR_INTEGER,commons::bound_s(),0);
-                        // main constraint
-                        g.addRow(pred_row_name  ,commons::bound_s(commons::LOW_BOUND,coef));
-                        g.addCoef(pred_row_name ,local_mo_name                     , -   (double) ((double) mu_j /  (double) Zj) * (double) gcdz );
-
-                        if ((source != target)) {
-                               g.addCoef(pred_row_name ,"s_" +  sourceStr    ,  1        );
-                               g.addCoef(pred_row_name ,"s_" +  targetStr    , -1        );
-                        }
-                        VERBOSE_DEBUG("LP : s_"  <<  sourceStr  << " - " << "s_"  << targetStr  << " >= " << ltaj<< "-"<< offsetai << "+"<< offsetaj  << " + f * " << gcdz <<  " *(" << mu_j << "/" << Zj <<  ")");
-                        VERBOSE_DEBUG("     s_"  <<  sourceStr  << " - " << "s_"  << targetStr  << " - f * " << (TIME_UNIT) ( mu_j /  (TIME_UNIT) Zj) * gcdz  << " >= " << coef);
-
-
-                        //local mop bound
-                        // -Mo -WaPred + Ra - 1 - gcdz + 1 \leq local_mo * gcdz  \leq -Mo -WaPred + Ra - 1
-                        // Low bound :
-                        //   -Mo -WaPred + Ra - 1 - gcdz + 1 \leq local_mo
-                        //   -Mo -gcdz * local_mo  \leq WaPred - Ra + gcdz
-                        //   Ra - WaPred - gcdz - gcdz * local_mo  \leq + Mo
-                        //   Mo \geq  Ra - WaPred - gcdz - gcdz * local_mo
-                        g.addRow (local_mo_name + "_L",commons::bound_s(commons::LOW_BOUND, - crajm1 + cwai  - gcdz ));
-                        g.addCoef(local_mo_name + "_L",local_mo_name        , (double) gcdz   );
-                        g.addCoef(local_mo_name + "_L",feedback_mo_name     , 1       );
-
-                        // Up bound (not necessary):
-                        //  local_mo * gcdz  \leq -Mo -WaPred + Ra - 1
-                        //  local_mo * gcdz + Mo \leq -WaPred + Ra - 1
-                        //g.addRow (local_mo_name + "_U",commons::bound_s(commons::UP_BOUND, - crajm1 + cwai  - 1 ));
-                        //g.addCoef(local_mo_name + "_U",local_mo_name        , gcdz   );
-                        //g.addCoef(local_mo_name + "_U",feedback_mo_name     , 1      );
-
-                        // resume
-                        //
-                        // -local_mo * gcdz - Mo \leq  WaPred - Ra + gcdz
-                        //  local_mo * gcdz + Mo \leq -WaPred + Ra - 1
-
-                  } // end of  if ( std::min (wai,raj) > 0)
-
-                  crajm1 = craj;
-              }
-
-
-              cwaim1 = cwai;
-          }
-
-    }}
-
-
-    //##################################################################
-    // SOLVE LP
-    //##################################################################
-
-    // commons::GLPParameters ilp_params = commons::getDefaultParams();
-
-    // ilp_params.general_doScale = true;
-    // ilp_params.linear_doAdvBasis = true;
-    // ilp_params.linear_method = commons::DUAL_LINEAR_METHOD;
-    //
-    // bool sol = g.solve(ilp_params);
-    VERBOSE_INFO("[CSDF K-periodic with fixed start times]  Start");
-
-    bool sol = g.solveWith();
-
-    VERBOSE_INFO("[CSDF K-periodic with fixed start times]  Solved");
-
-    //##################################################################
-    // GATHERING RESULTS
-    //##################################################################
-
-    // BUFFER SIZES
-    //******************************************************************
-    if (sol) {
-        DATA_UNIT total_buffer_size = 0;
-        // ** Good value retreiving method **
-        ARRAY_INDEX  edge_indice = 0; // FIXME
-        {ForEachEdge(dataflow,c) {
-            edge_indice++;
-              const Vertex source   = dataflow->getEdgeSource(c);
-              const Vertex target   = dataflow->getEdgeTarget(c);
-
-              const std::string  buffername= dataflow->getEdgeName(c);
-              const std::string  feedbackbuffername= "feedback_" + dataflow->getEdgeName(c);
-              const std::string  feedback_mo_name   = "Mop_" + feedbackbuffername;
-              const std::string  sourceStr = dataflow->getVertexName(source);
-              const std::string  targetStr = dataflow->getVertexName(target);
-
-              const TOKEN_UNIT  Zi        = dataflow->getEdgeIn(c);
-              const TOKEN_UNIT  Zj        = dataflow->getEdgeOut(c);
-
-              const TOKEN_UNIT  gcdz      = std::gcd((Zi),(Zj));
-
-
-              TOKEN_UNIT wai    = 0;  /* wai data write at start ai  */
-              TOKEN_UNIT cwai   = 0;  /* cwai cumul data write at start ai   */
-
-              TOKEN_UNIT raj    = 0;   /* raj data read at start aj  */
-              TOKEN_UNIT craj   = 0;   /* craj cumul data read at start aj   */
-              TOKEN_UNIT crajm1 = 0;   /* craj cumul data read at start aj-1 */
-
-              // init value for ai = 0
-              wai    = 0;
-              cwai   = 0;
-              TOKEN_UNIT feedbackmopmax =  commons::ceil(g.getValue(feedback_mo_name),1);
-              if (CONTINUE_OR_INTEGER == commons::KIND_INTEGER) feedbackmopmax = (TOKEN_UNIT) round(g.getIntegerValue(feedback_mo_name));
-              VERBOSE_DEBUG(dataflow->getEdgeName(c) << " : Starting with " << g.getValue(feedback_mo_name) << " => " << feedbackmopmax );
-              for(EXEC_COUNT ai = 1; ai <= dataflow->getPhasesQuantity(source) ; ai++) {
-
-                  // update wai and cwai (new execution of ti)
-                  wai = dataflow->getEdgeInPhase(c,ai);
-                  cwai += wai;
-
-                  // init value for aj = 0
-                  raj    = 0;
-                  craj   = 0;
-                  crajm1 = 0;
-
-                  for(EXEC_COUNT  aj = 1; aj <= dataflow->getPhasesQuantity(target) ; aj++) {
-
-                      // update raj and craj (new execution of tj)
-                      raj = dataflow->getEdgeOutPhase(c,aj);
-                      craj += raj;
-
-                      //   -Mo -WaPred + Ra - 1 - gcdz + 1 \leq local_mo
-                      //   -Mo -gcdz * local_mo  \leq WaPred - Ra + gcdz
-                      //   -Mo \leq WaPred - Ra + gcdz  + gcdz * local_mo
-                      //   Mo   >= -  WaPred + Ra - gcdz - gcdz * local_mo
-
-
-                      const std::string pred_row_name = "precedence_" + feedbackbuffername + "_" + commons::toString<EXEC_COUNT>(aj) + "_" + commons::toString<EXEC_COUNT>(ai);
-                      const std::string local_coef = feedback_mo_name  + "_" + commons::toString<EXEC_COUNT>(ai) + "_" + commons::toString<EXEC_COUNT>(aj) ;
-
-                      if (!g.haveValue(local_coef)) {
-                          if (std::min(wai,raj) > 0 ) VERBOSE_FAILURE();
-                          continue; // skip null constraint
-                      }
-
-                      TOKEN_UNIT from_lp = commons::floor(g.getValue(local_coef),1);
-                      if (CONTINUE_OR_INTEGER == commons::KIND_INTEGER)
-                          from_lp =  (TOKEN_UNIT) round(g.getIntegerValue(local_coef));
-
-                      // *** Feedback Buffer constraint computation
-                      TOKEN_UNIT bound =  - from_lp * gcdz - crajm1 + cwai - gcdz;
-                      if (bound > feedbackmopmax) {
-                          VERBOSE_DEBUG("   -> new fmax => " << g.getValue(local_coef) << "=> " << from_lp);
-                    	  VERBOSE_DEBUG("   -> new bound = " <<  - from_lp <<  "*"  << gcdz << "-" << crajm1 << "+" <<cwai << "-" << gcdz<< "=" << bound );
-                    	  feedbackmopmax = bound;
-                      }
-                      crajm1 = craj;
-                  }
-              }
-
-              VERBOSE_INFO(dataflow->getEdgeName(c) << " :" << g.getValue(feedback_mo_name) << " => " << feedbackmopmax );
-              //TOKEN_UNIT from_integer_mop          = commons::floor(g.getIntegerValue(feedback_mo_name),1);
-
-              TOKEN_UNIT buffersize =  feedbackmopmax  + dataflow->getPreload(c);
-              total_buffer_size += buffersize * dataflow->getTokenSize(c);
-          }}
-
-          VERBOSE_INFO("Loopback buffers : " << dataflow->getVerticesCount());
-          std::cout << "Total buffer size : " << total_buffer_size
-                  << " + 2 * " << dataflow->getVerticesCount() << " = "
-                  << total_buffer_size + 2 * dataflow->getVerticesCount() << std::endl ;
-    } else {
-        VERBOSE_ERROR("No feasible solution");
-    }
-    return;
-
-
-}
+                     const TIME_UNIT       ltaj    = dataflow->getVertexDuration(target,aj);
+                     const TIME_UNIT       offsetaj= offsets[target][(int)(aj-1)];
+
+                     // update raj and craj (new execution of tj)
+                     raj = dataflow->getEdgeOutPhase(c,aj);
+                     craj += raj;
+
+                     // *** Normal Buffer constraint computation
+                     const TOKEN_UNIT  Ha        =   std::max((TOKEN_UNIT)0, wai - raj);
+                     const TOKEN_UNIT  alphamin  =   commons::ceil(Ha + craj - cwai - mop,gcdz);
+                     const TOKEN_UNIT  alphamax  =   commons::floor(  craj - cwaim1 - mop - 1 ,gcdz);
+
+
+                     if (alphamin <= alphamax) { // check if contraint exist
+                          const std::string pred_row_name = "precedence_" + buffername + "_" + commons::toString<EXEC_COUNT>(ai) + "_" + commons::toString<EXEC_COUNT>(aj);
+                          TIME_UNIT coef = offsetai - offsetaj + ltai + (TIME_UNIT) alphamax * (TIME_UNIT) ( mu_i /  (TIME_UNIT) Zi);
+                          VERBOSE_DEBUG("LP : s_" <<  targetStr  << " - " << "s_"  <<  sourceStr  << " >= " << offsetai << " - " <<  offsetaj << " + " <<  ltai << " + " << (TIME_UNIT) alphamax << " * (" << mu_i << "/" << Zi <<  ")");
+                          VERBOSE_DEBUG("     s_" <<  targetStr  << " - " << "s_"  <<  sourceStr  << " >= " << coef);
+
+                          g.addRow(pred_row_name,commons::bound_s(commons::LOW_BOUND, (double) coef));
+                          if ((source != target)) {
+                                   g.addCoef(pred_row_name ,"s_" + targetStr    ,  1        );
+                                   g.addCoef(pred_row_name ,"s_" + sourceStr    , -1        );
+                          }
+                     }
+
+                     // *** Feedback Buffer constraint computation
+                     if ( std::min (wai,raj) > 0) { // best know constraint test for the moment (should be improve)
+                         const std::string pred_row_name = "precedence_" + feedbackbuffername + "_" +
+                                 commons::toString<EXEC_COUNT>(aj) + "_" + commons::toString<EXEC_COUNT>(ai);
+                         const std::string local_mo_name = feedback_mo_name  + "_" + commons::toString<EXEC_COUNT>(ai) + "_" + commons::toString<EXEC_COUNT>(aj) ;
+
+                         //TOKEN_UNIT      quot = commons::floor(- crajm1 + cwai  - gcdz,gcdz);
+                         //TOKEN_UNIT      rem =  TOKEN_UNIT - quot;
+                         //TIME_UNIT       coef     =  ltaj  + (TIME_UNIT) ( mu_j /  (TIME_UNIT) Zj) * quot;
+                         TIME_UNIT       coef     =  ltaj - offsetai + offsetaj  ;
+                         //VERBOSE_DEBUG(" add feedback coef, " << ltaj << " + " << (TIME_UNIT)  (quot - gcdz) << " * " << mu_j << "=" << coef);
+
+                           g.addColumn(local_mo_name,CONTINUE_OR_INTEGER,commons::bound_s(),0);
+                           // main constraint
+                           g.addRow(pred_row_name  ,commons::bound_s(commons::LOW_BOUND,coef));
+                           g.addCoef(pred_row_name ,local_mo_name                     , -   (double) ((double) mu_j /  (double) Zj) * (double) gcdz );
+
+                           if ((source != target)) {
+                                  g.addCoef(pred_row_name ,"s_" +  sourceStr    ,  1        );
+                                  g.addCoef(pred_row_name ,"s_" +  targetStr    , -1        );
+                           }
+                           VERBOSE_DEBUG("LP : s_"  <<  sourceStr  << " - " << "s_"  << targetStr  << " >= " << ltaj<< "-"<< offsetai << "+"<< offsetaj  << " + f * " << gcdz <<  " *(" << mu_j << "/" << Zj <<  ")");
+                           VERBOSE_DEBUG("     s_"  <<  sourceStr  << " - " << "s_"  << targetStr  << " - f * " << (TIME_UNIT) ( mu_j /  (TIME_UNIT) Zj) * gcdz  << " >= " << coef);
+
+
+                           //local mop bound
+                           // -Mo -WaPred + Ra - 1 - gcdz + 1 \leq local_mo * gcdz  \leq -Mo -WaPred + Ra - 1
+                           // Low bound :
+                           //   -Mo -WaPred + Ra - 1 - gcdz + 1 \leq local_mo
+                           //   -Mo -gcdz * local_mo  \leq WaPred - Ra + gcdz
+                           //   Ra - WaPred - gcdz - gcdz * local_mo  \leq + Mo
+                           //   Mo \geq  Ra - WaPred - gcdz - gcdz * local_mo
+                           g.addRow (local_mo_name + "_L",commons::bound_s(commons::LOW_BOUND, - crajm1 + cwai  - gcdz ));
+                           g.addCoef(local_mo_name + "_L",local_mo_name        , (double) gcdz   );
+                           g.addCoef(local_mo_name + "_L",feedback_mo_name     , 1       );
+
+
+
+                           // resume
+                           //
+                           // -local_mo * gcdz - Mo \leq  WaPred - Ra + gcdz
+                           //  local_mo * gcdz + Mo \leq -WaPred + Ra - 1
+
+                     } // end of  if ( std::min (wai,raj) > 0)
+
+                     crajm1 = craj;
+                 }
+
+
+                 cwaim1 = cwai;
+             }
+
+       }}
+
+
+       //##################################################################
+       // SOLVE LP
+       //##################################################################
+
+       // commons::GLPParameters ilp_params = commons::getDefaultParams();
+
+       // ilp_params.general_doScale = true;
+       // ilp_params.linear_doAdvBasis = true;
+       // ilp_params.linear_method = commons::DUAL_LINEAR_METHOD;
+       //
+       // bool sol = g.solve(ilp_params);
+
+
+       if (gen_only)  {
+       	g.writeMPSProblem();
+       	return;
+       }
+
+
+       VERBOSE_INFO("[CSDF 1-periodic with fixed start times]  Start LP");
+
+
+       bool sol = g.solveWith();
+
+
+       VERBOSE_INFO("[CSDF 1-periodic with fixed start times]  LP Finished");
+
+       //##################################################################
+       // GATHERING RESULTS
+       //##################################################################
+
+       // BUFFER SIZES
+       //******************************************************************
+       if (sol) {
+           DATA_UNIT total_buffer_size = 0;
+           // ** Good value retreiving method **
+           ARRAY_INDEX  edge_indice = 0; // FIXME
+           {ForEachEdge(dataflow,c) {
+               edge_indice++;
+                 const Vertex source   = dataflow->getEdgeSource(c);
+                 const Vertex target   = dataflow->getEdgeTarget(c);
+
+                 const std::string  buffername= dataflow->getEdgeName(c);
+                 const std::string  feedbackbuffername= "feedback_" + dataflow->getEdgeName(c);
+                 const std::string  feedback_mo_name   = "Mop_" + feedbackbuffername;
+                 const std::string  sourceStr = dataflow->getVertexName(source);
+                 const std::string  targetStr = dataflow->getVertexName(target);
+
+                 const TOKEN_UNIT  Zi        = dataflow->getEdgeIn(c);
+                 const TOKEN_UNIT  Zj        = dataflow->getEdgeOut(c);
+
+                 const TOKEN_UNIT  gcdz      = std::gcd((Zi),(Zj));
+
+
+                 TOKEN_UNIT wai    = 0;  /* wai data write at start ai  */
+                 TOKEN_UNIT cwai   = 0;  /* cwai cumul data write at start ai   */
+
+                 TOKEN_UNIT raj    = 0;   /* raj data read at start aj  */
+                 TOKEN_UNIT craj   = 0;   /* craj cumul data read at start aj   */
+                 TOKEN_UNIT crajm1 = 0;   /* craj cumul data read at start aj-1 */
+
+                 // init value for ai = 0
+                 wai    = 0;
+                 cwai   = 0;
+                 TOKEN_UNIT feedbackmopmax =  commons::ceil(g.getValue(feedback_mo_name),1);
+                 if (CONTINUE_OR_INTEGER == commons::KIND_INTEGER) feedbackmopmax = (TOKEN_UNIT) round(g.getIntegerValue(feedback_mo_name));
+                 VERBOSE_DEBUG(dataflow->getEdgeName(c) << " : Starting with " << g.getValue(feedback_mo_name) << " => " << feedbackmopmax );
+                 for(EXEC_COUNT ai = 1; ai <= dataflow->getPhasesQuantity(source) ; ai++) {
+
+                     // update wai and cwai (new execution of ti)
+                     wai = dataflow->getEdgeInPhase(c,ai);
+                     cwai += wai;
+
+                     // init value for aj = 0
+                     raj    = 0;
+                     craj   = 0;
+                     crajm1 = 0;
+
+                     for(EXEC_COUNT  aj = 1; aj <= dataflow->getPhasesQuantity(target) ; aj++) {
+
+                         // update raj and craj (new execution of tj)
+                         raj = dataflow->getEdgeOutPhase(c,aj);
+                         craj += raj;
+
+                         //   -Mo -WaPred + Ra - 1 - gcdz + 1 \leq local_mo
+                         //   -Mo -gcdz * local_mo  \leq WaPred - Ra + gcdz
+                         //   -Mo \leq WaPred - Ra + gcdz  + gcdz * local_mo
+                         //   Mo   >= -  WaPred + Ra - gcdz - gcdz * local_mo
+
+
+                         const std::string pred_row_name = "precedence_" + feedbackbuffername + "_" + commons::toString<EXEC_COUNT>(aj) + "_" + commons::toString<EXEC_COUNT>(ai);
+                         const std::string local_coef = feedback_mo_name  + "_" + commons::toString<EXEC_COUNT>(ai) + "_" + commons::toString<EXEC_COUNT>(aj) ;
+
+                         if (!g.haveValue(local_coef)) {
+                             if (std::min(wai,raj) > 0 ) VERBOSE_FAILURE();
+                             continue; // skip null constraint
+                         }
+
+                         TOKEN_UNIT from_lp = commons::floor(g.getValue(local_coef),1);
+                         if (CONTINUE_OR_INTEGER == commons::KIND_INTEGER)
+                             from_lp =  (TOKEN_UNIT) round(g.getIntegerValue(local_coef));
+
+                         // *** Feedback Buffer constraint computation
+                         TOKEN_UNIT bound =  - from_lp * gcdz - crajm1 + cwai - gcdz;
+                         if (bound > feedbackmopmax) {
+                             VERBOSE_DEBUG("   -> new fmax => " << g.getValue(local_coef) << "=> " << from_lp);
+                       	  VERBOSE_DEBUG("   -> new bound = " <<  - from_lp <<  "*"  << gcdz << "-" << crajm1 << "+" <<cwai << "-" << gcdz<< "=" << bound );
+                       	  feedbackmopmax = bound;
+                         }
+                         crajm1 = craj;
+                     }
+                 }
+
+                 VERBOSE_INFO(dataflow->getEdgeName(c) << " :" << g.getValue(feedback_mo_name) << " => " << feedbackmopmax );
+                 //TOKEN_UNIT from_integer_mop          = commons::floor(g.getIntegerValue(feedback_mo_name),1);
+
+                 TOKEN_UNIT buffersize =  feedbackmopmax  + dataflow->getPreload(c);
+                 total_buffer_size += buffersize * dataflow->getTokenSize(c);
+             }}
+
+             VERBOSE_INFO("Loopback buffers : " << dataflow->getVerticesCount());
+             std::cout << "Total buffer size : " << total_buffer_size
+                     << " + 2 * " << dataflow->getVerticesCount() << " = "
+                     << total_buffer_size + 2 * dataflow->getVerticesCount() << std::endl ;
+       } else {
+           VERBOSE_ERROR("No feasible solution");
+       }
+       return;
+
+
+   }

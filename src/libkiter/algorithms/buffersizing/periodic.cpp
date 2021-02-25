@@ -17,19 +17,20 @@
 
 
 void algorithms::compute_csdf_1periodic_memory   (models::Dataflow* const  dataflow, parameters_list_t params) {
-    VERBOSE_INFO("Please note you can specify the INTEGERSOLVING and ILPGENERATIONONLY parameters.");
+    VERBOSE_INFO("Please note you can specify the ILP and GENONLY parameter flags.");
 
-    TIME_UNIT PERIOD = 0 ;
-	if (params.find("PERIOD")!= params.end() ) PERIOD =  commons::fromString<TIME_UNIT>(params["PERIOD"]);
-	TOKEN_UNIT size = periodic_memory_sizing_csdf( dataflow,  PERIOD,  params.find("INTEGERSOLVING")!= params.end() ,  params.find("ILPGENERATIONONLY")!= params.end() );
+    TIME_UNIT period    = commons::get_parameter<TIME_UNIT>(params, "PERIOD", 0.0) ;
+    bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
+    bool      gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
 
-	 VERBOSE_INFO("Size is " << size);
+	TOKEN_UNIT size = periodic_memory_sizing_csdf( dataflow, period, solve_ilp, gen_only);
+
+	 std::cout << "1Periodic size is " << size << std::endl;
 }
-
-TOKEN_UNIT algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  dataflow, TIME_UNIT PERIOD, bool INTEGERSOLVING, bool ILPGENERATIONONLY) {
+TOKEN_UNIT algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  dataflow, TIME_UNIT PERIOD, bool INTEGERSOLVING, bool ilp_solving) {
 
 	commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
-	if (INTEGERSOLVING) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
+	if (ilp_solving) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
 
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 	VERBOSE_ASSERT (PERIOD > 0, "The period must be defined");
@@ -38,10 +39,14 @@ TOKEN_UNIT algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  d
 
 	TIME_UNIT FREQUENCY = 1.0 / PERIOD;
 
+   	// STEP 0 - CSDF Graph should be normalized
+   	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+
+
 	//##################################################################
 	// Linear program generation
 	//##################################################################
-	const std::string problemName =  "PeriodicSizing_" + dataflow->getGraphName() + "_" + commons::toString(FREQUENCY) + "_" + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "INT" : "");
+	const std::string problemName =  "PeriodicSizing_" + dataflow->getGraphName() + "_" + commons::toString(FREQUENCY) + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "_INT" : "");
 	commons::GLPSol g = commons::GLPSol(problemName,commons::MIN_OBJ);
 
 
@@ -251,7 +256,7 @@ TOKEN_UNIT algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  d
 	// ilp_params.linear_method = commons::DUAL_LINEAR_METHOD;
 	//
 	// bool sol = g.solve(ilp_params);
-	if (ILPGENERATIONONLY)  {
+	if (ilp_solving)  {
 		g.writeMPSProblem();
 		return 0;
 	}
