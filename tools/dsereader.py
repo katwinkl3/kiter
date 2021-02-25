@@ -24,6 +24,8 @@ def load_app_dse(logdir, appname, method, cols=["throughput", "cumulative durati
         return df
     except pd.errors.EmptyDataError:
         return pd.DataFrame()
+    except FileNotFoundError:
+        return pd.DataFrame()
 
 def extract_pareto (df) :
     # sort by sd
