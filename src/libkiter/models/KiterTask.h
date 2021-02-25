@@ -10,10 +10,9 @@
 
 #include <map>
 #include <string>
+#include <commons/KiterRegistry.h>
 
 namespace models {class Dataflow;}
-
-typedef std::map<std::string,std::string> parameters_list_t;
 
 namespace models {
 	class KiterTask {

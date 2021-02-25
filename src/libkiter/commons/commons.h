@@ -10,6 +10,7 @@
 #define COMMONS_H_
 
 #include <commons/verbose.h>
+#include <commons/KiterRegistry.h>
 
 #include <numeric>
 #include <algorithm>
@@ -561,6 +562,21 @@ std::pair<entier,entier> extended_euclide (entier _a, entier _b, entier _c) {
 }
 
 
+
+template <typename VALUE_TYPE>
+VALUE_TYPE get_parameter ( parameters_list_t params , std::string name , VALUE_TYPE default_value) {
+
+	VALUE_TYPE value = default_value ;
+
+	 if (params.find(name)!= params.end() ) {
+		 value = commons::fromString<VALUE_TYPE>(params[name]);
+		 VERBOSE_INFO(name << " was to " << value);
+	 } else {
+		 VERBOSE_WARNING(name << " parameter is not found.");
+	 }
+
+	 return value;
+}
 
 }// end of commons namespace
 
