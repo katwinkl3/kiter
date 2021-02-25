@@ -101,43 +101,36 @@ std::vector<TOKEN_UNIT> inline stringlist2tokenlist (const std::vector<std::stri
 	return res;
 }
 
-void                        readSDF3OutputSpec      (models::Dataflow *to, const Edge c, const std::string rates) {
+
+
+std::pair<std::vector<TOKEN_UNIT>,std::vector<TOKEN_UNIT>>  StringRate2Vectors (const std::string rates) {
+
+	std::pair<std::vector<TOKEN_UNIT>,std::vector<TOKEN_UNIT>>  res ;
 
 	std::vector<std::string>  init_periodic = commons::split<std::string> (rates, INIT_PERIODIC_SEPARATOR);
 	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? commons::split<std::string> (init_periodic[0], ',') : std::vector<std::string>() ;
 	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? commons::split<std::string> (init_periodic[0], ',') : commons::split<std::string> (init_periodic[1], ',') ;
 
 
-	std::vector<TOKEN_UNIT>  init_cons  = stringlist2tokenlist (init_phases);
-	std::vector<TOKEN_UNIT>  periodic_cons  = stringlist2tokenlist (periodic_phases);
-
-
-
-	VERBOSE_ASSERT(periodic_cons.size() > 0, "Edges output rates must have a periodic pattern. ");
-
-	to->setEdgeOutInitPhases(c,init_cons);
-	to->setEdgeOutPhases(c,periodic_cons);
+	res.first  = stringlist2tokenlist (init_phases);
+	res.second    = stringlist2tokenlist (periodic_phases);
+	return res;
 
 }
 
+
+void                        readSDF3OutputSpec      (models::Dataflow *to, const Edge c, const std::string rates) {
+	auto cons = StringRate2Vectors (rates) ;
+	VERBOSE_ASSERT(cons.second.size() > 0, "Edges output rates must have a periodic pattern. ");
+	to->setEdgeOutInitPhases(c,cons.first);
+	to->setEdgeOutPhases(c,cons.second);
+}
+
 void                        readSDF3InputSpec      (models::Dataflow *to, const Edge c, const std::string rates) {
-
-	std::vector<std::string>  init_periodic = commons::split<std::string> (rates, INIT_PERIODIC_SEPARATOR);
-	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? commons::split<std::string> (init_periodic[0], ',') : std::vector<std::string>() ;
-	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? commons::split<std::string> (init_periodic[0], ',') : commons::split<std::string> (init_periodic[1], ',') ;
-
-
-
-	std::vector<TOKEN_UNIT>  init_prod  = stringlist2tokenlist (init_phases);
-	std::vector<TOKEN_UNIT>  periodic_prod  = stringlist2tokenlist (periodic_phases);
-
-
-
-
-	VERBOSE_ASSERT(periodic_prod.size() > 0, "Edges input rates must have a periodic pattern. ");
-	to->setEdgeInInitPhases(c,init_prod);
-	to->setEdgeInPhases(c,periodic_prod);
-
+	auto prod = StringRate2Vectors (rates) ;
+	VERBOSE_ASSERT(prod.second.size() > 0, "Edges input rates must have a periodic pattern. ");
+	to->setEdgeInInitPhases(c,prod.first);
+	to->setEdgeInPhases(c,prod.second);
 }
 
 void readSDF3VertexPorts (models::Dataflow *to,xmlNodePtr taskNode) {
@@ -253,6 +246,8 @@ void readSDF3VertexTimings (models::Dataflow *to,xmlNodePtr taskNode) {
 		}
 	}
 
+
+
 	std::vector<std::string>  init_periodic = commons::split<std::string> (timings, INIT_PERIODIC_SEPARATOR);
 	std::vector<std::string>  init_phases = (init_periodic.size() == 2) ? commons::splitSDF3List (init_periodic[0]) : std::vector<std::string>() ;
 	std::vector<std::string>  periodic_phases = (init_periodic.size() == 1) ? commons::splitSDF3List (init_periodic[0]) : commons::splitSDF3List (init_periodic[1]) ;
@@ -276,19 +271,15 @@ void readSDF3VertexTimings (models::Dataflow *to,xmlNodePtr taskNode) {
 
 
 bool onlyOneRate(std::string rates) {
-	std::vector<std::string>  init_periodic = commons::split <std::string> (rates, INIT_PERIODIC_SEPARATOR);
-	if (init_periodic.size() > 1) {
-		for (auto x : init_periodic) {
-			if (not onlyOneRate(x)) {return false;}
-		}
-	} else {
-		auto rate = init_periodic[0];
-		// '1' and ',' alternate
-		bool val = (rate[0] == '1') ? true : false;
-		for (unsigned int i = 0 ; i < rate.size() ; i++) {
-			if (!(val?rate[i]=='1':rate[i]==',')) return false;
-			val = !val;
-		}
+
+
+	auto res = StringRate2Vectors (rates);
+
+	for (auto x : res.first) {
+		if (x != 1) return false;
+	}
+	for (auto x : res.second) {
+		if (x != 1) return false;
 	}
 
 	return true;
