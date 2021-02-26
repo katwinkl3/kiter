@@ -62,6 +62,13 @@ fi;
 
 cd "${ORIGIN}" || exit 1
 
+
+if find "${SDF3_ROOT}"/sdf3/build/release/*/bin/sdf3analysis-csdf; then
+    SDF3ANALYSIS=$(find "${SDF3_ROOT}"/sdf3/build/release/*/bin/sdf3analysis-csdf)
+    echo "EXECUTABLE FOUND SDF3ANALYSIS=${SDF3ANALYSIS} !"
+fi
+
+
 if "${SDF3ANALYSIS}" 2>&1 | grep -q version; then
     echo "Script finished and binary is found.";
 else
@@ -95,6 +102,11 @@ else
 fi;
 
 cd "${ORIGIN}" || exit 1
+
+if find "${SDF3_CUSTOM_ROOT}"/sdf3/build/release/*/bin/sdf3analysis-csdf; then
+    SDF3ANALYSIS_CUSTOM=$(find "${SDF3_CUSTOM_ROOT}"/sdf3/build/release/*/bin/sdf3analysis-csdf)
+    echo "EXECUTABLE FOUND SDF3ANALYSIS_CUSTOM=${SDF3ANALYSIS_CUSTOM} !"
+fi
 
 if "${SDF3ANALYSIS_CUSTOM}" 2>&1 | grep -q version; then
     echo "Script finished and binary is found.";
