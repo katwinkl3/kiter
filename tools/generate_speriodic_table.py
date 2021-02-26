@@ -42,8 +42,6 @@ def print_schedule_size_table(df):
 
     newnames = {
         "Filename": "Graph",
-        "tasks": "#tasks",
-        "buffers": "#buffers",
         "tasks": "Strictly Periodic",
         "sumphit": "1-Periodic",
         "sumki": "K-Periodic",
@@ -63,7 +61,6 @@ def print_schedule_size_table(df):
 
 if __name__ == "__main__":
     import argparse
-    import glob
 
     parser = argparse.ArgumentParser(description="Generate Latex table for throughput")
     parser.add_argument("filename", metavar="F", type=str, help="CSV file to process")
