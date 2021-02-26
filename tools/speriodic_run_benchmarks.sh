@@ -35,7 +35,7 @@ mkdir -p "${LOGDIR}"
 
 ########## THROUGHPUT NUMBERS OUTPUT AS CSV #################
 
-echo "Filename;tasks;buffers;sumqt;sumphit;sumnt;sumki;SPeriodic;1Periodic;KPeriodic" > ${THLOG}
+echo "Filename;tasks;buffers;sumqt;sumphit;sumnt;sumki;SPeriodic;1Periodic;KPeriodic" > "${THLOG}"
 for f in $(find "${BENCH_DIR}/IB5CSDF" "${BENCH_DIR}/AGB5CSDF/" -type f); do
     #echo "Run ${f}"
     THS=$(${COMMAND_PREFIX} ${KITER} -f "$f" -a SPeriodicThroughput | grep throughput | sed "s/.* \([^ ]\)/\1/g")
@@ -55,7 +55,7 @@ for f in $(find "${BENCH_DIR}/IB5CSDF" "${BENCH_DIR}/AGB5CSDF/" -type f); do
     sphit=$(./Release/bin/kiter -f "$f" -a PrintInfos| grep "(phit)" | sed "s/.* \([^ ]\)/\1/g")
     snt=$(./Release/bin/kiter -f "$f" -a PrintInfos| grep "Nt=" | sed "s/.* \([^ ]\)/\1/g")
 
-    echo "${f};${tcount};${bcount};${sqt};${sphit};${snt};${ski};${THS};${TH1};${THK}" >> ${THLOG}
+    echo "${f};${tcount};${bcount};${sqt};${sphit};${snt};${ski};${THS};${TH1};${THK}" >> "${THLOG}"
 done
 
 
@@ -74,7 +74,7 @@ done
 ########## PRODUCE TABLES AND FIGURES #####################################
 
 
-./tools/dsereader.py --logdir ${LOGDIR} level_2_bench5 level_3_bench11 level_3_bench18 level_5_bench2 level_6_bench8 --opareto randombench_pareto.png 
-./tools/dsereader.py --logdir ${LOGDIR} Black-scholes echo MotionJPEG2000_CODEC_cad_V3 ViolaJones_Methode1 encoderH264  --opareto kiterbench_pareto.png
+./tools/dsereader.py --logdir "${LOGDIR}" level_2_bench5 level_3_bench11 level_3_bench18 level_5_bench2 level_6_bench8 --opareto randombench_pareto.png 
+./tools/dsereader.py --logdir "${LOGDIR}" Black-scholes echo MotionJPEG2000_CODEC_cad_V3 ViolaJones_Methode1 encoderH264  --opareto kiterbench_pareto.png
 
-./tools/generate_speriodic_table.py ${THLOG} > speriodic_throughput.tex
+./tools/generate_speriodic_table.py "${THLOG}" > speriodic_throughput.tex
