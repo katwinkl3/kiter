@@ -27,8 +27,4 @@ addons:
     - libboost-all-dev
 
 script:
-  - pip install psutil pandas matplotlib --user
-  - ./tools/install_sdf3.sh ./tools/sdf3/
-  - make sdf3_benchmarks
   - CTEST_OUTPUT_ON_FAILURE=1 make unit_test
-  - make test
