@@ -4,7 +4,7 @@ set -x
 
 
 if [ "$#" -ne 1 ]; then
-    echo -ne "Error\nUsage: $0 TARGET\n"
+    echo -ne "Error\nUsage: $0 TARGET\nTARGET can be ./tools/sdf3/\n"
     exit 1
 fi
 
@@ -39,9 +39,17 @@ fi
 
 SDF3_ROOT="${TARGET}/sdf3_${SDF3_VERSION}/"
 
+SDF3ANALYSIS="${SDF3_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf"
+
+if find "${SDF3_ROOT}"/sdf3/build/release/*/bin/sdf3analysis-csdf; then
+    SDF3ANALYSIS=$(find "${SDF3_ROOT}"/sdf3/build/release/*/bin/sdf3analysis-csdf)
+    echo "EXECUTABLE FOUND SDF3ANALYSIS=${SDF3ANALYSIS} !"
+fi
 
 
-if "${SDF3_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" 2>&1 | grep -q version; then
+
+
+if "${SDF3ANALYSIS}" 2>&1 | grep -q version; then
     echo "Binary found, we assume it is done.";
 else
     rm -rf "${SDF3_ROOT}";
@@ -54,7 +62,7 @@ fi;
 
 cd "${ORIGIN}" || exit 1
 
-if "${SDF3_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" 2>&1 | grep -q version; then
+if "${SDF3ANALYSIS}" 2>&1 | grep -q version; then
     echo "Script finished and binary is found.";
 else
     echo "Error, sdf3analysis-csdf not found.";
@@ -65,8 +73,16 @@ fi;
 ## UNZIP, PATCH AND COMPILE THE CUSTOM VERSION
 
 SDF3_CUSTOM_ROOT="${TARGET}/sdf3_custom/"
-export SDF3LOGDIR=./logs 
-if "${SDF3_CUSTOM_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" 2>&1 | grep -q version; then
+export SDF3LOGDIR=./logs
+SDF3ANALYSIS_CUSTOM="${SDF3_CUSTOM_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf"
+
+if find "${SDF3_CUSTOM_ROOT}"/sdf3/build/release/*/bin/sdf3analysis-csdf; then
+    SDF3ANALYSIS_CUSTOM=$(find "${SDF3_CUSTOM_ROOT}"/sdf3/build/release/*/bin/sdf3analysis-csdf)
+    echo "EXECUTABLE FOUND SDF3ANALYSIS_CUSTOM=${SDF3ANALYSIS_CUSTOM} !"
+fi
+
+
+if "${SDF3ANALYSIS_CUSTOM}"  2>&1 | grep -q version; then
     echo "Binary found, we assume it is done.";
 else
     rm -rf "${SDF3_CUSTOM_ROOT}";
@@ -80,7 +96,7 @@ fi;
 
 cd "${ORIGIN}" || exit 1
 
-if "${SDF3_CUSTOM_ROOT}/sdf3/build/release/Linux/bin/sdf3analysis-csdf" 2>&1 | grep -q version; then
+if "${SDF3ANALYSIS_CUSTOM}" 2>&1 | grep -q version; then
     echo "Script finished and binary is found.";
 else
     echo "Error at the end of the script.";
