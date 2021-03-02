@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf3 type="csdf" version="1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <applicationGraph name='NiknamFig1'>
+    <csdf name='NiknamFig1' type='NiknamFig1'>
+      <actor name='T1' type='a'>
+	<port type='out' name='T11' rate='1,0,1'/>
+	<port type='out' name='T12' rate='0,1,0'/>
+	<port type='in'  name='T15' rate='0,1,1'/>
+      </actor>
+      <actor name='T2' type='a'>
+	<port type='in'   name='T21' rate='1'/>
+	<port type='out'  name='T23' rate='1'/>
+      </actor>
+      <actor name='T3' type='a'>
+	<port type='in'   name='T32' rate='1'/>
+	<port type='out'  name='T34' rate='1'/>
+      </actor>
+      <actor name='T4' type='a'>
+	<port type='in'  name='T43' rate='2,0'/>
+	<port type='in'  name='T44' rate='0,1'/>
+	<port type='out' name='T45' rate='1,1'/>
+      </actor>
+      <channel name='e1' srcActor='T1' srcPort='T11' dstActor='T2' dstPort='T21' size='1' initialTokens='0'/>
+      <channel name='e2' srcActor='T1' srcPort='T12' dstActor='T3' dstPort='T32' size='1' initialTokens='0'/>
+      <channel name='e3' srcActor='T2' srcPort='T23' dstActor='T4' dstPort='T43' size='1' initialTokens='0'/>
+      <channel name='e4' srcActor='T3' srcPort='T34' dstActor='T4' dstPort='T44' size='1' initialTokens='0'/>
+      <channel name='e5' srcActor='T4' srcPort='T45' dstActor='T1' dstPort='T15' size='1' initialTokens='2'/>
+    </csdf>
+
+    <csdfProperties>
+      <actorProperties actor='T1'>
+        <processor type='cluster_0' default='true'>
+          <executionTime time='1,2,1'/>
+        </processor>
+      </actorProperties>
+      <actorProperties actor='T2'>
+        <processor type='cluster_0' default='true'>
+          <executionTime time='2'/>
+        </processor>
+      </actorProperties>
+      <actorProperties actor='T3'>
+        <processor type='cluster_0' default='true'>
+          <executionTime time='3'/>
+        </processor>
+      </actorProperties>
+      <actorProperties actor='T4'>
+        <processor type='cluster_0' default='true'>
+          <executionTime time='2,3'/>
+        </processor>
+      </actorProperties>
+    </csdfProperties>
+  </applicationGraph>
+</sdf3>
