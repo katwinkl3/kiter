@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
  
-FIND_PACKAGE( GLPK    REQUIRED )
-#FIND_PACKAGE( GUROBI )
+FIND_PACKAGE( GLPK   REQUIRED)
+FIND_PACKAGE( GUROBI REQUIRED)
 
 #
 #  ######### COMPILE FLAGS ##########
@@ -67,9 +67,12 @@ TARGET_LINK_LIBRARIES              (kiter_commons PUBLIC  ${LIBXML2_LIBRARIES})
 ADD_LIBRARY			   (kiter_models SHARED   ${models_sources})
 TARGET_LINK_LIBRARIES              (kiter_models PUBLIC   kiter_commons )
 
+ADD_LIBRARY			   (kiter_printers   SHARED  ${printers_sources})
+TARGET_LINK_LIBRARIES  (kiter_printers   PUBLIC kiter_commons kiter_models)
 
 ADD_LIBRARY		(kiter_lp SHARED  ${lp_sources})
 TARGET_LINK_LIBRARIES   (kiter_lp PUBLIC   kiter_commons )
+
 
 if(GLPK_FOUND)
     message(STATUS "GLPK FOUND")
@@ -77,27 +80,16 @@ if(GLPK_FOUND)
     TARGET_LINK_LIBRARIES   (kiter_lp  PUBLIC   kiter_commons     ${GLPK_LIBRARIES})
 endif(GLPK_FOUND)
 
-if(GUROBI_FOUND)
-    message(STATUS "GUROBI FOUND")
-    target_include_directories(kiter_lp PRIVATE ${GUROBI_INCLUDE_DIRS})
-    TARGET_LINK_LIBRARIES(kiter_lp ${GUROBI_LIBRARIES} )
-    target_compile_definitions(kiter_lp PRIVATE __GUROBILIB__=1)
-endif(GUROBI_FOUND)
-
-
-
-
-ADD_LIBRARY			   (kiter_generators SHARED ${generators_sources})
-TARGET_LINK_LIBRARIES  (kiter_generators PUBLIC kiter_commons  kiter_models kiter_algorithms)
-
-ADD_LIBRARY			   (kiter_printers   SHARED  ${printers_sources})
-TARGET_LINK_LIBRARIES  (kiter_printers   PUBLIC kiter_commons kiter_models)
-
 
 ADD_LIBRARY			   (kiter_algorithms SHARED  ${algorithms_sources})
 TARGET_LINK_LIBRARIES  (kiter_algorithms PUBLIC kiter_commons kiter_models kiter_printers kiter_lp 
 							${Boost_FILESYSTEM_LIBRARY} 
  							${Boost_SYSTEM_LIBRARY})
+
+ADD_LIBRARY			   (kiter_generators SHARED ${generators_sources})
+TARGET_LINK_LIBRARIES  (kiter_generators PUBLIC kiter_commons  kiter_models kiter_algorithms)
+
+
 
 
 file(WRITE null.cpp "")
@@ -109,6 +101,51 @@ TARGET_LINK_LIBRARIES  (libkiter PUBLIC
 				kiter_printers
            		kiter_algorithms
 				kiter_generators)
+
+
+if(GUROBI_FOUND)
+    message(STATUS "GUROBI FOUND")
+    
+	ADD_LIBRARY		(kiter_gurobi_lp STATIC  ${lp_sources})
+	TARGET_LINK_LIBRARIES   (kiter_gurobi_lp PUBLIC   kiter_commons )
+
+
+
+	if(GLPK_FOUND)
+  	  message(STATUS "GLPK FOUND")
+  	  target_include_directories(kiter_gurobi_lp PRIVATE ${GLPK_INCLUDE_DIR})
+   	 TARGET_LINK_LIBRARIES   (kiter_gurobi_lp  PUBLIC   kiter_commons     ${GLPK_LIBRARIES})
+	endif(GLPK_FOUND)
+
+
+    target_include_directories(kiter_gurobi_lp PRIVATE ${GUROBI_INCLUDE_DIRS})
+    TARGET_LINK_LIBRARIES(kiter_gurobi_lp ${GUROBI_LIBRARIES} )
+    target_compile_definitions(kiter_gurobi_lp PRIVATE __GUROBILIB__=1)
+    
+    
+	ADD_LIBRARY			   (kiter_gurobi_algorithms STATIC  ${algorithms_sources})
+	TARGET_LINK_LIBRARIES  (kiter_gurobi_algorithms PUBLIC kiter_commons kiter_models kiter_printers kiter_gurobi_lp 
+							${Boost_FILESYSTEM_LIBRARY} 
+ 							${Boost_SYSTEM_LIBRARY})
+
+	ADD_LIBRARY			   (kiter_gurobi_generators STATIC ${generators_sources})
+	TARGET_LINK_LIBRARIES  (kiter_gurobi_generators PUBLIC kiter_commons  kiter_models kiter_gurobi_algorithms)
+    
+ADD_LIBRARY			   (libkiter_gurobi STATIC   null.cpp )
+    TARGET_LINK_LIBRARIES  (libkiter_gurobi PUBLIC
+				kiter_commons 
+				kiter_gurobi_lp 
+				kiter_models 
+				kiter_printers
+           		kiter_gurobi_algorithms
+				kiter_gurobi_generators)
+    
+    
+endif(GUROBI_FOUND)
+
+
+				
+				
 set_property(TARGET libkiter PROPERTY FRAMEWORK ON)
 
  

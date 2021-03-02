@@ -3,9 +3,6 @@ cmake_minimum_required(VERSION 2.6)
 
 #  ######### BOOST ##########
 
-#SET(Boost_USE_STATIC_LIBS  TRUE)
-#SET (CGAL_Boost_USE_STATIC_LIBS TRUE)
-#SET(Boost_DEBUG 1)
 FIND_PACKAGE( Boost 1.69.0 COMPONENTS  graph  system  filesystem ) # remove REQUIRED to check by hand !
 
 
