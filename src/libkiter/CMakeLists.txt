@@ -110,16 +110,18 @@ if(GUROBI_FOUND)
 	TARGET_LINK_LIBRARIES   (kiter_gurobi_lp PUBLIC   kiter_commons )
 
 
+    target_include_directories(kiter_gurobi_lp PRIVATE ${GUROBI_INCLUDE_DIRS})
 
 	if(GLPK_FOUND)
   	  message(STATUS "GLPK FOUND")
   	  target_include_directories(kiter_gurobi_lp PRIVATE ${GLPK_INCLUDE_DIR})
-   	 TARGET_LINK_LIBRARIES   (kiter_gurobi_lp  PUBLIC   kiter_commons     ${GLPK_LIBRARIES})
+   	 TARGET_LINK_LIBRARIES   (kiter_gurobi_lp  PUBLIC   kiter_commons     ${GLPK_LIBRARIES} ${GUROBI_LIBRARIES})
+   	 else()
+    TARGET_LINK_LIBRARIES(kiter_gurobi_lp kiter_commons ${GUROBI_LIBRARIES} )
+   	 
 	endif(GLPK_FOUND)
 
 
-    target_include_directories(kiter_gurobi_lp PRIVATE ${GUROBI_INCLUDE_DIRS})
-    TARGET_LINK_LIBRARIES(kiter_gurobi_lp ${GUROBI_LIBRARIES} )
     target_compile_definitions(kiter_gurobi_lp PRIVATE __GUROBILIB__=1)
     
     
