@@ -59,6 +59,9 @@ models::EventGraph* algorithms::generate_csdf_strictly_periodic_event_graph(cons
 				auto phitp = dataflow->getPhasesQuantity(tp);
 				auto tid = dataflow->getVertexId(t);
 				auto tpid = dataflow->getVertexId(tp);
+
+				VERBOSE_DEBUG ("Buffer from tid=" << tid << " tpid=" << tpid );
+
 				auto d = item.first;
 				TOKEN_UNIT ia = dataflow->getEdgeIn(c);
 				TOKEN_UNIT oa = dataflow->getEdgeOut(c);
@@ -95,14 +98,22 @@ models::EventGraph* algorithms::generate_csdf_strictly_periodic_event_graph(cons
 						TOKEN_UNIT Ha_k_kp = std::max ( (TOKEN_UNIT) 0, inak - outakp);
 						TOKEN_UNIT alphamin_k_kp = commons::ceil( Ha_k_kp + oapp - iap - mop  ,gcdz);
 						TOKEN_UNIT alphamax_k_kp = commons::floor( oapp - iapm1 - mop - 1 ,gcdz);
-						VERBOSE_DEBUG ("k=" << k << " kp=" << kp << " alphamax_k_kp=" << alphamax_k_kp << " weight=" <<  ((TIME_UNIT) alphamax_k_kp ) / ( (TIME_UNIT) ia  * (TIME_UNIT) ni));
-						VERBOSE_DEBUG ("ia=" << ia << " oa=" << oa<< " phit=" << phit<< " phitp=" << phitp);
-
 
 						auto tw = alphamax_k_kp - ((TIME_UNIT)((kp - 1) * oa) / (TIME_UNIT) phitp) + ((TIME_UNIT) ((k - 1) * ia) / (TIME_UNIT) phit) ;
 						auto nw =   (TIME_UNIT) tw / ( (TIME_UNIT) ia  * (TIME_UNIT) ni);
 
+
+						VERBOSE_DEBUG ("k=" << k << " kp=" << kp );
+						VERBOSE_DEBUG (" ia=" << ia << " oa=" << oa<< " phit=" << phit<< " phitp=" << phitp);
+						VERBOSE_DEBUG (" alphamax_k_kp=" << alphamin_k_kp  << " alphamax_k_kp=" << alphamax_k_kp );
+						VERBOSE_DEBUG (" tw = " << tw);
+						VERBOSE_DEBUG (" nw = " << nw);
+
+
 						if (alphamin_k_kp <= alphamax_k_kp) {
+
+							VERBOSE_DEBUG (" **** PICK IT " << nw);
+
 							w = std::max ( w , nw )  ;
 						}
 

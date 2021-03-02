@@ -53,6 +53,11 @@ void BufferlessNoCScheduling(models::Dataflow* const  dataflow, parameters_list_
 
 		 models::Scheduling CSDF_RealPeriodicScheduling_LP    (const models::Dataflow* const dataflow);
 		 void CSDF_Real1PeriodicScheduling_LP (models::Dataflow*  dataflow, parameters_list_t );
+
+
+		 models::Scheduling CSDF_SPeriodicScheduling       (const models::Dataflow* const dataflow) ;
+		 void SPeriodicScheduling (models::Dataflow*  dataflow, parameters_list_t ) ;
+
 	}
 }
 
@@ -75,6 +80,10 @@ ADD_TRANSFORMATION(BufferlessKPeriodicScheduling,
 		transformation_t({ "BufferlessKPeriodicScheduling" , "Run Bufferless Kperiodic", algorithms::scheduling::bufferlessKPeriodicScheduling} )
 	);
 
+
+
+ADD_TRANSFORMATION(SPeriodicScheduling,
+transformation_t({ "SPeriodicScheduling" , "Experimental", algorithms::scheduling::SPeriodicScheduling}));
 
 // Throughput techniques
 ADD_TRANSFORMATION(BufferlessNoCScheduling,

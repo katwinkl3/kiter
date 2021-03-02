@@ -17,6 +17,7 @@ namespace models {
 namespace algorithms {
 	models::EventGraph* generate_csdf_strictly_periodic_event_graph(const models::Dataflow * const dataflow);
 	void compute_SPeriodic_throughput    (models::Dataflow*  dataflow, parameters_list_t );
+
 }
 
 

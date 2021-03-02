@@ -176,6 +176,9 @@ private :
 private :
     std::map< SchedulingEvent , EventGraphVertex > schedulingEvent2Vertex;
 public :
+    inline EventGraphVertex getEventGraphVertex(ARRAY_INDEX taskId) {
+    	return getEventGraphVertex(taskId, 1, 1) ;
+    }
     inline EventGraphVertex getEventGraphVertex(ARRAY_INDEX taskId, EXEC_COUNT execution) {
     	return getEventGraphVertex(taskId, 1, execution) ;
     }

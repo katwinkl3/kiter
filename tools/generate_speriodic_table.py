@@ -51,6 +51,9 @@ def print_schedule_size_table(df):
     # rdf = df.drop(columns=["buffers","sumqt","1Periodic", "KPeriodic", "SPeriodic"])
     rdf = df.rename(columns=newnames)
     rdf = rdf[["Graph", "Strictly Periodic", "1-Periodic", "K-Periodic", "MCM"]]
+
+    
+    
     colformat = "|".join([""] + ["l"] * rdf.index.nlevels + ["r"] * rdf.shape[1] + [""])
     latex = rdf.to_latex(
         float_format="{:0.0f}".format, column_format=colformat, index=False

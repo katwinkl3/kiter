@@ -12,7 +12,7 @@ import seaborn as sns
 
 sns.set_theme()
 
-methods = {"kiter": "red", "speriodic": "yellow", "periodic": "green", "sdf3": "black"}
+methods = {"kiter": "red", "speriodic": "purple", "periodic": "green", "sdf3": "black"}
 
 
 def load_app_dse(

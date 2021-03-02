@@ -38,11 +38,11 @@ public :
 	}
 
 	TIME_UNIT getGraphPeriod () const {
-			return this->_period;
+		return this->_period;
 	}
 
 	TIME_UNIT getGraphThroughput () const {
-			return 1.0 / this->_period;
+		return 1.0 / this->_period;
 	}
 	const scheduling_t& getTaskSchedule () const{
 		return this->_tasks_schedule;
@@ -54,6 +54,58 @@ public :
 
 	void verbose_print ();
 
+
+	std::string asText () {
+
+		std::ostringstream returnStream;
+
+		for (auto item : this->getTaskSchedule()) {
+			ARRAY_INDEX tid = item.first;
+			Vertex v = _dataflow->getVertexById(item.first);
+			std::string  tname = _dataflow->getVertexName(v);
+			TIME_UNIT period = item.second.first;
+			std::vector<TIME_UNIT> &starts = item.second.second;
+			returnStream << std::setw(5) << tid << ") " << tname << " | starts:" << commons::toString(starts) << " | period:" << period << std::endl;
+		}
+
+
+		return returnStream.str();
+
+	}
+	std::string asASCII (int line_size) {
+
+
+		std::ostringstream returnStream;
+
+		for (auto item : this->getTaskSchedule()) {
+			ARRAY_INDEX tid = item.first;
+			Vertex v = _dataflow->getVertexById(item.first);
+			std::string  tname = _dataflow->getVertexName(v);
+			TIME_UNIT period = item.second.first;
+			std::vector<TIME_UNIT> &starts = item.second.second;
+			std::string line = "";
+			ARRAY_INDEX max_iter = line_size / period;
+			for (TIME_UNIT time = 0 ; time < line_size ; time ++) {
+				bool execute = false;
+				for (ARRAY_INDEX iteration = 0 ; iteration <= max_iter ; iteration ++) {
+					for (ARRAY_INDEX sidx = 0 ; sidx < starts.size() ; sidx++) {
+						TIME_UNIT s = starts[sidx] + iteration * period;
+						EXEC_COUNT exec_count = sidx + iteration * starts.size();
+						TIME_UNIT duration = _dataflow->getVertexDuration(v, 1 + (exec_count % _dataflow->getPhasesQuantity(v))); // TODO : unsupported init phases
+						TIME_UNIT normalize = (time > s) ? (time - s) - ((time - s) / period) : (time - s);
+						bool execute_here = ((0  <= normalize ) and (normalize < duration ));
+						execute = execute or execute_here;
+					}
+				}
+				line += execute ? "#" : " ";
+			}
+			returnStream << std::setw(5) << tid << " | " << line << std::endl;
+		}
+
+
+		return returnStream.str();
+
+	}
 };
 }
 
