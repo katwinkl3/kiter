@@ -112,6 +112,11 @@ BlackScholes.xml        Echo.xml        H264.xml        JPEG2000.xml        PDec
 }
 ```
 
+
+## Possible compilation Error
+
+ - undefined reference to `GRBModel::addVar : you'll need to compile gurobi C++ interface `make -C /path/to/gurobi/build/src/`
+
 ## TODOs (to check)
 
 - Add type for actors in XML and Dataflow
