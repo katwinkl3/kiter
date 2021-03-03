@@ -73,3 +73,4 @@ tools/sdf3*/
 /*.png
 __pycache__
 /ascent_pictures/
+/*.tex
