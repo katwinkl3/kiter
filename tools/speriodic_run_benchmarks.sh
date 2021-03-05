@@ -6,7 +6,7 @@ set -x
 
 MAX_TIME=2m
 
-KITER="./Release/bin/kiter"
+KITER="./Release/bin/kiter_gurobi"
 BENCH_DIR="benchmarks/"
 
 
