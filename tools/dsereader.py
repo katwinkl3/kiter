@@ -52,13 +52,13 @@ def extract_pareto(df):
 def plot_dse(df, dsename=None, dsecolor=None):
 
     if len(df) == 0:
-        return 0
+        return (0,0)
 
     x = df["cumulative duration"]
     y = df["throughput"]
 
     if len(y) == 0:
-        return 0
+        return (0,0)
 
     steplines = plt.step(
         x, y, where="post", color=dsecolor, linewidth=0.4, alpha=0.5, label=dsename
@@ -81,13 +81,13 @@ def plot_dse(df, dsename=None, dsecolor=None):
     plt.setp(markerline, "color", current_color)
     plt.setp(markerline, "markersize", 1)
 
-    return y2.max()
+    return (x2.max(),y2.max())
 
 
 def plot_pareto(df, dsename=None, dsecolor=None):
 
     if len(df) == 0:
-        return 0
+        return (0,0)
 
     pareto = extract_pareto(df)
 
@@ -97,7 +97,7 @@ def plot_pareto(df, dsename=None, dsecolor=None):
 
     x, y = pareto["storage distribution size"], pareto["period"]
     if len(y) == 0:
-        return 0
+        return (0,0)
 
     markersize = 3
     linewidth = 1
@@ -117,13 +117,14 @@ def plot_pareto(df, dsename=None, dsecolor=None):
     plt.setp(steppoints, "color", current_color)
     plt.setp(scatterpoints, "color", current_color)
 
-    return y.max()
+    return (x.max(),y.max())
 
 
 def plot_app_dse(logdir, appname):
 
     total_time = time.time()
     ymax = 0
+    xmax = 0
     for method, color in methods.items():
 
         start_time = time.time()
@@ -133,15 +134,23 @@ def plot_app_dse(logdir, appname):
 
         start_time = time.time()
         print("Plot", appname, method)
-        ymax = max(ymax, plot_dse(df, method, color))
+        
+        cxmax,cymax = plot_dse(df, method, color)
+        xmax = max(xmax, cxmax)
+        ymax = max(ymax, cymax)
+        
         print("Plotted after", time.time() - start_time, "sec.")
 
     plt.xlabel("Execution time (ms)")
     plt.ylabel("Throughput (Hz)")
     plt.title(f"{appname}")
     plt.legend(loc="upper left", ncol=2, borderaxespad=0.5)
+
     if ymax:
         plt.ylim(bottom=0, top=1.3 * ymax)
+        
+    if xmax:
+        plt.xlim(left=0, right=1.3 * xmax)
 
     print("Finished in", time.time() - total_time, "sec.")
     print("")
@@ -151,6 +160,7 @@ def plot_app_pareto(logdir, appname):
 
     total_time = time.time()
     ymax = 0
+    xmax = 0
 
     for method, color in methods.items():
 
@@ -163,15 +173,21 @@ def plot_app_pareto(logdir, appname):
 
         start_time = time.time()
         print("Plot", appname, method)
-        ymax = max(ymax, plot_pareto(df, method, color))
+        cxmax,cymax = plot_pareto(df, method, color)
+        xmax = max(xmax, cxmax)
+        ymax = max(ymax, cymax)
         print("Plotted after", time.time() - start_time, "sec.")
 
     plt.xlabel("Storage Distribution")
     plt.ylabel("Period (sec)")
     plt.title(f"{appname}")
     plt.legend(loc="upper left", ncol=2, borderaxespad=0.5)
+    
     if ymax:
         plt.ylim(bottom=0, top=1.3 * ymax)
+
+    if xmax:
+        plt.xlim(left=0, right=1.3 * xmax)
 
     print("Finished in", time.time() - total_time, "sec.")
     print("")
