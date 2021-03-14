@@ -65,7 +65,12 @@ public :
 			std::string  tname = _dataflow->getVertexName(v);
 			TIME_UNIT period = item.second.first;
 			std::vector<TIME_UNIT> &starts = item.second.second;
-			returnStream << std::setw(5) << tid << ") " << tname << " | starts:" << commons::toString(starts) << " | period:" << period << std::endl;
+			returnStream << std::setw(5) << tid << ") " << tname
+					<< " | starts:" << commons::toString(starts)
+					<< " | period:" << period
+					<< " | durations:" << commons::toString(_dataflow->getVertexInitPhaseDuration(v))
+			                           << ";[" << commons::toString(_dataflow->getVertexPhaseDuration(v)) << "]"
+					<< std::endl;
 		}
 
 

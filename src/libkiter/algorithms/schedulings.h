@@ -47,9 +47,13 @@ void BufferlessNoCScheduling(models::Dataflow* const  dataflow, parameters_list_
 		 models::Scheduling CSDF_KPeriodicScheduling_LP    (const models::Dataflow* const dataflow, const periodicity_vector_t& kvector);
 		 void CSDF_1PeriodicScheduling_LP (models::Dataflow*  dataflow, parameters_list_t );
 		 void CSDF_NPeriodicScheduling_LP (models::Dataflow*  dataflow, parameters_list_t );
-		 void CSDF_1PeriodicScheduling    (models::Dataflow*  dataflow, parameters_list_t );
-		 void CSDF_NPeriodicScheduling    (models::Dataflow*  dataflow, parameters_list_t );
 
+		 void CSDF_1PeriodicThroughput    (models::Dataflow*  dataflow, parameters_list_t );
+		 void CSDF_NPeriodicThroughput    (models::Dataflow*  dataflow, parameters_list_t );
+
+
+		 models::Scheduling CSDF_1PeriodicScheduling    (const models::Dataflow* const dataflow);
+		 void OnePeriodicScheduling (models::Dataflow*  dataflow, parameters_list_t ) ;
 
 		 models::Scheduling CSDF_RealPeriodicScheduling_LP    (const models::Dataflow* const dataflow);
 		 void CSDF_Real1PeriodicScheduling_LP (models::Dataflow*  dataflow, parameters_list_t );
@@ -73,9 +77,9 @@ ADD_TRANSFORMATION(LPN,
 transformation_t({ "LPN" , "Rewriting Bodin2016 Threshold CSDF N-Periodic Scheduling with Bufferless channel using Linear Programming", algorithms::scheduling::CSDF_NPeriodicScheduling_LP}));
 
 ADD_TRANSFORMATION(EG1,
-transformation_t({ "EG1" , "Rewriting Bodin2013 CSDF 1-Periodic Scheduling", algorithms::scheduling::CSDF_1PeriodicScheduling}));
+transformation_t({ "EG1" , "Rewriting Bodin2013 CSDF 1-Periodic Scheduling", algorithms::scheduling::CSDF_1PeriodicThroughput}));
 ADD_TRANSFORMATION(EGN,
-transformation_t({ "EGN" , "Rewriting Bodin2013 CSDF N-Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicScheduling}));
+transformation_t({ "EGN" , "Rewriting Bodin2013 CSDF N-Periodic Scheduling", algorithms::scheduling::CSDF_NPeriodicThroughput}));
 ADD_TRANSFORMATION(BufferlessKPeriodicScheduling,
 		transformation_t({ "BufferlessKPeriodicScheduling" , "Run Bufferless Kperiodic", algorithms::scheduling::bufferlessKPeriodicScheduling} )
 	);
@@ -84,6 +88,9 @@ ADD_TRANSFORMATION(BufferlessKPeriodicScheduling,
 
 ADD_TRANSFORMATION(SPeriodicScheduling,
 transformation_t({ "SPeriodicScheduling" , "Experimental", algorithms::scheduling::SPeriodicScheduling}));
+
+ADD_TRANSFORMATION(OnePeriodicScheduling,
+transformation_t({ "1PeriodicScheduling" , "CSDF 1-Periodic Scheduling [Bodin2013]", algorithms::scheduling::OnePeriodicScheduling}));
 
 // Throughput techniques
 ADD_TRANSFORMATION(BufferlessNoCScheduling,
