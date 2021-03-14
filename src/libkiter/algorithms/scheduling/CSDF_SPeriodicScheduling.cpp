@@ -56,14 +56,16 @@ models::Scheduling algorithms::scheduling::CSDF_SPeriodicScheduling    (const mo
 
 }
 
-void algorithms::scheduling::SPeriodicScheduling (models::Dataflow*  dataflow, parameters_list_t )  {
+void algorithms::scheduling::SPeriodicScheduling (models::Dataflow*  dataflow, parameters_list_t params)  {
 
 	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 	models::Scheduling res = CSDF_SPeriodicScheduling    (dataflow);
 
    TIME_UNIT omega = res.getGraphPeriod();
 
-   std::cout << res.asASCII(80);
+   int linesize = params.count("LINE")? commons::fromString<int>(params["LINE"]) : 80;
+
+   std::cout << res.asASCII(linesize);
    std::cout << res.asText();
 
    std::cout << "SPeriodic throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
