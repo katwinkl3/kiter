@@ -220,6 +220,37 @@ def plot_all(logdir, graphs, plotfunc=plot_app_dse, outputname=None):
     plt.cla()  # Clear axis
 
 
+def gen_minsize(logdir, graphs, outputname="/dev/stdout"):
+    res = { "name" : [] }
+    for m in methods:
+        res[m] = []
+    for i, name in zip(range(1, len(graphs) + 1), graphs):
+        res["name"].append(name)
+        for m in methods:
+            df = load_app_dse(logdir, name, m, cols = ["throughput", "storage distribution size"])
+            v = df[df["throughput"] >0]["storage distribution size"].min() if "throughput" in df else "-"
+            res[m].append(v)
+
+            
+    df = pd.DataFrame(res)[["name","speriodic","periodic"]]    
+    df["overhead"] = 100 - 100 * (df["periodic"] /  df["speriodic"]) 
+    df = df.rename (columns = {
+        "overhead":"Overhead(%)",
+        "name" : "Graph",
+        "speriodic" : "S-Periodic",
+        "periodic" : "1-Periodic",
+    })
+    colformat = "|".join([""] + ["l"] * df.index.nlevels + ["r"] * df.shape[1] + [""])
+               
+    latex = df.to_latex(
+        float_format="{:0.1f}".format, column_format=colformat, index=False
+    )
+    latex = latex.replace("NAN","-")
+    fd = open(outputname, 'w')
+    fd.write(latex)
+    fd.close()
+
+   
 def plot_all_pareto(logdir, graphs, outputname=None):
     plot_all(logdir, graphs, plotfunc=plot_app_pareto, outputname=outputname)
 
@@ -251,6 +282,13 @@ if __name__ == "__main__":
         help="location of the output pareto plot file",
         required=False,
     )
+    
+    parser.add_argument(
+        "--tminsize",
+        type=str,
+        help="location of the output minimal buffersize table file",
+        required=False,
+    )
     args = parser.parse_args()
 
     logdir = args.logdir
@@ -275,6 +313,12 @@ if __name__ == "__main__":
         print("Generate pareto output")
         plot_all_pareto(logdir=logdir, graphs=graphs, outputname=args.opareto)
 
+        
+
+    if args.tminsize:
+        print("Generate minimal size table")
+        gen_minsize(logdir=logdir, graphs=graphs, outputname=args.tminsize)
+        
     endmem = process.memory_info().rss
     print(
         "Memory usage from",

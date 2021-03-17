@@ -12,7 +12,7 @@
 #include "csdf_strictly_periodic.h"
 #include <numeric>
 
-models::EventGraph* algorithms::generate_csdf_strictly_periodic_event_graph(const models::Dataflow * const dataflow) {
+models::EventGraph* algorithms::generate_csdf_strictly_periodic_event_graph(const models::Dataflow * const dataflow, bool use_max_duration) {
 	models::EventGraph* eg = new models::EventGraph();
 
 	std::map<ARRAY_INDEX,models::SchedulingEvent> tid2event;
@@ -33,16 +33,24 @@ models::EventGraph* algorithms::generate_csdf_strictly_periodic_event_graph(cons
 
 	for (auto t : dataflow->vertices()) {
 
+		// `max_d` is only used if max_duration for approximation of exact Strictly Periodic
+		auto exec_times = dataflow->getVertexPhaseDuration(t);
+		TIME_UNIT max_d = *std::max_element(exec_times.begin(), exec_times.end());
+
+
 		// for each task we look at different timings bags
 
 
 		auto phit = dataflow->getPhasesQuantity(t);
-		auto dur  = dataflow->getVertexPhaseDuration(t);
 		std::map <TIME_UNIT, std::vector<EXEC_COUNT>> delta_l_t;
 
 		for (EXEC_COUNT k = 1 ; k <= phit ; k ++) {
 			TIME_UNIT duration = dataflow->getVertexDuration(t, k);
-			delta_l_t[duration].push_back(k);
+			if (use_max_duration) { // approx
+				delta_l_t[max_d].push_back(k);
+			} else { // exact case
+				delta_l_t[duration].push_back(k);
+			}
 		}
 
 		EXEC_COUNT ni = dataflow->getNi(t) / phit;
@@ -139,7 +147,7 @@ models::EventGraph* algorithms::generate_csdf_strictly_periodic_event_graph(cons
 
 void algorithms::compute_SPeriodic_throughput    (models::Dataflow*  dataflow, parameters_list_t params) {
 	VERBOSE_ASSERT(computeRepetitionVector(dataflow), "Repetition vector failed.");
-	models::EventGraph* eg = algorithms::generate_csdf_strictly_periodic_event_graph(dataflow);
+	models::EventGraph* eg = algorithms::generate_csdf_strictly_periodic_event_graph(dataflow, false);
 	std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
 
 	TIME_UNIT res = howard_res.first ;
@@ -160,4 +168,26 @@ void algorithms::compute_SPeriodic_throughput    (models::Dataflow*  dataflow, p
 
 }
 
+void algorithms::compute_ASPeriodic_throughput    (models::Dataflow*  dataflow, parameters_list_t params) {
+	VERBOSE_ASSERT(computeRepetitionVector(dataflow), "Repetition vector failed.");
+	models::EventGraph* eg = algorithms::generate_csdf_strictly_periodic_event_graph(dataflow, true);
+	std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
+
+	TIME_UNIT res = howard_res.first ;
+
+	if (params.count("PRINTEG")) {
+		std::cout << eg->printXML() << std::endl;
+	}
+
+	if (params.count("PRINTCC")) {
+		std::cout << "MCRP: " << howard_res.first << std::endl;
+		std::cout << "Critical cycle: " <<commons::toString(howard_res.second) << std::endl;
+	}
+
+
+	std::cout << "SPeriodic throughput is "  << std::setw( 20 ) << std::setprecision( 9 ) <<     res    << std::endl;
+	std::cout << "SPeriodic period     is " << std::fixed      << std::setw( 20 ) << std::setprecision( 6 ) << 1.0/res    << std::endl;
+
+
+}
 

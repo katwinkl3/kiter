@@ -35,9 +35,10 @@ mkdir -p "${LOGDIR}"
 
 ########## THROUGHPUT NUMBERS OUTPUT AS CSV #################
 
-echo "Filename;tasks;buffers;sumqt;sumphit;sumnt;sumki;SPeriodic;1Periodic;KPeriodic" > "${THLOG}"
+echo "Filename;tasks;buffers;sumqt;sumphit;sumnt;sumki;SPeriodic;ASPeriodic;1Periodic;KPeriodic" > "${THLOG}"
 for f in $(find "${BENCH_DIR}/IB5CSDF" "${BENCH_DIR}/AGB5CSDF/" -type f); do
     #echo "Run ${f}"
+    THA=$(${COMMAND_PREFIX} ${KITER} -f "$f" -a ASPeriodicThroughput | grep throughput | sed "s/.* \([^ ]\)/\1/g")
     THS=$(${COMMAND_PREFIX} ${KITER} -f "$f" -a SPeriodicThroughput | grep throughput | sed "s/.* \([^ ]\)/\1/g")
     TH1=$(${COMMAND_PREFIX} ${KITER} -f "$f" -a 1PeriodicThroughput | grep throughput | sed "s/.* \([^ ]\)/\1/g")
 
@@ -46,16 +47,16 @@ for f in $(find "${BENCH_DIR}/IB5CSDF" "${BENCH_DIR}/AGB5CSDF/" -type f); do
     THK=$(echo "${KPERIODICLOG}" | grep -i Throughput | sed "s/.* \([^ ]\)/\1/g")
     ski=$(echo "${KPERIODICLOG}" | grep -i "Scheduling Size" | sed "s/.* \([^ ]\)/\1/g")
 
-    
-    tcount=$(./Release/bin/kiter -f "$f" -a PrintInfos| grep  "Task count" | sed "s/.* \([^ ]\)/\1/g")
-    bcount=$(./Release/bin/kiter -f "$f" -a PrintInfos| grep "Channel count" | sed "s/.* \([^ ]\)/\1/g")
+    tmp=$(./Release/bin/kiter -f "$f" -a PrintInfos)
+    tcount=$(echo "$tmp" | grep  "Task count" | sed "s/.* \([^ ]\)/\1/g")
+    bcount=$(echo "$tmp" | grep "Channel count" | sed "s/.* \([^ ]\)/\1/g")
 
     
-    sqt=$(./Release/bin/kiter -f "$f" -a PrintInfos| grep "(qt)" | sed "s/.* \([^ ]\)/\1/g")
-    sphit=$(./Release/bin/kiter -f "$f" -a PrintInfos| grep "(phit)" | sed "s/.* \([^ ]\)/\1/g")
-    snt=$(./Release/bin/kiter -f "$f" -a PrintInfos| grep "Nt=" | sed "s/.* \([^ ]\)/\1/g")
+    sqt=$(echo "$tmp" | grep "(qt)" | sed "s/.* \([^ ]\)/\1/g")
+    sphit=$(echo "$tmp" | grep "(phit)" | sed "s/.* \([^ ]\)/\1/g")
+    snt=$(echo "$tmp" | grep "Nt=" | sed "s/.* \([^ ]\)/\1/g")
 
-    echo "${f};${tcount};${bcount};${sqt};${sphit};${snt};${ski};${THS};${TH1};${THK}" >> "${THLOG}"
+    echo "${f};${tcount};${bcount};${sqt};${sphit};${snt};${ski};${THS};${THA};${TH1};${THK}" >> "${THLOG}"
 done
 
 
