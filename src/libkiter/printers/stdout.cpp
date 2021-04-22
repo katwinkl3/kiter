@@ -330,6 +330,8 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
   std::vector<std::string> available_colors = {"#ACFF54","#41E869","#53FFEE","#4191E8","#4191E8","#634BFA",
 		                                       "#DB42FF","#E83154","#FF7843","#E8A131","#FADC39", "#8736FF"
 };
+  std::string task_color = "#ff8065";
+  std::string small_task_color = "#e2ffaf";
 
   for (const NetworkEdge e : noc.getEdges()) {
 	  auto cnt = link_usage[e.id].size();
@@ -486,11 +488,11 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 	  for (auto ts : updatedSprites) {
 
 	   if (ts.small) {
-		   returnStream <<  "task_" << ts.id << "[penwidth=0.2,color=black,label=\"\", style=\"filled\", fillcolor=\"red\", fontsize=\"5\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.1, height=0.1];" << std::endl;
+		   returnStream <<  "task_" << ts.id << "[penwidth=0.2,color=black,label=\"\", style=\"filled\", fillcolor=\"" << small_task_color << "\", fontsize=\"5\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.1, height=0.1];" << std::endl;
 	   } else {
 		   Vertex v = dataflow->getVertexById(ts.id);
 		   std::string label = dataflow->getVertexName(v) ;
-		   returnStream <<  "task_" << ts.id << "[penwidth=0.2,color=black,label=\"" << label << "\", style=\"filled\", fillcolor=\"red\", fontsize=\"9\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.4, height=0.4];" << std::endl;
+		   returnStream <<  "task_" << ts.id << "[penwidth=0.2,color=black,label=\"" << label << "\", style=\"filled\", fillcolor=\"" << task_color << "\", fontsize=\"9\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.4, height=0.4];" << std::endl;
 	   }
 	 }
    }

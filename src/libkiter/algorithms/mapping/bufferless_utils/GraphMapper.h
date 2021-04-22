@@ -78,13 +78,7 @@ public:
 
 		//list of cores that are available
 		std::vector<int> available_cores;//{5, 6, 10, 9, 8, 4, 0, 1, 2, 3, 7, 11, 15, 14, 13, 12};
-		ARRAY_INDEX origV = input->getVerticesCount();
-		if(origV <= 16)
-		{
-			std::vector<int> temp_vec{5, 6, 10, 9, 8, 4, 0, 1, 2, 3, 7, 11, 15, 14, 13, 12};
-			available_cores = temp_vec;
-		}
-		else
+
 		{
 			for(int i = 0; i < noc->getMeshSize(); i++)
 				available_cores.push_back(i);
@@ -199,7 +193,7 @@ private :
 			core_mapping[index] = start_core;
 			std::remove(avail_cores.begin(), avail_cores.end(), start_core);
 			avail_cores.resize( avail_cores.size() - 1);
-			std::cout << "allocating " << index << " to " << start_core << "\n";
+			VERBOSE_DEBUG("allocating " << index << " to " << start_core );
 			return;
 		}
 
@@ -295,7 +289,7 @@ private :
 			routes[it.first] = it.second;
 		}
 		//VERBOSE_DEBUG( "allocating " << index << " to " << core_allocated );
-		std::cout << "allocating " << index << " to " << core_allocated << "\n";
+		VERBOSE_DEBUG( "allocating " << index << " to " << core_allocated );
 	}
 
 
