@@ -23,6 +23,7 @@
 #include <boost/filesystem.hpp>
 
 // #define WRITE_GRAPHS // uncomment to write dot files of explored graphs
+
 // Compute and return period and causal dependency cycles of given dataflow graph
 kperiodic_result_t algorithms::compute_Kperiodic_throughput_and_cycles(models::Dataflow* const dataflow, parameters_list_t parameters) {
   
@@ -380,7 +381,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
   std::ofstream dseLog;
   if (writeLogFiles) {
     dseLog.open(logDirName + dataflow_prime->getGraphName() + "_dselog" + methodName + ".csv");
-    dseLog << "storage distribution size,throughput,channel quantities,computation duration,cumulative duration"
+    dseLog << "storage distribution size,throughput,channel quantities,dependency mask,computation duration,cumulative duration"
            << std::endl; // initialise headers
   }
   
@@ -429,6 +430,7 @@ void algorithms::compute_Kperiodic_throughput_dse (models::Dataflow* const dataf
       dseLog << checkDist.getDistributionSize() << ","
              << checkDist.getThroughput() << ","
              << checkDist.print_quantities_csv(dataflow_prime) << ","
+             << checkDist.print_dependency_mask(dataflow_prime, result) << ","
              << execTime.count() << ","
              << cumulativeTime.count() << std::endl;
     }
