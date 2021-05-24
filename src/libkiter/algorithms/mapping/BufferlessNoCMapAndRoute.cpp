@@ -109,12 +109,14 @@
 
 
 
-	static void updateNetworkOnChipModel (models::Dataflow* const  dataflow) {
+	static void updateNetworkOnChipModel (models::Dataflow* const  dataflow, int meshsize) {
 
 	// #### Generate NoC
 	int mesh_row = (int)ceil(sqrt((double) dataflow->getVerticesCount()));
 	if(mesh_row <= 2)
 		mesh_row = 2;
+	if (meshsize > 0) mesh_row = meshsize;
+	VERBOSE_INFO("Set the NoC with mesh_row=" << mesh_row << " when Data vertices count is " << dataflow->getVerticesCount());
 	NoC noc (mesh_row, mesh_row); //Init NoC
 	dataflow->setNoC(noc);
 
@@ -205,6 +207,7 @@ static std::map<int, route_t> graphProcessing(const models::Dataflow* const data
 
 	auto start = to->addVertex();
 	to->setVertexName(start, "start");
+
 	bool input_task_found = false;
 	bool top_is_set = false;
 	Vertex top;
@@ -269,6 +272,7 @@ static std::map<int, route_t> graphProcessing(const models::Dataflow* const data
 
 	// Result: routes is the route between every task of the graph.
 
+	VERBOSE_DEBUG( "done route size = " << routes.size() );
 
 
 	VERBOSE_INFO("End of graphProcessing.");
@@ -294,10 +298,14 @@ static std::map<int, std::vector<Edge>> generateEdgesMap(models::Dataflow* dataf
 }
 
 
-void algorithms::mapping::BufferlessNoCMapAndRoute (models::Dataflow* const dataflow, parameters_list_t ) {
+void algorithms::mapping::BufferlessNoCMapAndRoute (models::Dataflow* const dataflow, parameters_list_t params) {
 
 	VERBOSE_INFO("Starting BufferlessNoCMapAndRoute.");
-	updateNetworkOnChipModel(dataflow);
+	if (params.count("MESHSIZE")) {
+		updateNetworkOnChipModel(dataflow, commons::fromString<int>(params["MESHSIZE"]) );
+	} else {
+		updateNetworkOnChipModel(dataflow, 0);
+	}
 	NoCGraph *  noc = createNoCGraph (&(dataflow->getNoC()));
 
 	// STEP 0.2 - Assert SDF
@@ -326,6 +334,7 @@ void algorithms::mapping::BufferlessNoCMapAndRoute (models::Dataflow* const data
 	std::map<Vertex, node_id_t> mapping;
 	std::map<Edge, std::vector <edge_id_t> > routing;
 
+	VERBOSE_INFO("len of routes: " << routes.size());
 
 	for (auto route_item : routes ) {
 		std::vector<Edge> e_to_vec = edge_list[route_item.first];
@@ -377,7 +386,7 @@ void algorithms::mapping::BufferlessNoCMapAndRoute (models::Dataflow* const data
 
 	for (auto mapping_item : mapping) {
 		dataflow->setMapping(mapping_item.first,mapping_item.second);
-		VERBOSE_DEBUG("Mapping of task " << dataflow->getVertexName(mapping_item.first) << " to " << mapping_item.second);
+		VERBOSE_INFO("Mapping of task " << dataflow->getVertexName(mapping_item.first) << " to " << mapping_item.second);
 	}
 
 	for (auto routing_item : routing) {
@@ -385,7 +394,14 @@ void algorithms::mapping::BufferlessNoCMapAndRoute (models::Dataflow* const data
 		VERBOSE_DEBUG("Routing of buffer " << dataflow->getEdgeName(routing_item.first) << " to " << commons::toString(routing_item.second));
 	}
 
+	for (auto v : dataflow->vertices()) {
 
+			ARRAY_INDEX tid = dataflow->getVertexId(v);
+			auto current_mapping =  (dataflow->getMapping(v));
+
+			VERBOSE_ASSERT(current_mapping >= 0, "UNSUPPORTED CASE, EVERY TASK NEED TO BE MAPPED AND THE TASK " << tid << " IS NOT!");
+
+		}
 
 	VERBOSE_DEBUG("End of BufferlessNoCMapAndRoute.");
 

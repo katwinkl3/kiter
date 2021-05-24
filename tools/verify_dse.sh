@@ -43,13 +43,15 @@ for BENCHMARK in "${BENCHMARK_ARRAY[@]}"; do
     echo "running DSEs on ${GRAPH_NAME}...";
     # generate respective pareto logs
     echo "${KITER}" -f "${BENCHMARK}" -a KPeriodicThroughputwithDSE -p LOGDIR=${LOG_DIR};
-    ${KITER} -f "${BENCHMARK}" -a KPeriodicThroughputwithDSE -p LOGDIR=${LOG_DIR};
+    ${KITER} -f "${BENCHMARK}" -a KPeriodicThroughputwithDSE -p LOGDIR=${LOG_DIR} > /dev/null;
     mv "${LOG_DIR}"/pp_logs/*.csv "${KITER_LOG}/${GRAPH_NAME}"_pp_kiter.csv
     if head -n 3 "${BENCHMARK}" | grep csdf > /dev/null; then
+	echo "${SDF3ANALYSIS_CSDF} --graph \"${BENCHMARK}\" --algo buffersize"
 	${SDF3ANALYSIS_CSDF} --graph "${BENCHMARK}" --algo buffersize > tmp.xml;
 	grep -v "analysis time" tmp.xml >  "${LOG_DIR}/${GRAPH_NAME}"_pp_sdf3.xml
 	rm tmp.xml
-    else 
+    else
+	echo "${SDF3ANALYSIS_SDF} --graph \"${BENCHMARK}\" --algo buffersize"
 	${SDF3ANALYSIS_SDF} --graph "${BENCHMARK}" --algo buffersize > "${LOG_DIR}/${GRAPH_NAME}"_pp_sdf3.xml;
     fi
     # convert SDF3 DSE output to CSV (from XML):
@@ -64,11 +66,11 @@ for BENCHMARK in "${BENCHMARK_ARRAY[@]}"; do
     if [ -f "${SDF3_RES}" ] && [ -f "${KITER_RES}" ]; then
         TOTAL_TESTS=$((TOTAL_TESTS + 1))
         printf "Checking %s" "${GRAPH_NAME}..."
-        if diff -q <(sort "$KITER_RES") <(sort "$SDF3_RES"); then # sort results to avoid mismatches due to ordering
+        if diff -q <(sort "$KITER_RES") <(sort "$SDF3_RES") > /dev/null; then # sort results to avoid mismatches due to ordering
             PASSED=$((PASSED + 1))
             echo "results match!"
         else
-            echo "      Run 'diff -y <(sort $KITER_RES) <(sort $SDF3_RES)' to see differences"
+            echo "failed! Run 'diff -y <(sort $KITER_RES) <(sort $SDF3_RES)' to see differences"
             # diff -y <(sort $KITER_RES) <(sort $SDF3_RES)
         fi
     else

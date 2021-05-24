@@ -12,42 +12,42 @@
 
 namespace algorithms {
 
-	struct node{
-		ARRAY_INDEX index;
-	};
+struct node{
+	ARRAY_INDEX index;
+};
 
 class NodeComparator {
 
 private :
 
-		const std::vector< std::vector<unsigned int> >  &   cyclen_per_vtxid;
+	const std::vector< std::vector<unsigned int> >  &   cyclen_per_vtxid;
 
 public :
-		NodeComparator(const std::vector< std::vector<unsigned int> >  &   cyclen_per_vtxid) : cyclen_per_vtxid(cyclen_per_vtxid) {
+	NodeComparator(const std::vector< std::vector<unsigned int> >  &   cyclen_per_vtxid) : cyclen_per_vtxid(cyclen_per_vtxid) {
 
-		};
-
-		bool lessthan(const node& a, const node& b) {
-
-							auto alen = cyclen_per_vtxid[a.index].size();
-							auto blen = cyclen_per_vtxid[b.index].size();
-							auto lenmin = std::min(alen, blen);
-
-							for(unsigned int i = 0; i < lenmin; i++)
-							{
-								if(cyclen_per_vtxid[a.index][i] == cyclen_per_vtxid[b.index][i])
-									continue;
-								else
-									return cyclen_per_vtxid[a.index][i] < cyclen_per_vtxid[b.index][i];
-							}
-
-							if(alen == 0)
-								return true;
-							if(blen == 0)
-								return false;
-							return false;
-		}
 	};
+
+	bool lessthan(const node& a, const node& b) {
+
+		auto alen = cyclen_per_vtxid[a.index].size();
+		auto blen = cyclen_per_vtxid[b.index].size();
+		auto lenmin = std::min(alen, blen);
+
+		for(unsigned int i = 0; i < lenmin; i++)
+		{
+			if(cyclen_per_vtxid[a.index][i] == cyclen_per_vtxid[b.index][i])
+				continue;
+			else
+				return cyclen_per_vtxid[a.index][i] < cyclen_per_vtxid[b.index][i];
+		}
+
+		if(alen == 0)
+			return true;
+		if(blen == 0)
+			return false;
+		return false;
+	}
+};
 
 
 
@@ -83,6 +83,7 @@ public:
 			for(int i = 0; i < noc->getMeshSize(); i++)
 				available_cores.push_back(i);
 		}
+		VERBOSE_INFO ( "available_cores " << commons::toString(available_cores) ) ;
 
 		noc->clear();
 
@@ -98,15 +99,8 @@ public:
 		{
 			top = to->getVertexById(pq.top().index);
 			pq.pop();
-			if(top != start)
-			{
-				//std::cout << "mapping " << to->getVertexId(top) << ",mesh=" << noc->getMeshSize() << "\n";
-				//if( noc->getMeshSize() <= 9*9)
-				//	mapping(top, core_mapping, noc, input, available_cores, routes);
-				//else
-					//hwconstrainted_mapping(top, core_mapping, noc, input, available_cores, routes);
-					dijkstra_mapping(top, core_mapping, noc, input, available_cores, routes);
-					//new_mapping(top, core_mapping, noc, input, available_cores, routes);
+			if(top != start) {
+				dijkstra_mapping(top, core_mapping, noc, input, available_cores, routes);
 
 			}
 			visited[to->getVertexId(top)] = true;
@@ -142,18 +136,18 @@ public:
 			mapping(top, core_mapping, noc, input, available_cores, routes);
 		}*/
 
-	/*
+		/*
 		for(ARRAY_INDEX s = 1; s <= (ARRAY_INDEX)(V-1); s++)
 		{
 			prog_order[s] = prog_order[s] + 1 - 1;
 			auto top = to->getVertexById(s);
 			mapping(top, core_mapping, noc, input, available_cores, routes);
 		}
-	*/
+		 */
 		VERBOSE_INFO ( "srjkvr-mapping " << commons::toString(core_mapping) ) ;
 		//std::cout << "SRJKVR";
 		//for(auto i = 1; i < core_mapping.size()-1; i++)
-			//std::cout << "," << core_mapping[i];
+		//std::cout << "," << core_mapping[i];
 		//std::cout << "\n";
 		return routes;
 	}
@@ -199,8 +193,7 @@ private :
 			core_mapping[index] = start_core;
 			std::remove(avail_cores.begin(), avail_cores.end(), start_core);
 			avail_cores.resize( avail_cores.size() - 1);
-
-			//std::cout << "allocating " << index << " to " << start_core << "\n";
+			VERBOSE_DEBUG("allocating " << index << " to " << start_core );
 			return;
 		}
 
@@ -212,7 +205,7 @@ private :
 		//in the list of avaiable cores
 		for (auto core_considered : avail_cores)
 		{
-			//std::cout << "dijk core_considered=" << core_considered << "\n";
+			VERBOSE_DEBUG("dijk core_considered=" << core_considered);//std::cout <<  << "\n";
 			int cont_l1 = -1;
 			std::vector<int> curr_util = noc->getLinkUtil(); //get the utilization of every link in the NoC
 			std::map<int, route_t> store_path; //variable to store the route to be utilized by the (src,dest) core
@@ -272,7 +265,7 @@ private :
 			if(counter > 0 )
 				cost += (float)pathlen/(float)counter;
 
-
+			VERBOSE_DEBUG("cost=" << cost);
 			//std::cout << "cost=" << cost << "\n";
 
 			if(best_contention_l1 == -1 || cost < best_contention_l1)
@@ -295,7 +288,8 @@ private :
 				VERBOSE_INFO ( "already one route is stored for this");
 			routes[it.first] = it.second;
 		}
-		//std::cout << "allocating " << index << " to " << core_allocated << "\n";
+		//VERBOSE_DEBUG( "allocating " << index << " to " << core_allocated );
+		VERBOSE_DEBUG( "allocating " << index << " to " << core_allocated );
 	}
 
 

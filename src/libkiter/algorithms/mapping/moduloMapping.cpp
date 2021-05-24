@@ -23,5 +23,13 @@ void algorithms::mapping::moduloMapping (models::Dataflow* const  dataflow, para
 		}
 	}
 
+
+	VERBOSE_INFO("XYRouting");
+	// TODO: This needs to be done
+	for (auto b : dataflow->edges()) {
+
+	}
+
+
 }
 

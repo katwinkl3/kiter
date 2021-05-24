@@ -291,10 +291,6 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 
 
   std::map<edge_id_t,std::vector<Edge>> link_usage;
-  std::map<Edge,std::string> edge_color;
-  std::vector<std::string> available_colors = {"#ACFF54","#41E869","#53FFEE","#4191E8","#4191E8","#634BFA", "#FAF93C",
-		                                       "#DB42FF","#E83154","#FF7843","#E8A131","#FADC39", "#8736FF"
-};
 
 
 
@@ -309,7 +305,6 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 
 
   {ForEachChannel(dataflow,c){
-	  edge_color[c] = available_colors[edge_color.size() % available_colors.size()];
 	  Vertex source_vtx   = dataflow->getEdgeSource(c);
 	  Vertex target_vtx   = dataflow->getEdgeTarget(c);
 	  const std::vector<edge_id_t>& route = dataflow->getRoute(c);
@@ -331,6 +326,12 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 
 
   // ******* Print link_usage
+  std::map<Edge,std::string> edge_color;
+  std::vector<std::string> available_colors = {"#ACFF54","#41E869","#53FFEE","#4191E8","#4191E8","#634BFA",
+		                                       "#DB42FF","#E83154","#FF7843","#E8A131","#FADC39", "#8736FF"
+};
+  std::string task_color = "#ff8065";
+  std::string small_task_color = "#e2ffaf";
 
   for (const NetworkEdge e : noc.getEdges()) {
 	  auto cnt = link_usage[e.id].size();
@@ -339,7 +340,11 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 	  } else {
 		  std::string color = "";
 		  for (Edge c : link_usage[e.id]) {
-			  if (color != "") color += "::";
+			  if (color != "") {color += "::";}
+
+			  if (edge_color.find(c) == edge_color.end()) {
+				  edge_color[c] = available_colors[edge_color.size() % available_colors.size()];
+			  }
 			  color += edge_color[c];
 		  }
 	      returnStream << e.src << " -> " << e.dst<< "[style = \"bold\", color=\"" << color << "\", splines=\"false\"  , penwidth=2 , arrowsize=0.5 ];" << std::endl;
@@ -407,7 +412,7 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
   }
 
   // ******* spread overlapping sprites
-  // ** Naive algorithm, we don't need a jumbo cargo to carry two cheese.
+  // ** Naive algorithm, we don't need a jumbo cargo to carry two cheeses.
 
   std::map<std::pair<int,int>, std::vector<TaskSprite> > closed_sprites;
 
@@ -483,11 +488,11 @@ std::string printers::GenerateNoCDOT    (models::Dataflow* const  dataflow , boo
 	  for (auto ts : updatedSprites) {
 
 	   if (ts.small) {
-		   returnStream <<  "task_" << ts.id << "[label=\"" << ts.id << "\", style=\"filled\", color=\"red\", fontsize=\"5\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.1, height=0.1];" << std::endl;
+		   returnStream <<  "task_" << ts.id << "[penwidth=0.2,color=black,label=\"\", style=\"filled\", fillcolor=\"" << small_task_color << "\", fontsize=\"5\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.1, height=0.1];" << std::endl;
 	   } else {
 		   Vertex v = dataflow->getVertexById(ts.id);
 		   std::string label = dataflow->getVertexName(v) ;
-		   returnStream <<  "task_" << ts.id << "[label=\"" << label << "\", style=\"filled\", color=\"red\", fontsize=\"9\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.4, height=0.4];" << std::endl;
+		   returnStream <<  "task_" << ts.id << "[penwidth=0.2,color=black,label=\"" << label << "\", style=\"filled\", fillcolor=\"" << task_color << "\", fontsize=\"9\", shape=\"circle\", pos=\"" << ts.x << "," << ts.y << "!\", fixedsize=\"shape\", width=0.4, height=0.4];" << std::endl;
 	   }
 	 }
    }
@@ -651,13 +656,35 @@ void printers::printXML    (models::Dataflow* const  dataflow, parameters_list_t
 
 }
 
-static EXEC_COUNT computeComplexity(models::Dataflow* const  dataflow) {
+static EXEC_COUNT sum_nt(models::Dataflow* const  dataflow) {
 	bool consistent = dataflow->is_consistent();
 	if (!consistent) { return 0; }
 
 	EXEC_COUNT total = 0;
 	{ForEachTask(dataflow,t) {
 		total += dataflow->getNi(t) ;
+	}}
+
+	return total;
+}
+static EXEC_COUNT sum_phit(models::Dataflow* const  dataflow) {
+	bool consistent = dataflow->is_consistent();
+	if (!consistent) { return 0; }
+
+	EXEC_COUNT total = 0;
+	{ForEachTask(dataflow,t) {
+		total += dataflow->getPhasesQuantity(t) ;
+	}}
+
+	return total;
+}
+static EXEC_COUNT sum_qt(models::Dataflow* const  dataflow) {
+	bool consistent = dataflow->is_consistent();
+	if (!consistent) { return 0; }
+
+	EXEC_COUNT total = 0;
+	{ForEachTask(dataflow,t) {
+		total += dataflow->getNi(t) / dataflow->getPhasesQuantity(t);
 	}}
 
 	return total;
@@ -707,12 +734,12 @@ void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list
 	std::cout << "Graph name     = " <<  dataflow->getGraphName() << std::endl;
 	std::cout << "Graph type     = " <<  dataflow->getGraphType() << std::endl;
 	std::cout << "Task count     = " <<  dataflow->getVerticesCount() << std::endl;
-	std::cout << "Channels total = " <<  dataflow->getEdgesCount() << std::endl;
-
-	EXEC_COUNT complexity = computeComplexity(dataflow) ;
+	std::cout << "Channel count = " <<  dataflow->getEdgesCount() << std::endl;
 
 	if (consistent) {
-		std::cout << "Complexity     = " <<  complexity << std::endl;
+		std::cout << "Sum(qt) = " <<  sum_qt(dataflow) << std::endl;
+		std::cout << "Sum(phit) = " <<  sum_phit(dataflow) << std::endl;
+		std::cout << "Sum(Nt=qt*phit) (complexity) = " <<  sum_nt(dataflow) << std::endl;
 	} else {
 		std::cout << "This dataflow graph is not consistent!" << std::endl;
 	}

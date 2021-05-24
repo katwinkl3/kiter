@@ -10,6 +10,7 @@
 #define COMMONS_H_
 
 #include <commons/verbose.h>
+#include <commons/KiterRegistry.h>
 
 #include <numeric>
 #include <algorithm>
@@ -523,6 +524,59 @@ inline entier modulo(entier a, entier b) {
 }
 
 
+
+template <typename entier>
+std::pair<entier,entier> extended_euclide (entier _a, entier _b, entier _c) {
+
+	// Kuṭṭaka, Aryabhata's algorithm for solving linear Diophantine equations in two unknowns
+
+
+	entier gcdab = std::gcd(_a,_b) ;
+
+	VERBOSE_ASSERT (_c % gcdab == 0, "No solution");
+
+	entier a = _a/ gcdab;
+	entier b = _b/ gcdab;
+	entier c = _c/ gcdab;
+
+	std::pair<entier,entier> r (a,b);
+	std::pair<entier,entier> s (1,0);
+	std::pair<entier,entier> t (0,1);
+
+    while (r.second != 0) {
+    	entier quotient = r.first / r.second;
+    	r = std::pair<entier,entier> ( r.second ,  r.first - quotient * r.second );
+    	s = std::pair<entier,entier> ( s.second ,  s.first - quotient * s.second );
+    	t = std::pair<entier,entier> ( t.second ,  t.first - quotient * t.second );
+    }
+
+    VERBOSE_INFO ( "A:" <<  _a << ", B:" <<  _b << ", C:" <<  _c );
+    VERBOSE_INFO ( "gcdab:" <<  gcdab );
+    VERBOSE_INFO ( "A:" <<  a << ", B:" <<  b << ", C:" <<  c );
+    VERBOSE_INFO ( "Bézout coefficients:" <<  s.first << "," <<  t.first );
+    VERBOSE_INFO ( "greatest common divisor:" <<  r.first);
+    VERBOSE_INFO ( "quotients by the gcd:" <<  t.second<< "," <<   s.second);
+
+    return std::pair<entier,entier>  ( (c * s.first), (c * t.first));
+
+}
+
+
+
+template <typename VALUE_TYPE>
+VALUE_TYPE get_parameter ( parameters_list_t params , std::string name , VALUE_TYPE default_value) {
+
+	VALUE_TYPE value = default_value ;
+
+	 if (params.find(name)!= params.end() ) {
+		 value = commons::fromString<VALUE_TYPE>(params[name]);
+		 VERBOSE_INFO(name << " was to " << value);
+	 } else {
+		 VERBOSE_WARNING(name << " parameter is not found.");
+	 }
+
+	 return value;
+}
 
 }// end of commons namespace
 

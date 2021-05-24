@@ -1,0 +1,14 @@
+{
+  "threshold": 0,
+  "reporters": [
+    "consoleFull"
+  ],
+  "ignore": [
+      "**/*.xml",
+      "**/*.py",      
+      "**/*.cpp",
+      "**/*.hpp",
+      "**/*.h"
+  ],
+  "absolute": true
+}

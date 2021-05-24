@@ -31,6 +31,8 @@ struct transformation_t {
 	void (*fun)(models::Dataflow*, parameters_list_t);
 };
 
+
+
 #define ADD_TRANSFORMATION(name,t) static auto name##unique = KiterRegistry<transformation_t>::add(t)
 #define ADD_GENERATOR(name,t) static auto name##unique = KiterRegistry<generator_t>::add(t)
 

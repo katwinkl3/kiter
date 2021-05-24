@@ -326,6 +326,7 @@ public :
 public :
 
 inline	 Edge addEdge(const Vertex from, const Vertex to) {
+	// TODO: fixme too long
 	ForEachEdge(this,e) 	{ if (this->getEdgeId(e) >= auto_edge_num) auto_edge_num = this->getEdgeId(e) + 1;};
 	return addEdgeUnsafe(from , to , auto_edge_num);
 }
@@ -360,11 +361,13 @@ inline	 Edge addEdgeUnsafe(const Vertex from, const Vertex to, const  ARRAY_INDE
 
 
 inline 	Vertex 				addVertex			() 							{
+	// TODO: fixme too long
 	ForEachVertex(this,v) 	{ if (this->getVertexId(v) >= auto_vertex_num) auto_vertex_num = this->getVertexId(v) + 1;};
 	return addUnsafeVertex(auto_vertex_num++);
 }
 
 inline  Vertex                addVertex         (const ARRAY_INDEX id)      {
+	// TODO: fixme too long
 	ForEachVertex(this,v) 	{ if (this->getVertexId(v) >= id) VERBOSE_FAILURE();};
 	return addUnsafeVertex(id);
 
@@ -444,11 +447,14 @@ public :
 
 
 	inline	Vertex					getVertexById		(const ARRAY_INDEX id) const	{
+		// TODO: fixme too long
 		ForEachVertex(this,pVertex){ if (this->getVertexId(pVertex) == id) return pVertex;};
 		throw std::out_of_range(TXT_TASK_NOT_FOUND);
 	}
 
-	inline	Edge					getEdgeById			(const ARRAY_INDEX id) const	{ForEachEdge(this,pEdge) 	{ if (this->getEdgeId(pEdge) == id) return pEdge;};throw std::out_of_range(TXT_CHANNEL_NOT_FOUND);}
+	inline	Edge					getEdgeById			(const ARRAY_INDEX id) const	{
+		// TODO: fixme too long
+		ForEachEdge(this,pEdge) 	{ if (this->getEdgeId(pEdge) == id) return pEdge;};throw std::out_of_range(TXT_CHANNEL_NOT_FOUND);}
 
 
 	inline  void 				setVertexId		(const Vertex t,
@@ -538,7 +544,10 @@ public :
     }
 
 
-    inline  Vertex              getVertexByName (const std::string s) const {ForEachVertex(this,pVertex) {if (this->getVertexName(pVertex) == s)return pVertex;};throw std::out_of_range(TXT_TASK_NOT_FOUND + s);}
+    inline  Vertex              getVertexByName (const std::string s) const {
+    	// TODO: FIXME PLEASE!
+    	ForEachVertex(this,pVertex) {if (this->getVertexName(pVertex) == s)return pVertex;};throw std::out_of_range(TXT_TASK_NOT_FOUND + s);
+    }
 
     inline 	const std::string 	getEdgeName	    (const Edge c)		const	{
     		std::string s = boost::get(get(boost::edge_name, this->getG()), c.e);
@@ -547,6 +556,7 @@ public :
     }
 
     inline  Edge                getEdgeByName   (const std::string s) const {
+    	// TODO: fixme too long
     	{ForEachEdge(this,pEdge)     {
     		if (this->getEdgeName(pEdge) == s) return pEdge;
     	}};
@@ -656,7 +666,7 @@ public :
                                        			reset_computation();boost::put(boost::edge_tokensize, this->getG(), c.e, ts);}
     inline  EXEC_COUNT          getEdgeOutPhasesCount   (const Edge c) const   {
     	EXEC_COUNT tmp =  boost::get(get(boost::edge_outputs, this->getG()), c.e).size();
-    	VERBOSE_DEBUG_ASSERT(this->getPhasesQuantity(this->getEdgeTarget(c)) == tmp, "Edge output spec does ot match task spec");
+    	VERBOSE_DEBUG_ASSERT(this->getPhasesQuantity(this->getEdgeTarget(c)) == tmp, "Edge (" << this->getEdgeName(c) << ") output spec (" << tmp << ") does not match task spec(" << this->getPhasesQuantity(this->getEdgeTarget(c)) << ")");
     	return tmp;
     }
     inline  EXEC_COUNT          getEdgeInPhasesCount   (const Edge c) const   {

@@ -11,25 +11,54 @@
 #include <lp/glpsol.h>
 #include <models/Dataflow.h>
 #include <models/EventGraph.h>
+#include <algorithms/buffersizing.h>
 #include <algorithms/normalization.h>
 #include <algorithms/buffersizing/periodic.h>
+#include <algorithms/throughput/kperiodic.h>
 
 
 
 void algorithms::compute_csdf_1periodic_memory   (models::Dataflow* const  dataflow, parameters_list_t params) {
-    VERBOSE_INFO("Please note you can specify the INTEGERSOLVING and ILPGENERATIONONLY parameters.");
+    VERBOSE_INFO("Please note you can specify the ILP and GENONLY parameter flags.");
 
-    TIME_UNIT PERIOD = 0 ;
-	if (params.find("PERIOD")!= params.end() ) PERIOD =  commons::fromString<TIME_UNIT>(params["PERIOD"]);
-	TOKEN_UNIT size = periodic_memory_sizing_csdf( dataflow,  PERIOD,  params.find("INTEGERSOLVING")!= params.end() ,  params.find("ILPGENERATIONONLY")!= params.end() );
+    TIME_UNIT period    = commons::get_parameter<TIME_UNIT>(params, "PERIOD", 0.0) ;
+    bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
+    bool      gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
 
-	 VERBOSE_INFO("Size is " << size);
+
+	  /// BEGIN $$$$$$$$$$$$$$$ This part compute a period if none provided
+	  std::map<Vertex,EXEC_COUNT> kvector = algorithms::scheduling::generate1PeriodicVector(dataflow);
+
+	  	kperiodic_result_t result = algorithms::KSchedule(dataflow,&kvector);
+
+	  	TIME_UNIT MIN_PERIOD = 1 / result.throughput;
+
+	  	if (MIN_PERIOD) {
+	  	   	VERBOSE_ASSERT (MIN_PERIOD <= period, "The period must be possible");
+	  	   	if (period == 0) {
+	  	   	period = MIN_PERIOD;
+	  	   		VERBOSE_WARNING("PERIOD set to " << period);
+	  	   	}
+	  	} else {
+	  		VERBOSE_ERROR ("Cannot compute the maximum period...");
+	  	}
+
+	  /// END $$$$$$$$$$$$$$$ This part compute a period if none provided
+
+	BufferSizingResult sizing_res = periodic_memory_sizing_csdf( dataflow, period, solve_ilp, gen_only);
+	if (sizing_res.is_valid()) {
+		std::cout << "Total buffer size : " << sizing_res.total_size()
+				  << " + 2 * " << dataflow->getVerticesCount() << " = "
+				  <<  sizing_res.total_size() + 2 * dataflow->getVerticesCount() << std::endl ;
+		 std::cout << "1Periodic size is " <<  sizing_res.total_size() << std::endl;
+	} else {
+		std::cout << "No solution" << std::endl;
+	}
 }
-
-TOKEN_UNIT algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  dataflow, TIME_UNIT PERIOD, bool INTEGERSOLVING, bool ILPGENERATIONONLY) {
+BufferSizingResult algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  dataflow, TIME_UNIT PERIOD, bool ilp_solving, bool gen_only) {
 
 	commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
-	if (INTEGERSOLVING) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
+	if (ilp_solving) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
 
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 	VERBOSE_ASSERT (PERIOD > 0, "The period must be defined");
@@ -38,10 +67,14 @@ TOKEN_UNIT algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  d
 
 	TIME_UNIT FREQUENCY = 1.0 / PERIOD;
 
+   	// STEP 0 - CSDF Graph should be normalized
+   	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+
+
 	//##################################################################
 	// Linear program generation
 	//##################################################################
-	const std::string problemName =  "PeriodicSizing_" + dataflow->getGraphName() + "_" + commons::toString(FREQUENCY) + "_" + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "INT" : "");
+	const std::string problemName =  "PeriodicSizing_" + dataflow->getGraphName() + "_" + commons::toString(FREQUENCY) + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "_INT" : "");
 	commons::GLPSol g = commons::GLPSol(problemName,commons::MIN_OBJ);
 
 
@@ -251,9 +284,9 @@ TOKEN_UNIT algorithms::periodic_memory_sizing_csdf   (models::Dataflow* const  d
 	// ilp_params.linear_method = commons::DUAL_LINEAR_METHOD;
 	//
 	// bool sol = g.solve(ilp_params);
-	if (ILPGENERATIONONLY)  {
+	if (gen_only)  {
 		g.writeMPSProblem();
-		return 0;
+		return BufferSizingResult(false);
 	}
 	bool sol = g.solveWith();
 

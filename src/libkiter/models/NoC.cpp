@@ -7,94 +7,92 @@
 
 #include <models/NoC.h>
 #include <set>
+#include <limits>
+#include <algorithm>
 
-		NoC::NoC (int XSIZE, int YSIZE) : _XSIZE(XSIZE), _YSIZE(YSIZE) {
-			VERBOSE_INFO( "start NoC with dim=" << XSIZE << "x" << YSIZE  );
+bool NoC::check_ids () {
 
-			int NodeCount = XSIZE * YSIZE * 2;
+	VERBOSE_DEBUG("Start auto-check of NoC model");
 
-			for (int X = 0 ; X < XSIZE ; X ++) {
+	std::set<noc_id_t> ids;
 
-				for (int Y = 0 ; Y < YSIZE ; Y ++) {
+	for (auto e : this->getEdges()) {
+		VERBOSE_DEBUG("Edge " << e);
+		VERBOSE_ASSERT(ids.count(e.id) == 0, "Two NoC elements must not share the same id!");
+		ids.insert(e.id);
+	}
+	for (auto n : this->getNodes()) {
+		VERBOSE_DEBUG("Node " << n);
+		VERBOSE_ASSERT(ids.count(n.id) == 0, "Two NoC elements must not share the same id!");
+		ids.insert(n.id);
+	}
 
-					int source = X + Y * XSIZE ;
-					int core_id = source + this->size();
-					NetworkNode source_node = NetworkNode(source,  NetworkNodeType::Router, (double)(X)+0.5, (double)(Y)+0.5);
-					NetworkNode core_node =  NetworkNode(core_id, NetworkNodeType::Core, (double)(X), (double)(Y));
+	VERBOSE_DEBUG("End auto-check of NoC model");
+
+	return (ids.size() == this->getEdges().size() + this->getNodes().size());
+
+}
+
+void NoC::generate() {
+
+	_vnodes.clear();
+	_mnodes.clear();
+
+	_vedges.clear();
+	_medges.clear();
+	_mid2edges.clear();
+
+	_adj.clear();
 
 
-					_vnodes.push_back(source_node);
-					_vnodes.push_back(core_node);
-					_mnodes.insert({source,source_node});
-					_mnodes.insert({core_id,core_node});
+	auto XSIZE = this->getXSize();
+	auto YSIZE = this->getYSize();
 
-					//add edges between source core and router
-					NetworkEdge ep = NetworkEdge(NodeCount + core_id*NodeCount + source , core_id, source);
-					_mid2edges.insert({ep.id,ep});
-					_medges.insert({std::pair<node_id_t,node_id_t>(core_id , source),ep});
-					_vedges.push_back(ep);
+	VERBOSE_DEBUG( "start NoC with dim=" << XSIZE << "x" << YSIZE  );
+
+				const int NodeCount = XSIZE * YSIZE * 2;
+
+				for (int X = 0 ; X < XSIZE ; X ++) {
+
+					for (int Y = 0 ; Y < YSIZE ; Y ++) {
+
+						const int source_id = X + Y * XSIZE ;
+						const int core_id   = source_id + this->size();
+
+						// Add Core and Router nodes
+						this->addNetworkNode(NetworkNode(source_id,  NetworkNodeType::Router, (double)(X)+0.5, (double)(Y)+0.5));
+						this->addNetworkNode(NetworkNode(core_id, NetworkNodeType::Core, (double)(X), (double)(Y)));
+
+						// Connect them
+						this->addNetworkEdge(NetworkEdge(NodeCount + source_id*NodeCount + core_id, source_id, core_id));
+						this->addNetworkEdge(NetworkEdge(NodeCount + core_id*NodeCount + source_id , core_id, source_id));
 
 
+						if (X < (XSIZE - 1)) {
+							const int dest_right = (X + 1) + Y * XSIZE ;
 
-					NetworkEdge e = NetworkEdge(NodeCount + source*NodeCount + core_id, source, core_id);
-					_mid2edges.insert({e.id,e});
-					_medges.insert({std::pair<node_id_t,node_id_t>(source, core_id),e});
-					_vedges.push_back(e);
+							// Connect with previous nodes on the left
+							this->addNetworkEdge(NetworkEdge(NodeCount + source_id*NodeCount + dest_right, source_id, dest_right));
+							this->addNetworkEdge(NetworkEdge(NodeCount + dest_right*NodeCount + source_id, dest_right, source_id));
 
+						}
 
+						if (Y < (YSIZE - 1)) {
+							int dest_bottom = X + (Y+1) * XSIZE ;
 
-					if (X < (XSIZE - 1)) {
-						int dest_right = (X + 1) + Y * XSIZE ;
+							// Connect with previous nodes on the top
+							this->addNetworkEdge(NetworkEdge(NodeCount + source_id*NodeCount + dest_bottom, source_id, dest_bottom));
+							this->addNetworkEdge(NetworkEdge(NodeCount + dest_bottom*NodeCount + source_id, dest_bottom, source_id));
 
-						NetworkEdge e = NetworkEdge(NodeCount + source*NodeCount + dest_right, source, dest_right);
-						_mid2edges.insert({e.id,e});
-						_medges.insert({std::pair<node_id_t,node_id_t>( source, dest_right),e});
-						_vedges.push_back(e);
-
-						NetworkEdge ep = NetworkEdge(NodeCount + dest_right*NodeCount + source, dest_right, source);
-						_mid2edges.insert({ep.id,ep});
-						_medges.insert({std::pair<node_id_t,node_id_t>(  dest_right , source),ep});
-						_vedges.push_back(ep);
+						}
 
 					}
-
-					if (Y < (YSIZE - 1)) {
-						int dest_bottom = X + (Y+1) * XSIZE ;
-
-						NetworkEdge e = NetworkEdge(NodeCount + source*NodeCount + dest_bottom, source, dest_bottom);
-						_mid2edges.insert({e.id,e});
-						_medges.insert({std::pair<node_id_t,node_id_t>( source, dest_bottom),e});
-						_vedges.push_back(e);
-
-
-						NetworkEdge ep = NetworkEdge(NodeCount + dest_bottom*NodeCount + source, dest_bottom, source);
-						_mid2edges.insert({ep.id,ep});
-						_medges.insert({std::pair<node_id_t,node_id_t>( dest_bottom ,  source),ep});
-						_vedges.push_back(ep);
-
-					}
-
 				}
-			}
-			VERBOSE_INFO( "dim=" << XSIZE << "x" << YSIZE << ",edges=" << _vedges.size() << ",medges=" << _medges.size() );
+				VERBOSE_DEBUG( "dim=" << XSIZE << "x" << YSIZE << ",edges=" << _vedges.size() << ",medges=" << _medges.size() );
 
-			VERBOSE_DEBUG("Start auto-check of NoC model");
 
-			std::set<noc_id_t> ids;
 
-			for (auto e : this->getEdges()) {
-				VERBOSE_DEBUG("Edge " << e);
-				VERBOSE_ASSERT(ids.count(e.id) == 0, "Two NoC elements must not share the same id!");
-				ids.insert(e.id);
-			}
-			for (auto n : this->getNodes()) {
-				VERBOSE_DEBUG("Node " << n);
-				VERBOSE_ASSERT(ids.count(n.id) == 0, "Two NoC elements must not share the same id!");
-				ids.insert(n.id);
-			}
+}
 
-			VERBOSE_DEBUG("End auto-check of NoC model");
-
-		}
 
 

@@ -38,6 +38,61 @@
 	return kvector;
 }
 
+ models::Scheduling algorithms::scheduling::CSDF_1PeriodicScheduling    (const models::Dataflow* const dataflow) {
+
+ 	VERBOSE_ASSERT(dataflow->has_repetition_vector(), "Repetition vector failed.");
+
+
+    // STEP 1 - generate initial vector
+    periodicity_vector_t kvector;
+    {ForEachVertex(dataflow,t) {
+        kvector[t] = 1;
+
+    }}
+
+ 	models::EventGraph* eg =  generateKPeriodicEventGraph(dataflow,&kvector);
+ 	std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
+
+ 	TIME_UNIT res = howard_res.first ;
+ 	std::vector<models::EventGraphEdge> critical_circuit = howard_res.second;
+
+
+
+ 	// Build critical_edges
+ 	std::set<Edge> critical_edges;
+ 	for (auto constraint: critical_circuit) {
+ 		ARRAY_INDEX channel_id = eg->getChannelId(constraint);
+ 		try {
+ 			Edge        channel    = dataflow->getEdgeById(channel_id);
+ 			critical_edges.insert(channel);
+ 		} catch(...) {
+ 			VERBOSE_DEBUG("      is loopback");
+ 		}
+ 	}
+
+ 	scheduling_t scheduling_result;
+ 	TIME_UNIT omega = 1.0 / res ;
+ 	eg->computeStartingTimeWithOmega (omega);
+
+ 	{ForEachEvent(eg,e) {
+ 	        models::SchedulingEvent se = eg->getEvent(e);
+ 	        EXEC_COUNT ti = se.getTaskId();
+ 	        TIME_UNIT start = eg->getStartingTime(e);
+ 	        Vertex v = dataflow->getVertexById(ti);
+ 	        TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
+
+ 	       scheduling_result[(ARRAY_INDEX)ti].first = period;
+ 	      scheduling_result[(ARRAY_INDEX)ti].second.push_back(start);
+
+ 	        //sheduling_result[v].first = period;
+ 	        //sheduling_result[v].second.push_back(start);
+ 	    }}
+
+ 	return models::Scheduling(dataflow, omega, scheduling_result, critical_edges);
+
+
+ }
+
 
 models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (const models::Dataflow* const dataflow) {
 
@@ -63,7 +118,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (const mo
     EXEC_COUNT iteration_count = 0;
 
     // STEP 1 - generate initial vector
-    std::map<Vertex,EXEC_COUNT> kvector;
+    periodicity_vector_t kvector;
     {ForEachVertex(dataflow,t) {
         kvector[t] = 1;
 
@@ -215,7 +270,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (const mo
 
 }
 
-void algorithms::scheduling::CSDF_1PeriodicScheduling (models::Dataflow*  dataflow, parameters_list_t )  {
+void algorithms::scheduling::CSDF_1PeriodicThroughput (models::Dataflow*  dataflow, parameters_list_t )  {
 
 	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
    //STEP 1 - Generate Event Graph
@@ -234,8 +289,26 @@ void algorithms::scheduling::CSDF_1PeriodicScheduling (models::Dataflow*  datafl
 
 }
 
+void algorithms::scheduling::OnePeriodicScheduling (models::Dataflow*  dataflow, parameters_list_t params)  {
 
-void algorithms::scheduling::CSDF_NPeriodicScheduling (models::Dataflow*  dataflow, parameters_list_t )  {
+	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+	models::Scheduling res = CSDF_1PeriodicScheduling    (dataflow);
+
+   TIME_UNIT omega = res.getGraphPeriod();
+
+   int linesize = params.count("LINE")? commons::fromString<int>(params["LINE"]) : 80;
+
+   std::cout << res.asASCII(linesize);
+   std::cout << res.asText();
+
+   std::cout << "1Periodic throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
+   std::cout << "1Periodic period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
+
+}
+
+
+
+void algorithms::scheduling::CSDF_NPeriodicThroughput (models::Dataflow*  dataflow, parameters_list_t )  {
 
 	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
    //STEP 1 - Generate Event Graph

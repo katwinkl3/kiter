@@ -8,7 +8,6 @@
 
 SHELL = /bin/bash
 
-
 SDF3_BENCHMARK := ./benchmarks/sdf3bench/
 SDF3_MEM_BENCHMARK := ./benchmarks/sdf3mem/
 SDF3_CS_BENCHMARK := ./benchmarks/sdf3cs/
@@ -42,10 +41,10 @@ info :
 	@echo "make ubuntu_test: Run kiter with Ubuntu Docker"
 	@echo "make test: Run Kiter user-level test"
 	@echo "make sdf3_benchmarks: Download SDF3 benchmarks."
-	@echo "make sdf3: Download and Compile SDF3 (required for Travis CI)."	
+	@echo "make sdf3: Download and Compile SDF3 (required for comparative tests)."	
 	@echo "-------------------------------------------"
 
-all : release
+all : release debug
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 
 sdf3: ${SDF3_BINARY_ROOT}
@@ -63,7 +62,7 @@ clean:
 
 cleanall: clean
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	rm  -rf logs/ tools/sdf3*/ sdf.log benchmarks/sdf3*/ benchmarks/ascenttestbench/
+	rm  -rf ./logs/ tools/sdf3*/ sdf.log benchmarks/sdf3*/ benchmarks/ascenttestbench/
 
 benchmark :  sdf.log  csdf.log csdf_sized.log
 	@echo "###########"" ENTER IN $@ : $^  #####################"
@@ -74,12 +73,21 @@ ubuntu_test:
 
 test: ./Release/bin/kiter 
 	@echo "###########"" ENTER IN $@ : $^  #####################"
-	for f in  benchmarks/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
-	for f in  benchmarks/IB5CSDF/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput   ; done
-	${KITER} -f benchmarks/sample.xml -a KPeriodicThroughput -pA=1 -pB=1 -pC=1
-	${KITER} -f benchmarks/sample.xml -a KPeriodicThroughput -pA=2 -pB=1 -pC=2
-	./tools/verify_kperiodic.sh benchmarks/21.xml benchmarks/expansion_paper_norm_sdf.xml benchmarks/expansion_paper_sdf.xml benchmarks/faustTest.xml benchmarks/multrate.xml benchmarks/new_benchmark.xml benchmarks/sample.xml benchmarks/simpler_benchmark.xml benchmarks/tiny_r.xml benchmarks/tiny.xml
-	./tools/verify_dse.sh benchmarks/21.xml benchmarks/expansion_paper_norm_sdf.xml benchmarks/expansion_paper_sdf.xml benchmarks/faustTest.xml benchmarks/new_benchmark.xml benchmarks/sample.xml benchmarks/simpler_benchmark.xml benchmarks/tiny_r.xml benchmarks/tiny.xml
+#Bodin2013 and Bodin2016
+	mkdir -p ./logs
+	rm -rf ./logs/*
+	for f in  benchmarks/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput >> ./logs/1KBenchmarks.log  ; done
+	for f in  benchmarks/IB5CSDF/*.xml ; do echo === $$f ; ${KITER} -f $$f  -a 1PeriodicThroughput -a KPeriodicThroughput >> ./logs/1KBenchmarks.log  ; done
+	${KITER} -f benchmarks/sample.xml -a KPeriodicThroughput -pA=1 -pB=1 -pC=1 | grep -q 23.000000
+	${KITER} -f benchmarks/sample.xml -a KPeriodicThroughput -pA=2 -pB=1 -pC=2 | grep -q 23.000000
+
+# test:  Verify Kperiodic
+	./tools/verify_kperiodic.sh benchmarks/21.xml benchmarks/expansion_paper_norm_sdf.xml benchmarks/expansion_paper_sdf.xml benchmarks/faustTest.xml benchmarks/multrate.xml benchmarks/new_benchmark.xml benchmarks/sample.xml benchmarks/simpler_benchmark.xml benchmarks/tiny_r.xml benchmarks/tiny.xml > ./logs/verifykperiodic.log
+# test:  Verify KDSE
+	./tools/verify_dse.sh benchmarks/21.xml benchmarks/expansion_paper_norm_sdf.xml benchmarks/expansion_paper_sdf.xml benchmarks/faustTest.xml benchmarks/new_benchmark.xml benchmarks/sample.xml benchmarks/simpler_benchmark.xml benchmarks/tiny_r.xml benchmarks/tiny.xml > ./logs/verifydse.log
+
+# test:  KDSE
+	./tools/kdse_run_benchmarks.sh ./logs/ 30 > ./logs/kdse_run_benchmarks.log  # Limit to 30 sec for CI
 
 csdf_benchmarks.log:  ./Release/bin/kiter Makefile 
 	@echo "###########"" ENTER IN $@ : $^  #####################"
@@ -125,7 +133,7 @@ ${SDF3_CS_BENCHMARK} : ${SDF3_ROOT}/sdfg_designflow_case_study.zip
 	mkdir -p $@
 	cp $< $@/
 	cd $@ && unzip $<
-	sed -i.bak "s/xsi:noNamespaceSchemaLocation=\"http:..www.es.ele.tue.nl.sdf3.xsd.sdf3-sdf.xsd\"//g" $@/*.xml
+	sed -i.bak "s/xsi:noNamespaceSchemaLocation=\"http:..www.es.ele.tue.nl.sdf3.xsd.sdf3-sdf.xsd\"//g" $@/designflow_case_study/*.xml
 
 ${SDF3_MEM_BENCHMARK} : ${SDF3_ROOT}/sdfg_buffersizing.zip
 	@echo "###########"" ENTER IN $@ : $^  #####################"
@@ -157,7 +165,7 @@ ${ASCENT_TESTBENCH} : ${SDF3_BENCHMARK}
 	mkdir -p $@
 	cp $</one_* $@/
 	for f in $@/*_buffer.xml; do mv -- "$$f" "$${f%_buffer.xml}.xml" ; done
-	sed -i.bak "s/.*_.*//" $@/*.xml
+	sed -i.bak "s/.*=\"_.*//" $@/*.xml
 	rm $@/*.bak
 
 

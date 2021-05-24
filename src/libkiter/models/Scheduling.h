@@ -38,11 +38,11 @@ public :
 	}
 
 	TIME_UNIT getGraphPeriod () const {
-			return this->_period;
+		return this->_period;
 	}
 
 	TIME_UNIT getGraphThroughput () const {
-			return 1.0 / this->_period;
+		return 1.0 / this->_period;
 	}
 	const scheduling_t& getTaskSchedule () const{
 		return this->_tasks_schedule;
@@ -53,6 +53,9 @@ public :
 	}
 
 	void verbose_print ();
+	std::string asText () ;
+	std::string asASCII (int line_size) ;
+
 
 };
 }

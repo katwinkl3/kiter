@@ -125,6 +125,7 @@ static inline bool  VERBOSE_IS_ILP()                     { return (commons::VERB
 #define VERBOSE_ASSERT_GreaterEqualThan(a,b) if (a < b)  {VERBOSE_ERROR("Assertion failed : " << #a << "(=" << a << ") >=" << #b << "(=" << b << ")"); ERROR();}
 
 
+
 #ifndef __RELEASE_MODE__
 #define VERBOSE_BAD_PROGRAMMING() {VERBOSE_ERROR("Internal Error"); VERBOSE_BACKTRACE(); std::cerr << std::flush; EXIT_ON_FAILURE();}
 #else

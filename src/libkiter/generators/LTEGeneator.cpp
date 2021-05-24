@@ -12,17 +12,18 @@
 models::Dataflow*  generators::generate_lte_sdf(parameters_list_t   param_list) {
 
 
-	double yscale = 1;
-	if (param_list.count("yscale") == 1) yscale = std::stod(param_list["yscale"]);
+	int miwf = param_list.count("miwf") ? commons::fromString<int>(param_list["miwf"]) : 64;
+	int cwac = param_list.count("cwac") ? commons::fromString<int>(param_list["cwac"]) : 75;
+	int ifft = param_list.count("ifft") ? commons::fromString<int>(param_list["ifft"]) : 24;
+	int dd = param_list.count("dd") ? commons::fromString<int>(param_list["dd"]) : 75;
 
 	models::Dataflow* to = new models::Dataflow();
 
 	std::vector<phase_info> phases;
-
-	phases.push_back( getPhaseStruct(4, 392504, 16, "miwf"));
-	phases.push_back( getPhaseStruct(2, 230635, 32, "cwac"));
-	phases.push_back( getPhaseStruct(6, 353448, 32, "ifft"));
-	phases.push_back( getPhaseStruct(4, 267559, 32, "dd"));
+	phases.push_back( getPhaseStruct(miwf, 392504, 16, "miwf"));
+	phases.push_back( getPhaseStruct(cwac, 230635, 32, "cwac"));
+	phases.push_back( getPhaseStruct(ifft, 353448, 32, "ifft"));
+	phases.push_back( getPhaseStruct(dd,   267559, 32, "dd"));
 
 
 	std::vector< std::vector<ARRAY_INDEX> > vertex_info;

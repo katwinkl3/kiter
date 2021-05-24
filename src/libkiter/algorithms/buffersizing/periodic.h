@@ -17,7 +17,7 @@ namespace models {
 
 namespace algorithms {
 
-TOKEN_UNIT periodic_memory_sizing_csdf   (models::Dataflow* const  dataflow, TIME_UNIT PERIOD, bool INTEGERSOLVING, bool ILPGENERATIONONLY) ;
+BufferSizingResult periodic_memory_sizing_csdf   (models::Dataflow* const  dataflow, TIME_UNIT PERIOD, bool INTEGERSOLVING, bool ILPGENERATIONONLY) ;
 void compute_csdf_1periodic_memory       (models::Dataflow* const  dataflow, parameters_list_t);
 
 } // end of namespace algorithms

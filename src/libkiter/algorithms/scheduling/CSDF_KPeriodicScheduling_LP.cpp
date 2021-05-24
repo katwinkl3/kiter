@@ -164,7 +164,7 @@ bool add_precedences_constraints (commons::GLPSol &g, commons::idx_t OMEGA_COL, 
 				TIME_UNIT omega_coef =  ((TIME_UNIT) alphamax) / ( (TIME_UNIT) N_t * (TIME_UNIT) NoKPeriodic_i_a );
 				int rowid = g.addRow(pred_row_name,commons::bound_s(commons::LOW_BOUND, (double) ltai ));
 
-				VERBOSE_EXTRA_DEBUG("      omega_coef =  " << omega_coef );
+				VERBOSE_EXTRA_DEBUG("      omega_coef =  " << ((TIME_UNIT) alphamax) << "/(" <<  (TIME_UNIT) N_t  << "*" <<  (TIME_UNIT) NoKPeriodic_i_a  << ") = " << omega_coef );
 
 				g.fastAddCoef(rowid ,OMEGA_COL    , (double) - omega_coef      );
 				if ( sajcolid != saicolid) {
@@ -435,7 +435,7 @@ models::Scheduling  algorithms::scheduling::CSDF_RealPeriodicScheduling_LP    (c
     			std::string colam1_name = START_COL_STR(name,a-1,1);
     			std::string cola_name   = START_COL_STR(name,a,1);
     			std::string omega_name  = OMEGA_COL_STR();
-    			EXEC_COUNT execution_count = dataflow->getPhasesQuantity(t) * dataflow->getNi(t);
+    			EXEC_COUNT execution_count = dataflow->getNi(t);
 
     			std::string row_name = "Fully_periodic_"  + name + "_" + cola_name;
 
@@ -516,8 +516,8 @@ void algorithms::scheduling::CSDF_Real1PeriodicScheduling_LP (models::Dataflow* 
 	models::Scheduling res = CSDF_RealPeriodicScheduling_LP    (dataflow);
 
    TIME_UNIT omega = res.getGraphPeriod();
-   std::cout << "Maximum throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
-   std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
+   std::cout << "SPeriodic(LP) throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
+   std::cout << "SPeriodic(LP) period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
 
 }
 
@@ -527,8 +527,8 @@ void algorithms::scheduling::CSDF_Real1PeriodicScheduling_LP (models::Dataflow* 
 	models::Scheduling res = CSDF_KPeriodicScheduling_LP    (dataflow, generate1PeriodicVector(dataflow));
 
     TIME_UNIT omega = res.getGraphPeriod();
-    std::cout << "Maximum throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
-    std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
+    std::cout << "1Periodic(LP) throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
+    std::cout << "1Periodic(LP) period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
 
 }
 
@@ -538,8 +538,8 @@ void algorithms::scheduling::CSDF_Real1PeriodicScheduling_LP (models::Dataflow* 
 	models::Scheduling res = CSDF_KPeriodicScheduling_LP    (dataflow, generateNPeriodicVector(dataflow));
 
     TIME_UNIT omega = res.getGraphPeriod();
-    std::cout << "Maximum throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
-    std::cout << "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
+    std::cout << "NPeriodic(LP) throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
+    std::cout << "NPeriodic(LP) period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
 
 }
 

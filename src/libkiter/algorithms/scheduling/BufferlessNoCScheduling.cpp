@@ -115,7 +115,7 @@ static router_xbar_usage_t build_router_xbar_usage (const models::Dataflow* cons
 	for (auto v : dataflow->vertices()) {
 				ARRAY_INDEX tid = dataflow->getVertexId(v);
 				auto current_mapping =  (dataflow->getMapping(v));
-				VERBOSE_ASSERT(current_mapping >= 0, "UNSUPPORTED CASE, EVERY TASK NEED TO BE MAPPED");
+				VERBOSE_ASSERT(current_mapping >= 0, "UNSUPPORTED CASE, EVERY TASK NEED TO BE MAPPED AND THE TASK " << tid << " IS NOT!");
 				VERBOSE_ASSERT(dataflow->getNoC().hasEdge(current_mapping) xor dataflow->getNoC().hasNode(current_mapping), "UNSUPPORTED CASE, NOC NODE AND NOC EDGE WITH SIMILAR ID : " << current_mapping);
 
 				VERBOSE_DEBUG("Process task " << tid << " - " << dataflow->getVertexName(v) << " mapped to " << current_mapping);
@@ -190,7 +190,6 @@ static std::vector<std::vector<ARRAY_INDEX>> get_overlaps (models::Dataflow* con
 
 //print_graph(to, original_df);
 void algorithms::BufferlessNoCScheduling(models::Dataflow* const  _dataflow, parameters_list_t params  ) {
-
 
 	models::Dataflow* to = new models::Dataflow(*_dataflow);
 
