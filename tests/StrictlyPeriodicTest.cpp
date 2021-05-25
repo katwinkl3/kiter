@@ -65,15 +65,6 @@ BOOST_AUTO_TEST_CASE( test_scheduling_simple_buffer_dataflow )
     g->setEdgeInPhases(e1,{1});
     g->setEdgeOutPhases(e1,{1});
 
-
-    // Without reentrancy constraint
-	VERBOSE_ASSERT(computeRepetitionVector(g),"Cannot generate repetition vector.");
-	models::Scheduling res1 = algorithms::scheduling::CSDF_SPeriodicScheduling (g);
-    BOOST_REQUIRE_EQUAL( res1.getGraphPeriod(), 0 );
-
-
-    // With reentrancy constraint
-    g->reset_computation();
     g->setReentrancyFactor(v1,1);
 
 	VERBOSE_ASSERT(computeRepetitionVector(g),"Cannot generate repetition vector.");
@@ -106,6 +97,14 @@ BOOST_AUTO_TEST_CASE( test_scheduling_varied_duration_time_buffer_dataflow )
 	models::Scheduling res = algorithms::scheduling::CSDF_SPeriodicScheduling (g);
 
     BOOST_REQUIRE_EQUAL( res.getGraphPeriod(), 4);
+
+	g->reset_computation();
+    g->setReentrancyFactor(v1,1);
+
+	VERBOSE_ASSERT(computeRepetitionVector(g),"Cannot generate repetition vector.");
+	models::Scheduling res2 = algorithms::scheduling::CSDF_KPeriodicScheduling_LP (g, algorithms::scheduling::generate1PeriodicVector(g));
+
+    BOOST_REQUIRE_NE( res.getGraphPeriod(), res2.getGraphPeriod());
 	
 
     delete g;
