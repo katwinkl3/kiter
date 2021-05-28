@@ -34,7 +34,7 @@ class Actor {
   bool isReadyToEndExec(State s);
   void execStart(models::Dataflow* const dataflow, State &s);
   void execEnd(models::Dataflow* const dataflow, State &s);
-  void printStatus(models::Dataflow* const dataflow);
+  std::string printStatus(models::Dataflow* const dataflow);
  private:
   Vertex actor;
   EXEC_COUNT numExecs; // track number of executions

@@ -35,26 +35,25 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
   std::map<ARRAY_INDEX, Actor> actorMap;
   {ForEachTask(dataflow, t) {
       actorMap[dataflow->getVertexId(t)] = Actor(dataflow, t);
-      std::cout << std::endl;
+      VERBOSE_INFO("\n");
     }}
   State prevState(dataflow, actorMap);
   State currState(dataflow, actorMap);
-  std::cout << "Printing initial state status" << std::endl;
-  prevState.print(dataflow);
-  std::cout << "Printing actor statuses:" << std::endl;
-  printStatus(dataflow);
+  VERBOSE_INFO("Printing initial state status");
+  VERBOSE_INFO(prevState.print(dataflow));
+  VERBOSE_INFO("Printing actor statuses:");
+  VERBOSE_INFO(printStatus(dataflow));
   {ForEachTask(dataflow, t) {
-      actorMap[dataflow->getVertexId(t)].printStatus(dataflow);
+      VERBOSE_INFO(actorMap[dataflow->getVertexId(t)].printStatus(dataflow));
       // track actor with lowest repetition factor (determines when states are stored)
       if (actorMap[dataflow->getVertexId(t)].getRepVec() < minRepFactor) {
         minRepFactor = actorMap[dataflow->getVertexId(t)].getRepVec();
         minRepActorId = actorMap[dataflow->getVertexId(t)].getId();
       }
     }}
-  std::cout << "Actor with ID " << minRepActorId
-            << " is actor with lowest repetition factor ("
-            << minRepFactor << ")" << std::endl;
-
+  VERBOSE_INFO("Actor with ID " << minRepActorId
+               << " is actor with lowest repetition factor ("
+               << minRepFactor << ")");
   // Start ASAP execution loop
   while (true) {
     {ForEachEdge(dataflow, e) {
@@ -67,13 +66,13 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
             minRepActorExecCount++;
             if (minRepActorExecCount == minRepFactor) {
               // TODO add to state list and check for revisited state
-                std::cout << "Adding the following state to list of visited states:" << std::endl;
-                currState.print(dataflow);
+              VERBOSE_INFO("Adding the following state to list of visited states:");
+              VERBOSE_INFO(currState.print(dataflow));
               if (!visitedStates.addState(currState)) {
-                std::cout << "ending execution and computing throughput" << std::endl;
+                VERBOSE_INFO("ending execution and computing throughput");
                 // should now compute throughput using recurrent state
-                std::cout<< "throughput computed is: "
-                         << visitedStates.computeThroughput() << std::endl;
+                TIME_UNIT thr = visitedStates.computeThroughput();
+                std::cout << "throughput computed is: " << thr << std::endl;
                 return;
               }
               currState.setTimeElapsed(0);
@@ -84,45 +83,47 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
           currState.updateState(dataflow, actorMap); // NOTE updating tokens/phase in state done separately from execEnd function, might be a cause for bugs
         }
       }}
-    std::cout << "Printing current state status after ending firing" << std::endl;
-    currState.print(dataflow);
-    std::cout << "Printing Actor Statuses:" << std::endl;
+    VERBOSE_INFO("Printing current state status after ending firing");
+    VERBOSE_INFO(currState.print(dataflow));
+    VERBOSE_INFO("Printing Actor Statuses:");
     {ForEachTask(dataflow, t) {
-        actorMap[dataflow->getVertexId(t)].printStatus(dataflow);
+        VERBOSE_INFO(actorMap[dataflow->getVertexId(t)].printStatus(dataflow));
       }}
-    printStatus(dataflow);
+    VERBOSE_INFO(printStatus(dataflow));
     // start actor firing
-    printStatus(dataflow);
     {ForEachTask(dataflow, t) {
         while (actorMap[dataflow->getVertexId(t)].isReadyForExec(currState)) {
           actorMap[dataflow->getVertexId(t)].execStart(dataflow, currState);
           currState.updateState(dataflow, actorMap);
         }
       }}
-    std::cout << "Printing Current State Status" << std::endl;
-    currState.print(dataflow);
-    std::cout << "Printing Actor Statuses:" << std::endl;
+    VERBOSE_INFO("Printing Current State Status");
+    VERBOSE_INFO(currState.print(dataflow));
+    VERBOSE_INFO("Printing Actor Statuses:");
     {ForEachTask(dataflow, t) {
-        actorMap[dataflow->getVertexId(t)].printStatus(dataflow);
+        VERBOSE_INFO(actorMap[dataflow->getVertexId(t)].printStatus(dataflow));
       }}
-    printStatus(dataflow);
+    VERBOSE_INFO(printStatus(dataflow));
     // advance time and check for deadlocks
     timeStep = currState.advanceTime();
     if (timeStep == LONG_MAX) { // NOTE should technically be LDBL_MAX cause TIME_UNIT is of type long double
-      std::cout << "Deadlock found!" << std::endl;
+      VERBOSE_INFO("Deadlock found!");
       return; // should be returning 0
     }
   }
 }
 
 // prints current status of dataflow graph
-void algorithms::printStatus(models::Dataflow* const dataflow) {
-  std::cout << "Token counts:" << std::endl;
+std::string algorithms::printStatus(models::Dataflow* const dataflow) {
+  std::stringstream outputStream;
+
+  outputStream << "\nToken counts:" << std::endl;
   {ForEachEdge(dataflow, e) {
-      std::cout << "\tChannel " << dataflow->getEdgeName(e) << " ("
-                << dataflow->getVertexName(dataflow->getEdgeSource(e))
-                << "->"
-                << dataflow->getVertexName(dataflow->getEdgeTarget(e))
-                << "): " << dataflow->getPreload(e) << std::endl;
+      outputStream << "\tChannel " << dataflow->getEdgeName(e) << " ("
+                   << dataflow->getVertexName(dataflow->getEdgeSource(e))
+                   << "->"
+                   << dataflow->getVertexName(dataflow->getEdgeTarget(e))
+                   << "): " << dataflow->getPreload(e) << std::endl;
     }}
+  return outputStream.str();
 }

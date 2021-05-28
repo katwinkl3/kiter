@@ -27,24 +27,26 @@ Actor::Actor(models::Dataflow* const dataflow, Vertex a) {
   repVector = dataflow->getNi(actor);
   id = dataflow->getVertexId(actor);
   isExecuting = false;
-  std::cout << "initialising actor " << dataflow->getVertexName(actor) << std::endl;
+  VERBOSE_INFO("initialising actor " << dataflow->getVertexName(actor));
   {ForInputEdges(dataflow, actor, e) {
-      std::cout << "input port execution rates (phases = " << dataflow->getEdgeOutPhasesCount(e) <<"): ";
+      VERBOSE_INFO("input port execution rates (phases = "
+                   << dataflow->getEdgeOutPhasesCount(e) <<"): ");
       consPhaseCount[e] = dataflow->getEdgeOutPhasesCount(e);
       {ForEachPhase(dataflow, actor, p) {
-          std::cout << dataflow->getEdgeOutPhase(e, p) << " ";
+          VERBOSE_INFO(dataflow->getEdgeOutPhase(e, p) << " ");
           consExecRate[e][p] = dataflow->getEdgeOutPhase(e, p);
         }}
-      std::cout << std::endl;
+      VERBOSE_INFO("\n");
     }}
   {ForOutputEdges(dataflow, actor, e) {
-      std::cout << "output port execution rates (phases = " << dataflow->getEdgeInPhasesCount(e) <<"): ";
+      VERBOSE_INFO("output port execution rates (phases = "
+                   << dataflow->getEdgeInPhasesCount(e) <<"): ");
       prodPhaseCount[e] = dataflow->getEdgeInPhasesCount(e);
       {ForEachPhase(dataflow, actor, p) {
-          std::cout << dataflow->getEdgeInPhase(e, p) << " ";
+          VERBOSE_INFO(dataflow->getEdgeInPhase(e, p) << " ");
           prodExecRate[e][p] = dataflow->getEdgeInPhase(e, p);
         }}
-      std::cout << std::endl;
+      VERBOSE_INFO("\n");
     }}
 }
 
@@ -146,9 +148,6 @@ void Actor::execStart(models::Dataflow* const dataflow, State &s) {
   std::pair<TIME_UNIT, PHASE_INDEX> newExec(dataflow->getVertexDuration(this->actor,
                                                                         this->getPhase()),
                                             this->getPhase());
-  // std::cout << "Adding execution time of "
-  //           << dataflow->getVertexDuration(this->actor, this->getPhase())
-  //           << " for Actor " << dataflow->getVertexName(this->actor) << std::endl;
   s.addExecution(this->actor, newExec);
   this->numExecs++;
   this->isExecuting = true;
@@ -160,26 +159,31 @@ void Actor::execEnd(models::Dataflow* const dataflow, State &s) {
   dataflow->reset_computation();
   {ForOutputEdges(dataflow, this->actor, e) {
       currentPhase = s.getRemExecTime(this->actor).front().second;
-      std::cout << "ending execution for phase "
+      VERBOSE_INFO("ending execution for phase "
                 << currentPhase << ", producing "
-                << this->getExecRate(e, currentPhase) << " tokens"
-                << std::endl;
+                << this->getExecRate(e, currentPhase) << " tokens");
       dataflow->setPreload(e, dataflow->getPreload(e) + this->getExecRate(e, currentPhase));
     }}
   s.removeFrontExec(this->actor);
   this->isExecuting = false;
 }
 
-void Actor::printStatus(models::Dataflow* const dataflow) {
-  std::cout << "Actor " << dataflow->getVertexName(this->actor)
-            << " (ID: " << this->getId() << ")" << std::endl;
-  std::cout << "\tNumber of executions: " << this->getNumExecutions() << std::endl;
+std::string Actor::printStatus(models::Dataflow* const dataflow) {
+  std::stringstream outputStream;
+
+  outputStream << "\nActor " << dataflow->getVertexName(this->actor)
+               << " (ID: " << this->getId() << ")" << std::endl;
+  outputStream << "\tNumber of executions: " << this->getNumExecutions()
+               << std::endl;
   {ForInputEdges(dataflow, this->actor, e) {
-      std::cout << "\tTokens consumed from Channel " << dataflow->getEdgeName(e)
-                << ": " << this->getExecRate(e) << std::endl;
+      outputStream << "\tTokens consumed from Channel "
+                   << dataflow->getEdgeName(e) << ": " << this->getExecRate(e)
+                   << std::endl;
     }}
   {ForOutputEdges(dataflow, this->actor, e) {
-      std::cout << "\tTokens produced into Channel " << dataflow->getEdgeName(e)
-                << ": " << this->getExecRate(e) << std::endl;
+      outputStream << "\tTokens produced into Channel "
+                   << dataflow->getEdgeName(e) << ": " << this->getExecRate(e)
+                   << std::endl;
     }}
+  return outputStream.str();
 }

@@ -69,8 +69,8 @@ void State::setTokens(Edge e, TOKEN_UNIT newTokens) {
 }
 
 void State::addExecution(Vertex a, std::pair<TIME_UNIT, PHASE_INDEX> newExec) {
-  std::cout << "Adding new execution of time " << newExec.first
-            << " and phase " << newExec.second << std::endl;
+  VERBOSE_INFO("Adding new execution of time " << newExec.first
+               << " and phase " << newExec.second);
   this->executingActors[a].push_back(newExec);
 }
 
@@ -115,8 +115,8 @@ TIME_UNIT State::advanceTime() {
     this->advanceRemExecTime(it.first, timeElapsed);
   }
   this->timeElapsed += timeElapsed;
-  std::cout << "Time advanced by: " << timeElapsed << std::endl;
-  std::cout << "Total time elapsed: " << this->getTimeElapsed() << std::endl;
+  VERBOSE_INFO("Time advanced by: " << timeElapsed);
+  VERBOSE_INFO("Total time elapsed: " << this->getTimeElapsed());
   return timeElapsed;
 }
 
@@ -143,29 +143,32 @@ bool State::operator==(const State& s) const {
   return true;
 }
 
-void State::print(models::Dataflow* const dataflow) {
-  std::cout << "Printing state status:" << std::endl;
-  std::cout << "\tActor phases:" << std::endl;
+std::string State::print(models::Dataflow* const dataflow) {
+  std::stringstream outputStream;
+  outputStream << "\nPrinting state status:" << std::endl;
+  outputStream << "\tActor phases:" << std::endl;
   for (auto const &it : this->actorPhases) {
-    std::cout << "\t\tPhase of Actor " << dataflow->getVertexName(it.first)
-              << ": " << this->getPhase(it.first) << std::endl;
+    outputStream << "\t\tPhase of Actor " << dataflow->getVertexName(it.first)
+                 << ": " << this->getPhase(it.first) << std::endl;
   }
-  std::cout << "\tChannel token counts:" << std::endl;
+  outputStream << "\tChannel token counts:" << std::endl;
   for (auto const &it : this->currentTokens) {
-    std::cout << "\t\tChannel " << dataflow->getEdgeName(it.first) << ": "
-              << this->getTokens(it.first) << std::endl;
+    outputStream << "\t\tChannel " << dataflow->getEdgeName(it.first) << ": "
+                 << this->getTokens(it.first) << std::endl;
   }
-  std::cout << "\tPrinting execution queues:" << std::endl;
+  outputStream << "\tPrinting execution queues:" << std::endl;
   for (auto const &it : this->executingActors) {
-    std::cout << "\t\tExecution queue for Actor " << dataflow->getVertexName(it.first)
-              << ": " << std::endl;
+    outputStream << "\t\tExecution queue for Actor "
+                 << dataflow->getVertexName(it.first) << ": " << std::endl;
     for (auto const &q : it.second) {
-      std::cout << "\t\t  ";
-      std::cout << q.first << " ";
+      outputStream << "\t\t  ";
+      outputStream << q.first << " ";
     }
-    std::cout << std::endl;
+    outputStream << std::endl;
   }
-  std::cout << "Total time elapsed: " << this->getTimeElapsed() << std::endl;
+  outputStream << "Total time elapsed: " << this->getTimeElapsed() << std::endl;
+
+  return outputStream.str();
 }
 
 StateList::StateList() {
@@ -197,13 +200,15 @@ std::list<State>::iterator StateList::getRepeatedState() {
 TIME_UNIT StateList::computeThroughput() {
   EXEC_COUNT number_iterations = 0;
   TIME_UNIT total_time = 0;
+  // TODO add assert warning for instances where this function is
+  // called before a repeated state has been identified
   for (std::list<State>::iterator i = this->getRepeatedState();
        i != this->visitedStates.end(); i++) {
     State &state = *i;
     number_iterations++;
     total_time += state.getTimeElapsed();
   }
-  std::cout << "Total time: " << total_time << "\nNum executions: "
-            << number_iterations << std::endl;
+  VERBOSE_INFO("\nTotal time: " << total_time << "\nNum executions: "
+               << number_iterations);
   return (TIME_UNIT) (number_iterations/total_time);
 }

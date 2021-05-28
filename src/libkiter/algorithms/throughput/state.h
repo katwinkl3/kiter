@@ -37,7 +37,7 @@ class State {
                    std::map<ARRAY_INDEX, Actor> actorMap); // updates state with current status of graph
   TIME_UNIT advanceTime();
   bool operator==(const State& s) const;
-  void print(models::Dataflow* const dataflow);
+  std::string print(models::Dataflow* const dataflow);
 
   /* bool addToVisitedStates(std::vector<State> &visitedStates); // checks list of visited states and adds to list if new state */
 

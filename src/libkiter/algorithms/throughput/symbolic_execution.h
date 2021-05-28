@@ -18,7 +18,7 @@ namespace models {
 namespace algorithms {
   void compute_asap_throughput(models::Dataflow* const dataflow,
                                parameters_list_t);
-  void printStatus(models::Dataflow* const dataflow);
+  std::string printStatus(models::Dataflow* const dataflow);
 }
 
 ADD_TRANSFORMATION(SymbExec,
