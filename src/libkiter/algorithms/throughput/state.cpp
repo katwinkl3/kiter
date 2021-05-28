@@ -69,6 +69,8 @@ void State::setTokens(Edge e, TOKEN_UNIT newTokens) {
 }
 
 void State::addExecution(Vertex a, std::pair<TIME_UNIT, PHASE_INDEX> newExec) {
+  std::cout << "Adding new execution of time " << newExec.first
+            << " and phase " << newExec.second << std::endl;
   this->executingActors[a].push_back(newExec);
 }
 
@@ -113,7 +115,8 @@ TIME_UNIT State::advanceTime() {
     this->advanceRemExecTime(it.first, timeElapsed);
   }
   this->timeElapsed += timeElapsed;
-
+  std::cout << "Time advanced by: " << timeElapsed << std::endl;
+  std::cout << "Total time elapsed: " << this->getTimeElapsed() << std::endl;
   return timeElapsed;
 }
 
@@ -162,6 +165,7 @@ void State::print(models::Dataflow* const dataflow) {
     }
     std::cout << std::endl;
   }
+  std::cout << "Total time elapsed: " << this->getTimeElapsed() << std::endl;
 }
 
 StateList::StateList() {

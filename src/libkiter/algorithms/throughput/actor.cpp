@@ -146,6 +146,9 @@ void Actor::execStart(models::Dataflow* const dataflow, State &s) {
   std::pair<TIME_UNIT, PHASE_INDEX> newExec(dataflow->getVertexDuration(this->actor,
                                                                         this->getPhase()),
                                             this->getPhase());
+  // std::cout << "Adding execution time of "
+  //           << dataflow->getVertexDuration(this->actor, this->getPhase())
+  //           << " for Actor " << dataflow->getVertexName(this->actor) << std::endl;
   s.addExecution(this->actor, newExec);
   this->numExecs++;
   this->isExecuting = true;
