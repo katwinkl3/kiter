@@ -14,6 +14,7 @@ Actor::Actor()
    phaseCount{0},
    repVector{0}, // TODO rename to repFactor
    id{},
+   isExecuting{false},
    consPhaseCount(),
    prodPhaseCount(),
    prodExecRate(),
@@ -25,6 +26,7 @@ Actor::Actor(models::Dataflow* const dataflow, Vertex a) {
   phaseCount = dataflow->getPhasesQuantity(actor);
   repVector = dataflow->getNi(actor);
   id = dataflow->getVertexId(actor);
+  isExecuting = false;
   std::cout << "initialising actor " << dataflow->getVertexName(actor) << std::endl;
   {ForInputEdges(dataflow, actor, e) {
       std::cout << "input port execution rates (phases = " << dataflow->getEdgeOutPhasesCount(e) <<"): ";
@@ -118,7 +120,7 @@ bool Actor::isReadyForExec(State s) {
   // (1) enough room in output channel, (2) enough tokens in input channel, (3) not currently executing
   bool isExecutable = true;
   for (auto const &e : this->consPhaseCount) {
-    if (s.getTokens(e.first) < this->getExecRate(e.first)) {
+    if (s.getTokens(e.first) < this->getExecRate(e.first) || this->isExecuting) {
       isExecutable = false;
     }
   }
@@ -146,6 +148,7 @@ void Actor::execStart(models::Dataflow* const dataflow, State &s) {
                                             this->getPhase());
   s.addExecution(this->actor, newExec);
   this->numExecs++;
+  this->isExecuting = true;
 }
 
 // End actor's execution, producing tokens into output channels
@@ -161,6 +164,7 @@ void Actor::execEnd(models::Dataflow* const dataflow, State &s) {
       dataflow->setPreload(e, dataflow->getPreload(e) + this->getExecRate(e, currentPhase));
     }}
   s.removeFrontExec(this->actor);
+  this->isExecuting = false;
 }
 
 void Actor::printStatus(models::Dataflow* const dataflow) {
