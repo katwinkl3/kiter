@@ -56,6 +56,7 @@ public:
   StateList(State s);
   bool addState(State s);
   std::list<State>::iterator getRepeatedState();
+  TIME_UNIT computeThroughput();
 
 private:
   std::list<State> visitedStates;

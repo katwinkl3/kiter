@@ -67,9 +67,13 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
             minRepActorExecCount++;
             if (minRepActorExecCount == minRepFactor) {
               // TODO add to state list and check for revisited state
+                std::cout << "Adding the following state to list of visited states:" << std::endl;
+                currState.print(dataflow);
               if (!visitedStates.addState(currState)) {
                 std::cout << "ending execution and computing throughput" << std::endl;
                 // should now compute throughput using recurrent state
+                std::cout<< "throughput computed is: "
+                         << visitedStates.computeThroughput() << std::endl;
                 return;
               }
               currState.setTimeElapsed(0);

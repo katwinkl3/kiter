@@ -190,3 +190,20 @@ bool StateList::addState(State s) {
 std::list<State>::iterator StateList::getRepeatedState() {
   return this->repeatedState;
 }
+
+// Computes throughput given a revisited state
+// Note that a repeated state needs to have been identified before
+// this function can be called
+TIME_UNIT StateList::computeThroughput() {
+  EXEC_COUNT number_iterations = 0;
+  TIME_UNIT total_time = 0;
+  for (std::list<State>::iterator i = this->getRepeatedState();
+       i != this->visitedStates.end(); i++) {
+    State &state = *i;
+    number_iterations++;
+    total_time += state.getTimeElapsed();
+  }
+  std::cout << "Total time: " << total_time << "\nNum executions: "
+            << number_iterations << std::endl;
+  return (TIME_UNIT) (number_iterations/total_time);
+}
