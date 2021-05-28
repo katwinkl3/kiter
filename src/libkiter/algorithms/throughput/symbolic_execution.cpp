@@ -25,6 +25,8 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
                                          parameters_list_t param_list) {
   VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
   VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+  EXEC_COUNT minRepFactor = INT_MAX; // EXEC_COUNT is of type long int, and LONG_MAX has same max value
+  ARRAY_INDEX minRepActorId;
 
   // initialise actors
   std::map<ARRAY_INDEX, Actor> actorMap;
@@ -40,7 +42,15 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
   printStatus(dataflow);
   {ForEachTask(dataflow, t) {
       actorMap[dataflow->getVertexId(t)].printStatus(dataflow);
+      // track actor with lowest repetition factor (determines when states are stored)
+      if (actorMap[dataflow->getVertexId(t)].getRepVec() < minRepFactor) {
+        minRepFactor = actorMap[dataflow->getVertexId(t)].getRepVec();
+        minRepActorId = actorMap[dataflow->getVertexId(t)].getId();
+      }
     }}
+  std::cout << "Actor with ID " << minRepActorId
+            << " is actor with lowest repetition factor ("
+            << minRepFactor << ")" << std::endl;
   // testing functions
   // start actor firing
   printStatus(dataflow);
