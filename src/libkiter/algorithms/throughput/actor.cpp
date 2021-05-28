@@ -12,7 +12,8 @@ Actor::Actor()
   :actor{},
    numExecs{0},
    phaseCount{0},
-   repVector{0},
+   repVector{0}, // TODO rename to repFactor
+   id{},
    consPhaseCount(),
    prodPhaseCount(),
    prodExecRate(),
@@ -23,6 +24,7 @@ Actor::Actor(models::Dataflow* const dataflow, Vertex a) {
   numExecs = 0;
   phaseCount = dataflow->getPhasesQuantity(actor);
   repVector = dataflow->getNi(actor);
+  id = dataflow->getVertexId(actor);
   std::cout << "initialising actor " << dataflow->getVertexName(actor) << std::endl;
   {ForInputEdges(dataflow, actor, e) {
       std::cout << "input port execution rates (phases = " << dataflow->getEdgeOutPhasesCount(e) <<"): ";
@@ -69,6 +71,14 @@ PHASE_INDEX Actor::getPhase() {
 
 EXEC_COUNT Actor::getRepVec() {
   return this->repVector;
+}
+
+ARRAY_INDEX Actor::getId() {
+  return this->id;
+}
+
+void Actor::setId(ARRAY_INDEX newId) {
+  this->id = newId;
 }
 
 TOKEN_UNIT Actor::getExecRate(Edge e) {
@@ -154,7 +164,8 @@ void Actor::execEnd(models::Dataflow* const dataflow, State &s) {
 }
 
 void Actor::printStatus(models::Dataflow* const dataflow) {
-  std::cout << "Actor " << dataflow->getVertexName(this->actor) << std::endl;
+  std::cout << "Actor " << dataflow->getVertexName(this->actor)
+            << " (ID: " << this->getId() << ")" << std::endl;
   std::cout << "\tNumber of executions: " << this->getNumExecutions() << std::endl;
   {ForInputEdges(dataflow, this->actor, e) {
       std::cout << "\tTokens consumed from Channel " << dataflow->getEdgeName(e)
