@@ -10,7 +10,7 @@
 
 Actor::Actor()
   :actor{},
-   numExecs{0},
+   numExecs{0}, // NOTE this might not be necessary as we only need to track numExecs for actor with lowest repetition factor
    phaseCount{0},
    repVector{0}, // TODO rename to repFactor
    id{},
