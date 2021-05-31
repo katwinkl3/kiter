@@ -23,8 +23,12 @@ namespace algorithms {
 
 	namespace mapping {
 		void randomMapping (models::Dataflow* const  dataflow, parameters_list_t params);
+		void createNoC (models::Dataflow* const  dataflow, parameters_list_t params);
 		void moduloMapping (models::Dataflow* const  dataflow, parameters_list_t params);
 		void BufferlessNoCMapAndRoute (models::Dataflow* const  dataflow, parameters_list_t params);
+		void xyRouting (models::Dataflow* const  dataflow, parameters_list_t params);
+		void randomRouting (models::Dataflow* const  dataflow, parameters_list_t params);
+		
 	}
 
 	void ModelNoCConflictFreeCommunication(models::Dataflow* const  dataflow, parameters_list_t   param_list = parameters_list_t());
@@ -36,6 +40,19 @@ namespace algorithms {
 ADD_TRANSFORMATION(randomMapping,
 		transformation_t({ "randomMapping" , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.", algorithms::mapping::randomMapping} )
 );
+
+ADD_TRANSFORMATION(createNoC,
+	transformation_t({ "createNoC" , "Create NoC based on file inserted", algorithms::mapping::createNoC} )
+);
+
+ADD_TRANSFORMATION(xyRouting,
+		transformation_t({ "xyRouting" , "Create X-Y routing", algorithms::mapping::xyRouting} )
+);
+
+ADD_TRANSFORMATION(randomRouting,
+		transformation_t({ "randomRouting" , "Create random X-Y routing", algorithms::mapping::randomRouting} )
+);
+
 ADD_TRANSFORMATION(moduloMapping,
 		transformation_t({ "moduloMapping" , "This command will associate a mapping to each task of the graph. Task unspecified as parameters will be randomly allocated to a core.", algorithms::mapping::moduloMapping} )
 );
