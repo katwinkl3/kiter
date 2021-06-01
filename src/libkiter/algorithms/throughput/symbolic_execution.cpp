@@ -15,12 +15,6 @@
 #include "actor.h"
 #include "state.h"
 
-// TODO: Functions to add:
-// (0) Actor class
-// - Attributes: current phase, number of phases, execution rates (indexed by phase), status (currently firing)
-// - Methods: advance phase, execute
-// (1) Print status
-
 void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
                                          parameters_list_t param_list) {
   VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
@@ -65,7 +59,6 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
           if (actorMap[dataflow->getVertexId(t)].getId() == minRepActorId) {
             minRepActorExecCount++;
             if (minRepActorExecCount == minRepFactor) {
-              // TODO add to state list and check for revisited state
               VERBOSE_INFO("Adding the following state to list of visited states:");
               VERBOSE_INFO(currState.print(dataflow));
               if (!visitedStates.addState(currState)) {
