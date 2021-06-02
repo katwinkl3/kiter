@@ -14,10 +14,14 @@ namespace models {
 }
 
 namespace algorithms {
-  void dfs(models::Dataflow* const dataflow);
+  void computeSCCKosaraju(models::Dataflow* const dataflow);
   void computeDFSStack(models::Dataflow* const dataflow,
                        ARRAY_INDEX startId,
                        std::map<ARRAY_INDEX, bool> &visitedActors,
                        std::stack<ARRAY_INDEX> &dfsOrder);
+  void dfsTranspose(models::Dataflow* const dataflow,
+                    ARRAY_INDEX startId,
+                    std::map<ARRAY_INDEX, bool> &visitedActors,
+                    std::vector<ARRAY_INDEX> &sccActors);
 }
 #endif /* SCC_H_ */
