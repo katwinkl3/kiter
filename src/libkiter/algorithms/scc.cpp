@@ -24,8 +24,11 @@ void algorithms::computeSCCKosaraju(models::Dataflow* const dataflow) {
   {ForEachTask(dataflow, t) {
       visitedActors[dataflow->getVertexId(t)] = false;
     }}
-  startId = visitedActors.begin()->first;
-  computeDFSStack(dataflow, startId, visitedActors, dfsOrder);
+  for (auto const& it : visitedActors) {
+    if (!visitedActors[it.first]) {
+      computeDFSStack(dataflow, it.first, visitedActors, dfsOrder);
+    }
+  }
 
   // reset visited actor list
   for (auto const& it : visitedActors) {
