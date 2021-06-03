@@ -55,20 +55,26 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
         /* NOTE this is a workaround from ignoring reentrancy edges --- if this
            condition is met, we assume that we have a single actor with
            re-entrancy, which should therefore have a throughput of 1 */
-        // std::cout << "assuming that this is a standalone component" << std::endl;
         ARRAY_INDEX standaloneId;
-        {ForEachVertex(g, v) {
+        EXEC_COUNT standaloneRepFactor;
+        {ForEachVertex(g, v) { // FIXME this probably won't be necessary once the getFirstVertex() bug is fixed
             standaloneId = g->getVertexId(v);
+            standaloneRepFactor = g-> getPhasesQuantity(v);
           }}
-        EXEC_COUNT repFac = dataflow->getNi(dataflow->getVertexById(standaloneId));
-         // FIXME might need to account for CSDFs with different execution rates depending on phase
-        TIME_UNIT componentThroughput = (TIME_UNIT) 1 /
-          dataflow->getVertexDuration(dataflow->getVertexById(standaloneId));
-        TIME_UNIT scaledThroughput = (TIME_UNIT) componentThroughput / repFac;
+        EXEC_COUNT repFactor = dataflow->getNi(dataflow->getVertexById(standaloneId));
+        /* repetition factor for standalone component will be equal to its phase count
+           this makes sense because, while it's producing and consuming 1 token in its
+           re-entrant edge, it will need to execute its number of phases to arrive
+           back at the same state */
+        TIME_UNIT componentThroughput = (TIME_UNIT) (1 * standaloneRepFactor) /
+          dataflow->getVertexTotalDuration(dataflow->getVertexById(standaloneId));
+        TIME_UNIT scaledThroughput = (TIME_UNIT) componentThroughput / repFactor;
         if (scaledThroughput < minThroughput) {
           minThroughput = scaledThroughput;
         }
-        VERBOSE_INFO("actor ID, repFactor: " << standaloneId << ", " << repFac);
+        VERBOSE_INFO("component throughput: " << componentThroughput);
+        VERBOSE_INFO("standalone actor repetition factor: " << standaloneRepFactor);
+        VERBOSE_INFO("actor ID, repFactor: " << standaloneId << ", " << repFactor);
         VERBOSE_INFO("scaled throughput: " << scaledThroughput);
       }
     }
@@ -197,14 +203,7 @@ std::vector<models::Dataflow*> algorithms::generateSCCs(models::Dataflow* const 
       }}
     sccDataflows.push_back(sccDataflow);
   }
-  // std::cout << "WITHIN function test:" << std::endl;
-  // for (auto g : sccDataflows) {
-  //   std::cout << "Actors in SCC:" << std::endl;
-  //   {ForEachVertex(g, actor) {
-  //       std::cout << g->getVertexName(actor) << " ";
-  //     }}
-  //   std::cout << std::endl;
-  // }
+
   return sccDataflows;
 }
 
@@ -220,5 +219,6 @@ std::string algorithms::printStatus(models::Dataflow* const dataflow) {
                    << dataflow->getVertexName(dataflow->getEdgeTarget(e))
                    << "): " << dataflow->getPreload(e) << std::endl;
     }}
+
   return outputStream.str();
 }
