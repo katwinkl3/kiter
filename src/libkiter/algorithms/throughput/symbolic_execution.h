@@ -18,6 +18,10 @@ namespace models {
 namespace algorithms {
   void compute_asap_throughput(models::Dataflow* const dataflow,
                                parameters_list_t);
+  TIME_UNIT computeComponentThroughput(models::Dataflow* const dataflow,
+                                       std::pair<ARRAY_INDEX, EXEC_COUNT> &minActorInfo);
+  std::vector<models::Dataflow*> generateSCCs(models::Dataflow* const dataflow,
+                                              std::map<int, std::vector<ARRAY_INDEX>> sccMap);
   std::string printStatus(models::Dataflow* const dataflow);
 }
 

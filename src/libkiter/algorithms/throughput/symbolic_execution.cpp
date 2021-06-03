@@ -5,6 +5,7 @@
  *      Author: jkmingwen
  */
 
+#include <algorithm>
 #include <map>
 #include <vector>
 #include <printers/stdout.h>
@@ -14,9 +15,80 @@
 #include "symbolic_execution.h"
 #include "actor.h"
 #include "state.h"
+#include "../scc.h"
 
 void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
                                          parameters_list_t param_list) {
+  VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
+  VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+  std::map<int, std::vector<ARRAY_INDEX>> sccMap;
+  std::vector<models::Dataflow*> sccDataflows;
+  TIME_UNIT minThroughput = LONG_MAX; // NOTE should technically be LDBL_MAX cause TIME_UNIT is of type long double
+
+  // generate SCCs if any
+  sccMap = computeSCCKosaraju(dataflow);
+  if (sccMap.size() > 1) { // if the original graph isn't one SCC, need to break into SCC subgraphs
+    sccDataflows = generateSCCs(dataflow, sccMap);
+    VERBOSE_INFO("Strongly connected components:");
+    for (auto g : sccDataflows) {
+      VERBOSE_INFO("Actors in SCC:");
+      {ForEachVertex(g, actor) {
+          VERBOSE_INFO(g->getVertexName(actor) << "(id:"
+                       << g->getVertexId(actor)<< ") ");
+        }}
+      VERBOSE_INFO("\n");
+    }
+    for (auto g : sccDataflows) {
+      if (g->getEdgesCount() > 0) {
+        std::pair<ARRAY_INDEX, EXEC_COUNT> actorInfo;
+        TIME_UNIT componentThroughput = computeComponentThroughput(g, actorInfo);
+        VERBOSE_INFO("component throughput: " << componentThroughput);
+        VERBOSE_INFO("actor ID, repFactor: " << actorInfo.first << ", "
+                     << actorInfo.second);
+        TIME_UNIT scaledThroughput = (componentThroughput * actorInfo.second) /
+          dataflow->getNi(dataflow->getVertexById(actorInfo.first));
+        VERBOSE_INFO("scaled throughput: " << scaledThroughput);
+        if (scaledThroughput < minThroughput) {
+          minThroughput = scaledThroughput;
+        }
+      } else if (g->getVerticesCount() == 1 && g->getEdgesCount() == 0) {
+        /* NOTE this is a workaround from ignoring reentrancy edges --- if this
+           condition is met, we assume that we have a single actor with
+           re-entrancy, which should therefore have a throughput of 1 */
+        // std::cout << "assuming that this is a standalone component" << std::endl;
+        ARRAY_INDEX standaloneId;
+        {ForEachVertex(g, v) {
+            standaloneId = g->getVertexId(v);
+          }}
+        EXEC_COUNT repFac = dataflow->getNi(dataflow->getVertexById(standaloneId));
+         // FIXME might need to account for CSDFs with different execution rates depending on phase
+        TIME_UNIT componentThroughput = (TIME_UNIT) 1 /
+          dataflow->getVertexDuration(dataflow->getVertexById(standaloneId));
+        TIME_UNIT scaledThroughput = (TIME_UNIT) componentThroughput / repFac;
+        if (scaledThroughput < minThroughput) {
+          minThroughput = scaledThroughput;
+        }
+        VERBOSE_INFO("actor ID, repFactor: " << standaloneId << ", " << repFac);
+        VERBOSE_INFO("scaled throughput: " << scaledThroughput);
+      }
+    }
+    std::cout << "Throughput of graph: " << minThroughput << std::endl;
+    return;
+  }
+  // if graph is strongly connected, just need to use computeComponentThroughput
+  std::pair<ARRAY_INDEX, EXEC_COUNT> actorInfo; // look at note for computeComponentThroughput
+  minThroughput = computeComponentThroughput(dataflow, actorInfo);
+  std::cout << "Throughput of graph: " << minThroughput << std::endl;
+  return;
+}
+
+// Compute throughput of given component, and return info of actor used to compute throughput
+/* NOTE the minActorInfo argument is a workaround as 'getFirstVertex' is currently not working
+   as expected. Ideally, we would call 'getFirstVertex' in 'compute_asap_throughput' in order to
+   find the ID of one of the actors in the SCC component, and subsequently use that to get its
+   repetition factor */
+TIME_UNIT algorithms::computeComponentThroughput(models::Dataflow* const dataflow,
+                                                 std::pair<ARRAY_INDEX, EXEC_COUNT> &minActorInfo) {
   VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
   VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
   StateList visitedStates;
@@ -48,6 +120,7 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
   VERBOSE_INFO("Actor with ID " << minRepActorId
                << " is actor with lowest repetition factor ("
                << minRepFactor << ")");
+  minActorInfo = std::make_pair(minRepActorId, minRepFactor);
   // Start ASAP execution loop
   while (true) {
     {ForEachEdge(dataflow, e) {
@@ -63,10 +136,9 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
               VERBOSE_INFO(currState.print(dataflow));
               if (!visitedStates.addState(currState)) {
                 VERBOSE_INFO("ending execution and computing throughput");
-                // should now compute throughput using recurrent state
+                // compute throughput using recurrent state
                 TIME_UNIT thr = visitedStates.computeThroughput();
-                std::cout << "throughput computed is: " << thr << std::endl;
-                return;
+                return thr;
               }
               currState.setTimeElapsed(0);
               minRepActorExecCount = 0;
@@ -101,9 +173,39 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
     timeStep = currState.advanceTime();
     if (timeStep == LONG_MAX) { // NOTE should technically be LDBL_MAX cause TIME_UNIT is of type long double
       VERBOSE_INFO("Deadlock found!");
-      return; // should be returning 0
+      return 0;
     }
   }
+}
+
+// takes in original dataflow graph and map of its SCCs, outputs vector of SCC dataflow subgraphs
+std::vector<models::Dataflow*> algorithms::generateSCCs(models::Dataflow* const dataflow,
+                                                        std::map<int, std::vector<ARRAY_INDEX>> sccMap) {
+  std::vector<models::Dataflow*> sccDataflows;
+  for (auto const& component : sccMap) {
+    models::Dataflow* sccDataflow = new models::Dataflow(*dataflow);
+    sccDataflow->reset_computation();
+    // remove all actors not in component, as well as edges/ports associated with them
+    {ForEachVertex(dataflow, v) {
+        // check if given actor in current SCC
+        ARRAY_INDEX actorId = dataflow->getVertexId(v);
+        if (std::find(component.second.begin(),
+                      component.second.end(),
+                      actorId) == component.second.end()) { // actor not in SCC
+          sccDataflow->removeVertex(sccDataflow->getVertexById(actorId));
+        }
+      }}
+    sccDataflows.push_back(sccDataflow);
+  }
+  // std::cout << "WITHIN function test:" << std::endl;
+  // for (auto g : sccDataflows) {
+  //   std::cout << "Actors in SCC:" << std::endl;
+  //   {ForEachVertex(g, actor) {
+  //       std::cout << g->getVertexName(actor) << " ";
+  //     }}
+  //   std::cout << std::endl;
+  // }
+  return sccDataflows;
 }
 
 // prints current status of dataflow graph
