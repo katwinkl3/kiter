@@ -14,7 +14,7 @@ namespace models {
 }
 
 namespace algorithms {
-  void computeSCCKosaraju(models::Dataflow* const dataflow);
+  std::map<int, std::vector<ARRAY_INDEX>> computeSCCKosaraju(models::Dataflow* const dataflow);
   void computeDFSStack(models::Dataflow* const dataflow,
                        ARRAY_INDEX startId,
                        std::map<ARRAY_INDEX, bool> &visitedActors,

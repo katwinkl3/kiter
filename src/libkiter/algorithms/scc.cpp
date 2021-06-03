@@ -13,9 +13,8 @@
 #include <models/Dataflow.h>
 #include "scc.h"
 
-void algorithms::computeSCCKosaraju(models::Dataflow* const dataflow) {
+std::map<int, std::vector<ARRAY_INDEX>> algorithms::computeSCCKosaraju(models::Dataflow* const dataflow) {
   std::map<ARRAY_INDEX, bool> visitedActors;
-  ARRAY_INDEX startId;
   std::stack<ARRAY_INDEX> dfsOrder;
   std::vector<ARRAY_INDEX> sccActors;
   std::map<int, std::vector<ARRAY_INDEX>> sccMap;
@@ -42,18 +41,12 @@ void algorithms::computeSCCKosaraju(models::Dataflow* const dataflow) {
       dfsTranspose(dataflow, firstId, visitedActors, sccActors);
       // add to SCC map and reset for next component
       sccMap[sccCount] = sccActors;
-      sccActors.clear();
       sccCount++;
+      sccActors.clear();
     }
   }
-  // test output
-  for (auto const& component : sccMap) {
-    std::cout << "Printing strongly connected component " << component.first << std::endl;
-    for (auto id : component.second) {
-      std::cout << id << " ";
-    }
-    std::cout << std::endl;
-  }
+
+  return sccMap;
 }
 
 // Performs a DFS on dataflow graph, tracks order of actors finished --- helper function for Kosaraju's algorithm
