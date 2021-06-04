@@ -12,7 +12,7 @@ Actor::Actor()
   :actor{},
    numExecs{0}, // NOTE this might not be necessary as we only need to track numExecs for actor with lowest repetition factor
    phaseCount{0},
-   repVector{0}, // TODO rename to repFactor
+   repFactor{0},
    id{},
    isExecuting{false},
    consPhaseCount(),
@@ -24,7 +24,7 @@ Actor::Actor(models::Dataflow* const dataflow, Vertex a) {
   actor = a;
   numExecs = 0;
   phaseCount = dataflow->getPhasesQuantity(actor);
-  repVector = dataflow->getNi(actor);
+  repFactor = dataflow->getNi(actor);
   id = dataflow->getVertexId(actor);
   isExecuting = false;
   VERBOSE_INFO("initialising actor " << dataflow->getVertexName(actor));
@@ -73,8 +73,8 @@ PHASE_INDEX Actor::getPhase() {
   return (this->getNumExecutions() % this->phaseCount) + 1;
 }
 
-EXEC_COUNT Actor::getRepVec() {
-  return this->repVector;
+EXEC_COUNT Actor::getRepFactor() {
+  return this->repFactor;
 }
 
 ARRAY_INDEX Actor::getId() {

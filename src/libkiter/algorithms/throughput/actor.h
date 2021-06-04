@@ -24,7 +24,7 @@ class Actor {
   EXEC_COUNT getPhaseCount(Edge e);
   PHASE_INDEX getPhase(Edge e); // returns current phase using edge (allows for different number of phases for each port)
   PHASE_INDEX getPhase();
-  EXEC_COUNT getRepVec();
+  EXEC_COUNT getRepFactor();
   ARRAY_INDEX getId();
   void setId(ARRAY_INDEX newId);
   TOKEN_UNIT getExecRate(Edge e);
@@ -39,7 +39,7 @@ class Actor {
   Vertex actor;
   EXEC_COUNT numExecs; // track number of executions
   PHASE_INDEX phaseCount; // number of phases of execution
-  EXEC_COUNT repVector;
+  EXEC_COUNT repFactor;
   ARRAY_INDEX id;
   bool isExecuting; // FIXME this is a workaround for preventing actors from executing more than once in a single time frame
   std::map<Edge, EXEC_COUNT> consPhaseCount; // number of consumption phases of execution

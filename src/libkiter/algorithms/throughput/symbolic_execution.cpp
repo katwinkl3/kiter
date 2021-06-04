@@ -118,8 +118,8 @@ TIME_UNIT algorithms::computeComponentThroughput(models::Dataflow* const dataflo
   {ForEachTask(dataflow, t) {
       VERBOSE_INFO(actorMap[dataflow->getVertexId(t)].printStatus(dataflow));
       // track actor with lowest repetition factor (determines when states are stored)
-      if (actorMap[dataflow->getVertexId(t)].getRepVec() < minRepFactor) {
-        minRepFactor = actorMap[dataflow->getVertexId(t)].getRepVec();
+      if (actorMap[dataflow->getVertexId(t)].getRepFactor() < minRepFactor) {
+        minRepFactor = actorMap[dataflow->getVertexId(t)].getRepFactor();
         minRepActorId = actorMap[dataflow->getVertexId(t)].getId();
       }
     }}
