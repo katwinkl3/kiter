@@ -53,21 +53,17 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
         }
       } else if (g->getVerticesCount() == 1 && g->getEdgesCount() == 0) {
         /* NOTE this is a workaround from ignoring reentrancy edges --- if this
-           condition is met, we assume that we have a single actor with
-           re-entrancy, which should therefore have a throughput of 1 */
-        ARRAY_INDEX standaloneId;
-        EXEC_COUNT standaloneRepFactor;
-        {ForEachVertex(g, v) { // FIXME this probably won't be necessary once the getFirstVertex() bug is fixed
-            standaloneId = g->getVertexId(v);
-            standaloneRepFactor = g-> getPhasesQuantity(v);
-          }}
-        EXEC_COUNT repFactor = dataflow->getNi(dataflow->getVertexById(standaloneId));
-        /* repetition factor for standalone component will be equal to its phase count
+           condition is met, we assume that we have a single actor with re-entrancy */
+        ARRAY_INDEX standaloneId = g->getVertexId(g->getFirstVertex());
+        EXEC_COUNT standaloneRepFactor = g->getPhasesQuantity(g->getFirstVertex());
+        Vertex vertexInDataflow = dataflow->getVertexById(standaloneId);
+        /* repetition factor for standalone component will be equal to its phase count:
            this makes sense because, while it's producing and consuming 1 token in its
            re-entrant edge, it will need to execute its number of phases to arrive
            back at the same state */
+        EXEC_COUNT repFactor = dataflow->getNi(vertexInDataflow);
         TIME_UNIT componentThroughput = (TIME_UNIT) (1 * standaloneRepFactor) /
-          dataflow->getVertexTotalDuration(dataflow->getVertexById(standaloneId));
+          dataflow->getVertexTotalDuration(vertexInDataflow);
         TIME_UNIT scaledThroughput = (TIME_UNIT) componentThroughput / repFactor;
         if (scaledThroughput < minThroughput) {
           minThroughput = scaledThroughput;
