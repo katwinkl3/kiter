@@ -70,7 +70,6 @@ static void print_graph (models::Dataflow * to, std::string suffix = "none") {
 	}
 
 	{
-
 		std::string filename = sfilename + "_gaph";
 		std::ofstream myfile;
 		myfile.open (filename  + ".dot");
@@ -86,7 +85,6 @@ static void print_graph (models::Dataflow * to, std::string suffix = "none") {
 	}
 
 	to->reset_computation();
-
 }
 
 static LARGE_INT gcdExtended(LARGE_INT x, LARGE_INT y, LARGE_INT *a, LARGE_INT *b)
@@ -189,7 +187,7 @@ static std::vector<std::vector<ARRAY_INDEX>> get_overlaps (models::Dataflow* con
 
 
 //print_graph(to, original_df);
-void algorithms::BufferlessNoCScheduling(models::Dataflow* const  _dataflow, parameters_list_t params  ) {
+void algorithms::BufferlessNoCScheduling(models::Dataflow* const  _dataflow, parameters_list_t params) {
 
 	models::Dataflow* to = new models::Dataflow(*_dataflow);
 

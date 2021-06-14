@@ -69,7 +69,7 @@
     	 }
     }
 
-    void algorithms::compute_strictly_periodic_memory                                   (models::Dataflow* const  dataflow, parameters_list_t params) {
+    void algorithms::compute_strictly_periodic_memory    (models::Dataflow* const  dataflow, parameters_list_t params) {
     	  std::map<Vertex,std::vector<TIME_UNIT> > offsets;
 
     	  VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
@@ -79,7 +79,7 @@
     	  bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
     	  bool      gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
 
-    	  /// BEGIN $$$$$$$$$$$$$$$ This part compute a period if none provided
+    	  /// BEGIN $$$$$$$$$$$$$$$ This part computes a period if none provided
     	  std::map<Vertex,EXEC_COUNT> kvector = algorithms::scheduling::generate1PeriodicVector(dataflow);
 
     	  	kperiodic_result_t result = algorithms::KSchedule(dataflow,&kvector);
@@ -95,8 +95,7 @@
     	  	} else {
     	  		VERBOSE_ERROR ("Cannot compute the maximum period...");
     	  	}
-
-      	  /// END $$$$$$$$$$$$$$$ This part compute a period if none provided
+      	  /// END $$$$$$$$$$$$$$$ This part computed a period if none was provided
 
 
     	  	VERBOSE_ASSERT (period > 0, "The period must be defined");
@@ -111,17 +110,15 @@
     	  	 std::cout << "SPeriodicSizing size is " << total_buffer_size << std::endl;
     }
 
-   void algorithms::compute_burst_memory                                   (models::Dataflow* const  dataflow, parameters_list_t params) {
+   void algorithms::compute_burst_memory  (models::Dataflow* const  dataflow, parameters_list_t params) {
 	   std::map<Vertex,std::vector<TIME_UNIT> > offsets;
        generateBurstOffsets(dataflow,offsets);
 
        VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
-
        TIME_UNIT period    = commons::get_parameter<TIME_UNIT>(params, "PERIOD", 0.0) ;
        bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
        bool      gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
-
 
        checkOffsets(dataflow,period,offsets);
        auto total_buffer_size = compute_periodic_fixed_memory(dataflow, offsets,period, solve_ilp, gen_only).total_size();
@@ -130,16 +127,16 @@
                     << total_buffer_size + 2 * dataflow->getVerticesCount() << std::endl ;
        	 std::cout << "BurstSizing size is " << total_buffer_size << std::endl;
    }
-   void algorithms::compute_average_memory                                   (models::Dataflow* const  dataflow, parameters_list_t params) {
 
+   void algorithms::compute_average_memory  (models::Dataflow* const  dataflow, parameters_list_t params) {
 	   std::map<Vertex,std::vector<TIME_UNIT> > offsets;
 
 	   VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
 
-	   TIME_UNIT period    = commons::get_parameter<TIME_UNIT>(params, "PERIOD", 0.0) ;
-	   bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
-	    bool      gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
+	    TIME_UNIT period    = commons::get_parameter<TIME_UNIT>(params, "PERIOD", 0.0) ;
+	    bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
+	    bool     gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
 
 
 	   generateAverageOffsets(dataflow,period,offsets);
@@ -151,12 +148,12 @@
 	   	 std::cout << "AverageSizing size is " << total_buffer_size << std::endl;
    }
 
-   void algorithms::compute_minmax_memory                                   (models::Dataflow* const  dataflow, parameters_list_t params) {
+   void algorithms::compute_minmax_memory   (models::Dataflow* const  dataflow, parameters_list_t params) {
        std::map<Vertex,std::vector<TIME_UNIT> > offsets;
        VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
-	   TIME_UNIT period    = commons::get_parameter<TIME_UNIT>(params, "PERIOD", 0.0) ;
-	   bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
+        TIME_UNIT period    = commons::get_parameter<TIME_UNIT>(params, "PERIOD", 0.0) ;
+	    bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
 	    bool      gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
 
 	   generateMinMaxOffsets(dataflow,period,offsets);
@@ -168,27 +165,25 @@
        	 std::cout << "MinMaxSizing size is " << total_buffer_size << std::endl;
    }
 
-   void algorithms::compute_wiggers_memory                                   (models::Dataflow* const  dataflow, parameters_list_t params) {
+   void algorithms::compute_wiggers_memory  (models::Dataflow* const  dataflow, parameters_list_t params) {
        std::map<Vertex,std::vector<TIME_UNIT> > offsets;
 
-	   TIME_UNIT period    = commons::get_parameter<TIME_UNIT>(params, "PERIOD", 0.0) ;
-	   bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
+	    TIME_UNIT period    = commons::get_parameter<TIME_UNIT>(params, "PERIOD", 0.0) ;
+	    bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
 	    bool      gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
 
-       generateWiggersOffsets(dataflow,period,offsets);
-       checkOffsets(dataflow,period,offsets);
-	   auto total_buffer_size = compute_periodic_fixed_memory(dataflow, offsets,period, solve_ilp, gen_only).total_size();
-
-       std::cout << "Total buffer size : " << total_buffer_size
+        generateWiggersOffsets(dataflow,period,offsets);
+        checkOffsets(dataflow,period,offsets);
+	    auto total_buffer_size = compute_periodic_fixed_memory(dataflow, offsets,period, solve_ilp, gen_only).total_size();
+        std::cout << "Total buffer size : " << total_buffer_size
                << " + 2 * " << dataflow->getVerticesCount() << " = "
                << total_buffer_size + 2 * dataflow->getVerticesCount() << std::endl ;
-  	 std::cout << "WiggersSizing size is " << total_buffer_size << std::endl;
+  	    std::cout << "WiggersSizing size is " << total_buffer_size << std::endl;
 
    }
 
 
-   bool algorithms::generateStrictlyPeriodicOffsets(models::Dataflow * dataflow, TIME_UNIT OMEGA, std::map<Vertex,std::vector<TIME_UNIT> > & res) {
-
+   bool algorithms::generateStrictlyPeriodicOffsets  (models::Dataflow * dataflow, TIME_UNIT OMEGA, std::map<Vertex,std::vector<TIME_UNIT> > & res) {
 	   VERBOSE_DEBUG("generateStrictlyPeriodicOffsets");
 
 	   if (OMEGA == 0 ) {
@@ -203,7 +198,6 @@
 		   TIME_UNIT shift = OMEGA / dataflow->getNi(pTask) ;
 
 		   res.insert(std::pair<Vertex ,  std::vector<TIME_UNIT> > (pTask, std::vector<TIME_UNIT>()));
-
 
 		   VERBOSE_DEBUG("Task " << dataflow->getVertexName(pTask) << " max_k=" << max_k << " shift=" << shift);
 
@@ -230,7 +224,6 @@
 
    bool algorithms::generateBurstOffsets(models::Dataflow * const dataflow,std::map<Vertex,std::vector<TIME_UNIT> > & res) {
         //recuperer les transition
-
 
         res.clear();
 
@@ -291,7 +284,6 @@
 
 
        VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
-
 
 
        // STEP 0 - Need the repetition vector
@@ -385,8 +377,7 @@
        }}
 
 
-
-       //step 3 - retiming of starting times
+       // STEP 3 - retiming of starting times
        VERBOSE_INFO("STEP 3 : Retiming.");
 
        std::map<std::pair<Vertex,EXEC_COUNT>,TIME_UNIT> g; // new start time
@@ -397,7 +388,6 @@
 
            VERBOSE_DEBUG("Retiming of " << dataflow->getVertexName(vi));
            const EXEC_COUNT maxk = dataflow->getPhasesQuantity(vi);
-
 
 
            h[std::make_pair(vi,maxk)] = mu[vi];
@@ -412,7 +402,7 @@
            VERBOSE_DEBUG("h(" << dataflow->getVertexName(vi) << ","<< maxk << ") = " << h[std::make_pair(vi,maxk)]);
 
            for(EXEC_COUNT k = (maxk - 1); k >= 1;k--){
-               // print ax +b
+               // print ax + b
                // print h(v)
                h[std::make_pair(vi,k)] = g[std::make_pair(vi,k+1)];
                VERBOSE_DEBUG("Task_duration("<< dataflow->getVertexName(vi) << ","<< k << ") = "<< dataflow->getVertexDuration(vi,k));
@@ -526,7 +516,6 @@
 
        /********************************************** PREPARE LP ***************************************************/
 
-
        // on considere une tache 't'.
 
        const std::string taskName    = dataflow->getVertexName(t);
@@ -586,7 +575,6 @@
 
 
        // A : definition des alpha
-
 
        {ForOutputEdges(dataflow,t,pChannel) {
 	   
@@ -648,8 +636,6 @@
            }
 
 
-
-
        }}
 
        {ForInputEdges(dataflow,t,pChannel) {
@@ -707,7 +693,6 @@
 
 
 
-
                Dainppluspred += dataflow->getEdgeOutPhase(pChannel,k);
 
 
@@ -740,43 +725,35 @@
 
 
 
+    BufferSizingResult algorithms::compute_periodic_fixed_memory   (models::Dataflow* const  dataflow, std::map<Vertex,std::vector<TIME_UNIT> > & offsets,  TIME_UNIT PERIOD , bool ilp_solving , bool gen_only) {
+
+        commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
+        if (ilp_solving) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
+
+        VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
+
+        VERBOSE_ASSERT (PERIOD > 0, "The period must be defined");
+        VERBOSE_ASSERT (PERIOD != std::numeric_limits<TIME_UNIT>::infinity(), "The period must be defined");
+        VERBOSE_ASSERT(dataflow->is_consistent(),"inconsistent graph");
+
+        TIME_UNIT FREQUENCY = 1.0 / PERIOD;
+
+            // STEP 0 - CSDF Graph should be normalized
+            VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
 
-   BufferSizingResult algorithms::compute_periodic_fixed_memory   (models::Dataflow* const  dataflow, std::map<Vertex,std::vector<TIME_UNIT> > & offsets,  TIME_UNIT PERIOD , bool ilp_solving , bool gen_only) {
+        //##################################################################
+        // Linear program generation
+        //##################################################################
+        const std::string problemName =  "PeriodicSizingFixed_" + dataflow->getGraphName() + "_" + commons::toString(FREQUENCY) + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "_INT" : "");
+        commons::GLPSol g = commons::GLPSol(problemName,commons::MIN_OBJ);
 
-
-   	commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
-   	if (ilp_solving) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
-
-   	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
-
-   	VERBOSE_ASSERT (PERIOD > 0, "The period must be defined");
-   	VERBOSE_ASSERT (PERIOD != std::numeric_limits<TIME_UNIT>::infinity(), "The period must be defined");
-   	VERBOSE_ASSERT(dataflow->is_consistent(),"inconsistent graph");
-
-   	TIME_UNIT FREQUENCY = 1.0 / PERIOD;
-
-      	// STEP 0 - CSDF Graph should be normalized
-      	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-
-
-   	//##################################################################
-   	// Linear program generation
-   	//##################################################################
-   	const std::string problemName =  "PeriodicSizingFixed_" + dataflow->getGraphName() + "_" + commons::toString(FREQUENCY) + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "_INT" : "");
-   	commons::GLPSol g = commons::GLPSol(problemName,commons::MIN_OBJ);
-
-
-       // Starting times
-       //******************************************************************
-       {ForEachVertex(dataflow,pVertex) {
-           std::string name = dataflow->getVertexName(pVertex);
-           g.addColumn("s_" + name,commons::KIND_CONTINUE,commons::bound_s(commons::LOW_BOUND,0),0);
-       }}
-
-
-
-
+        // Starting times
+        //******************************************************************
+        {ForEachVertex(dataflow,pVertex) {
+            std::string name = dataflow->getVertexName(pVertex);
+            g.addColumn("s_" + name,commons::KIND_CONTINUE,commons::bound_s(commons::LOW_BOUND,0),0);
+        }}
 
 
        // Constraints
@@ -901,7 +878,6 @@
                            g.addRow (local_mo_name + "_L",commons::bound_s(commons::LOW_BOUND, - crajm1 + cwai  - gcdz ));
                            g.addCoef(local_mo_name + "_L",local_mo_name        , (double) gcdz   );
                            g.addCoef(local_mo_name + "_L",feedback_mo_name     , 1       );
-
 
 
                            // resume
