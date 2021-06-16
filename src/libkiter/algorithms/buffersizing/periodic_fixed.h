@@ -31,7 +31,7 @@ namespace algorithms {
     BufferSizingResult compute_periodic_fixed_memory(models::Dataflow* const  dataflow, std::map<Vertex,std::vector<TIME_UNIT> > & res,  TIME_UNIT PERIOD , bool ilp_solving , bool gen_only);
 
     void compute_strictly_periodic_memory(models::Dataflow* const  dataflow, parameters_list_t params);
-    void algorithms::compute_x_memory (models::Dataflow* const dataflow, parameters_list_t params);
+    void algorithms::compute_fixed_offset_buffer_sizing (models::Dataflow* const dataflow, parameters_list_t params));
 
 
 } // end of namespace algorithms
@@ -39,5 +39,7 @@ namespace algorithms {
 //Buffer sizing techniques
 ADD_TRANSFORMATION(SPeriodicSizing,
 transformation_t({ "SPeriodicSizing" , "Minimal Buffer size estimation by periodic scheduling with StrictlyPeriodic policy.", algorithms::compute_strictly_periodic_memory}));
+ADD_TRANSFORMATION(FixedOffsetBufferSizing,
+transformation_t({ "FixedOffsetBufferSizing" , "Minimal Buffer size estimation by periodic scheduling with fixed offset buffer sizing techniques (BURST, AVERAGE, MINMAX, WIGGERS). Define chosen sizing technique as parameter.", algorithms::compute_fixed_offset_buffer_sizing}));
 
 #endif /* PERIODIC_FIXED_H_ */

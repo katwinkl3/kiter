@@ -109,7 +109,7 @@ void algorithms::compute_strictly_periodic_memory (models::Dataflow* const dataf
 }
 
 
-void algorithms::compute_x_memory (models::Dataflow* const dataflow, parameters_list_t params){
+void algorithms::compute_fixed_offset_buffer_sizing (models::Dataflow* const dataflow, parameters_list_t params){
     std::map<Vertex,std::vector<TIME_UNIT> > offsets;
 
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
@@ -118,26 +118,23 @@ void algorithms::compute_x_memory (models::Dataflow* const dataflow, parameters_
     bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
     bool      gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
 
-    if (params.count("S_TYPE")){
-        std::string mem;
-        if (params.count("BURST")){
-            mem = "Burst";
-            generateBurstOffsets(dataflow, offsets);
-        } else if (params.count("AVERAGE")){
-            mem = "Average";
-            generateAverageOffsets(dataflow, period, offsets);
-        } else if (params.count("MINMAX")){
-            mem = "MinMax";
-            generateMinMaxOffsets(dataflow,period,offsets);
-        } else if (params.count("WIGGERS")){
-            mem = "Wiggers";
-            generateWiggersOffsets(dataflow,period,offsets);
-        } else {
-            VERBOSE_ASSERT(false, "Invalid Schedule Paradigm")
-        }
+    
+    std::string mem;
+    if (params.count("BURST")){
+        mem = "Burst";
+        generateBurstOffsets(dataflow, offsets);
+    } else if (params.count("AVERAGE")){
+        mem = "Average";
+        generateAverageOffsets(dataflow, period, offsets);
+    } else if (params.count("MINMAX")){
+        mem = "MinMax";
+        generateMinMaxOffsets(dataflow, period, offsets);
+    } else if (params.count("WIGGERS")){
+        mem = "Wiggers";
+        generateWiggersOffsets(dataflow, period, offsets);
     } else {
-        VERBOSE_ASSERT(false, "No Scheduling Paradigm Defined")
-    }
+        VERBOSE_ASSERT(false, "Invalid Schedule Paradigm Defined")
+    };
 
     checkOffsets(dataflow,period,offsets);
     auto total_buffer_size = compute_periodic_fixed_memory(dataflow, offsets,period, solve_ilp, gen_only).total_size();
