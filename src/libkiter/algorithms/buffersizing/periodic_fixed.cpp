@@ -118,23 +118,26 @@ void algorithms::compute_fixed_offset_buffer_sizing (models::Dataflow* const dat
     bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
     bool      gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
 
-    
     std::string mem;
-    if (params.count("BURST")){
-        mem = "Burst";
-        generateBurstOffsets(dataflow, offsets);
-    } else if (params.count("AVERAGE")){
-        mem = "Average";
-        generateAverageOffsets(dataflow, period, offsets);
-    } else if (params.count("MINMAX")){
-        mem = "MinMax";
-        generateMinMaxOffsets(dataflow, period, offsets);
-    } else if (params.count("WIGGERS")){
-        mem = "Wiggers";
-        generateWiggersOffsets(dataflow, period, offsets);
-    } else {
-        VERBOSE_ASSERT(false, "Invalid Schedule Paradigm Defined")
-    };
+    if (params.count("OFFSET")) {
+        std::string offset_type = params["OFFSET"];
+
+        if (offset_type == "BURST"){
+            mem = "Burst";
+            generateBurstOffsets(dataflow, offsets);
+        } else if (offset_type == "AVERAGE"){
+            mem = "Average";
+            generateAverageOffsets(dataflow, period, offsets);
+        } else if (offset_type == "MINMAX"){
+            mem = "MinMax";
+            generateMinMaxOffsets(dataflow, period, offsets);
+        } else if (offset_type == "WIGGERS"){
+            mem = "Wiggers";
+            generateWiggersOffsets(dataflow, period, offsets);
+        } else {
+            VERBOSE_ASSERT(false, "Invalid Schedule Paradigm Defined")
+        };
+    }
 
     checkOffsets(dataflow,period,offsets);
     auto total_buffer_size = compute_periodic_fixed_memory(dataflow, offsets,period, solve_ilp, gen_only).total_size();
