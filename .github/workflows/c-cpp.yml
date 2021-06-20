@@ -1,0 +1,21 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install deps
+      run: sudo apt-get install git make cmake gcc g++ libboost-all-dev libxml2-dev libglpk-dev glpk-utils
+    - name: make
+      run: make all
+    - name: make unit_test
+      run: make unit_test
