@@ -38,6 +38,8 @@ public:
   void updateDistributionSize();
   std::string printInfo(models::Dataflow* const dataflow);
   std::string print_quantities_csv(models::Dataflow* const dataflow);
+  std::string print_dependency_mask(models::Dataflow* const dataflow,
+                                    kperiodic_result_t const result);
   std::string printGraph(models::Dataflow* const dataflow);
   // BASE MONOTONIC OPTIMISATION FUNCTIONS
   bool inBackConeOf(StorageDistribution checkDist);

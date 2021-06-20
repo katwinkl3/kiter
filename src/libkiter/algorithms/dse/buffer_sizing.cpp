@@ -189,6 +189,30 @@ std::string StorageDistribution::print_quantities_csv(models::Dataflow* const da
   return output;
 }
 
+// prints mask of critical channels identified in storage distribution where 1 = channel
+// associated with critical cycle
+std::string StorageDistribution::print_dependency_mask(models::Dataflow* const dataflow,
+                                                       kperiodic_result_t const result) {
+  std::string output("\"");
+  std::string delim("");
+  ARRAY_INDEX ch_count = 0;
+
+  {ForEachEdge(dataflow, c) {
+      if (ch_count >= (this->edge_count / 2)) {
+	output += delim;
+        if (result.critical_edges.find(c) != result.critical_edges.end()) {
+          output += "1";
+        } else {
+          output += "0";
+        }
+	delim = ",";
+      }
+      ch_count++;
+    }}
+  output += "\"";
+  return output;
+}
+
 // Print a DOT file of the given graph modelled with a storage distribution
 std::string StorageDistribution::printGraph(models::Dataflow* const dataflow) {
   // copy graph to model
@@ -361,6 +385,16 @@ bool StorageDistributionSet::isSearchComplete(StorageDistributionSet checklist,
   /* search is complete when the max throughput has been found and there 
      isn't any more storage distributions of the same distribution size
      left to check */
+  VERBOSE_DSE("Checking if search is complete:" << std::endl);
+  VERBOSE_DSE("\tCurrent max throughput: " << this->p_max.second
+              << "\n\tTarget throughput: " << target_thr << std::endl);
+  VERBOSE_DSE("\t\tIs current max equal to target (yes:1/no:0)? "
+              << commons::AreSame(this->p_max.second, target_thr) << std::endl);
+  VERBOSE_DSE("\tIs there any other SD with same dist size (" << p_max.first
+              << ")? " << checklist.hasDistribution(this->p_max.first)
+              << std::endl);
+  VERBOSE_DSE("\tHow many SDs left in checklist? " << checklist.getSize()
+              << std::endl);
   return ((commons::AreSame(this->p_max.second, target_thr) &&
           (!checklist.hasDistribution(this->p_max.first))) ||
           (checklist.getSize() <= 0)); // also end when we're out of distributions to check
