@@ -36,6 +36,7 @@ class State {
   void updateState(models::Dataflow* const dataflow,
                    std::map<ARRAY_INDEX, Actor> actorMap); // updates state with current status of graph
   TIME_UNIT advanceTime();
+  TIME_UNIT advanceTimeWithMod();
   bool operator==(const State& s) const;
   std::string print(models::Dataflow* const dataflow);
 

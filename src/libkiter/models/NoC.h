@@ -95,6 +95,56 @@ public:
 		return this->_medges.at(pair);
 	};
 
+	
+	const NetworkEdge& getLeftNeighbour(node_id_t src) const {
+		for (const auto &it : this->_vedges){
+			if ((it.src == src) && (this->getNode(it.src).y == this->getNode(it.dst).y) 
+				&& (this->getNode(it.src).x > this->getNode(it.dst).x)){
+					return it;
+			}
+		}
+	};
+	const NetworkEdge& getRightNeighbour(node_id_t src) const {
+		for (const auto &it : this->_vedges){
+			if ((it.src == src) && (this->getNode(it.src).y == this->getNode(it.dst).y) 
+				&& (this->getNode(it.src).x < this->getNode(it.dst).x)){
+					return it;
+			}
+		}
+	};
+	const NetworkEdge& getTopNeighbour(node_id_t src) const {
+		for (const auto &it : this->_vedges){
+			if ((it.src == src) && (this->getNode(it.src).x == this->getNode(it.dst).x) 
+				&& (this->getNode(it.src).y < this->getNode(it.dst).y)){
+					return it;
+			}
+		}
+	};
+	const NetworkEdge& getBottomNeighbour(node_id_t src) const {
+		for (const auto &it : this->_vedges){
+			if ((it.src == src) && (this->getNode(it.src).x == this->getNode(it.dst).x) 
+				&& (this->getNode(it.src).y > this->getNode(it.dst).y)){
+					return it;
+			}
+		}
+	};
+	const NetworkEdge& getSrcNeighbour(node_id_t src) const {
+		//Match associated router
+		for (const auto &it : this->_vedges){
+			if (it.src == src){
+					return it;
+			}
+		}
+	};
+	const NetworkEdge& getDstNeighbour(node_id_t dst) const {
+		//Match associated router
+		for (const auto &it : this->_vedges){
+			if (it.dst == dst){
+					return it;
+			}
+		}
+	};
+
 
 	//the routers are from (0 to (NXN)-1)
 	//while the cores are marked from (NXN) to 2*(NXN) - 1
