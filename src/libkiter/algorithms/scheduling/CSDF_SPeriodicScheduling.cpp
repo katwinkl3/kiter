@@ -22,6 +22,9 @@ models::Scheduling algorithms::scheduling::CSDF_SPeriodicScheduling    (const mo
 
 
 	models::EventGraph* eg = algorithms::generate_csdf_strictly_periodic_event_graph(dataflow);
+
+ 	VERBOSE_INFO("EventGraph Latex\n" << eg->printTikz());
+
 	std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
 
 	TIME_UNIT res = howard_res.first ;
