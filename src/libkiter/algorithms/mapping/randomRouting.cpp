@@ -1,5 +1,8 @@
 /*
-    XY Routing Algorithm
+ * Randomize-X-Y-steps routing
+ *
+ *  Created on: May 2020
+ *      Author: katwinkl3
  */
 
 #include <models/Dataflow.h>

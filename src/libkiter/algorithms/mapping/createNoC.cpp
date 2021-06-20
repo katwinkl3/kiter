@@ -1,5 +1,8 @@
 /*
-	Create NoC
+ * Initialize NoC
+ *
+ *  Created on: May 2020
+ *      Author: katwinkl3
  */
 
 #include <models/Dataflow.h>

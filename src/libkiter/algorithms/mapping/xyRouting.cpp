@@ -1,7 +1,9 @@
 /*
-    XY Routing Algorithm
+ * X-first-then-Y routing
+ *
+ *  Created on: May 2020
+ *      Author: katwinkl3
  */
-
 #include <models/Dataflow.h>
 #include <algorithms/mappings.h>
 #include <models/NoC.h>
