@@ -30,6 +30,24 @@ BOOST_AUTO_TEST_CASE( test_empty_dataflow )
 }
 
 
+
+BOOST_AUTO_TEST_CASE( test_get_first_vertex )
+{
+    models::Dataflow* g = new models::Dataflow(0);
+    auto v1 = g->addVertex();
+    auto v2 = g->addVertex();
+    g->addEdge(v1,v2);
+
+    BOOST_REQUIRE_EQUAL(  g->getFirstVertex(),  g->getFirstVertex() );
+    BOOST_REQUIRE_EQUAL(  g->getFirstVertex(),  v1 );
+    BOOST_REQUIRE_NE   (  g->getFirstVertex(),  v2 );
+
+    delete g;
+
+}
+
+
+
 BOOST_AUTO_TEST_CASE( test_one_buffer_dataflow )
 {
     models::Dataflow* g = new models::Dataflow(0);

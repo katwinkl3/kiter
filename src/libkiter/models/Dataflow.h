@@ -441,7 +441,7 @@ public :
 
 
 public :
-    inline  Vertex                  getFirstVertex      ()                   const    {return Vertex(1);}
+    inline  Vertex                  getFirstVertex      ()                   const    {return *(this->getVertices().first);}
 	inline 	ARRAY_INDEX 					getVertexId			(const Vertex t)	const	{return boost::get(get(boost::vertex_index2, this->getG()), t.v); }
 	inline 	ARRAY_INDEX 					getEdgeId			(const Edge c)		const	{return boost::get(get(boost::edge_index, this->getG()), c.e);}
 

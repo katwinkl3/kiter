@@ -42,6 +42,7 @@
 
  	VERBOSE_ASSERT(dataflow->has_repetition_vector(), "Repetition vector failed.");
 
+ 	VERBOSE_INFO ("Start 1 periodic Scheduling");
 
     // STEP 1 - generate initial vector
     periodicity_vector_t kvector;
@@ -51,6 +52,9 @@
     }}
 
  	models::EventGraph* eg =  generateKPeriodicEventGraph(dataflow,&kvector);
+
+ 	VERBOSE_INFO("EventGraph Latex\n" << eg->printTikz());
+
  	std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
 
  	TIME_UNIT res = howard_res.first ;

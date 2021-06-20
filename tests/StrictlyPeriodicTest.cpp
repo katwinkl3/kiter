@@ -5,6 +5,8 @@
 
 #define BOOST_TEST_MODULE StrictlyPeriodicTest
 #include "helpers/test_classes.h"
+
+
 #include <algorithms/throughput/csdf_strictly_periodic.h>
 #include <algorithms/throughput/kperiodic.h>
 #include <algorithms/schedulings.h>
