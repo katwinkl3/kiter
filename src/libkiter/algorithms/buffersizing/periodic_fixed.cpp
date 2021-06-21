@@ -302,10 +302,10 @@ bool algorithms::generateWiggersOffsets(models::Dataflow * dataflow, TIME_UNIT P
     std::map<Edge,TIME_UNIT> beta_prod;
 
     {ForEachEdge(dataflow,e) {
-        const TIME_UNIT alpha_e = alpha[e];
+        const TIME_UNIT alpha_e   = alpha[e];
         const TOKEN_UNIT lambda_p = lambda_prod[e];
-        const Vertex vi         = dataflow->getEdgeSource(e);
-        const EXEC_COUNT max_ki = dataflow->getEdgeInPhasesCount(e);
+        const Vertex vi           = dataflow->getEdgeSource(e);
+        const EXEC_COUNT max_ki   = dataflow->getEdgeInPhasesCount(e);
 
         TIME_UNIT  beta_e = std::numeric_limits<TIME_UNIT>::infinity();
         TOKEN_UNIT cumul_production = 0;
