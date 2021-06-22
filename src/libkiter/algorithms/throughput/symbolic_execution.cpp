@@ -234,7 +234,7 @@ std::pair<TIME_UNIT, static_task_schedule_t> get_periods(std::vector<std::vector
     }
   }
   TIME_UNIT ped = period;
-  //std::cout <<     " PERIOD=[ " << commons::toString(res) << "], " << "length = " << commons::toString(period) << std::endl;
+  std::cout <<     " PERIOD=[ " << commons::toString(res) << "], " << "length = " << commons::toString(period) << std::endl;
   return {ped, res};
 }
 
@@ -250,8 +250,8 @@ std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSch
 
   bool periodic_state = false;
   TIME_UNIT curr_step = 0;
-  std::map<ARRAY_INDEX, std::vector<TIME_UNIT>> statics; //initial phase
-  std::map<ARRAY_INDEX, std::vector<std::vector<TIME_UNIT>>> periodics; //periodic phase: task idx : [start, end]
+  std::map<ARRAY_INDEX, std::vector<std::vector<TIME_UNIT>>> starts; //{task idx : [[state 0 starts], [state 1 ...]]}
+  std::map<ARRAY_INDEX, std::vector<TIME_UNIT>> state_start = {};  //{task idx : [ starts]}, 
 
   // initialise actors
   std::map<ARRAY_INDEX, Actor> actorMap;
@@ -288,31 +288,42 @@ std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSch
           if (actorMap[dataflow->getVertexId(t)].getId() == minRepActorId) {
             minRepActorExecCount++;
             if (minRepActorExecCount == minRepFactor) {
-              if (!periodic_state){periodic_state = true;} // assumes first repeat is the end of period TODO: change to searching through repeats
               VERBOSE_INFO("Adding the following state to list of visited states:");
               VERBOSE_INFO(currState.print(dataflow));
+
               if (!visitedStates.addState(currState)) {
                 VERBOSE_INFO("ending execution and computing throughput");
                 // compute throughput using recurrent state
                 TIME_UNIT thr = visitedStates.computeThroughput();
-                {ForEachTask(dataflow, t2){ //Creates schedule at end of graph
-                auto p = periodics.find(dataflow->getVertexId(t2));
-                auto s = statics.find(dataflow->getVertexId(t2));
-                if (p != periodics.end() && s != statics.end()){
-                  task_schedule_t sched_struct = {statics[dataflow->getVertexId(t2)], get_periods(periodics[dataflow->getVertexId(t2)])};
-                  schedule.insert(std::make_pair(dataflow->getVertexId(t2), sched_struct));
-                }
+                int periodic_state_idx = visitedStates.computeIdx(currState); //idx for repeated state
+                {ForEachTask(dataflow, task){ //Creates schedule at end of graph
+                  static_task_schedule_t initials; 
+                  periodic_task_schedule_t periodics;
+                  for(std::size_t i = 0; i < starts[dataflow->getVertexId(task)].size(); ++i){
+                    if (i < periodic_state_idx){ //initials
+                      initials.insert(initials.end(),starts[dataflow->getVertexId(task)][i].begin(),starts[dataflow->getVertexId(task)][i].end());
+                    } else { //periodic
+                      periodics.second.insert(periodics.second.end(),starts[dataflow->getVertexId(task)][i].begin(),starts[dataflow->getVertexId(task)][i].end());
+                    }
+                  }
+                  periodics.first = periodics.second[periodics.second.size()-1] - periodics.second[0]; 
+                  task_schedule_t sched_struct = {initials,periodics};
+                  schedule.insert({dataflow->getVertexId(task), sched_struct});
+
+                  std::cout << dataflow->getVertexName(task) << ": initial starts=" << commons::toString(initials) << ", periodic starts=" << commons::toString(periodics) << std::endl;
                 }}
+                std::string separator(20, '-');
+                std::cout << separator << std::endl;
                 return std::make_pair(thr, schedule);
               }
+              {ForEachTask(dataflow, task){ //start new state vector in starts
+                starts[dataflow->getVertexId(task)].push_back({});
+              }}
               currState.setTimeElapsed(0);
               minRepActorExecCount = 0;
             }
           }
           actorMap[dataflow->getVertexId(t)].execEnd(dataflow, currState);
-          if (periodic_state){
-            periodics[dataflow->getVertexId(t)].back().push_back(curr_step);
-          }
           currState.updateState(dataflow, actorMap); // NOTE updating tokens/phase in state done separately from execEnd function, might be a cause for bugs
         }
       }}
@@ -328,13 +339,12 @@ std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSch
         while (actorMap[dataflow->getVertexId(t)].isReadyForExec(currState)) {
           actorMap[dataflow->getVertexId(t)].execStart(dataflow, currState);
           currState.updateState(dataflow, actorMap);
-          if (periodic_state){
-            periodics[dataflow->getVertexId(t)].push_back({curr_step});
+          if (starts[dataflow->getVertexId(t)].size() == 0){
+            starts[dataflow->getVertexId(t)].push_back({currState.getTimeElapsed()}); //push into current state's task start list
           } else {
-            statics[dataflow->getVertexId(t)].push_back(currState.getTimeElapsed());
+            starts[dataflow->getVertexId(t)].back().push_back(currState.getTimeElapsed());
           }
-
-        }
+          }
       }}
     VERBOSE_INFO("Printing Current State Status");
     VERBOSE_INFO(currState.print(dataflow));
@@ -411,14 +421,14 @@ void algorithms::scheduling::ASAPPeriodicScheduling(models::Dataflow* const data
         }
       }
     }
-    std::cout << "Throughput of graph: " << minThroughput << std::endl;
+    
     TIME_UNIT omega = 1.0 / minThroughput ;
     models::SchedulingMod res = models::SchedulingMod(dataflow, omega, scheduling_result);
     std::cout << res.asASCII(linesize);
     std::cout << res.asText();
 
-    std::cout << "SPeriodic throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
-    std::cout << "SPeriodic period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
+    std::cout << "ASAP throughput is  " << minThroughput << std::endl;
+    std::cout << "ASAP period is  " << omega << std::endl;
 
     return;
   }
@@ -433,8 +443,8 @@ void algorithms::scheduling::ASAPPeriodicScheduling(models::Dataflow* const data
   std::cout << res.asASCII(linesize);
   std::cout << res.asText();
 
-  std::cout << "SPeriodic throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  1.0 / omega << std::endl;
-  std::cout << "SPeriodic period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << omega   << std::endl;
+  std::cout << "ASAP throughput is  " << minThroughput << std::endl;
+  std::cout << "ASAP period is  " << omega << std::endl;
 
   return;
 }
