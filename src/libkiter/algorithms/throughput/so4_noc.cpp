@@ -14,15 +14,16 @@
 
 std::pair<TIME_UNIT, static_task_schedule_t> get_starts(std::vector<std::vector<TIME_UNIT>> periods){
   std::vector<TIME_UNIT> res;
-  TIME_UNIT period = 0;
+  int period = 0;
   for(std::size_t i = 0; i < periods.size(); ++i) {
     res.push_back(periods[i][0]);
     if (i == periods.size() - 1){
       period = periods[i][1] - periods[0][0];
     }
   }
+  TIME_UNIT ped = period;
   std::cout <<     " PERIOD=[ " << commons::toString(res) << "], " << "length = " << commons::toString(period) << std::endl;
-  return {period, res};
+  return {ped, res};
 }
 
 void algorithms::so4_noc(models::Dataflow* const dataflow,   parameters_list_t param_list) {
@@ -96,7 +97,7 @@ void algorithms::so4_noc(models::Dataflow* const dataflow,   parameters_list_t p
 
                 {ForEachTask(dataflow, t2){
                   task_schedule_t sched_struct = {statics[dataflow->getVertexId(t2)], get_starts(periodics[dataflow->getVertexId(t2)])};
-                  task_schedule.insert(std::make_pair(dataflow->getVertexId(t), sched_struct));
+                  task_schedule.insert(std::make_pair(dataflow->getVertexId(t2), sched_struct));
                 }}
                 models::SchedulingMod res = models::SchedulingMod(dataflow, 1/thr, task_schedule);
                 res.verbose_print();

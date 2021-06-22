@@ -58,6 +58,7 @@ public:
   bool addState(State s);
   std::list<State>::iterator getRepeatedState();
   TIME_UNIT computeThroughput();
+  int computeIdx(State s);
 
 private:
   std::list<State> visitedStates;

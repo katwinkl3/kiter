@@ -62,6 +62,8 @@ public :
 	// }
 
 	void verbose_print ();
+	std::string asText () ;
+	std::string asASCII (int line_size) ;
 
 };
 }

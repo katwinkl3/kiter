@@ -236,3 +236,13 @@ TIME_UNIT StateList::computeThroughput() {
                << number_iterations);
   return (TIME_UNIT) (number_iterations/total_time);
 }
+
+// Get index of state
+int StateList::computeIdx(State s){
+  auto i = std::find(this->visitedStates.begin(), this->visitedStates.end(), s);
+  if (i != this->visitedStates.end()) {
+    return std::distance(this->visitedStates.begin(), i);
+  } else {
+    return -1;
+  }
+}
