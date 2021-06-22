@@ -106,10 +106,4 @@ ADD_TRANSFORMATION(BufferlessNoCScheduling,
 		transformation_t({ "BufferlessNoCScheduling" , "BufferlessNoCScheduling, WIP", algorithms::BufferlessNoCScheduling}));
 
 
-
-
-
-
-
-
 #endif /* SRC_LIBKITER_ALGORITHMS_SCHEDULINGS_H_ */

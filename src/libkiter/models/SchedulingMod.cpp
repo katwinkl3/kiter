@@ -94,4 +94,3 @@ std::string models::SchedulingMod::asASCII (int line_size) {
 	return returnStream.str();
 
 }
-
