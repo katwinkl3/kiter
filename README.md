@@ -3,8 +3,7 @@
 Kiter is an iterative algorithm based on K-periodic scheduling to compute the throughput of a CSDFG (see [Bodin2016](https://dl.acm.org/doi/abs/10.1145/2897937.2898056)).
 
 Build status:
-[![Build Status](https://travis-ci.org/bbodin/kiter.svg?branch=master)](https://travis-ci.org/bbodin/kiter)
-[![Linter Status](https://github.com/bbodin/kiter/workflows/Super-Linter/badge.svg)](https://github.com/marketplace/actions/super-linter)
+[![C/C++ CI](https://github.com/bbodin/kiter/actions/workflows/c-cpp.yml/badge.svg?branch=master)](https://github.com/bbodin/kiter/actions/workflows/c-cpp.yml)[![Linter Status](https://github.com/bbodin/kiter/workflows/Super-Linter/badge.svg)](https://github.com/marketplace/actions/super-linter)
 
 ## Quick start
 
