@@ -120,6 +120,30 @@ TIME_UNIT State::advanceTime() {
   return timeElapsed;
 }
 
+TIME_UNIT State::advanceTimeWithMod() {
+  TIME_UNIT timeElapsed = LONG_MAX;
+  for (auto &i : this->actors) {
+    if (!this->executingActors[i].empty()) {
+      timeElapsed = std::min(timeElapsed, this->executingActors[i].front().first);
+    }
+  }
+  // check for cases where time shouldn't advance/deadlock
+  if (timeElapsed == 0) {
+    return timeElapsed; // there exists actors that need to end execution
+  }
+  if (timeElapsed == LONG_MAX) {
+    return 0; // simply have faith that the periodic code did not break amen
+  }
+  // advance time for all actors
+  for (auto &it : this->executingActors) {
+    this->advanceRemExecTime(it.first, timeElapsed);
+  }
+  this->timeElapsed += timeElapsed;
+  VERBOSE_INFO("Time advanced by: " << timeElapsed);
+  VERBOSE_INFO("Total time elapsed: " << this->getTimeElapsed());
+  return timeElapsed;
+}
+
 bool State::operator==(const State& s) const {
   if (this->getTimeElapsed() != s.getTimeElapsed()) {
     return false;
@@ -211,4 +235,14 @@ TIME_UNIT StateList::computeThroughput() {
   VERBOSE_INFO("\nTotal time: " << total_time << "\nNum executions: "
                << number_iterations);
   return (TIME_UNIT) (number_iterations/total_time);
+}
+
+// Get index of state
+int StateList::computeIdx(State s){
+  auto i = std::find(this->visitedStates.begin(), this->visitedStates.end(), s);
+  if (i != this->visitedStates.end()) {
+    return std::distance(this->visitedStates.begin(), i);
+  } else {
+    return -1;
+  }
 }

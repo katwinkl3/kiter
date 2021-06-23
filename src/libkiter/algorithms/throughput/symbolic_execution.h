@@ -20,9 +20,12 @@ namespace algorithms {
                                parameters_list_t);
   TIME_UNIT computeComponentThroughput(models::Dataflow* const dataflow,
                                        std::pair<ARRAY_INDEX, EXEC_COUNT> &minActorInfo);
+  std::pair<TIME_UNIT, scheduling_t_mod> computeComponentThroughputSchedule(models::Dataflow* const dataflow,
+                                       std::pair<ARRAY_INDEX, EXEC_COUNT> &minActorInfo, scheduling_t_mod schedule);                                       
   std::vector<models::Dataflow*> generateSCCs(models::Dataflow* const dataflow,
                                               std::map<int, std::vector<ARRAY_INDEX>> sccMap);
   std::string printStatus(models::Dataflow* const dataflow);
+
 }
 
 ADD_TRANSFORMATION(SymbExec,
