@@ -224,20 +224,6 @@ std::string algorithms::printStatus(models::Dataflow* const dataflow) {
 
 
 // Modification of original program to output scheduling object
-std::pair<TIME_UNIT, static_task_schedule_t> get_periods(std::vector<std::vector<TIME_UNIT>> periods){
-  std::vector<TIME_UNIT> res;
-  int period = 0;
-  for(std::size_t i = 0; i < periods.size(); ++i) {
-    res.push_back(periods[i][0]);
-    if (i == periods.size() - 1){
-      period = periods[i][1] - periods[0][0];
-    }
-  }
-  TIME_UNIT ped = period;
-  std::cout <<     " PERIOD=[ " << commons::toString(res) << "], " << "length = " << commons::toString(period) << std::endl;
-  return {ped, res};
-}
-
 std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSchedule(models::Dataflow* const dataflow,
                                                  std::pair<ARRAY_INDEX, EXEC_COUNT> &minActorInfo, scheduling_t_mod schedule) {
   VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
@@ -248,7 +234,16 @@ std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSch
   TOKEN_UNIT minRepActorExecCount = 0;
   TIME_UNIT timeStep;
 
-  bool periodic_state = false;
+  int periodic_state_idx;
+  TIME_UNIT thr;
+  bool end_check = false; // temp workaround before replacing with mathematical solution
+  int actors_left; // seems more efficient to use a counter check than to check through the array
+  std::map<ARRAY_INDEX, TIME_UNIT> actors_check;
+  {ForEachTask(dataflow, t){
+    ++actors_left;
+    actors_check[dataflow->getVertexId(t)] = -1;
+  }}
+  
   TIME_UNIT curr_step = 0;
   std::map<ARRAY_INDEX, std::vector<std::vector<TIME_UNIT>>> starts; //{task idx : [[state 0 starts], [state 1 ...]]}
   std::map<ARRAY_INDEX, std::vector<TIME_UNIT>> state_start = {};  //{task idx : [ starts]}, 
@@ -294,27 +289,9 @@ std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSch
               if (!visitedStates.addState(currState)) {
                 VERBOSE_INFO("ending execution and computing throughput");
                 // compute throughput using recurrent state
-                TIME_UNIT thr = visitedStates.computeThroughput();
-                int periodic_state_idx = visitedStates.computeIdx(currState); //idx for repeated state
-                {ForEachTask(dataflow, task){ //Creates schedule at end of graph
-                  static_task_schedule_t initials; 
-                  periodic_task_schedule_t periodics;
-                  for(std::size_t i = 0; i < starts[dataflow->getVertexId(task)].size(); ++i){
-                    if (i < periodic_state_idx){ //initials
-                      initials.insert(initials.end(),starts[dataflow->getVertexId(task)][i].begin(),starts[dataflow->getVertexId(task)][i].end());
-                    } else { //periodic
-                      periodics.second.insert(periodics.second.end(),starts[dataflow->getVertexId(task)][i].begin(),starts[dataflow->getVertexId(task)][i].end());
-                    }
-                  }
-                  periodics.first = periodics.second[periodics.second.size()-1] - periodics.second[0]; 
-                  task_schedule_t sched_struct = {initials,periodics};
-                  schedule.insert({dataflow->getVertexId(task), sched_struct});
-
-                  std::cout << dataflow->getVertexName(task) << ": initial starts=" << commons::toString(initials) << ", periodic starts=" << commons::toString(periodics) << std::endl;
-                }}
-                std::string separator(20, '-');
-                std::cout << separator << std::endl;
-                return std::make_pair(thr, schedule);
+                thr = visitedStates.computeThroughput();
+                periodic_state_idx = visitedStates.computeIdx(currState); //idx for repeated state
+                if (!end_check){end_check = true;}
               }
               {ForEachTask(dataflow, task){ //start new state vector in starts
                 starts[dataflow->getVertexId(task)].push_back({});
@@ -339,12 +316,41 @@ std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSch
         while (actorMap[dataflow->getVertexId(t)].isReadyForExec(currState)) {
           actorMap[dataflow->getVertexId(t)].execStart(dataflow, currState);
           currState.updateState(dataflow, actorMap);
-          if (starts[dataflow->getVertexId(t)].size() == 0){
-            starts[dataflow->getVertexId(t)].push_back({currState.getTimeElapsed()}); //push into current state's task start list
+
+          if (end_check){
+            if (actors_check[dataflow->getVertexId(t)] < 0){
+              actors_check[dataflow->getVertexId(t)] = curr_step;
+              --actors_left;
+            }
+            if (actors_left == 0){
+              {ForEachTask(dataflow, task){ //Creates schedule after additional actor is fired after end of period
+                static_task_schedule_t initials; 
+                periodic_task_schedule_t periodics;
+                for(std::size_t i = 0; i < starts[dataflow->getVertexId(task)].size(); ++i){
+                  if (i < periodic_state_idx){ //initials
+                    initials.insert(initials.end(),starts[dataflow->getVertexId(task)][i].begin(),starts[dataflow->getVertexId(task)][i].end());
+                  } else { //periodic
+                    periodics.second.insert(periodics.second.end(),starts[dataflow->getVertexId(task)][i].begin(),starts[dataflow->getVertexId(task)][i].end());
+                  }
+                }
+                periodics.first = actors_check[dataflow->getVertexId(t)] - periodics.second[0]; 
+                task_schedule_t sched_struct = {initials,periodics};
+                schedule.insert({dataflow->getVertexId(task), sched_struct});
+                std::cout << dataflow->getVertexName(task) << ": initial starts=" << commons::toString(initials) << ", periodic starts=" << commons::toString(periodics) << std::endl;
+              }}
+              std::string separator(60, '-');
+              std::cout << separator << std::endl;
+              return std::make_pair(thr, schedule);
+            }
+
           } else {
-            starts[dataflow->getVertexId(t)].back().push_back(currState.getTimeElapsed());
+            if (starts[dataflow->getVertexId(t)].size() == 0){
+              starts[dataflow->getVertexId(t)].push_back({curr_step}); //push into current state's task start list
+            } else {
+              starts[dataflow->getVertexId(t)].back().push_back(curr_step);
+            }
           }
-          }
+        }
       }}
     VERBOSE_INFO("Printing Current State Status");
     VERBOSE_INFO(currState.print(dataflow));
@@ -363,7 +369,7 @@ std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSch
   }
 }
 
-void algorithms::scheduling::ASAPPeriodicScheduling(models::Dataflow* const dataflow,
+void algorithms::scheduling::ASAPScheduling(models::Dataflow* const dataflow,
                                          parameters_list_t param_list) {
   VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
   VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");

@@ -63,8 +63,8 @@ void BufferlessNoCScheduling(models::Dataflow* const  dataflow, parameters_list_
 		 models::Scheduling CSDF_SPeriodicScheduling       (const models::Dataflow* const dataflow) ;
 		 void SPeriodicScheduling (models::Dataflow*  dataflow, parameters_list_t ) ;
 
-		 models::Scheduling ASAPPeriodScheduling       (const models::Dataflow* const dataflow) ;
-		 void ASAPPeriodicScheduling (models::Dataflow*  dataflow, parameters_list_t ) ;
+		 models::Scheduling ASAPScheduling       (const models::Dataflow* const dataflow) ;
+		 void ASAPScheduling (models::Dataflow*  dataflow, parameters_list_t ) ;
 
 		 
 
@@ -98,8 +98,8 @@ transformation_t({ "SPeriodicScheduling" , "Experimental", algorithms::schedulin
 ADD_TRANSFORMATION(OnePeriodicScheduling,
 transformation_t({ "1PeriodicScheduling" , "CSDF 1-Periodic Scheduling [Bodin2013]", algorithms::scheduling::OnePeriodicScheduling}));
 
-ADD_TRANSFORMATION(ASAPPeriodicScheduling,
-transformation_t({ "ASAPPeriodicScheduling" , "Symbolic Execution", algorithms::scheduling::ASAPPeriodicScheduling}));
+ADD_TRANSFORMATION(ASAPScheduling,
+transformation_t({ "ASAPScheduling" , "Symbolic Execution", algorithms::scheduling::ASAPScheduling}));
 
 // Throughput techniques
 ADD_TRANSFORMATION(BufferlessNoCScheduling,
