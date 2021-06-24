@@ -38,9 +38,11 @@ std::string models::SchedulingMod::asText () {
 			std::string  tname = _dataflow->getVertexName(v);
 			TIME_UNIT period = item.second.periodic_starts.first;//item.second.first;
 			std::vector<TIME_UNIT> &starts = item.second.initial_starts;//item.second.second;
+			std::vector<TIME_UNIT> &pedstarts = item.second.periodic_starts.second;
 			returnStream << std::setw(5) << tid << ") " << tname
 					<< " | starts:" << commons::toString(starts)
 					<< " | period:" << period
+					<< " | periodic starts:" << commons::toString(pedstarts)
 					<< " | durations:" << commons::toString(_dataflow->getVertexInitPhaseDuration(v))
 			                           << ";[" << commons::toString(_dataflow->getVertexPhaseDuration(v)) << "]"
 					<< std::endl;
@@ -56,6 +58,53 @@ std::string models::SchedulingMod::asASCII (int line_size) {
 
 
 	std::ostringstream returnStream;
+
+	// for (auto item : this->getTaskSchedule()) {
+	// 	ARRAY_INDEX tid = item.first;
+	// 	Vertex v = _dataflow->getVertexById(item.first);
+	// 	TIME_UNIT period = item.second.periodic_starts.first;// period
+	// 	std::vector<TIME_UNIT> &starts = item.second.initial_starts;// initial starts
+	// 	std::vector<TIME_UNIT> &pedstarts = item.second.periodic_starts.second; //periodic starts
+	// 	std::string start_str;
+	// 	std::string period_str;
+	// 	TIME_UNIT prev = -1;
+	// 	int idx = 0;
+	// 	std::string line = "";
+	// 	ARRAY_INDEX max_iter = line_size / period;
+
+	// 	for (TIME_UNIT i: starts) {
+	// 		std::string add_space(i-prev-1, ' ');
+	// 		start_str += add_space;
+	// 		start_str += "#";
+	// 		prev = i;
+	// 	}
+	// 	if (start_str.length() <= line_size) {
+	// 		line += start_str;
+	// 		line_size -= start_str.length();
+	// 	}
+	// 	else {
+	// 		line += (start_str.substr(line_size));
+	// 		line_size = 0;
+	// 	}
+	// 	prev = -1;
+	// 	for (TIME_UNIT i: period_str) {
+	// 		std::string add_space(i-prev-1, ' ');
+	// 		period_str += add_space;
+	// 		period_str += "#";
+	// 		prev = i;
+	// 	}
+	// 	while (line_size > 0){
+	// 		if (line_size >= period_str.length()){
+	// 			line += period_str;
+	// 			line_size -= period_str.length();
+	// 		} else {
+	// 			line += (period_str.substr(line_size));
+	// 			line_size = 0;
+	// 		}
+	// 	}
+
+	// 	returnStream << std::setw(5) << tid << " |" << line << std::endl;
+	// }
 
 	for (auto item : this->getTaskSchedule()) {
 		ARRAY_INDEX tid = item.first;
