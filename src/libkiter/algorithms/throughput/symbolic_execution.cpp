@@ -368,8 +368,8 @@ std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSch
       }}
     VERBOSE_INFO(printStatus(dataflow));
     // advance time and check for deadlocks
-    curr_step++;
     timeStep = currState.advanceTime();
+    curr_step+= timeStep;
     if (timeStep == LONG_MAX) { // NOTE should technically be LDBL_MAX cause TIME_UNIT is of type long double
       VERBOSE_INFO("Deadlock found!");
       return std::make_pair(0, schedule);

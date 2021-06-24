@@ -77,7 +77,7 @@ std::string models::SchedulingMod::asASCII (int line_size) {
 		std::string line = "";
 		int linesize = line_size;
 
-		// create trailing spaces after initial starts (before periodic starts)
+		// add for initial starts, and include sta (before periodic starts)
 		for (TIME_UNIT i: starts) {
 			std::string add_space(i-prev-1, ' ');
 			start_str += add_space;
