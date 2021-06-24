@@ -193,7 +193,10 @@ sdf.log:  ./Release/bin/kiter Makefile
 unit_test: ./Debug/Makefile ./Debug/bin/kiter
 	@echo "###########"" ENTER IN $@ : $^  #####################"
 	make -C Debug/ test
-
+check: ./Debug/Makefile ./Debug/bin/kiter ./Release/Makefile ./Release/bin/kiter
+	timeout 5 ./Release/bin/kiter -f ./benchmarks/sample.xml -a SPeriodicScheduling
+	timeout 5 ./Release/bin/kiter -f ./benchmarks/sample.xml -a 1PeriodicScheduling
+	timeout 5 ./Release/bin/kiter -f ./benchmarks/sample.xml -a ASAPScheduling
 
 
 .PHONY:  sdf3 all infos  debug release clean benchmark ubuntu_test test  unit_test
