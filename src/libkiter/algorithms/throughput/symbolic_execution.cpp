@@ -55,17 +55,21 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
         }
       } else if (g->getVerticesCount() == 1 && g->getEdgesCount() == 0) {
         /* NOTE this is a workaround from ignoring reentrancy edges --- if this
-           condition is met, we assume that we have a single actor with re-entrancy */
-        ARRAY_INDEX standaloneId = g->getVertexId(g->getFirstVertex());
-        EXEC_COUNT standaloneRepFactor = g->getPhasesQuantity(g->getFirstVertex());
-        Vertex vertexInDataflow = dataflow->getVertexById(standaloneId);
-        /* repetition factor for standalone component will be equal to its phase count:
+           condition is met, we assume that we have a single actor with
+           re-entrancy, which should therefore have a throughput of 1 */
+        ARRAY_INDEX standaloneId;
+        EXEC_COUNT standaloneRepFactor;
+        {ForEachVertex(g, v) { // FIXME this probably won't be necessary once the getFirstVertex() bug is fixed
+            standaloneId = g->getVertexId(v);
+            standaloneRepFactor = g-> getPhasesQuantity(v);
+          }}
+        EXEC_COUNT repFactor = dataflow->getNi(dataflow->getVertexById(standaloneId));
+        /* repetition factor for standalone component will be equal to its phase count
            this makes sense because, while it's producing and consuming 1 token in its
            re-entrant edge, it will need to execute its number of phases to arrive
            back at the same state */
-        EXEC_COUNT repFactor = dataflow->getNi(vertexInDataflow);
         TIME_UNIT componentThroughput = (TIME_UNIT) (1 * standaloneRepFactor) /
-          dataflow->getVertexTotalDuration(vertexInDataflow);
+          dataflow->getVertexTotalDuration(dataflow->getVertexById(standaloneId));
         TIME_UNIT scaledThroughput = (TIME_UNIT) componentThroughput / repFactor;
         if (scaledThroughput < minThroughput) {
           minThroughput = scaledThroughput;
@@ -81,7 +85,7 @@ void algorithms::compute_asap_throughput(models::Dataflow* const dataflow,
   }
   // if graph is strongly connected, just need to use computeComponentThroughput
   std::pair<ARRAY_INDEX, EXEC_COUNT> actorInfo; // look at note for computeComponentThroughput
-  TIME_UNIT result = computeComponentThroughput(dataflow, actorInfo);
+  minThroughput = computeComponentThroughput(dataflow, actorInfo);
   std::cout << "Throughput of graph: " << minThroughput << std::endl;
   return;
 }
@@ -221,8 +225,6 @@ std::string algorithms::printStatus(models::Dataflow* const dataflow) {
   return outputStream.str();
 }
 
-
-
 // Modification of original program to output scheduling object
 std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSchedule(models::Dataflow* const dataflow,
                                                  std::pair<ARRAY_INDEX, EXEC_COUNT> &minActorInfo, scheduling_t_mod schedule) {
@@ -285,17 +287,22 @@ std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSch
             if (minRepActorExecCount == minRepFactor) {
               VERBOSE_INFO("Adding the following state to list of visited states:");
               VERBOSE_INFO(currState.print(dataflow));
-
-              if (!visitedStates.addState(currState)) {
-                VERBOSE_INFO("ending execution and computing throughput");
-                // compute throughput using recurrent state
-                thr = visitedStates.computeThroughput();
-                periodic_state_idx = visitedStates.computeIdx(currState); //idx for repeated state
-                if (!end_check){end_check = true;}
+              
+              if (!end_check){
+                if (!visitedStates.addState(currState)) {
+                  VERBOSE_INFO("ending execution and computing throughput");
+                  // compute throughput using recurrent state
+                  
+                  thr = visitedStates.computeThroughput();
+                  periodic_state_idx = visitedStates.computeIdx(currState); //idx for repeated state
+                  end_check = true;
+                }
               }
-              {ForEachTask(dataflow, task){ //start new state vector in starts
-                starts[dataflow->getVertexId(task)].push_back({});
-              }}
+              if (!end_check){
+                {ForEachTask(dataflow, task){ //start new state vector in starts
+                  starts[dataflow->getVertexId(task)].push_back({});
+                }}
+              }
               currState.setTimeElapsed(0);
               minRepActorExecCount = 0;
             }
