@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf3 type="csdf" version="1.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    >
+<applicationGraph name='sample'>
+    <csdf name='sample' type='sample'>
+        <actor name='A' type='a'>
+            <port type='in' name='out_channel_3' rate='1,3'/>
+            <port type='out' name='in_channel_1' rate='3,5'/>
+            <port type='in'  name='out_RA' rate='1,1'/>
+            <port type='out' name='in_RA' rate='1,1'/>
+        </actor>
+        <actor name='B' type='a'>
+            <port type='in' name='out_channel_1' rate='1,1,4'/>
+            <port type='out' name='in_channel_2' rate='6,2,1'/>
+            <port type='in'  name='out_RB' rate='1,1,1'/>
+            <port type='out' name='in_RB' rate='1,1,1'/>
+        </actor>
+        <actor name='C' type='a'>
+            <port type='in' name='out_channel_2' rate='6'/>
+            <port type='out' name='in_channel_3' rate='2'/>
+            <port type='in'  name='out_RC' rate='1'/>
+            <port type='out' name='in_RC' rate='1'/>
+        </actor>
+        <channel name='channel_A' srcActor='A' srcPort='in_RA' dstActor='A' dstPort='out_RA' size='1' initialTokens='1'/>
+        <channel name='channel_B' srcActor='B' srcPort='in_RB' dstActor='B' dstPort='out_RB' size='1' initialTokens='1'/>
+        <channel name='channel_C' srcActor='C' srcPort='in_RC' dstActor='C' dstPort='out_RC' size='1' initialTokens='1'/>
+
+
+        <channel name='channel_1' srcActor='A' srcPort='in_channel_1' dstActor='B' dstPort='out_channel_1' size='1' initialTokens='0'/>
+        <channel name='channel_2' srcActor='B' srcPort='in_channel_2' dstActor='C' dstPort='out_channel_2' size='1' initialTokens='0'/>
+        <channel name='channel_3' srcActor='C' srcPort='in_channel_3' dstActor='A' dstPort='out_channel_3' size='1' initialTokens='4'/>
+    </csdf>
+
+    <csdfProperties>
+        <actorProperties actor='A'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='3,1'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='B'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='2,1,3'/>
+            </processor>
+        </actorProperties>
+        <actorProperties actor='C'>
+            <processor type='cluster_0' default='true'>
+                <executionTime time='1'/>
+            </processor>
+        </actorProperties>
+    </csdfProperties>
+
+</applicationGraph>
+
+</sdf3>

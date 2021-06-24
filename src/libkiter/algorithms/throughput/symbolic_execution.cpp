@@ -239,7 +239,7 @@ std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSch
   int periodic_state_idx;
   TIME_UNIT thr;
   bool end_check = false; // temp workaround before replacing with mathematical solution
-  int actors_left; // seems more efficient to use a counter check than to check through the array
+  int actors_left = 0; // seems more efficient to use a counter check than to check through the array
   std::map<ARRAY_INDEX, TIME_UNIT> actors_check;
   {ForEachTask(dataflow, t){
     ++actors_left;
@@ -327,6 +327,7 @@ std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSch
           if (end_check){
             if (actors_check[dataflow->getVertexId(t)] < 0){
               actors_check[dataflow->getVertexId(t)] = curr_step;
+              starts[dataflow->getVertexId(t)].back().push_back(curr_step);
               --actors_left;
             }
             if (actors_left == 0){
@@ -340,7 +341,7 @@ std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSch
                     periodics.second.insert(periodics.second.end(),starts[dataflow->getVertexId(task)][i].begin(),starts[dataflow->getVertexId(task)][i].end());
                   }
                 }
-                periodics.first = actors_check[dataflow->getVertexId(t)] - periodics.second[0]; 
+                periodics.first = actors_check[dataflow->getVertexId(task)] - periodics.second[0]; 
                 task_schedule_t sched_struct = {initials,periodics};
                 schedule.insert({dataflow->getVertexId(task), sched_struct});
                 std::cout << dataflow->getVertexName(task) << ": initial starts=" << commons::toString(initials) << ", periodic starts=" << commons::toString(periodics) << std::endl;
