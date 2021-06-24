@@ -14,6 +14,9 @@
 #include <generators/RandomGenerator.h>
 #include <chrono>
 
+#define MAX_ITER 4000
+#define MAX_PHASE_COUNT 10
+
 static void verify_dataflow (models::Dataflow * dataflow, RandomGeneratorConfiguration config) {
 	BOOST_REQUIRE_LE(dataflow->getVerticesCount() , config.max_vertices_count );
 	BOOST_REQUIRE_LE(dataflow->getEdgesCount() , config.max_edges_count );
@@ -46,8 +49,6 @@ long performance_random_dataflow (int num_actor, int num_buffers, int max_phases
 
 BOOST_FIXTURE_TEST_SUITE( generator_test , WITH_VERBOSE)
 
-#define MAX_ITER 100
-
 BOOST_AUTO_TEST_CASE( generator_test_two_HSDF_tasks ) {
 	performance_random_dataflow (2, 1, 1, 1, 1);
 }
@@ -78,7 +79,7 @@ BOOST_AUTO_TEST_CASE( dataflow_generator_test_SDF ) {
 
 		std::cout << "" << i
 			<< ", " << buf_num
-			<< ", " << performance_random_dataflow(i, buf_num, i, i, 1);
+			<< ", " << performance_random_dataflow(i, buf_num, 1, i, i);
 	}
 }
 
@@ -94,7 +95,7 @@ BOOST_AUTO_TEST_CASE( dataflow_generator_test_CSDF ) {
 
 		std::cout << "" << i
 			<< ", " << buf_num
-			<< ", " << performance_random_dataflow(i, buf_num, i, i, i);
+			<< ", " << performance_random_dataflow(i, buf_num, MAX_PHASE_COUNT, i, i);
 	}
 }
 
