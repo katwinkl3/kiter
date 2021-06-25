@@ -441,6 +441,7 @@ void algorithms::scheduling::ASAPScheduling(models::Dataflow* const dataflow,
     models::Scheduling res = models::Scheduling(dataflow, omega, scheduling_result);
     std::cout << res.asASCII(linesize);
     std::cout << res.asText();
+    std::cout << printers::Scheduling2Tikz(res);
 
     std::cout << "ASAP throughput is  " << minThroughput << std::endl;
     std::cout << "ASAP period is  " << omega << std::endl;

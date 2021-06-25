@@ -19,13 +19,15 @@ typedef std::pair<TIME_UNIT, static_task_schedule_t> periodic_task_schedule_t;
 struct task_schedule_t {
 	static_task_schedule_t initial_starts;
 	periodic_task_schedule_t periodic_starts;
+	task_schedule_t ()  :  initial_starts(), periodic_starts() {}
+	task_schedule_t (static_task_schedule_t is, periodic_task_schedule_t ps) : initial_starts(is), periodic_starts(ps) {}
 };
 
 class scheduling_t {
 private :
 	std::map<ARRAY_INDEX, task_schedule_t> _data;
 public:
-	void set (ARRAY_INDEX i, task_schedule_t& ts) {
+	void set (ARRAY_INDEX i, task_schedule_t ts) {
 		_data[i] = ts;
 	}
 	//task_schedule_t operator [](ARRAY_INDEX i) const {return _data[i];}
@@ -67,6 +69,10 @@ public :
 
 	}
 
+	const models::Dataflow* getDataflow () const {
+			return _dataflow;
+	}
+
 	TIME_UNIT getGraphPeriod () const {
 			return this->_period;
 	}
@@ -85,8 +91,10 @@ public :
 	void verbose_print ();
 	std::string asText () ;
 	std::string asASCII (int line_size) ;
+	std::string asASCIINew (int line_size) ;
 
 };
 }
+
 
 #endif /* SRC_LIBKITER_ALGORITHMS_SCHEDULING_SCHEDULING_H_ */

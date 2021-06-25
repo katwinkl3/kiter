@@ -831,4 +831,26 @@ void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list
 	dataflow->reset_computation();
 }
 
+std::string printers::Scheduling2Tikz    (models::Scheduling& scheduling) {
+	  std::ostringstream returnStream;
+
+	  auto task_count     = scheduling.getDataflow()->getVerticesCount();
+	  auto scale          = 1.0;
+	  auto execution_time = 30;
+
+
+	  returnStream << "\\begin{scheduling}{" << task_count << "}{" << 0 << "}{" << scale << "}{" << execution_time << "}" << std::endl;
+
+	  for (auto item : scheduling.getTaskSchedule()) {
+		  auto taskId = item.first;
+		  returnStream << "% Task " << taskId << std::endl;
+	  }
+
+
+
+
+	  returnStream << "\\end{scheduling}" << std::endl;
+	  return returnStream.str();
+
+}
 

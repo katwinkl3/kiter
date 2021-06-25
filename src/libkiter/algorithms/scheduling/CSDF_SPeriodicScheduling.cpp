@@ -50,8 +50,15 @@ models::Scheduling algorithms::scheduling::CSDF_SPeriodicScheduling    (const mo
 	for (auto v : dataflow->vertices()) {
 		ARRAY_INDEX tid = dataflow->getVertexId(v);
 		TIME_UNIT period = omega / dataflow->getNi(v);
-		scheduling_result[tid].periodic_starts.first = period;
-		scheduling_result[tid].periodic_starts.second.push_back( eg->getStartingTime(eg->getEventGraphVertex(tid)) );
+
+		static_task_schedule_t is = {};
+		periodic_task_schedule_t ps;
+		ps.first = period;
+		ps.second.push_back( eg->getStartingTime(eg->getEventGraphVertex(tid)) );
+
+		task_schedule_t ts (is,ps);
+		scheduling_result.set(tid, ts);
+		VERBOSE_ASSERT(scheduling_result[tid].periodic_starts.second.size() == 1, "Scheduling data structure incorrect.");
 	}
 
 	return models::Scheduling(dataflow, omega, scheduling_result, critical_edges);

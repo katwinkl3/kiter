@@ -52,6 +52,14 @@ BOOST_AUTO_TEST_CASE( test_MinCycleRatio )
 }
 
 
+BOOST_AUTO_TEST_CASE( test_SPeriodicTask )
+{
+
+	algorithms::scheduling::SPeriodicScheduling (cycle_sample, {}) ;
+
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
