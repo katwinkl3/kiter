@@ -11,6 +11,7 @@
 #include "helpers/random_generator.h"
 #include "algorithms/throughput/kperiodic.h"
 #include "algorithms/nperiodic.h"
+#include <models/EventGraph.h>
 #include <chrono>
 
 
@@ -24,10 +25,10 @@ BOOST_FIXTURE_TEST_SUITE( MCRP_test_suite , WITH_VERBOSE)
 long event_graph_performance_tester (models::Dataflow* dataflow){
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-    auto kvector = get_Kvector(dataflow);
+	auto kvector = algorithms::get_Kvector(dataflow);
 
 	auto start = std::chrono::high_resolution_clock::now();
-	models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,kvector);
+	models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
     auto elapse = std::chrono::high_resolution_clock::now() - start;
 
     VERBOSE_INFO("KPeriodic EventGraph generation Done, edges = " << eg->getConstraintsCount() << " vertex = " << eg->getEventCount());
@@ -39,13 +40,13 @@ long event_graph_performance_tester (models::Dataflow* dataflow){
 long MCRP_performance_tester (models::Dataflow* dataflow){
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-    auto kvector = get_Kvector(dataflow);
+    auto kvector = algorithms::get_Kvector(dataflow);
 
-    models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,kvector);
+    models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
 	VERBOSE_INFO("KPeriodic EventGraph generation Done, edges = " << eg->getConstraintsCount() << " vertex = " << eg->getEventCount());
 
     auto start = std::chrono::high_resolution_clock::now();
-    std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = (bound > 0) ? eg->MinCycleRatio(bound) : eg->MinCycleRatio();
+    std::pair<TIME_UNIT,std::vector<models::EventGraphEdge> > howard_res = eg->MinCycleRatio();
 	std::vector<models::EventGraphEdge> * critical_circuit = &(howard_res.second);
     auto elapse = std::chrono::high_resolution_clock::now() - start;
 
