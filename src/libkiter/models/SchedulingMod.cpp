@@ -69,7 +69,6 @@ std::string models::SchedulingMod::asASCII (int line_size) {
 		std::vector<TIME_UNIT> &starts = item.second.initial_starts;// initial starts
 		std::vector<TIME_UNIT> &pedstarts = item.second.periodic_starts.second; //periodic starts
 		TIME_UNIT next = pedstarts.back();
-		pedstarts.pop_back(); //TODO: resolve this!!
 		std::string start_str;
 		std::string period_str;
 		TIME_UNIT prev = -1;
@@ -99,11 +98,11 @@ std::string models::SchedulingMod::asASCII (int line_size) {
 		}
 
 		// create period string without leading spaces so to use for both first and subsequent periods
-		for (TIME_UNIT i: pedstarts) {
-			std::string add_space(i-prev-1, ' ');
+		for (int i = 0; i < pedstarts.size()-1; ++i) {
+			std::string add_space(pedstarts[i]-prev-1, ' ');
 			period_str += add_space;
 			period_str += "#";
-			prev = i;
+			prev = pedstarts[i];
 		}
 		// add trailing spaces after period starts (before next period)
 		std::string trailing_space(next-prev-1, ' ');
