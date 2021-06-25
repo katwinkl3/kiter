@@ -141,7 +141,7 @@ std::string models::Scheduling::asASCIINew (int line_size) {
 }
 std::string models::Scheduling::asASCII (int line_size) {
 
-	//return asASCIINew(line_size);
+	return asASCIINew(line_size);
 
 	std::ostringstream returnStream;
 
