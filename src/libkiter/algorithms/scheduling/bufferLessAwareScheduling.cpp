@@ -130,8 +130,8 @@ scheduling_t algorithms::scheduling::bufferless_kperiodic_scheduling (models::Da
         Vertex v = dataflow->getVertexById(ti);
         TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
 
-        sheduling_result[(ARRAY_INDEX)ti].first = period;
-        sheduling_result[(ARRAY_INDEX)ti].second.push_back(start);
+        sheduling_result[(ARRAY_INDEX)ti].periodic_starts.first = period;
+        sheduling_result[(ARRAY_INDEX)ti].periodic_starts.second.push_back(start);
 
         //sheduling_result[v].first = period;
         //sheduling_result[v].second.push_back(start);
@@ -358,7 +358,7 @@ scheduling_t algorithms::scheduling::bufferless_scheduling (models::Dataflow* co
         {ForEachVertex(dataflow,t) {
             std::string name = dataflow->getVertexName(t);
 
-    		res_schedule[dataflow->getVertexId(t)].first = OMEGA / (TIME_UNIT) ( (TIME_UNIT) dataflow->getNi(t) / (TIME_UNIT) kvector[t] );
+    		res_schedule[dataflow->getVertexId(t)].periodic_starts.first = OMEGA / (TIME_UNIT) ( (TIME_UNIT) dataflow->getNi(t) / (TIME_UNIT) kvector[t] );
 
     		for(EXEC_COUNT a = 1; a <= dataflow->getPhasesQuantity(t) ; a++) {
     			for(EXEC_COUNT k = 1; k <= kvector[t] ; k++) {
@@ -369,7 +369,7 @@ scheduling_t algorithms::scheduling::bufferless_scheduling (models::Dataflow* co
         	         	<< "  period=" <<  OMEGA / (TIME_UNIT) ( (TIME_UNIT) dataflow->getNi(t) / (TIME_UNIT) kvector[t] )
 						<< "  end_of_execution_of_last_instance_of_hyper_period=" <<
 						starting_time + dataflow->getVertexDuration(t,a) + (dataflow->getNi(t)-1)  * ((OMEGA / (TIME_UNIT) ( (TIME_UNIT) dataflow->getNi(t) / (TIME_UNIT) kvector[t] ))) << std::endl ;
-    				res_schedule[dataflow->getVertexId(t)].second.push_back(starting_time);
+    				res_schedule[dataflow->getVertexId(t)].periodic_starts.second.push_back(starting_time);
     			}
     		}
 

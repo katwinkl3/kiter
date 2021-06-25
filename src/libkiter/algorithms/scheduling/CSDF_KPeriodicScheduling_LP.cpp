@@ -256,13 +256,13 @@ models::Scheduling collect_lp_results (const commons::GLPSol &g, const models::D
         ARRAY_INDEX vid   = dataflow->getVertexId(t);
     	const EXEC_COUNT periodicity_factor = kvector.at(t);
 
-		res_schedule[dataflow->getVertexId(t)].first = OMEGA / (TIME_UNIT) ( (TIME_UNIT) dataflow->getNi(t) / (TIME_UNIT) periodicity_factor );
+		res_schedule[dataflow->getVertexId(t)].periodic_starts.first = OMEGA / (TIME_UNIT) ( (TIME_UNIT) dataflow->getNi(t) / (TIME_UNIT) periodicity_factor );
 
 		// Collect init starting times
 		for(EXEC_COUNT a = 1; a <= dataflow->getInitPhasesQuantity(t) ; a++) {
 			auto starting_time_col_str = START_INIT_COL_STR(vname,a);
 			auto starting_time = g.getValue(starting_time_col_str);
-			res_schedule[vid].second.push_back(starting_time);
+			res_schedule[vid].periodic_starts.second.push_back(starting_time);
 		}
 
 		// Collect periodic starting times
@@ -270,7 +270,7 @@ models::Scheduling collect_lp_results (const commons::GLPSol &g, const models::D
 			for(EXEC_COUNT k = 1; k <= periodicity_factor ; k++) {
 				auto starting_time_col_str = START_COL_STR(vname,a,k);
 				auto starting_time = g.getValue(starting_time_col_str);
-				res_schedule[vid].second.push_back(starting_time);
+				res_schedule[vid].periodic_starts.second.push_back(starting_time);
 			}
 		}
     }}

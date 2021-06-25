@@ -59,9 +59,6 @@ ADD_TRANSFORMATION(randomRouting,
 ADD_TRANSFORMATION(ModelNoCConflictFreeCommunication,
 		transformation_t({ "ModelNoCConflictFreeCommunication" , "Given a graph with Mapping, can add fictive task to model network", algorithms::ModelNoCConflictFreeCommunication} )
 );
-ADD_TRANSFORMATION(FindConflicts,
-		transformation_t({ "FindConflicts" , "Given a graph with Mapping, this functio list the resources conflicts.", algorithms::FindConflicts} )
-);
 
 
 #endif

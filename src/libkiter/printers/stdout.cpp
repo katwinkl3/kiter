@@ -22,7 +22,7 @@ std::string add_block ( std::string name , TIME_UNIT start, TIME_UNIT duration, 
 std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  dataflow,  models::Scheduling& sched ,   TIME_UNIT last_execution_end_at, bool ,  double xscale , double yscale ) {
 
   std::ostringstream returnStream;
-  scheduling_t periodic_scheduling = sched.getTaskSchedule();
+  scheduling_t scheduling = sched.getTaskSchedule();
   static double label_node_width  =   0.5;
   static double label_node_height = yscale *  0.10;
 
@@ -46,9 +46,9 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
       //VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
   	  auto Ni = dataflow->getNi(t);
 
-  	  auto period = periodic_scheduling[tid].first;
+  	  auto period = scheduling[tid].periodic_starts.first;
   	  auto duration = dataflow->getVertexTotalDuration(t);
-  	  auto starts = periodic_scheduling[tid].second;
+  	  auto starts = scheduling[tid].periodic_starts.second;
 
         for (EXEC_COUNT iter = 0 ; iter < (Ni/(EXEC_COUNT)starts.size()) ; iter++) {
       	  for (auto  start : starts) {
@@ -63,8 +63,8 @@ std::string printers::PeriodicScheduling2DOT    (models::Dataflow* const  datafl
       auto tid = dataflow->getVertexId(t); 
       //VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1, "Support only SDF");
 
-	  auto period = periodic_scheduling[tid].first;
-	  auto starts = periodic_scheduling[tid].second;
+	  auto period = scheduling[tid].periodic_starts.first;
+	  auto starts = scheduling[tid].periodic_starts.second;
 
 	  double current_task_y_pos = yscale * -(fontsize + 1) * idx ;
 

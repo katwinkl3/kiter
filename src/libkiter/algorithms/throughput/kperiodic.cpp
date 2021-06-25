@@ -200,19 +200,19 @@ scheduling_t period2scheduling    (const models::Dataflow* const  dataflow,  std
 		auto first_pi = 1 - ipq;
 
 		TIME_UNIT period = (kvector[v] *  dataflow->getPhasesQuantity(v) * omega) / dataflow->getNi(v);
-		scheduling_result[dataflow->getVertexId(v)].first = period;
+		scheduling_result[dataflow->getVertexId(v)].periodic_starts.first = period;
 
 		for (EXEC_COUNT ki = 1  ; ki <= maxki ; ki++) {
 			for (EXEC_COUNT pi = first_pi ; pi <=pq ; pi++)  {
 				auto se = eg->getEventGraphVertex(tid,pi,ki);
 
 				TIME_UNIT start = eg->getStartingTime(se);
-				scheduling_result[tid].second.push_back( start );
+				scheduling_result[tid].periodic_starts.second.push_back( start );
 				VERBOSE_KPERIODIC_DEBUG("  - Start ki=" << ki << " pi=" << pi << " se=" << se << ":" << start  );
 
 			}
 		}
-		VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " Starts=" <<  commons::toString(scheduling_result[tid].second) << " Period = " << period  );
+		VERBOSE_DEBUG("Task " << dataflow->getVertexName(v) << " Starts=" <<  commons::toString(scheduling_result[tid].periodic_starts.second) << " Period = " << period  );
 
 
 	}
@@ -1106,9 +1106,9 @@ void algorithms::compute_Kperiodic_throughput    (models::Dataflow* const datafl
 			VERBOSE_INFO(  "Task " <<  dataflow->getVertexName(task_vtx)
 					<<  " : duration=" << commons::toString(dataflow->getVertexInitPhaseDuration(task_vtx))
 			<< ";" << commons::toString(dataflow->getVertexPhaseDuration(task_vtx))
-			<<  " period=" <<  persched[task].first
+			<<  " period=" <<  persched[task].periodic_starts.first
 			<<  " Ni=" << dataflow->getNi(task_vtx)
-			<<  " starts=[ " << commons::toString(persched[task].second) << "]");
+			<<  " starts=[ " << commons::toString(persched[task].periodic_starts.second) << "]");
 
 		}
 	}

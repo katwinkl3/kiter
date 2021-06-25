@@ -1,8 +1,8 @@
 /*
  * Scheduling.h
  *
- *  Created on: 12 Oct 2019
- *      Author: toky
+ *  Created on: 25 June 2021
+ *      Author: Katherine
  */
 
 #ifndef SRC_LIBKITER_ALGORITHMS_SCHEDULING_SCHEDULING_H_
@@ -13,8 +13,29 @@
 #include <map>
 #include <vector>
 
-typedef std::pair<TIME_UNIT,std::vector<TIME_UNIT>> periodic_task_schedule_t;
-typedef std::map<ARRAY_INDEX,periodic_task_schedule_t> scheduling_t;
+typedef std::vector<TIME_UNIT> static_task_schedule_t;
+typedef std::pair<TIME_UNIT, static_task_schedule_t> periodic_task_schedule_t;
+
+struct task_schedule_t {
+	static_task_schedule_t initial_starts;
+	periodic_task_schedule_t periodic_starts;
+};
+
+class scheduling_t {
+private :
+	std::map<ARRAY_INDEX, task_schedule_t> _data;
+public:
+	void set (ARRAY_INDEX i, task_schedule_t& ts) {
+		_data[i] = ts;
+	}
+	//task_schedule_t operator [](ARRAY_INDEX i) const {return _data[i];}
+	task_schedule_t& operator [](ARRAY_INDEX i)  {return _data[i];}
+
+	std::map<ARRAY_INDEX, task_schedule_t>::const_iterator  begin() const { return _data.begin();}
+	std::map<ARRAY_INDEX, task_schedule_t>::const_iterator  end()  const { return _data.end(); }
+
+};
+//typedef std::map<ARRAY_INDEX, task_schedule_t> scheduling_t;
 typedef std::set<Edge>  critical_circuit_t;
 
 namespace models {
@@ -24,7 +45,7 @@ private:
 	TIME_UNIT              _period ;
 	const models::Dataflow*_dataflow;
 	scheduling_t           _tasks_schedule;
-	critical_circuit_t     _critical_edges;
+    critical_circuit_t     _critical_edges;
 public :
 	Scheduling () : _period (0), _dataflow(nullptr)  {}
 private :
@@ -33,29 +54,37 @@ private :
 	}
 
 public :
-	Scheduling (const models::Dataflow* dataflow, TIME_UNIT omega, scheduling_t tasks_schedule, critical_circuit_t critical_edges) : _period(omega), _dataflow(dataflow), _tasks_schedule(tasks_schedule), _critical_edges (critical_edges) {
+	Scheduling (const models::Dataflow* dataflow, TIME_UNIT omega, scheduling_t tasks_schedule
+	 ,critical_circuit_t critical_edges
+	) : _period(omega), _dataflow(dataflow), _tasks_schedule(tasks_schedule)
+	 , _critical_edges (critical_edges)
+	{
+
+	}
+	Scheduling (const models::Dataflow* dataflow, TIME_UNIT omega, scheduling_t tasks_schedule
+			) : _period(omega), _dataflow(dataflow), _tasks_schedule(tasks_schedule), _critical_edges ()
+	{
 
 	}
 
 	TIME_UNIT getGraphPeriod () const {
-		return this->_period;
+			return this->_period;
 	}
 
 	TIME_UNIT getGraphThroughput () const {
-		return 1.0 / this->_period;
+			return 1.0 / this->_period;
 	}
 	const scheduling_t& getTaskSchedule () const{
 		return this->_tasks_schedule;
 	}
 
-	const critical_circuit_t& getCriticalEdges() const {
-		return this->_critical_edges;
-	}
+	 const critical_circuit_t& getCriticalEdges() const {
+	 	return this->_critical_edges;
+	 }
 
 	void verbose_print ();
 	std::string asText () ;
 	std::string asASCII (int line_size) ;
-
 
 };
 }

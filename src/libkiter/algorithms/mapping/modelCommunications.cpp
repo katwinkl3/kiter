@@ -237,29 +237,7 @@ static std::vector<std::set<ARRAY_INDEX>> get_overlaps (models::Dataflow* const 
 
 }
 
-void algorithms::FindConflicts(models::Dataflow* const  dataflow, parameters_list_t    ) {
 
-	VERBOSE_INFO("Step 1 - Run the schedule to see overlapping");
-		models::Scheduling scheduling_res = algorithms::scheduling::CSDF_KPeriodicScheduling(dataflow);
-
-
-		VERBOSE_INFO("Step 2 - Identify task that we care about");
-		std::vector<std::set<ARRAY_INDEX>> bags = get_overlaps(dataflow);
-		for (auto bag : bags) {
-			if (bag.size() > 1) {
-				VERBOSE_INFO("Possible conflicts with bag " << commons::toString(bag));
-				for (auto tid : bag) {
-					VERBOSE_INFO("  Task " << tid << " scheduled " << commons::toString(scheduling_res.getTaskSchedule().at(tid)));
-
-				}
-			}
-		}
-
-
-
-
-
-}
 void algorithms::ModelNoCConflictFreeCommunication(models::Dataflow* const  dataflow, parameters_list_t   param_list ) {
 
 	conflictEtype conflictEdges; //stores details of flows that share noc edges

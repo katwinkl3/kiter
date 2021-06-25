@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE( merge_test_LTE )
 
 	//models::Dataflow* graph = commons::readSDF3File("software_noc_246.xml");
 	models::Dataflow* graph = generateMergeTester () ;
-	printers::writeSDF3File("bogo",graph);
+
 	std::string name = "mid-10-14_34_mid-9-13_34";
 	auto v1 = graph->getVertexByName("mid-10-14_34");
 	auto v2 = graph->getVertexByName("mid-9-13_34");

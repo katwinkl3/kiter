@@ -54,7 +54,7 @@ bool algorithms::transformation::basic_mergeCSDFFromSchedule(models::Dataflow* t
 	// step two, we find the maximum time to reach by init phases
 	TIME_UNIT max_start = 0;
 	for (auto vid : mergeNodes) {
-		max_start = std::max(max_start, persched[vid].second[0]);
+		max_start = std::max(max_start, persched[vid].periodic_starts.second[0]);
 	}
 
 	//Find GCD value
@@ -76,20 +76,22 @@ bool algorithms::transformation::basic_mergeCSDFFromSchedule(models::Dataflow* t
 		Vertex vi     = to->getVertexById(vid);
 		std::string vname = to->getVertexName(vi);
 		EXEC_COUNT ni = to->getNi(vi);
-		VERBOSE_INFO("For task " << vid << " (" <<  vname << ") period is " << std::fixed  << std::setprecision(2) << persched[vid].first << " and starts " << commons::toString(persched[vid].second));
+		auto period = persched[vid].periodic_starts.first;
+		auto starts = persched[vid].periodic_starts.second;
+		VERBOSE_INFO("For task " << vid << " (" <<  vname << ") period is " << std::fixed  << std::setprecision(2) << period << " and starts " << commons::toString(starts));
 		ARRAY_INDEX current_start_index = 0;
-		TIME_UNIT current_start_time = persched[vid].second[0];
+		TIME_UNIT current_start_time = starts[0];
 
 		while (current_start_time < max_start) {
 			init_start_times.push_back(std::make_pair(current_start_time , vid));
 			current_start_index++;
-			current_start_time = persched[vid].second[current_start_index % persched[vid].second.size()]  + (current_start_index / persched[vid].second.size() ) * persched[vid].first;
+			current_start_time = starts[current_start_index % starts.size()]  + (current_start_index / starts.size() ) * period;
 		}
 
 		for (EXEC_COUNT i = 0 ; i <  to->getPhasesQuantity(vi) * (ni/gcd_value) ; i++) {
 			periodic_start_times.push_back(std::make_pair(current_start_time , vid));
 			current_start_index++;
-			current_start_time = persched[vid].second[current_start_index % persched[vid].second.size()]  + (current_start_index / persched[vid].second.size() ) * persched[vid].first;
+			current_start_time = starts[current_start_index % starts.size()]  + (current_start_index / starts.size() ) * period;
 		}
 
 	}
@@ -341,7 +343,7 @@ bool algorithms::transformation::mergeCSDFFromSchedule(models::Dataflow* to, std
 			output_edges[vid].push_back(ne);
 		}
 
-		original_tasks.insert({vid,vertex_infos(to,persched[vid],v)});
+		original_tasks.insert({vid,vertex_infos(to,persched[vid].periodic_starts,v)});
 	}
 
 

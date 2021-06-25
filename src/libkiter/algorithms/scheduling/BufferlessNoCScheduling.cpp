@@ -236,12 +236,15 @@ void algorithms::BufferlessNoCScheduling(models::Dataflow* const  _dataflow, par
 	models::Scheduling scheduling_res = CSDF_SCHEDULING_FUNCTION(to);
 
 
-	for (std::pair<ARRAY_INDEX,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> item : scheduling_res.getTaskSchedule()) {
-		ARRAY_INDEX tid = item.first;
-		Vertex v = to->getVertexById(item.first);
+	for (auto task_schedule : scheduling_res.getTaskSchedule()) {
+
+
+		ARRAY_INDEX tid = task_schedule.first;
+		Vertex v = to->getVertexById(task_schedule.first);
 		std::string  tname = to->getVertexName(v);
-		TIME_UNIT period = item.second.first;
-		std::vector<TIME_UNIT> &starts = item.second.second;
+		VERBOSE_ASSERT(task_schedule.second.initial_starts.size() == 0, "Does not support init starts in schedule");
+		TIME_UNIT period = task_schedule.second.periodic_starts.first;
+		std::vector<TIME_UNIT> &starts =  task_schedule.second.periodic_starts.second;
 
 		VERBOSE_INFO("Task " << std::setw(4) << tid << " | "
 				             << std::setw(15) << tname << " | "

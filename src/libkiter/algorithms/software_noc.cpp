@@ -1454,7 +1454,7 @@ static bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::v
 	// step two, we find the maximum time to reach by init phases
 	TIME_UNIT max_start = 0;
 	for (auto vid : mergeNodes) {
-		max_start = std::max(max_start, persched[vid].second[0]);
+		max_start = std::max(max_start, persched[vid].periodic_starts.second[0]);
 	}
 
 	//Find GCD value
@@ -1475,21 +1475,24 @@ static bool mergeConfigNodesInit(models::Dataflow* to, std::string name , std::v
 	std::vector < std::pair<TIME_UNIT , ARRAY_INDEX> > periodic_start_times ;
 	for (auto vid : mergeNodes) {
 		Vertex vi     = to->getVertexById(vid);
+		auto period = persched[vid].periodic_starts.first;
+		auto starts = persched[vid].periodic_starts.second;
 		EXEC_COUNT ni = to->getNi(vi);
-		VERBOSE_INFO("For task " << vid << " period is " << persched[vid].first << " and starts " << commons::toString(persched[vid].second));
+		VERBOSE_INFO("For task " << vid << " period is " <<period << " and starts " << commons::toString(starts));
 		ARRAY_INDEX current_start_index = 0;
-		TIME_UNIT current_start_time = persched[vid].second[0];
+		VERBOSE_ASSERT(starts.size(), "Need a valid scheduling");
+		TIME_UNIT current_start_time = starts[0];
 
 		while (current_start_time < max_start) {
 			init_start_times.push_back(std::make_pair(current_start_time , vid));
 			current_start_index++;
-			current_start_time = persched[vid].second[current_start_index % persched[vid].second.size()]  + (current_start_index / persched[vid].second.size() ) * persched[vid].first;
+			current_start_time = starts[current_start_index % starts.size()]  + (current_start_index / starts.size() ) * period;
 		}
 
 		for (EXEC_COUNT i = 0 ; i < (ni/gcd_value) ; i++) {
 			periodic_start_times.push_back(std::make_pair(current_start_time , vid));
 			current_start_index++;
-			current_start_time = persched[vid].second[current_start_index % persched[vid].second.size()]  + (current_start_index / persched[vid].second.size() ) * persched[vid].first;
+			current_start_time = starts[current_start_index % starts.size()]  + (current_start_index / starts.size() ) * period;
 		}
 
 	}
@@ -1913,10 +1916,10 @@ std::vector<ARRAY_INDEX> checkForConflicts(conflictEtype& conflictEdges, models:
 
 				//check if any of the starting times match
 				std::vector<TIME_UNIT> si_vec, sj_vec;
-				for (auto  skey : persched[taski].second) {
+				for (auto  skey : persched[taski].periodic_starts.second) {
 					si_vec.push_back(skey);
 				}
-				for (auto  skey : persched[taskj].second) {
+				for (auto  skey : persched[taskj].periodic_starts.second) {
 					sj_vec.push_back(skey);
 				}
 
@@ -1924,8 +1927,8 @@ std::vector<ARRAY_INDEX> checkForConflicts(conflictEtype& conflictEdges, models:
 				{
 					for(unsigned int sj_i = 0; sj_i < sj_vec.size(); sj_i++)
 					{
-						auto si =  persched[taski].second[si_i];
-						auto sj =  persched[taskj].second[sj_i];
+						auto si =  persched[taski].periodic_starts.second[si_i];
+						auto sj =  persched[taskj].periodic_starts.second[sj_i];
 
 						if( algorithms::isConflictPresent((LARGE_INT) HP, si, (LARGE_INT) ni, sj, (LARGE_INT) nj) )
 						{
@@ -2019,7 +2022,7 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 
 		// Here I need to compute the Ni-th execution of a task
 		auto Ni = orig->getNi(orig_v);
-		auto periodic_start_count = persched[orig_vid].second.size();
+		auto periodic_start_count = persched[orig_vid].periodic_starts.second.size();
 		VERBOSE_ASSERT(Ni % periodic_start_count == 0, "FIXME");
 		VERBOSE_ASSERT(orig->getPhasesQuantity(orig_v) == 1, "FIXME");
 
@@ -2028,7 +2031,7 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 		// I take Ni and I need to know which start correspond to this Ni-th
 		// auto start_index = Ni % periodic_start_count
 		auto start_index = periodic_start_count - 1;
-		auto end_of_last_start  = persched[orig_vid].second[start_index] * (Ni / periodic_start_count) + orig->getVertexDuration(orig_v);
+		auto end_of_last_start  = persched[orig_vid].periodic_starts.second[start_index] * (Ni / periodic_start_count) + orig->getVertexDuration(orig_v);
 
 		delays[orig_vid] = end_of_last_start;
 
@@ -2042,16 +2045,17 @@ void findHP(models::Dataflow* orig, models::Dataflow* to, scheduling_t& persched
 		auto task_vtx = to->getVertexById(key.first);
 
 		float new_ratio = ratio_arr[key.first];
-
+		auto period = persched[task].periodic_starts.first;
+		auto starts = persched[task].periodic_starts.second;
 		std::stringstream ss;
-		for(int i = 0; i < (int)persched[task].second.size(); i++)
-			ss << std::setprecision(13) << persched[task].second[i] << " ";
+		for(int i = 0; i < (int)starts.size(); i++)
+			ss << std::setprecision(13) << starts[i] << " ";
 
-		*HP =    ( persched[task].first * to->getNi(task_vtx) ) / (new_ratio * ((float)persched[task].second.size())) ;
+		*HP =    ( period * to->getNi(task_vtx) ) / (new_ratio * ((float)starts.size())) ;
 		auto delay = delays[key.first];
 		VERBOSE_INFO ( "Task " <<  to->getVertexName(task_vtx) <<  " : "
 				<< " duration=[ " << commons::toString(to->getVertexPhaseDuration(task_vtx)) <<  "]"
-				<< " period=" <<  persched[task].first << ""
+				<< " period=" <<  period << ""
 				<< " HP=" << *HP << ""
 				<< " Delay=" << delay << ""
 				<< " Ni=" << to->getNi(task_vtx) << ""
@@ -2368,12 +2372,13 @@ void algorithms::software_noc_bufferless(models::Dataflow* const  dataflow, para
 	auto utility = noc->getLinkUtil();
 	VERBOSE_INFO ( "utility" <<  commons::toString(utility) );
 
-	for (std::pair<ARRAY_INDEX,std::pair<TIME_UNIT,std::vector<TIME_UNIT>>> item : persched) {
+	for (auto item : persched) {
 		ARRAY_INDEX tid = item.first;
 		Vertex v = to->getVertexById(item.first);
 		std::string  tname = to->getVertexName(v);
-		TIME_UNIT period = item.second.first;
-		std::vector<TIME_UNIT> &starts = item.second.second;
+		VERBOSE_ASSERT(item.second.initial_starts.size() == 0, "Does not support init starts");
+		TIME_UNIT period = item.second.periodic_starts.first;
+		std::vector<TIME_UNIT> &starts = item.second.periodic_starts.second;
 		std::string line = "";
 
 		for (TIME_UNIT time = 0 ; time < 50 ; time ++) {

@@ -13,8 +13,9 @@
 #include <commons/commons.h>
 #include <models/Dataflow.h>
 #include <algorithms/schedulings.h>
-#include <models/SchedulingMod.h>
 #include "symbolic_execution.h"
+
+#include "../../models/Scheduling.h"
 #include "actor.h"
 #include "state.h"
 #include "../scc.h"
@@ -226,8 +227,8 @@ std::string algorithms::printStatus(models::Dataflow* const dataflow) {
 }
 
 // Modification of original program to output scheduling object
-std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSchedule(models::Dataflow* const dataflow,
-                                                 std::pair<ARRAY_INDEX, EXEC_COUNT> &minActorInfo, scheduling_t_mod schedule) {
+std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentThroughputSchedule(models::Dataflow* const dataflow,
+                                                 std::pair<ARRAY_INDEX, EXEC_COUNT> &minActorInfo, scheduling_t schedule) {
   VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
   VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
   StateList visitedStates;
@@ -343,7 +344,7 @@ std::pair<TIME_UNIT, scheduling_t_mod> algorithms::computeComponentThroughputSch
                 }
                 periodics.first = actors_check[dataflow->getVertexId(task)] - periodics.second[0]; 
                 task_schedule_t sched_struct = {initials,periodics};
-                schedule.insert({dataflow->getVertexId(task), sched_struct});
+                schedule.set(dataflow->getVertexId(task), sched_struct);
                 std::cout << dataflow->getVertexName(task) << ": initial starts=" << commons::toString(initials) << ", periodic starts=" << commons::toString(periodics) << std::endl;
               }}
               std::string separator(60, '-');
@@ -385,7 +386,7 @@ void algorithms::scheduling::ASAPScheduling(models::Dataflow* const dataflow,
   std::vector<models::Dataflow*> sccDataflows;
   TIME_UNIT minThroughput = LONG_MAX; // NOTE should technically be LDBL_MAX cause TIME_UNIT is of type long double
   
-  scheduling_t_mod scheduling_result;
+  scheduling_t scheduling_result;
   int linesize = param_list.count("LINE")? commons::fromString<int>(param_list["LINE"]) : 80;
 
   // generate SCCs if any
@@ -437,7 +438,7 @@ void algorithms::scheduling::ASAPScheduling(models::Dataflow* const dataflow,
     }
     
     TIME_UNIT omega = 1.0 / minThroughput ;
-    models::SchedulingMod res = models::SchedulingMod(dataflow, omega, scheduling_result);
+    models::Scheduling res = models::Scheduling(dataflow, omega, scheduling_result);
     std::cout << res.asASCII(linesize);
     std::cout << res.asText();
 
@@ -453,7 +454,7 @@ void algorithms::scheduling::ASAPScheduling(models::Dataflow* const dataflow,
   scheduling_result = res_pair.second;
   std::cout << "Throughput of graph: " << minThroughput << std::endl;
   TIME_UNIT omega = 1.0 / minThroughput ;
-  models::SchedulingMod res = models::SchedulingMod(dataflow, omega, scheduling_result);
+  models::Scheduling res = models::Scheduling(dataflow, omega, scheduling_result);
   std::cout << res.asASCII(linesize);
   std::cout << res.asText();
 

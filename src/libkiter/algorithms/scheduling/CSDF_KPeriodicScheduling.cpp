@@ -80,13 +80,13 @@
 
  	{ForEachEvent(eg,e) {
  	        models::SchedulingEvent se = eg->getEvent(e);
- 	        EXEC_COUNT ti = se.getTaskId();
+ 	        ARRAY_INDEX ti = se.getTaskId();
  	        TIME_UNIT start = eg->getStartingTime(e);
  	        Vertex v = dataflow->getVertexById(ti);
  	        TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
 
- 	       scheduling_result[(ARRAY_INDEX)ti].first = period;
- 	      scheduling_result[(ARRAY_INDEX)ti].second.push_back(start);
+ 	        scheduling_result[ti].periodic_starts.first = period;
+ 	        scheduling_result[ti].periodic_starts.second.push_back(start);
 
  	        //sheduling_result[v].first = period;
  	        //sheduling_result[v].second.push_back(start);

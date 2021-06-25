@@ -10,7 +10,8 @@
 #include "actor.h"
 #include "state.h"
 #include "so4_noc.h"
-#include <models/SchedulingMod.h>
+
+#include "../../models/Scheduling.h"
 
 std::pair<TIME_UNIT, static_task_schedule_t> get_starts(std::vector<std::vector<TIME_UNIT>> periods){
   std::vector<TIME_UNIT> res;
@@ -68,7 +69,7 @@ void algorithms::so4_noc(models::Dataflow* const dataflow,   parameters_list_t p
   State prevState(dataflow, actorMap);
   State currState(dataflow, actorMap);
 
-  scheduling_t_mod task_schedule; // {vertex_id : {time_unit: [time_unit]}}
+  scheduling_t task_schedule; // {vertex_id : {time_unit: [time_unit]}}
  
   {ForEachTask(dataflow, t) {
       if (actorMap[dataflow->getVertexId(t)].getRepFactor() < minRepFactor) {
@@ -97,9 +98,9 @@ void algorithms::so4_noc(models::Dataflow* const dataflow,   parameters_list_t p
 
                 {ForEachTask(dataflow, t2){
                   task_schedule_t sched_struct = {statics[dataflow->getVertexId(t2)], get_starts(periodics[dataflow->getVertexId(t2)])};
-                  task_schedule.insert(std::make_pair(dataflow->getVertexId(t2), sched_struct));
+                  task_schedule.set(dataflow->getVertexId(t2), sched_struct);
                 }}
-                models::SchedulingMod res = models::SchedulingMod(dataflow, 1/thr, task_schedule);
+                models::Scheduling res = models::Scheduling(dataflow, 1/thr, task_schedule);
                 res.verbose_print();
                 return;
               }
