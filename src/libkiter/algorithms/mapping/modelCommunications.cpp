@@ -50,11 +50,9 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 		return new_vertices;
 	}
 
-
 	bool flag = true;
 	ARRAY_INDEX original_edge_id = d->getEdgeId(c);
 	d->removeEdge(c); //we delete the edge
-
 
 	std::string key_str = "";
 
@@ -130,9 +128,7 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 			//configs[config_key.str()].push_back(tuple_temp);
 			configs[config_key.str()].push_back(d->getVertexId(vtx));
 
-
 			key_str = config_key.str();
-
 
 			d->setVertexName(vtx,config_name.str());
 			d->setPhasesQuantity(vtx,1); // number of state for the actor, only one in SDF
@@ -234,8 +230,8 @@ static std::vector<std::set<ARRAY_INDEX>> get_overlaps (models::Dataflow* const 
 		}
 
 	return res;
-
 }
+
 
 
 void algorithms::ModelNoCConflictFreeCommunication(models::Dataflow* const  dataflow, parameters_list_t   param_list ) {
@@ -298,7 +294,6 @@ void algorithms::ModelNoCConflictFreeCommunication(models::Dataflow* const  data
 
 		VERBOSE_INFO ("  - " << item.first << ":"  << item.second);
 	}
-
 
 }
 

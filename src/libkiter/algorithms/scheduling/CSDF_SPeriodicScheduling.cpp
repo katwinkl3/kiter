@@ -16,10 +16,9 @@
 
 
 
-models::Scheduling algorithms::scheduling::CSDF_SPeriodicScheduling    (const models::Dataflow* const dataflow) {
+models::Scheduling algorithms::scheduling::CSDF_SPeriodicScheduling (const models::Dataflow* const dataflow) {
 
 	VERBOSE_ASSERT(dataflow->has_repetition_vector(), "Repetition vector failed.");
-
 
 	models::EventGraph* eg = algorithms::generate_csdf_strictly_periodic_event_graph(dataflow);
 
@@ -29,8 +28,6 @@ models::Scheduling algorithms::scheduling::CSDF_SPeriodicScheduling    (const mo
 
 	TIME_UNIT res = howard_res.first ;
 	std::vector<models::EventGraphEdge> critical_circuit = howard_res.second;
-
-
 
 	// Build critical_edges
 	std::set<Edge> critical_edges;
@@ -62,7 +59,6 @@ models::Scheduling algorithms::scheduling::CSDF_SPeriodicScheduling    (const mo
 	}
 
 	return models::Scheduling(dataflow, omega, scheduling_result, critical_edges);
-
 
 }
 
