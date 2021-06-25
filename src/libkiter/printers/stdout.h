@@ -20,7 +20,7 @@ namespace printers {
 
 
 
-std::string Scheduling2Tikz    (models::Scheduling& periodic_scheduling);
+std::string Scheduling2Tikz    (const models::Scheduling& periodic_scheduling);
 
 std::string GenerateGraphDOT       (models::Dataflow* const  dataflow  , bool simple = true);
 std::string GenerateNoCDOT       (models::Dataflow* const  dataflow  , bool connect_tasks = true , bool color_routes = true);

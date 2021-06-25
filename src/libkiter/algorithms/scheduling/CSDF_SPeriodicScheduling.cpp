@@ -11,6 +11,7 @@
 #include <models/Dataflow.h>
 #include <models/EventGraph.h>
 #include <map>
+#include <printers/stdout.h>
 #include <algorithms/throughput/csdf_strictly_periodic.h>
 
 

@@ -831,19 +831,58 @@ void printers::printInfos    (models::Dataflow* const  dataflow, parameters_list
 	dataflow->reset_computation();
 }
 
-std::string printers::Scheduling2Tikz    (models::Scheduling& scheduling) {
+std::string printers::Scheduling2Tikz    (const models::Scheduling& scheduling) {
+
+
 	  std::ostringstream returnStream;
 
 	  auto task_count     = scheduling.getDataflow()->getVerticesCount();
-	  auto scale          = 1.0;
+	  auto scale          = 3.0;
 	  auto execution_time = 30;
+	  auto ticks          = 2.0;
+
+	  std::vector<std::string> task_colors = {"red", "blue", "green"};
+
+	  returnStream << "\\begin{scheduling}{" << task_count << "}{" << execution_time << "}{" << scale << "}{" << ticks << "}" << std::endl;
 
 
-	  returnStream << "\\begin{scheduling}{" << task_count << "}{" << 0 << "}{" << scale << "}{" << execution_time << "}" << std::endl;
-
+	  auto task_index = 0;
 	  for (auto item : scheduling.getTaskSchedule()) {
+		  task_index++;
+		  std::string init_execution_format = "bottom color=" +  task_colors[(task_index - 1) % task_colors.size()] +  "!60,  top color= white";
+		  std::string periodic_fexecution_format = "bottom color="+  task_colors[(task_index - 1) % task_colors.size()] +  "!40,  top color= white";
+		  std::string periodic_sexecution_format = "bottom color="+  task_colors[(task_index - 1) % task_colors.size()] +  "!20,  top color= white";
 		  auto taskId = item.first;
+		  auto df = scheduling.getDataflow();
+		  auto t = df->getVertexById(taskId);
+		  std::string task_name = df->getVertexName(t);
+		  auto phi = df->getPhasesQuantity(t);
 		  returnStream << "% Task " << taskId << std::endl;
+
+		  auto istarts = item.second.initial_starts;
+		  auto pstarts = item.second.periodic_starts;
+
+		  auto exec_index = 0;
+
+		  for (auto cstart : istarts) {
+			  exec_index++;
+			  auto cphi = (exec_index - 1) % phi + 1;
+			  auto cdur = df->getVertexDuration(t, cphi);
+			  returnStream << "% Init Start " << cstart << std::endl;
+			  returnStream << "\\addexecution[" << init_execution_format  << "]{" <<  task_index << "}{$" << task_name << "_{" << cphi << "}$}{" << cdur << "}{" << cstart << "}" << std::endl;
+
+		  }
+		  auto period = pstarts.first;
+		  for (auto cstart : pstarts.second) {
+			  exec_index++;
+			  auto cphi = (exec_index - 1) % phi + 1;
+			  auto cdur = df->getVertexDuration(t, cphi);
+			  returnStream << "% Periodic Start " << cstart  << " with period " << period << std::endl;
+			  returnStream << "\\addperiodictask[" << periodic_sexecution_format  << "]{" <<  task_index << "}{$" << task_name << "_{" << cphi << "}$}{" << cdur << "}{" << cstart << "}{" << period << "}{" << 0 << "}" << std::endl;
+			  returnStream << "\\addexecution[" << periodic_fexecution_format  << "]{" <<  task_index << "}{$" << task_name << "_{" << cphi << "}$}{" << cdur << "}{" << cstart << "}" << std::endl;
+
+
+		  }
 	  }
 
 
