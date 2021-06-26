@@ -83,6 +83,82 @@ namespace models {
         return graphs;
     }
 
+
+
+    std::string EventGraph::printXML    () {
+        std::ostringstream returnStream;
+        returnStream<< "<?xml version ='1.0' encoding='utf8'?>" << std::endl;
+        returnStream<< " <Graphe>" << std::endl;
+        returnStream<< "  <Arcs>" << std::endl;
+        int count = 0 ;
+        {ForEachConstraint(this,c) {
+            returnStream<< "   <Arc name='" << count << "'"
+                    <<    " node1='" << this->getSource(c)<< "'"
+                    <<    " node2='" << this->getTarget(c)<< "'"
+                    <<   " weight='" << this->getWeight(c)<< "'"
+                    <<   " strict='" << this->getStrictness(c)<< "'"
+                    <<   " time='" << this->getDuration(c)<< "'"
+                    << " />"
+                    << "<!-- "
+                    << "["  << ((this->getEvent(this->getSource(c)).getTaskId()) == (this->getEvent(this->getTarget(c)).getTaskId())? "R " : "")
+                    <<  getChannelId(c) << "] "
+                    << this->getEvent(this->getSource(c)).getTaskId()
+                    << ","     <<  this->getEvent(this->getSource(c)).getTaskPhase()
+                    << ","     <<  this->getEvent(this->getSource(c)).getTaskOc()
+                    << " to "  <<  this->getEvent(this->getTarget(c)).getTaskId()
+                    << ","     <<  this->getEvent(this->getTarget(c)).getTaskPhase()
+                    << ","     <<  this->getEvent(this->getTarget(c)).getTaskOc()
+                    <<  " -->" << std::endl;
+            count++;
+            //  << "<!-- " <<  dataflow->getVertexName( dataflow->getVertexById(eg->getEvent(eg->getSource(c)).getTaskId()))
+            //  << ","     <<                                                   eg->getEvent(eg->getSource(c)).getTaskOc()
+            //  << " to "  <<  dataflow->getVertexName( dataflow->getVertexById(eg->getEvent(eg->getTarget(c)).getTaskId()))
+            //  << ","     <<                                                   eg->getEvent(eg->getTarget(c)).getTaskOc()
+        }}
+
+        returnStream<< "  </Arcs>" << std::endl;
+        returnStream<< " </Graphe>" << std::endl;
+        return returnStream.str();
+    }
+
+    std::string EventGraph::printTikz    () {
+        std::ostringstream returnStream;
+        returnStream << "\\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=7 cm, semithick, scale = 0.75, transform shape]" << std::endl;
+
+        int count = 0 ;
+
+        {ForEachEvent(this,e) {
+            ARRAY_INDEX taskId = this->getEvent(e).getTaskId();
+
+            unsigned char taskLetter = (unsigned char) (taskId & 0xff) ;
+            taskLetter = (unsigned char) ( taskLetter + (unsigned char) 64 ) ;
+
+            ARRAY_INDEX taskPh = this->getEvent(e).getTaskPhase();
+            ARRAY_INDEX taskOc = this->getEvent(e).getTaskOc();
+
+            returnStream << "\\node[draw, circle, fill=color" << taskLetter << "] (" << e << ") at (" << taskId << ",0)    {$" << taskLetter << "_" << taskPh ;
+            returnStream << "," <<  taskOc ;
+            returnStream << "$};" << std::endl;
+
+        }}
+
+        returnStream << "\\path[->,every node/.style={font=\\scriptsize}]" << std::endl;
+
+        {ForEachConstraint(this,c) {
+
+            returnStream<< "(" << this->getSource(c) << ") edge node[above,midway]    {$(" << this->getWeight(c)  ;
+            returnStream     << "," << this->getDuration(c)<< ")$} (" <<  this->getTarget(c) << ")"
+                    << "% real value = " << this->getWeight(c)
+                    << std::endl ;
+
+            count++;
+
+        }}
+        returnStream << ";\n\\end{tikzpicture}" << std::endl;
+        return returnStream.str();
+    }
+
+
     std::string EventGraph::printDOT()  {
          std::ostringstream returnStream;
 
