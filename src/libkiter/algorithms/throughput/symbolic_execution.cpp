@@ -338,6 +338,10 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentThroughputSchedul
                 for(std::size_t i = 0; i < starts[dataflow->getVertexId(task)].size(); ++i){
                   if (i < periodic_state_idx){ //initials
                     initials.insert(initials.end(),starts[dataflow->getVertexId(task)][i].begin(),starts[dataflow->getVertexId(task)][i].end());
+                    continue;
+                  } 
+                  if (i == starts[dataflow->getVertexId(task)].size() - 1){
+                    periodics.second.insert(periodics.second.end(),starts[dataflow->getVertexId(task)][i].begin(),starts[dataflow->getVertexId(task)][i].end()-1);
                   } else { //periodic
                     periodics.second.insert(periodics.second.end(),starts[dataflow->getVertexId(task)][i].begin(),starts[dataflow->getVertexId(task)][i].end());
                   }
@@ -347,8 +351,6 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentThroughputSchedul
                 schedule.set(dataflow->getVertexId(task), sched_struct);
                 std::cout << dataflow->getVertexName(task) << ": initial starts=" << commons::toString(initials) << ", periodic starts=" << commons::toString(periodics) << std::endl;
               }}
-              std::string separator(60, '-');
-              std::cout << separator << std::endl;
               return std::make_pair(thr, schedule);
             }
 
@@ -440,8 +442,6 @@ void algorithms::scheduling::ASAPScheduling(models::Dataflow* const dataflow,
     TIME_UNIT omega = 1.0 / minThroughput ;
     models::Scheduling res = models::Scheduling(dataflow, omega, scheduling_result);
 
-
-
     std::cout << res.asASCII(linesize);
     std::cout << res.asText();
     std::cout << printers::Scheduling2Tikz(res);
@@ -459,6 +459,10 @@ void algorithms::scheduling::ASAPScheduling(models::Dataflow* const dataflow,
   std::cout << "Throughput of graph: " << minThroughput << std::endl;
   TIME_UNIT omega = 1.0 / minThroughput ;
   models::Scheduling res = models::Scheduling(dataflow, omega, scheduling_result);
+  std::vector<TIME_UNIT> nexts;
+    for (auto item : scheduling_result){
+      nexts.push_back(item.second.periodic_starts.first + item.second.periodic_starts.second[0]);
+    }
   std::cout << res.asASCII(linesize);
   std::cout << res.asText();
 

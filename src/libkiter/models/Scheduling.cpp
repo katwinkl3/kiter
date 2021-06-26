@@ -1,7 +1,7 @@
 /*
  * Scheduling.cpp
  *
- *  Created on: 25 June 2021
+ *  *  Created on: 25 June 2021
  *      Author: Katherine
  */
 
@@ -56,21 +56,21 @@ std::string models::Scheduling::asASCIINew (int line_size) {
 
 
 	std::ostringstream returnStream;
+	int idx = 0;
 
 	for (auto item : this->getTaskSchedule()) {
 		ARRAY_INDEX tid = item.first;
 		Vertex v = _dataflow->getVertexById(item.first);
 		std::vector<TIME_UNIT> &starts = item.second.initial_starts;// initial starts
 		std::vector<TIME_UNIT> &pedstarts = item.second.periodic_starts.second; //periodic starts
-		TIME_UNIT next = pedstarts.back();
-		pedstarts.pop_back(); //TODO: resolve this!!
+		TIME_UNIT period = item.second.periodic_starts.first;
 		std::string start_str;
 		std::string period_str;
 		TIME_UNIT prev = -1;
 
 		std::string line = "";
 		int linesize = line_size;
-		// add for initial starts, and include sta (before periodic starts)
+		// add to string 1) initial starts 2) trailing spaces (before periodic starts)
 		for (TIME_UNIT i: starts) {
 			std::string add_space(i-prev-1, ' ');
 			start_str += add_space;
@@ -79,9 +79,6 @@ std::string models::Scheduling::asASCIINew (int line_size) {
 		}
 		std::string leading_space(pedstarts[0]-prev-1, ' ');
 		start_str += leading_space; 
-		prev = pedstarts[0]-1;
-
-		// add to line while within limit
 		if (start_str.length() <= linesize) {
 			line += start_str;
 			linesize -= start_str.length();
@@ -92,27 +89,31 @@ std::string models::Scheduling::asASCIINew (int line_size) {
 		}
 
 		// create period string without leading spaces so to use for both first and subsequent periods
-		for (TIME_UNIT i: pedstarts) {
-			std::string add_space(i-prev-1, ' ');
-			period_str += add_space;
-			period_str += "#";
-			prev = i;
-		}
-		// add trailing spaces after period starts (before next period)
-		std::string trailing_space(next-prev-1, ' ');
-		period_str += trailing_space;
-		// continuously add period_str to line
-		while (linesize > 0){
-			if (linesize >= period_str.length()){
-				line += period_str;
-				linesize -= period_str.length();
-			} else {
-				line += (period_str.substr(0,linesize));
-				linesize = 0;
+		if (!pedstarts.empty()){
+			prev = pedstarts[0]-1;
+			for (TIME_UNIT i: pedstarts) {
+				std::string add_space(i-prev-1, ' ');
+				period_str += add_space;
+				period_str += "#";
+				prev = i;
+			}
+			// add trailing spaces after period starts (before next period)
+			std::string trailing_space((period+pedstarts[0])-prev-1, ' ');
+			period_str += trailing_space;
+			// continuously add period_str to line
+			while (linesize > 0){
+				if (linesize >= period_str.length()){
+					line += period_str;
+					linesize -= period_str.length();
+				} else {
+					line += (period_str.substr(0,linesize));
+					linesize = 0;
+				}
 			}
 		}
-
+		
 		linesize = line_size;
+		++idx;
 
 		returnStream << std::setw(5) << tid << " |" << line << std::endl;
 	}
@@ -182,5 +183,4 @@ std::string models::Scheduling::asASCII (int line_size) {
 	return returnStream.str();
 
 }
-
 
