@@ -35,11 +35,14 @@ inline double tock() {
 
 
 inline void activate_verbose(const std::string p) {
-
-	if (commons::fromString<int>(p) < 0) {
-		std::exit(EXIT_FAILURE);
+	if (commons::fromString<int>(p) <= 0) {
+		VERBOSE_INFO("activate_verbose with unsupported value: " << p);
+		commons::add_custom_verbose_mode(p);
+		//std::exit(EXIT_FAILURE);
+	} else {
+		VERBOSE_INFO("activate_verbose with level: " << p);
+		commons::set_verbose_mode(commons::fromString<int>((optarg)));
 	}
-	commons::set_verbose_mode(commons::fromString<int>((optarg)));
 }
 
 int main (int argc, char **argv)

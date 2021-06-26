@@ -38,6 +38,12 @@ extern bool VERBOSE_GUESS;
 extern std::set<std::string> VERBOSE_CUSTOM_MODES;
 #endif
 
+inline void add_custom_verbose_mode(const std::string m){
+#ifndef __RELEASE_MODE__
+	  VERBOSE_CUSTOM_MODES.insert(m);
+#endif
+}
+
 const int  MIN_LEVEL     =   0;
 const int  MAX_LEVEL     =  10;
 
@@ -53,6 +59,7 @@ const int  EXTRA_DEBUG_LEVEL   =  10;
   inline void set_verbose_mode(const int m){
     VERBOSE_MODE = m;
 }
+
 
   inline int  is_info_verbose () 			{ return VERBOSE_MODE >= INFO_LEVEL; }
   inline int  get_verbose_mode() 			{ return VERBOSE_MODE; }

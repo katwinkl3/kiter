@@ -12,7 +12,7 @@
 #include <commons/KiterRegistry.h>
 
 
-#define VERBOSE_KPERIODIC_DEBUG(msg) {VERBOSE_CUSTOM_DEBUG("keperiodic",msg);}
+#define VERBOSE_KPERIODIC_DEBUG(msg) {VERBOSE_CUSTOM_DEBUG("kperiodic",msg);}
 
 
 namespace models {

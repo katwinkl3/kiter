@@ -123,7 +123,7 @@ namespace models {
 
     std::string EventGraph::printTikz    () {
         std::ostringstream returnStream;
-        returnStream << "\\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=7 cm, semithick, scale = 0.75, transform shape]" << std::endl;
+        returnStream << "\\begin{tikzpicture}[->,>=stealth,shorten >=1pt,auto,node distance=7 cm, semithick, scale = 0.75, transform shape]" << std::endl;
 
         int count = 0 ;
 

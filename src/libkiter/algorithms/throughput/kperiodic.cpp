@@ -5,7 +5,10 @@
  *      Author: toky
  */
 
+
+#ifdef __RELEASE_MODE__
 #define STRONGLY_OPTIMIZED
+#endif
 
 #include <chrono>
 #include <map>
@@ -576,6 +579,9 @@ void algorithms::generateKPeriodicConstraint(const models::Dataflow * const data
 	Vertex source = dataflow->getEdgeSource(c);
 	Vertex target = dataflow->getEdgeTarget(c);
 
+	std::string sourceName = dataflow->getVertexName(source);
+	std::string targetName = dataflow->getVertexName(target);
+
 	const ARRAY_INDEX source_id = dataflow->getVertexId(source);
 	const ARRAY_INDEX target_id = dataflow->getVertexId(target);
 
@@ -649,14 +655,21 @@ void algorithms::generateKPeriodicConstraint(const models::Dataflow * const data
 
 					models::EventGraphVertex target_event = g->getEventGraphVertex(target_id,pj,kj);
 					VERBOSE_KPERIODIC_DEBUG("  stepa=" << stepa);
-					VERBOSE_KPERIODIC_DEBUG("  ki=" << ki<<" kj=" << kj << " (" <<  source_event  << "," << target_event  << ")");
+					VERBOSE_KPERIODIC_DEBUG("  ki=" << ki<<" kj=" << kj << " pi=" << pi<<" pj=" << pj << " (" <<  source_event  << "," << target_event  << ")");
 					VERBOSE_KPERIODIC_DEBUG("  alphamin=" << alphamin <<"   alphamax=" << alphamax );
+
+					VERBOSE_KPERIODIC_DEBUG("$S\\langle " << targetName << "_{" << pj << "}," << kj
+							  << "\\rangle - S\\langle " << sourceName << "_{" << pi << "}," << ki
+								<< "\\rangle \\geq d(" << sourceName << "_{" << pi << "}) + \\Omega^S_G \\times \\frac{" << alphamax << "\\times" << source_phase_count * maxki << "}{" << (TIME_UNIT) Wc * (TIME_UNIT) dataflow->getNi(source) << "}$ % alphamin = " << alphamin);
+
+
+
 					if (alphamin <= alphamax) {
 
 
 						TIME_UNIT w = ((TIME_UNIT) alphamax * source_phase_count * maxki ) / ( (TIME_UNIT) Wc  * (TIME_UNIT) dataflow->getNi(source) );
-						VERBOSE_KPERIODIC_DEBUG("   w = (" << alphamax << " * " << dataflow->getPhasesQuantity(source) * maxki << ") / (" << Wc << " * " << dataflow->getNi(source) / maxki << ")");
-						VERBOSE_KPERIODIC_DEBUG("   d = (" << d << ")");
+						VERBOSE_KPERIODIC_DEBUG("   ** w = (" << alphamax << " * " << dataflow->getPhasesQuantity(source) * maxki << ") / (" << Wc << " * " << dataflow->getNi(source) / maxki << ")");
+						VERBOSE_KPERIODIC_DEBUG("   ** d = (" << d << ")");
 
 
 						if (doBufferLessEdges) {
@@ -664,6 +677,8 @@ void algorithms::generateKPeriodicConstraint(const models::Dataflow * const data
 						} else {
 							g->addEventConstraint(source_event ,target_event,-w,d,id);
 						}
+					} else {
+						VERBOSE_KPERIODIC_DEBUG("   ** Skip that one" );
 					}
 				}
 			}
