@@ -459,10 +459,6 @@ void algorithms::scheduling::ASAPScheduling(models::Dataflow* const dataflow,
   std::cout << "Throughput of graph: " << minThroughput << std::endl;
   TIME_UNIT omega = 1.0 / minThroughput ;
   models::Scheduling res = models::Scheduling(dataflow, omega, scheduling_result);
-  std::vector<TIME_UNIT> nexts;
-    for (auto item : scheduling_result){
-      nexts.push_back(item.second.periodic_starts.first + item.second.periodic_starts.second[0]);
-    }
   std::cout << res.asASCII(linesize);
   std::cout << res.asText();
 

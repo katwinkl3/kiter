@@ -92,6 +92,7 @@ public :
 	std::string asText () ;
 	std::string asASCII (int line_size) ;
 	std::string asASCIINew (int line_size) ;
+	std::string asASCIINewNew (int line_size) ;
 
 };
 }
