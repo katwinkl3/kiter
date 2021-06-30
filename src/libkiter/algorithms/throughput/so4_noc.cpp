@@ -34,13 +34,13 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
     actors_check[dataflow->getVertexId(t)] = -1;
   }}
    long slots; //TODO: take from input file instead
-  slots = 2; //TODO: take from file 
+  slots = 1; //TODO: take from file 
   std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> condition; //TODO: take from input file instead; rmb to convert from id
-  condition.insert({{1,2},1});//4}); //id = v+1, i think??
+  condition.insert({{1,2},0});//4}); //id = v+1, i think??
   // condition.insert({{1,3},0});
   condition.insert({{1,4},0});//1});
   // condition.insert({{2,1},0});
-  condition.insert({{2,3},1});//1});
+  condition.insert({{2,3},0});//1});
   // condition.insert({{2,4},1});//4});
   condition.insert({{3,1},0});//4});
   // condition.insert({{3,2},0});//1});
@@ -152,7 +152,7 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
         }
       }}
     // advance time and check for deadlocks
-    timeStep = currState.advanceTime();
+    timeStep = currState.advanceTimeWithMod();
     curr_step+= timeStep;
     if (timeStep == LONG_MAX) { // NOTE should technically be LDBL_MAX cause TIME_UNIT is of type long double
       VERBOSE_INFO("Deadlock found!");

@@ -103,7 +103,7 @@ ADD_TRANSFORMATION(ASAPScheduling,
 transformation_t({ "ASAPScheduling" , "Symbolic Execution", algorithms::scheduling::ASAPScheduling}));
 
 ADD_TRANSFORMATION(So4Scheduling,
-transformation_t({ "So4Scheduling" , "Symbolic Execution with TDMA", algorithms::scheduling::ASAPScheduling}));
+transformation_t({ "So4Scheduling" , "Symbolic Execution with TDMA", algorithms::scheduling::So4Scheduling}));
 
 // Throughput techniques
 ADD_TRANSFORMATION(BufferlessNoCScheduling,
