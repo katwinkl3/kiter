@@ -6,12 +6,12 @@
  */
 
 #define BOOST_TEST_MODULE RepetitionVectorTest
-#include "helpers/test_classes.h"
-#include "helpers/sample.h"
-#include "helpers/random_generator.h"
+#include <helpers/test_classes.h>
+#include <helpers/sample.h>
+#include <helpers/random_generator.h>
 #include <chrono>
 
-#define MAX_ITER 4000
+#define MAX_ITER 100
 #define MAX_PHASE_COUNT 10
 
 BOOST_FIXTURE_TEST_SUITE( repetition_vector_test , WITH_SAMPLE)

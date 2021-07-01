@@ -6,16 +6,16 @@
  */
 
 #define BOOST_TEST_MODULE MCRPTest
-#include "helpers/test_classes.h"
-#include "models/Dataflow.h"
-#include "helpers/random_generator.h"
-#include "algorithms/throughput/kperiodic.h"
-#include "algorithms/nperiodic.h"
+#include <helpers/test_classes.h>
+#include <models/Dataflow.h>
+#include <helpers/random_generator.h>
+#include <algorithms/throughput/kperiodic.h>
+#include <algorithms/nperiodic.h>
 #include <models/EventGraph.h>
 #include <chrono>
 
 
-#define MAX_ITER 4000
+#define MAX_ITER 100
 #define MAX_PHASE_COUNT 10
 
 /* how to define bound? */

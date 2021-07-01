@@ -6,14 +6,14 @@
  */
 
 #define BOOST_TEST_MODULE NormalizationTest
-#include "helpers/test_classes.h"
+#include <helpers/test_classes.h>
 #include <models/Dataflow.h>
-#include "helpers/random_generator.h"
+#include <helpers/random_generator.h>
 #include <algorithms/normalization.h>
 #include <chrono>
 
 
-#define MAX_ITER 4000
+#define MAX_ITER 100
 #define MAX_PHASE_COUNT 10
 
 BOOST_FIXTURE_TEST_SUITE( normalization_test_suite , WITH_VERBOSE)
