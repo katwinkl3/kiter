@@ -27,7 +27,7 @@ const std::string cRESET  = "\033[0m";
 const std::set<std::string> cOLORS = {cPURPLE, cRED, cYELLOW, cGREEN, cBLUE, cRESET};
 
 
-const inline std::string _verbosegetFilename(const std::string s) { return s.substr(s.find_last_of("/\\")+1);}
+// const inline std::string _verbosegetFilename(const std::string s) { return s.substr(s.find_last_of("/\\")+1);}
 // #define __SHOW_LEVEL "[ "<< __RELEASE__ <<"  " << _verbosegetFilename(__FILE__) << ":" << __LINE__ << "]" << RESET_COLOR << " "
 
 
@@ -73,22 +73,21 @@ class VerboseStream {
                 (*this).sstream << val;
 
                 // Color definition
-                std::string& color;
-                for (c : (*this).debug_commands){
-                    if (cOLORS.contains(c)){
+                std::string color;
+                for (std::string c : (*this).commands){
+                    if (cOLORS.count(c) == 1){
                         // Should only be one color defined
                         color = c;
+                        std::cout << color << (*this).sstream.str();
                     }
                 }
-
-                std::cout << color << (*this).sstream.str();
             } else {
                 BOOST_REQUIRE(false);
             }
             /* Not using clean commands bc. need to maintain
             the debug_commands */
-            s.sstream.str("");
-            s.sstream.clear();
+            (*this).sstream.str("");
+            (*this).sstream.clear();
             return *this;                
         }
 
@@ -102,6 +101,8 @@ class VerboseStream {
 
         // Singleton Instance
         static VerboseStream stream;
+
+
 };
 
 // Creating the singleton instance (globally?)
@@ -109,22 +110,22 @@ VerboseStream VerboseStream::stream;
 
 namespace Verbose {
 
-    VerboseStream& info(debug_commands c = {}) {
+    VerboseStream& Info(debug_commands c = {}) {
         VerboseStream& out = VerboseStream::get();
         out.clean();
         out.addcommands(c);
         return out;
     }
 
-    VerboseStream& debug(debug_commands c = {}) {
+    VerboseStream& Debug(debug_commands c = {}) {
         c.insert(c.begin(), "DEBUG");
-        VerboseStream& out = Verbose::info(c);
+        VerboseStream& out = Verbose::Info(c);
         return out;
     }
 
-    VerboseStream& assert(bool statement, debug_commands c = {}) {
-        VerboseStream& out = Verbose::info(c);
-        if (~statement){
+    VerboseStream& Assert(bool statement, debug_commands c = {}) {
+        VerboseStream& out = Verbose::Info(c);
+        if (!statement){
             out.add2stream("Assertion failed : ");
             return out;
         } else {

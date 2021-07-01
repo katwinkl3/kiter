@@ -6,7 +6,7 @@
  */
 
 #define BOOST_TEST_MODULE MCRPTest
-#include <helpers/test_classes.h>
+#include "helpers/test_classes.h"
 #include <models/Dataflow.h>
 #include <helpers/random_generator.h>
 #include <algorithms/throughput/kperiodic.h>
