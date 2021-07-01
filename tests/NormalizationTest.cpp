@@ -8,7 +8,7 @@
 #define BOOST_TEST_MODULE NormalizationTest
 #include "helpers/test_classes.h"
 #include <models/Dataflow.h>
-#include <helpers/random_generator.h>
+#include "helpers/random_generator.h"
 #include <algorithms/normalization.h>
 #include <chrono>
 
