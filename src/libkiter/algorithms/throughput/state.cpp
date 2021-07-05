@@ -120,7 +120,12 @@ TIME_UNIT State::advanceTime() {
   return timeElapsed;
 }
 
-TIME_UNIT State::advanceTimeWithMod() {
+TIME_UNIT State::advanceTimeWithMod(int time) {
+  if (time > 0){
+    this->timeElapsed += time;
+    return time;
+  }
+
   TIME_UNIT timeElapsed = LONG_MAX;
   for (auto &i : this->actors) {
     if (!this->executingActors[i].empty()) {
@@ -139,9 +144,8 @@ TIME_UNIT State::advanceTimeWithMod() {
     this->advanceRemExecTime(it.first, timeElapsed);
   }
   this->timeElapsed += timeElapsed;
-  VERBOSE_INFO("Time advanced by: " << timeElapsed);
-  VERBOSE_INFO("Total time elapsed: " << this->getTimeElapsed());
   return timeElapsed;
+
 }
 
 bool State::operator==(const State& s) const {

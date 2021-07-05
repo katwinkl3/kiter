@@ -130,21 +130,21 @@ bool Actor::isReadyForExec(State s) {
   return isExecutable;
 }
 
-bool Actor::isReadyForExecWithMod(models::Dataflow* const dataflow, State s, std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> cond, long step) {
-  // Execution conditions (for given phase): Original + current slot = assigned slot
-  bool isExecutable = true;
-  bool currSlot = false;
-  for (auto const &e : this->consPhaseCount) {
-    if (s.getTokens(e.first) < this->getExecRate(e.first) || this->isExecuting) {
-      isExecutable = false;
-    }
-    if (cond[std::make_pair(dataflow->getVertexId(dataflow->getEdgeSource(e.first)), 
-      dataflow->getVertexId(dataflow->getEdgeTarget(e.first)))] == step){
-      currSlot = true;
-    }
-  }
-  return isExecutable && currSlot;
-}
+// bool Actor::isReadyForExecWithMod(State s, std::map<ARRAY_INDEX, long> cond, long step) {
+//   // Execution conditions (for given phase): Original + current slot = assigned slot
+//   bool isExecutable = true;
+//   bool currSlot = false;
+//   for (auto const &e : this->consPhaseCount) {
+//     if (s.getTokens(e.first) < this->getExecRate(e.first) || this->isExecuting) {
+//       isExecutable = false;
+//     }
+//     if (cond[std::make_pair(dataflow->getVertexId(dataflow->getEdgeSource(e.first)), 
+//       dataflow->getVertexId(dataflow->getEdgeTarget(e.first)))] == step){
+//       currSlot = true;
+//     }
+//   }
+//   return isExecutable && currSlot;
+// }
 
 // Given current state of graph, returns whether actor is ready to end execution or not
 bool Actor::isReadyToEndExec(State s) {
@@ -156,19 +156,19 @@ bool Actor::isReadyToEndExec(State s) {
   return isEndable;
 }
 
-bool Actor::isReadyToEndExecWithMod(State s, models::Dataflow* const dataflow, std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> cond, long step) {
-  if (s.getExecQueue()[this->actor].empty() ||
-      s.getExecQueue()[this->actor].front().first != 0) {
-    return false;
-  }
-  {ForOutputEdges(dataflow, this->actor, e) {
-      if (cond[std::make_pair(dataflow->getVertexId(dataflow->getEdgeSource(e)), 
-      dataflow->getVertexId(dataflow->getEdgeTarget(e)))] == step){
-        return true;
-      }
-    }}
-    return true;
-}
+// bool Actor::isReadyToEndExecWithMod(State s, std::map<ARRAY_INDEX, long> cond, long step) {
+//   if (s.getExecQueue()[this->actor].empty() ||
+//       s.getExecQueue()[this->actor].front().first != 0) {
+//     return false;
+//   }
+//   {ForOutputEdges(dataflow, this->actor, e) {
+//       if (cond[std::make_pair(dataflow->getVertexId(dataflow->getEdgeSource(e)), 
+//       dataflow->getVertexId(dataflow->getEdgeTarget(e)))] == step){
+//         return true;
+//       }
+//     }}
+//     return true;
+// }
 
 // Begin actor's execution, consuming tokens from input channels
 void Actor::execStart(models::Dataflow* const dataflow, State &s) {
@@ -185,12 +185,10 @@ void Actor::execStart(models::Dataflow* const dataflow, State &s) {
 }
 
 // Begin actor's execution, consuming tokens from input channels
-void Actor::execStartWithMod(models::Dataflow* const dataflow, State &s, 
-std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> cond, long step) {
+void Actor::execStartWithMod(models::Dataflow* const dataflow, State &s, ARRAY_INDEX edge) {
   dataflow->reset_computation();
   {ForInputEdges(dataflow, this->actor, e) {
-    if (cond[std::make_pair(dataflow->getVertexId(dataflow->getEdgeSource(e)), 
-      dataflow->getVertexId(dataflow->getEdgeTarget(e)))] == step){
+    if (dataflow->getEdgeId(e) == edge){
         dataflow->setPreload(e, dataflow->getPreload(e) - this->getExecRate(e));
 
       //   std::cout << "Checked for " << dataflow->getVertexId(dataflow->getEdgeSource(e)) 
@@ -222,24 +220,24 @@ void Actor::execEnd(models::Dataflow* const dataflow, State &s) {
   this->isExecuting = false;
 }
 
-void Actor::execEndWithMod(models::Dataflow* const dataflow, State &s, 
-std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> cond, long step) {
-  PHASE_INDEX currentPhase;
-  dataflow->reset_computation();
-  {ForOutputEdges(dataflow, this->actor, e) {
-    if (cond[std::make_pair(dataflow->getVertexId(dataflow->getEdgeSource(e)), 
-      dataflow->getVertexId(dataflow->getEdgeTarget(e)))] == step){
-        currentPhase = s.getRemExecTime(this->actor).front().second;
-        VERBOSE_INFO("ending execution for phase "
-                  << currentPhase << ", producing "
-                  << this->getExecRate(e, currentPhase) << " tokens");
-        dataflow->setPreload(e, dataflow->getPreload(e) + this->getExecRate(e, currentPhase));
-      }
+// void Actor::execEndWithMod(models::Dataflow* const dataflow, State &s, 
+// std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> cond, long step) {
+//   PHASE_INDEX currentPhase;
+//   dataflow->reset_computation();
+//   {ForOutputEdges(dataflow, this->actor, e) {
+//     if (cond[std::make_pair(dataflow->getVertexId(dataflow->getEdgeSource(e)), 
+//       dataflow->getVertexId(dataflow->getEdgeTarget(e)))] == step){
+//         currentPhase = s.getRemExecTime(this->actor).front().second;
+//         VERBOSE_INFO("ending execution for phase "
+//                   << currentPhase << ", producing "
+//                   << this->getExecRate(e, currentPhase) << " tokens");
+//         dataflow->setPreload(e, dataflow->getPreload(e) + this->getExecRate(e, currentPhase));
+//       }
       
-    }}
-  s.removeFrontExec(this->actor);
-  this->isExecuting = false;
-}
+//     }}
+//   s.removeFrontExec(this->actor);
+//   this->isExecuting = false;
+// }
 
 std::string Actor::printStatus(models::Dataflow* const dataflow) {
   std::stringstream outputStream;
