@@ -43,7 +43,7 @@ const int  MAX_LEVEL     =  10;
 
 const int  ERROR_LEVEL         =   1;
 const int  WARNING_LEVEL       =   2;
-const int  PB_LEVEL 	       =   3;
+const int  PB_LEVEL 	         =   3;
 const int  INFO_LEVEL          =   4;
 const int  ILP_LEVEL           =   7;
 const int  DEBUG_LEVEL         =   8;
