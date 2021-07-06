@@ -7,6 +7,7 @@
  */
 
 #include <models/Dataflow.h>
+#include <libxml/parser.h>
 #include "actor.h"
 #include "state.h"
 #include "so4_noc.h"
@@ -15,7 +16,7 @@
 #include "../scc.h"
 
 std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(models::Dataflow* const dataflow,
-                                                 std::pair<ARRAY_INDEX, EXEC_COUNT> &minActorInfo, scheduling_t schedule) {
+                                                 std::pair<ARRAY_INDEX, EXEC_COUNT> &minActorInfo, scheduling_t schedule, std::string filename) {
   VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
   VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
   StateList visitedStates;
@@ -33,6 +34,7 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
     ++actors_left;
     actors_check[dataflow->getVertexId(t)] = -1;
   }}
+
    long slots; //TODO: take from input file instead
   slots = 2; //TODO: take from file 
   std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> condition_param; //TODO: take from input file instead (rmb to convert from id), change input type accordingly
@@ -49,6 +51,45 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
   // condition.insert({{4,1},0});//1});
   // condition.insert({{4,2},0});
   condition_param.insert({{4,3},0});//4});
+
+  xmlDocPtr doc =  xmlParseFile(filename.c_str());
+  xmlNodePtr tdma_node;
+  for (xmlNodePtr cur_node = doc->children; cur_node; cur_node = cur_node->next) {
+		if (cur_node->type == XML_ELEMENT_NODE) {
+			if (std::string((const char*)cur_node->name) == std::string("tdma")) tdma_node = cur_node;
+		}
+	}
+  // xmlNodePtr tdma_node = xmlDocGetRootElement(doc)->children;
+  const char* temp = (const char*) tdma_node->properties->children->content;
+  char *stopstring; 
+  slots = atoi(temp); //TODO: change to strtol 
+  for (xmlNodePtr cur_node = tdma_node->children; cur_node; cur_node = cur_node->next) {
+		if (cur_node->type == XML_ELEMENT_NODE) {
+			if (std::string((const char*)cur_node->name) == std::string("rule")) {
+        for (xmlAttrPtr cur_attr = cur_node->properties; cur_attr; cur_attr = cur_attr->next){
+          long src;
+          long dest;
+          long s;
+          if (strcmp((const char*)cur_attr->name,"slot") == 0){
+            temp = (const char*) cur_attr->children->content;
+            s = strtol(temp, &stopstring, 10);
+          }
+          if (strcmp((const char*)cur_attr->name,"src") == 0){
+            temp = (const char*) cur_attr->children->content;
+            src = strtol(temp, &stopstring, 10);
+          }
+          if (strcmp((const char*)cur_attr->name,"dest") == 0){
+            temp = (const char*) cur_attr->children->content;
+            dest = strtol(temp, &stopstring, 10);
+          }
+          std::cout << 'slot'<< std::endl;;
+        }
+      }
+		}
+	}
+  xmlFreeDoc(doc);
+  
+
   {ForEachEdge(dataflow,e){
     condition.insert({dataflow->getEdgeId(e), condition_param[{dataflow->getVertexId(dataflow->getEdgeSource(e)), dataflow->getVertexId(dataflow->getEdgeTarget(e))}]});
   }}
@@ -218,7 +259,7 @@ void algorithms::scheduling::So4Scheduling(models::Dataflow* const dataflow,
     for (auto g : sccDataflows) {
       if (g->getEdgesCount() > 0) {
         std::pair<ARRAY_INDEX, EXEC_COUNT> actorInfo;
-        auto res_pair = computeComponentSo4Schedule(g, actorInfo, scheduling_result);
+        auto res_pair = computeComponentSo4Schedule(g, actorInfo, scheduling_result, param_list["TDMA"]);
         TIME_UNIT componentThroughput = res_pair.first;
         scheduling_result = res_pair.second;
         TIME_UNIT scaledThroughput = (componentThroughput * actorInfo.second) /
@@ -260,7 +301,7 @@ void algorithms::scheduling::So4Scheduling(models::Dataflow* const dataflow,
   }
   // if graph is strongly connected, just need to use computeComponentThroughput
   std::pair<ARRAY_INDEX, EXEC_COUNT> actorInfo; // look at note for computeComponentThroughput
-  auto res_pair = computeComponentSo4Schedule(dataflow, actorInfo, scheduling_result);
+  auto res_pair = computeComponentSo4Schedule(dataflow, actorInfo, scheduling_result, param_list["TDMA"]);
   minThroughput = res_pair.first;
   scheduling_result = res_pair.second;
   std::cout << "Throughput of graph: " << minThroughput << std::endl;
