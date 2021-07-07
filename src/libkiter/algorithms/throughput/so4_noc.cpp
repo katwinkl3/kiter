@@ -39,18 +39,18 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
   slots = 2; //TODO: take from file 
   std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> condition_param; //TODO: take from input file instead (rmb to convert from id), change input type accordingly
   std::map<ARRAY_INDEX, long> condition;
-  condition_param.insert({{1,2},0});//4}); //id = v+1, i think??
-  // condition.insert({{1,3},0});
-  condition_param.insert({{1,4},1});//1});
-  // condition.insert({{2,1},0});
-  condition_param.insert({{2,3},0});//1});
-  // condition.insert({{2,4},1});//4});
-  condition_param.insert({{3,1},0});//4});
-  // condition.insert({{3,2},0});//1});
-  // condition.insert({{3,4},0});
-  // condition.insert({{4,1},0});//1});
-  // condition.insert({{4,2},0});
-  condition_param.insert({{4,3},0});//4});
+  // condition_param.insert({{1,2},0});//4}); //id = v+1, i think??
+  // // condition.insert({{1,3},0});
+  // condition_param.insert({{1,4},1});//1});
+  // // condition.insert({{2,1},0});
+  // condition_param.insert({{2,3},0});//1});
+  // // condition.insert({{2,4},1});//4});
+  // condition_param.insert({{3,1},0});//4});
+  // // condition.insert({{3,2},0});//1});
+  // // condition.insert({{3,4},0});
+  // // condition.insert({{4,1},0});//1});
+  // // condition.insert({{4,2},0});
+  // condition_param.insert({{4,3},0});//4});
 
   xmlDocPtr doc =  xmlParseFile(filename.c_str());
   xmlNodePtr tdma_node;
@@ -61,29 +61,29 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
 	}
   // xmlNodePtr tdma_node = xmlDocGetRootElement(doc)->children;
   const char* temp = (const char*) tdma_node->properties->children->content;
-  char *stopstring; 
   slots = atoi(temp); //TODO: change to strtol 
   for (xmlNodePtr cur_node = tdma_node->children; cur_node; cur_node = cur_node->next) {
 		if (cur_node->type == XML_ELEMENT_NODE) {
 			if (std::string((const char*)cur_node->name) == std::string("rule")) {
+        long src;
+        long dest;
+        long s;
+        char *ss1, *ss2, *ss3; 
         for (xmlAttrPtr cur_attr = cur_node->properties; cur_attr; cur_attr = cur_attr->next){
-          long src;
-          long dest;
-          long s;
           if (strcmp((const char*)cur_attr->name,"slot") == 0){
             temp = (const char*) cur_attr->children->content;
-            s = strtol(temp, &stopstring, 10);
+            s = strtol(temp, &ss1, 10);
           }
           if (strcmp((const char*)cur_attr->name,"src") == 0){
             temp = (const char*) cur_attr->children->content;
-            src = strtol(temp, &stopstring, 10);
+            src = strtol(temp, &ss2, 10);
           }
           if (strcmp((const char*)cur_attr->name,"dest") == 0){
             temp = (const char*) cur_attr->children->content;
-            dest = strtol(temp, &stopstring, 10);
+            dest = strtol(temp, &ss3, 10);
           }
-          std::cout << 'slot'<< std::endl;;
         }
+        condition_param.insert({{src,dest},s});
       }
 		}
 	}
@@ -150,8 +150,8 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
           }
           actorMap[dataflow->getVertexId(t)].execEnd(dataflow, currState);
           currState.updateState(dataflow, actorMap); // NOTE updating tokens/phase in state done separately from execEnd function, might be a cause for bugs
-          std::cout <<"END FIRING\n"<< std::endl;
-          std::cout << currState.print(dataflow) << std::endl;
+          // std::cout <<"END FIRING\n"<< std::endl;
+          // std::cout << currState.print(dataflow) << std::endl;
         }
       }}
    
@@ -172,8 +172,8 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
             if (condition[dataflow->getEdgeId(e)] == (int) curr_step % slots){ // correct slot ? proceed : skip to time=slot
               actorMap[dataflow->getVertexId(t)].execStartWithMod(dataflow, currState, dataflow->getEdgeId(e));
               currState.updateState(dataflow, actorMap);
-              std::cout <<"FIRING\n"<< std::endl;
-              std::cout << currState.print(dataflow) << std::endl;
+              // std::cout <<"FIRING\n"<< std::endl;
+              // std::cout << currState.print(dataflow) << std::endl;
               if (end_check){
                 if (actors_check[dataflow->getVertexId(t)] < 0){
                   actors_check[dataflow->getVertexId(t)] = curr_step;
