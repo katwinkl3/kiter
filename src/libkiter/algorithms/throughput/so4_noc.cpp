@@ -35,22 +35,8 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
     actors_check[dataflow->getVertexId(t)] = -1;
   }}
 
-   long slots; //TODO: take from input file instead
-  slots = 2; //TODO: take from file 
-  std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> condition_param; //TODO: take from input file instead (rmb to convert from id), change input type accordingly
+  std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> condition_param; 
   std::map<ARRAY_INDEX, long> condition;
-  // condition_param.insert({{1,2},0});//4}); //id = v+1, i think??
-  // // condition.insert({{1,3},0});
-  // condition_param.insert({{1,4},1});//1});
-  // // condition.insert({{2,1},0});
-  // condition_param.insert({{2,3},0});//1});
-  // // condition.insert({{2,4},1});//4});
-  // condition_param.insert({{3,1},0});//4});
-  // // condition.insert({{3,2},0});//1});
-  // // condition.insert({{3,4},0});
-  // // condition.insert({{4,1},0});//1});
-  // // condition.insert({{4,2},0});
-  // condition_param.insert({{4,3},0});//4});
 
   xmlDocPtr doc =  xmlParseFile(filename.c_str());
   xmlNodePtr tdma_node;
@@ -59,9 +45,8 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
 			if (std::string((const char*)cur_node->name) == std::string("tdma")) tdma_node = cur_node;
 		}
 	}
-  // xmlNodePtr tdma_node = xmlDocGetRootElement(doc)->children;
   const char* temp = (const char*) tdma_node->properties->children->content;
-  slots = atoi(temp); //TODO: change to strtol 
+  long slots = atoi(temp); //TODO: change to strtol 
   for (xmlNodePtr cur_node = tdma_node->children; cur_node; cur_node = cur_node->next) {
 		if (cur_node->type == XML_ELEMENT_NODE) {
 			if (std::string((const char*)cur_node->name) == std::string("rule")) {
@@ -88,12 +73,10 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
 		}
 	}
   xmlFreeDoc(doc);
-  
-
-  {ForEachEdge(dataflow,e){
+    {ForEachEdge(dataflow,e){
     condition.insert({dataflow->getEdgeId(e), condition_param[{dataflow->getVertexId(dataflow->getEdgeSource(e)), dataflow->getVertexId(dataflow->getEdgeTarget(e))}]});
   }}
-  std::vector<ARRAY_INDEX> buffer;
+  std::map<std::map<ARRAY_INDEX, long>> buffer; //slot: [channel (actor): tokens produced for channel]
   scheduling_t task_schedule; // {vertex_id : {time_unit: [time_unit]}}
   ARRAY_INDEX skip_edge = 0;
   ARRAY_INDEX skip_vertex = 0;
@@ -166,14 +149,14 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
       }
         while (actorMap[dataflow->getVertexId(t)].isReadyForExec(currState)) {
           {ForInputEdges(dataflow, t, e){
-            if (skip_time != 0 && dataflow->getVertexId(t) != skip_vertex){
+            if (skip_time != 0 && dataflow->getVertexId(t) != skip_vertex && dataflow->getEdgeId(e) != skip_edge){
               continue;
             }
             if (condition[dataflow->getEdgeId(e)] == (int) curr_step % slots){ // correct slot ? proceed : skip to time=slot
               actorMap[dataflow->getVertexId(t)].execStartWithMod(dataflow, currState, dataflow->getEdgeId(e));
               currState.updateState(dataflow, actorMap);
-              // std::cout <<"FIRING\n"<< std::endl;
-              // std::cout << currState.print(dataflow) << std::endl;
+              std::cout <<"FIRING\n"<< std::endl;
+              std::cout << currState.print(dataflow) << std::endl;
               if (end_check){
                 if (actors_check[dataflow->getVertexId(t)] < 0){
                   actors_check[dataflow->getVertexId(t)] = curr_step;
@@ -212,7 +195,11 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
               }
               break; //finds first actor edge to execute then break the for loop for the while loop to continue
             } else {
-              skip_time = condition[dataflow->getEdgeId(e)] + slots-((int) curr_step % slots); //dont execute until current actor fires
+              if (((int) curr_step % slots) > condition[dataflow->getEdgeId(e)]){ //dont execute until current actor fires
+                skip_time = condition[dataflow->getEdgeId(e)] + slots-((int) curr_step % slots);
+              } else{
+                skip_time = condition[dataflow->getEdgeId(e)] - ((int) curr_step % slots);
+              }
               skip_edge = dataflow->getEdgeId(e);
               skip_vertex = dataflow->getVertexId(t);
               break;
