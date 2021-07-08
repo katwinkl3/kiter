@@ -76,7 +76,7 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
     {ForEachEdge(dataflow,e){
     condition.insert({dataflow->getEdgeId(e), condition_param[{dataflow->getVertexId(dataflow->getEdgeSource(e)), dataflow->getVertexId(dataflow->getEdgeTarget(e))}]});
   }}
-  std::map<std::map<ARRAY_INDEX, long>> buffer; //slot: [channel (actor): tokens produced for channel]
+  std::map<TIME_UNIT, std::map<ARRAY_INDEX, long>> buffer; //slot: [channel (actor): tokens produced for channel]
   scheduling_t task_schedule; // {vertex_id : {time_unit: [time_unit]}}
   ARRAY_INDEX skip_edge = 0;
   ARRAY_INDEX skip_vertex = 0;
