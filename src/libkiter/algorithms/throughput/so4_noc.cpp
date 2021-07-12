@@ -142,7 +142,7 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
     // set preload from ended firings
     int cast_out_idx;
     for (cast_out_idx = 0; cast_out_idx < (*n_buffer).size(); ++cast_out_idx){
-      if ((*n_buffer)[cast_out_idx].first == curr_step){
+      if ((*n_buffer)[cast_out_idx].first <= curr_step){
         Edge e = dataflow->getEdgeById((*n_buffer)[cast_out_idx].second.first);
         dataflow->setPreload(e, 
         dataflow->getPreload(e) + (*n_buffer)[cast_out_idx].second.second);
@@ -191,7 +191,7 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
                     periodics.first = actors_check[dataflow->getVertexId(task)] - periodics.second[0]; 
                     task_schedule_t sched_struct = {initials,periodics};
                     schedule.set(dataflow->getVertexId(task), sched_struct);
-                    std::cout << dataflow->getVertexName(task) << ": initial starts=" << commons::toString(initials) << ", periodic starts=" << commons::toString(periodics) << std::endl;
+                    // std::cout << dataflow->getVertexName(task) << ": initial starts=" << commons::toString(initials) << ", periodic starts=" << commons::toString(periodics) << std::endl;
                   }}
                   return std::make_pair(thr, schedule);
                 }
