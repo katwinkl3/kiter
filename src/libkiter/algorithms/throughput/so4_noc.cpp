@@ -73,10 +73,11 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
 		}
 	}
   xmlFreeDoc(doc);
-    {ForEachEdge(dataflow,e){
+  {ForEachEdge(dataflow,e){
     condition.insert({dataflow->getEdgeId(e), condition_param[{dataflow->getVertexId(dataflow->getEdgeSource(e)), dataflow->getVertexId(dataflow->getEdgeTarget(e))}]});
   }}
-  std::map<TIME_UNIT, std::map<ARRAY_INDEX, long>> buffer; //slot: [channel (actor): tokens produced for channel]
+  std::map<TIME_UNIT, std::map<ARRAY_INDEX, std::pair<long, bool>>> *buffer = new std::map<TIME_UNIT, std::map<ARRAY_INDEX, std::pair<long, bool>>>();; //slot: [channel (actor's edge): {tokens released, if actor needs to execute}]
+  std::deque<std::pair<TIME_UNIT, std::pair<ARRAY_INDEX, long>>> *n_buffer = new std::deque<std::pair<TIME_UNIT, std::pair<ARRAY_INDEX, long>>>();; //[timeslot, channel, token]
   scheduling_t task_schedule; // {vertex_id : {time_unit: [time_unit]}}
   ARRAY_INDEX skip_edge = 0;
   ARRAY_INDEX skip_vertex = 0;
@@ -131,32 +132,41 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
               minRepActorExecCount = 0;
             }
           }
-          actorMap[dataflow->getVertexId(t)].execEnd(dataflow, currState);
-          currState.updateState(dataflow, actorMap); // NOTE updating tokens/phase in state done separately from execEnd function, might be a cause for bugs
+          actorMap[dataflow->getVertexId(t)].execEndWithMod(dataflow, currState, n_buffer, curr_step, slots, condition);
+          // NOTE updating tokens/phase in state done separately from execEnd function, might be a cause for bugs
           // std::cout <<"END FIRING\n"<< std::endl;
           // std::cout << currState.print(dataflow) << std::endl;
         }
       }}
-   
-    // start actor firing
-    skip_time = 0; //TODO: make it less ugly?
-    skip_edge = 0;
-    skip_vertex = 0;
+    
+    // set preload from ended firings
+    int cast_out_idx;
+    for (cast_out_idx = 0; cast_out_idx < (*n_buffer).size(); ++cast_out_idx){
+      if ((*n_buffer)[cast_out_idx].first == curr_step){
+        Edge e = dataflow->getEdgeById((*n_buffer)[cast_out_idx].second.first);
+        dataflow->setPreload(e, 
+        dataflow->getPreload(e) + (*n_buffer)[cast_out_idx].second.second);
+      }
+      else{
+        break;
+      }
+    }
+    while (cast_out_idx > 0){
+      (*n_buffer).pop_front();
+      cast_out_idx--;
+    }
+    currState.updateState(dataflow, actorMap);
+
     {ForEachTask(dataflow, t) {
 
-      if (skip_time != 0 && dataflow->getVertexId(t) != skip_vertex){
-        continue;
-      }
-        while (actorMap[dataflow->getVertexId(t)].isReadyForExec(currState)) {
-          {ForInputEdges(dataflow, t, e){
-            if (skip_time != 0 && dataflow->getVertexId(t) != skip_vertex && dataflow->getEdgeId(e) != skip_edge){
-              continue;
-            }
-            if (condition[dataflow->getEdgeId(e)] == (int) curr_step % slots){ // correct slot ? proceed : skip to time=slot
-              actorMap[dataflow->getVertexId(t)].execStartWithMod(dataflow, currState, dataflow->getEdgeId(e));
+      // if (skip_time != 0 && dataflow->getVertexId(t) != skip_vertex){
+      //   continue;
+      // }
+        if(actorMap[dataflow->getVertexId(t)].isReadyForExec(currState)) {
+            actorMap[dataflow->getVertexId(t)].execStart(dataflow, currState);
               currState.updateState(dataflow, actorMap);
-              std::cout <<"FIRING\n"<< std::endl;
-              std::cout << currState.print(dataflow) << std::endl;
+              // std::cout <<"FIRING\n"<< std::endl;
+              // std::cout << currState.print(dataflow) << std::endl;
               if (end_check){
                 if (actors_check[dataflow->getVertexId(t)] < 0){
                   actors_check[dataflow->getVertexId(t)] = curr_step;
@@ -185,7 +195,6 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
                   }}
                   return std::make_pair(thr, schedule);
                 }
-
               } else {
                 if (starts[dataflow->getVertexId(t)].size() == 0){
                   starts[dataflow->getVertexId(t)].push_back({curr_step}); //push into current state's task start list
@@ -193,34 +202,10 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
                   starts[dataflow->getVertexId(t)].back().push_back(curr_step);
                 }
               }
-              break; //finds first actor edge to execute then break the for loop for the while loop to continue
-            } else {
-              if (((int) curr_step % slots) > condition[dataflow->getEdgeId(e)]){ //dont execute until current actor fires
-                skip_time = condition[dataflow->getEdgeId(e)] + slots-((int) curr_step % slots);
-              } else{
-                skip_time = condition[dataflow->getEdgeId(e)] - ((int) curr_step % slots);
-              }
-              skip_edge = dataflow->getEdgeId(e);
-              skip_vertex = dataflow->getVertexId(t);
-              break;
-            }
-          }}
-          if (skip_time != 0){
-            break;
-          }
-        }
-        if (skip_time != 0){ //TODO: too ugly
-            break;
         }
       }}
-    // advance time and check for deadlocks
-    if (skip_time != 0){
-      timeStep = currState.advanceTimeWithMod(skip_time);
-      curr_step+= timeStep;
-    } else {
-      timeStep = currState.advanceTimeWithMod(0);
-      curr_step+= timeStep;
-    }
+    timeStep = currState.advanceTimeWithMod();
+    curr_step+= timeStep;
     if (timeStep == LONG_MAX) { // NOTE should technically be LDBL_MAX cause TIME_UNIT is of type long double
       VERBOSE_INFO("Deadlock found!");
       return std::make_pair(0, schedule);

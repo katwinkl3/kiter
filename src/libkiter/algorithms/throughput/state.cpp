@@ -120,12 +120,7 @@ TIME_UNIT State::advanceTime() {
   return timeElapsed;
 }
 
-TIME_UNIT State::advanceTimeWithMod(int time) {
-  if (time > 0){
-    this->timeElapsed += time;
-    return time;
-  }
-
+TIME_UNIT State::advanceTimeWithMod() {
   TIME_UNIT timeElapsed = LONG_MAX;
   for (auto &i : this->actors) {
     if (!this->executingActors[i].empty()) {
@@ -133,11 +128,11 @@ TIME_UNIT State::advanceTimeWithMod(int time) {
     }
   }
   // check for cases where time shouldn't advance/deadlock
-  if (timeElapsed == 0) {
-    return timeElapsed; // there exists actors that need to end execution
+  if (timeElapsed == 0) { 
+    return 0; 
   }
   if (timeElapsed == LONG_MAX) {
-    return 0; // simply have faith that the periodic code did not break amen
+    return 1; // potentially no actors fired due to tdma slot mismatching the current time slot (counter to prevent non-termination?)
   }
   // advance time for all actors
   for (auto &it : this->executingActors) {
