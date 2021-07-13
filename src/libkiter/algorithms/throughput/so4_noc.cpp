@@ -35,8 +35,8 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
     actors_check[dataflow->getVertexId(t)] = -1;
   }}
 
-  std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> condition_param; 
-  std::map<ARRAY_INDEX, long> condition;
+  std::map<edge_id_t, long> condition_param; //noc edge id : slot
+  std::map<ARRAY_INDEX, long> condition; // dataflow edge : [slot]
 
   xmlDocPtr doc =  xmlParseFile(filename.c_str());
   xmlNodePtr tdma_node;
@@ -50,31 +50,28 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
   for (xmlNodePtr cur_node = tdma_node->children; cur_node; cur_node = cur_node->next) {
 		if (cur_node->type == XML_ELEMENT_NODE) {
 			if (std::string((const char*)cur_node->name) == std::string("rule")) {
-        long src;
-        long dest;
+        long eid;
         long s;
-        char *ss1, *ss2, *ss3; 
+        char *ss1, *ss2; 
         for (xmlAttrPtr cur_attr = cur_node->properties; cur_attr; cur_attr = cur_attr->next){
           if (strcmp((const char*)cur_attr->name,"slot") == 0){
             temp = (const char*) cur_attr->children->content;
             s = strtol(temp, &ss1, 10);
           }
-          if (strcmp((const char*)cur_attr->name,"src") == 0){
+          if (strcmp((const char*)cur_attr->name,"id") == 0){
             temp = (const char*) cur_attr->children->content;
-            src = strtol(temp, &ss2, 10);
-          }
-          if (strcmp((const char*)cur_attr->name,"dest") == 0){
-            temp = (const char*) cur_attr->children->content;
-            dest = strtol(temp, &ss3, 10);
+            eid = strtol(temp, &ss2, 10);
           }
         }
-        condition_param.insert({{src,dest},s});
+        condition_param.insert({eid,s});
       }
 		}
 	}
   xmlFreeDoc(doc);
   {ForEachEdge(dataflow,e){
-    condition.insert({dataflow->getEdgeId(e), condition_param[{dataflow->getVertexId(dataflow->getEdgeSource(e)), dataflow->getVertexId(dataflow->getEdgeTarget(e))}]});
+    std::vector<long> evec = {};
+    condition.insert({dataflow->getEdgeId(e), condition_param[dataflow->getRoute(e)[0]]});
+    // condition.insert({dataflow->getEdgeId(e), condition_param[{dataflow->getVertexId(dataflow->getEdgeSource(e)), dataflow->getVertexId(dataflow->getEdgeTarget(e))}]});
   }}
   std::map<TIME_UNIT, std::map<ARRAY_INDEX, std::pair<long, bool>>> *buffer = new std::map<TIME_UNIT, std::map<ARRAY_INDEX, std::pair<long, bool>>>();; //slot: [channel (actor's edge): {tokens released, if actor needs to execute}]
   std::deque<std::pair<TIME_UNIT, std::pair<ARRAY_INDEX, long>>> *n_buffer = new std::deque<std::pair<TIME_UNIT, std::pair<ARRAY_INDEX, long>>>();; //[timeslot, channel, token]
@@ -142,7 +139,7 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
     // set preload from ended firings
     int cast_out_idx;
     for (cast_out_idx = 0; cast_out_idx < (*n_buffer).size(); ++cast_out_idx){
-      if ((*n_buffer)[cast_out_idx].first == curr_step){
+      if ((*n_buffer)[cast_out_idx].first <= curr_step){
         Edge e = dataflow->getEdgeById((*n_buffer)[cast_out_idx].second.first);
         dataflow->setPreload(e, 
         dataflow->getPreload(e) + (*n_buffer)[cast_out_idx].second.second);
@@ -191,7 +188,7 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
                     periodics.first = actors_check[dataflow->getVertexId(task)] - periodics.second[0]; 
                     task_schedule_t sched_struct = {initials,periodics};
                     schedule.set(dataflow->getVertexId(task), sched_struct);
-                    std::cout << dataflow->getVertexName(task) << ": initial starts=" << commons::toString(initials) << ", periodic starts=" << commons::toString(periodics) << std::endl;
+                    // std::cout << dataflow->getVertexName(task) << ": initial starts=" << commons::toString(initials) << ", periodic starts=" << commons::toString(periodics) << std::endl;
                   }}
                   return std::make_pair(thr, schedule);
                 }

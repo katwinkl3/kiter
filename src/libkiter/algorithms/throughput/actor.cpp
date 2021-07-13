@@ -248,7 +248,21 @@ TIME_UNIT step, long slots, std::map<ARRAY_INDEX, long> condition) {
       } else{
         end_time = step + slots - (end_t_mod - correct_slot);
       }
-      // (*buffer)[step][dataflow->getEdgeId(e)].first += this->getExecRate(e, currentPhase);
+      // TIME_UNIT prev_time = step - dataflow->getVertexDuration(this->actor, this->getPhase());
+      // TIME_UNIT time_past = 0;
+      // long prev_t_mod = (int) prev_time % slots;
+      // for (auto & p : condition[dataflow->getEdgeId(e)]){
+      //   if (p < prev_t_mod){ // next mod cycle : time + remaining
+      //     time_past += (slots - prev_t_mod + p);
+      //   }
+      //   prev_t_mod = p;
+      // }
+      // time_past += (prev_t_mod);
+      // if (time_past > dataflow->getVertexDuration(this->actor, this->getPhase())){
+      //   end_time = prev_time + time_past;
+      // } else {
+      //   end_time = step;
+      // }
       (*buffer).push_back({end_time, {dataflow->getEdgeId(e), this->getExecRate(e, currentPhase)}});
       /// buffer[dtep].puhback(pair<>(edgeid,execrate))
     }}
