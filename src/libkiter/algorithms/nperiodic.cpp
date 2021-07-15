@@ -30,16 +30,12 @@ std::map<Vertex,EXEC_COUNT> algorithms::get_Kvector(models::Dataflow *  const da
 
 	}}
 
-
 	kperiodic_result_t result;
-
-
 
 	VERBOSE_INFO("KPeriodic EventGraph generation");
 
 	//STEP 1 - Generate Event Graph
 	models::EventGraph* eg = generateKPeriodicEventGraph(dataflow,&kvector);
-
 
 	VERBOSE_INFO("KPeriodic EventGraph generation Done");
 
@@ -145,7 +141,7 @@ std::map<Vertex,EXEC_COUNT> algorithms::get_Kvector(models::Dataflow *  const da
 }
 
 
-void algorithms::print_Nperiodic_eventgraph    (models::Dataflow* const  dataflow, parameters_list_t) {
+void algorithms::print_Nperiodic_eventgraph (models::Dataflow* const  dataflow, parameters_list_t) {
 
 
 	VERBOSE_INFO("NPeriodic EventGraph generation");
@@ -157,11 +153,9 @@ void algorithms::print_Nperiodic_eventgraph    (models::Dataflow* const  dataflo
 	VERBOSE_INFO("NPeriodic EventGraph generation Done");
 
 	std::cout << eg->printXML();
-
-
 }
 
-models::EventGraph* algorithms::generateNPeriodicEventGraph               (models::Dataflow *  const dataflow) {
+models::EventGraph* algorithms::generateNPeriodicEventGraph (models::Dataflow *  const dataflow) {
 
 	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 	VERBOSE_DEBUG_ASSERT(dataflow->is_normalized() == false,"Graph should not be normalized.");
@@ -210,7 +204,6 @@ models::EventGraph* algorithms::generateNPeriodicEventGraph               (model
 				VERBOSE_DEBUG("  wp  = " << wp  );
 				VERBOSE_DEBUG("  vp  = " << vp  );
 				VERBOSE_DEBUG("  mop = " << mop );
-
 
 
 				for(EXEC_COUNT k = 1; k <= Ni ; k++) {
@@ -311,14 +304,11 @@ models::EventGraph* algorithms::generateNPeriodicEventGraph               (model
 
 	}}
 
-
-
 	return eg;
 }
 
 
-void algorithms::compute_NPeriodic_throughput  		   (models::Dataflow* const  dataflow, parameters_list_t){
-
+void algorithms::compute_NPeriodic_throughput (models::Dataflow* const dataflow, parameters_list_t) {
 
 		// STEP 0.1 - PRE
 		VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
@@ -340,12 +330,10 @@ void algorithms::compute_NPeriodic_throughput  		   (models::Dataflow* const  da
 	    	} else {
 	    		std::cout << "Maximum throughput is " << frequency  << std::endl;
 	    	}
-
 }
 
 
-void algorithms::compute_NCleanPeriodic_throughput  		   (models::Dataflow* const  dataflow, parameters_list_t){
-
+void algorithms::compute_NCleanPeriodic_throughput (models::Dataflow* const dataflow, parameters_list_t){
 
 		// STEP 0.1 - PRE
 		VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
@@ -370,9 +358,10 @@ void algorithms::compute_NCleanPeriodic_throughput  		   (models::Dataflow* cons
 	    	} else {
 	    		std::cout << "Maximum throughput is " << frequency  << std::endl;
 	    	}
-
 }
-void algorithms::compute_1Periodic_memory   (models::Dataflow* const  dataflow, parameters_list_t params) {
+
+
+void algorithms::compute_1Periodic_memory (models::Dataflow* const dataflow, parameters_list_t params) {
     std::map<Vertex,EXEC_COUNT> kvector;
     {ForEachVertex(dataflow,t) {
         VERBOSE_ASSERT(dataflow->getPhasesQuantity(t) == 1,"This graph is not an SDF.");
@@ -390,7 +379,7 @@ void algorithms::compute_NPeriodic_memory   (models::Dataflow* const  dataflow, 
     KPeriodic_memory(dataflow,kvector,params);
 }
 
-void algorithms::compute_KPeriodic_memory   (models::Dataflow* const  dataflow, parameters_list_t params) {
+void algorithms::compute_KPeriodic_memory (models::Dataflow* const dataflow, parameters_list_t params) {
     std::map<Vertex,EXEC_COUNT> kvector = get_Kvector(dataflow);
 
     KPeriodic_memory(dataflow,kvector,params);
@@ -398,7 +387,6 @@ void algorithms::compute_KPeriodic_memory   (models::Dataflow* const  dataflow, 
 
 
 void algorithms::KPeriodic_memory   (models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT>& kvector, parameters_list_t params) {
-
 
     commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
 
@@ -437,10 +425,6 @@ void algorithms::KPeriodic_memory   (models::Dataflow* const  dataflow,  std::ma
             g.addColumn("s_" + commons::toString<EXEC_COUNT>(k) + "_" + name,commons::KIND_CONTINUE,commons::bound_s(commons::LOW_BOUND,0),0);
         }
     }}
-
-
-
-
 
 
     // Constraints
@@ -558,8 +542,6 @@ void algorithms::KPeriodic_memory   (models::Dataflow* const  dataflow,  std::ma
         }
 
     }}
-
-
 
 
     // LoopBack
@@ -704,6 +686,5 @@ void algorithms::KPeriodic_memory   (models::Dataflow* const  dataflow,  std::ma
 
     VERBOSE_INFO("Done");
     return;
-
 
 }
