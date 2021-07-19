@@ -267,3 +267,88 @@ std::string models::Scheduling::asASCII (int line_size) {
 
 }
 
+bool models::Scheduling::check_valid_schedule (){
+
+	// Step 0: Setting up symbolic execution
+
+	const models::Dataflow* g = this->getDataflow();
+	
+	std::vector<EXEC_COUNT> buffer_load (g->getMaxEdgeId());
+	{ForEachEdge(g,c) {
+		buffer_load[g->getEdgeId(c)] = g->getPreload(c);
+	}}
+
+	EXEC_COUNT total = 0 ;
+	std::vector<std::pair<EXEC_COUNT, EXEC_COUNT>>  task_execution (g->getMaxVertexId());
+	// First element for initialization stage phase tracker, second element for Ni value
+	{ForEachVertex(g,t) {
+		EXEC_COUNT Ni =  g->getNi(t) ;
+		task_execution[g->getVertexId(t)].first = 0;
+		task_execution[g->getVertexId(t)].second = Ni;
+		total += Ni ;
+	}}
+
+
+	scheduling_t s = this->getTaskSchedule();
+
+	// Step 1: Initialization Phase (keep going until first initialization phase ends)
+	
+	bool init_over = false;
+	while(!init_over){
+
+		// terminating condition
+		for (auto val : s){
+			if (val.second.initial_starts.empty()){
+				init_over = true;
+				continue;
+			}
+		}
+
+		// Finding next task in schedule (this feels like bad code)
+		std::tuple<ARRAY_INDEX, task_schedule_t, int> next_task;
+		std::get<2>(next_task) = INT_MAX;
+		for (auto val : s){
+			if (val.second.initial_starts[0] < std::get<2>(next_task)){
+				std::get<0>(next_task) = val.first;
+				std::get<1>(next_task) = val.second;
+				std::get<2>(next_task) = val.second.initial_starts[0];
+			}
+		}
+
+		// Simulating task run
+		
+		ARRAY_INDEX next_task_id = std::get<0>(next_task);
+		Vertex next_task_v = g->getVertexById(next_task_id);
+		// std::vector<TIME_UNIT> next_task_durations = g->getVertexPhaseDuration(next_task_v);
+		EXEC_COUNT next_task_phase = task_execution[next_task_id].first;
+		// TIME_UNIT next_task_phase_duration = next_task_durations[next_task_phase];
+		// int execution_time = std::get<2>(next_task) + next_task_phase_duration;
+		
+		// Should not need to consider execution time, as simultaneous tasks are locally independent
+
+		task_execution[next_task_id].first = (next_task_phase + 1) % g->getPhasesQuantity(next_task_v);
+		
+		{ForInputEdges(g,next_task_id,inE)	{
+			TOKEN_UNIT reqCount = g->getEdgeOut(inE); // How is this token unit without phase?
+			TOKEN_UNIT inCount  = buffer_load[g->getEdgeId(inE)];
+			buffer_load[g->getEdgeId(inE)] = inCount - reqCount;
+			if (!(buffer_load[g->getEdgeId(inE)] >= 0)) {
+				return false;
+			}
+		}}
+
+		{ForOutputEdges(g,next_task_id,inE)	{
+			TOKEN_UNIT reqCount = g->getEdgeIn(inE); // How is this token unit without phase?
+			TOKEN_UNIT inCount  = buffer_load[g->getEdgeId(inE)];
+			buffer_load[g->getEdgeId(inE)] = inCount + reqCount;
+		}}
+
+		// Popping task from schedule
+
+		s[next_task_id].initial_starts.erase(s[next_task_id].initial_starts.begin());
+
+	}
+
+
+}
+

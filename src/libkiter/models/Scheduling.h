@@ -93,9 +93,9 @@ public :
 	std::string asASCII (int line_size) ;
 	std::string asASCIINew (int line_size) ;
 	std::string asASCIINewNew (int line_size) ;
+	bool check_valid_schedule () ;
 
 };
 }
-
 
 #endif /* SRC_LIBKITER_ALGORITHMS_SCHEDULING_SCHEDULING_H_ */
