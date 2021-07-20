@@ -289,33 +289,35 @@ bool models::Scheduling::check_valid_schedule (){
 	}}
 
 
-	scheduling_t s = this->getTaskSchedule();
-
-	// Step 1: Initialization Phase (keep going until first initialization phase ends)
+	scheduling_t s = this->getTaskSchedule(); // This should make a copy of schedule
 	
-	bool init_over = false;
-	while(!init_over){
-
-		// terminating condition
-		for (auto val : s){
-			if (val.second.initial_starts.empty()){
-				init_over = true;
-				continue;
-			}
-		}
+	while(total > 0){
 
 		// Finding next task in schedule (this feels like bad code)
-		std::tuple<ARRAY_INDEX, task_schedule_t, int> next_task;
+		std::tuple<ARRAY_INDEX, task_schedule_t, TIME_UNIT> next_task;
 		std::get<2>(next_task) = INT_MAX;
 		for (auto val : s){
-			if (val.second.initial_starts[0] < std::get<2>(next_task)){
-				std::get<0>(next_task) = val.first;
-				std::get<1>(next_task) = val.second;
-				std::get<2>(next_task) = val.second.initial_starts[0];
+
+			if(!(val.second.initial_starts.empty())){
+
+				if (val.second.initial_starts[0] < std::get<2>(next_task)){
+					std::get<0>(next_task) = val.first;
+					std::get<1>(next_task) = val.second;
+					std::get<2>(next_task) = val.second.initial_starts[0];
+				}
+
+			} else {
+
+				if (val.second.periodic_starts.second[0] < std::get<2>(next_task)){
+					std::get<0>(next_task) = val.first;
+					std::get<1>(next_task) = val.second;
+					std::get<2>(next_task) = val.second.periodic_starts.second[0];
+				}
 			}
 		}
 
-		// Simulating task run
+
+		// Simulating task execution
 		
 		ARRAY_INDEX next_task_id = std::get<0>(next_task);
 		Vertex next_task_v = g->getVertexById(next_task_id);
@@ -323,32 +325,47 @@ bool models::Scheduling::check_valid_schedule (){
 		EXEC_COUNT next_task_phase = task_execution[next_task_id].first;
 		// TIME_UNIT next_task_phase_duration = next_task_durations[next_task_phase];
 		// int execution_time = std::get<2>(next_task) + next_task_phase_duration;
-		
-		// Should not need to consider execution time, as simultaneous tasks are locally independent
 
-		task_execution[next_task_id].first = (next_task_phase + 1) % g->getPhasesQuantity(next_task_v);
+		// note; Should not need to consider execution time, as simultaneous tasks are locally independent
 		
 		{ForInputEdges(g,next_task_id,inE)	{
-			TOKEN_UNIT reqCount = g->getEdgeOut(inE); // How is this token unit without phase?
+			TOKEN_UNIT reqCount = (g->getEdgeOutVector(inE))[next_task_phase];
 			TOKEN_UNIT inCount  = buffer_load[g->getEdgeId(inE)];
 			buffer_load[g->getEdgeId(inE)] = inCount - reqCount;
 			if (!(buffer_load[g->getEdgeId(inE)] >= 0)) {
 				return false;
+				// Should I check if execution time of input < execution of output + duration?
 			}
 		}}
 
 		{ForOutputEdges(g,next_task_id,inE)	{
-			TOKEN_UNIT reqCount = g->getEdgeIn(inE); // How is this token unit without phase?
+			TOKEN_UNIT reqCount = (g->getEdgeInVector(inE))[next_task_phase];
 			TOKEN_UNIT inCount  = buffer_load[g->getEdgeId(inE)];
 			buffer_load[g->getEdgeId(inE)] = inCount + reqCount;
 		}}
 
-		// Popping task from schedule
 
-		s[next_task_id].initial_starts.erase(s[next_task_id].initial_starts.begin());
+		// Adjusting current phase iteration of executed task
+		(task_execution[next_task_id]).first = (next_task_phase + 1) % g->getPhasesQuantity(next_task_v);
+
+		// Popping execution from schedule 
+
+		if (!(s[next_task_id].initial_starts.empty())){
+			s[next_task_id].initial_starts.erase(s[next_task_id].initial_starts.begin());
+		} else {
+			// Appending periodic total
+			total -= 1;
+			EXEC_COUNT periodic_executions_left = (task_execution[next_task_id]).second;
+			(task_execution[next_task_id]).second = periodic_executions_left - 1;
+
+			// Adding next periodic execution and removing the one that was just executed 
+			auto task_period = s[next_task_id].periodic_starts.first;
+			s[next_task_id].periodic_starts.second.push_back(std::get<2>(next_task) + task_period);
+			s[next_task_id].periodic_starts.second.erase(s[next_task_id].periodic_starts.second.begin());
+		}
+		
 
 	}
-
 
 }
 
