@@ -62,22 +62,22 @@ SET(LIBKITER_FLAGS "-Wconversion -Wfloat-equal  ${CMAKE_CXX_FLAGS_DEBUG} ")
 #          ######### API         ##########
 
 ADD_LIBRARY			   (kiter_commons SHARED  ${commons_sources})
-TARGET_LINK_LIBRARIES              (kiter_commons PUBLIC  ${LIBXML2_LIBRARIES})
+TARGET_LINK_LIBRARIES  (kiter_commons PUBLIC  ${LIBXML2_LIBRARIES})
 
 ADD_LIBRARY			   (kiter_models SHARED   ${models_sources})
-TARGET_LINK_LIBRARIES              (kiter_models PUBLIC   kiter_commons )
+TARGET_LINK_LIBRARIES  (kiter_models PUBLIC   kiter_commons )
 
 ADD_LIBRARY			   (kiter_printers   SHARED  ${printers_sources})
 TARGET_LINK_LIBRARIES  (kiter_printers   PUBLIC kiter_commons kiter_models)
 
-ADD_LIBRARY		(kiter_lp SHARED  ${lp_sources})
-TARGET_LINK_LIBRARIES   (kiter_lp PUBLIC   kiter_commons )
+ADD_LIBRARY		        (kiter_lp SHARED  ${lp_sources})
+TARGET_LINK_LIBRARIES   (kiter_lp PUBLIC  kiter_commons)
 
 
 if(GLPK_FOUND)
     message(STATUS "GLPK FOUND")
     target_include_directories(kiter_lp PRIVATE ${GLPK_INCLUDE_DIR})
-    TARGET_LINK_LIBRARIES   (kiter_lp  PUBLIC   kiter_commons     ${GLPK_LIBRARIES})
+    TARGET_LINK_LIBRARIES     (kiter_lp  PUBLIC ${GLPK_LIBRARIES})
 endif(GLPK_FOUND)
 
 
