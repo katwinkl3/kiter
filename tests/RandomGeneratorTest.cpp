@@ -11,7 +11,7 @@
 #include <models/Dataflow.h>
 #include <algorithms/symbolic_execution.h>
 #include <algorithms/schedulings.h>
-#include <generators/RandomGenerator.h>
+#include "helpers/random_generator.h" //
 #include <chrono>
 
 #define MAX_ITER 4000

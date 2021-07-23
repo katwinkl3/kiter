@@ -326,6 +326,10 @@ bool models::Scheduling::check_valid_schedule (){
 					while (val.second.initial_starts[i] <= next_task.exec_time){
 						i++;
 					}
+				} else {
+					while (val.second.initial_starts[i] < next_task.exec_time){
+						i++;
+					}
 				}
 
 				if (val.second.initial_starts[i] < exec_time){
@@ -339,6 +343,10 @@ bool models::Scheduling::check_valid_schedule (){
 				EXEC_COUNT i = 0;
 				if (val.first == next_task.id){
 					while (val.second.periodic_starts.second[i] <= next_task.exec_time){
+						i++;
+					} 
+				} else {
+					while (val.second.periodic_starts.second[i] < next_task.exec_time){
 						i++;
 					}
 				}
@@ -362,17 +370,18 @@ bool models::Scheduling::check_valid_schedule (){
 		for (auto val : s){
 
 			ARRAY_INDEX id = val.first;
+			TIME_UNIT phase_time = (task_log[id].phase_durations)[task_log[id].cur_phase];
+			TIME_UNIT task_finish_time;
 
 			if (val.second.initial_starts.empty()){
-
-				TIME_UNIT phase_time = (task_log[id].phase_durations)[task_log[id].cur_phase];
 				TIME_UNIT task_finish_time = val.second.initial_starts[0] + phase_time;
-				// should only be 1 execution per task at most.
+			} else {
+				TIME_UNIT task_finish_time = val.second.periodic_starts.second[0] + phase_time;
+			}
 
-				if (task_finish_time <= next_task.exec_time){
+			if (task_finish_time <= next_task.exec_time){
 					out_tasks.push_back(id);
 				}
-			}
 
 		}
 
