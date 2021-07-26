@@ -261,6 +261,7 @@ models::Scheduling algorithms::scheduling::CSDF_KPeriodicScheduling    (const mo
     VERBOSE_INFO("K-periodic schedule - total_ki=" << sumKi << " total_ni=" << sumNi );
 
     TIME_UNIT res = result.throughput;
+    std::cout << res << std::endl;
     VERBOSE_INFO( "Maximum throughput is "  << std::setw( 11 ) << std::setprecision( 9 ) <<  res );
     VERBOSE_INFO( "Maximum period     is " << std::fixed << std::setw( 11 ) << std::setprecision( 6 ) << 1.0/res   );
 

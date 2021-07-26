@@ -132,6 +132,7 @@ TIME_UNIT State::advanceTimeWithMod() {
     return 0; 
   }
   if (timeElapsed == LONG_MAX) {
+    this->timeElapsed += 1;
     return 1; // potentially no actors fired due to tdma slot mismatching the current time slot (counter to prevent non-termination?)
   }
   // advance time for all actors

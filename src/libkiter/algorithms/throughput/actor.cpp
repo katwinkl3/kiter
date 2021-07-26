@@ -130,20 +130,6 @@ bool Actor::isReadyForExec(State s) {
   return isExecutable;
 }
 
-// Outputs condition for whether actor can 0: execute 1: wait for another slot 2: do nothing
-// int Actor::isReadyForExecWithMod(State s) {
-//   bool lack_tokens = false;
-//   for (auto const &e : this->consPhaseCount) {
-//     if (this->isExecuting) {
-//       return 2;
-//     }
-//     if (s.getTokens(e.first) < this->getExecRate(e.first)){
-//       lack_tokens = true;
-//     }
-//   }
-//   return (int) lack_tokens;
-// }
-
 // Given current state of graph, returns whether actor is ready to end execution or not
 bool Actor::isReadyToEndExec(State s) {
   bool isEndable = true;
@@ -167,56 +153,6 @@ void Actor::execStart(models::Dataflow* const dataflow, State &s) {
   this->numExecs++;
   this->isExecuting = true;
 }
-
-// Execute and store record for tokens to be produced 
-// void Actor::execStartWithMod(models::Dataflow* const dataflow, State &s, std::map<TIME_UNIT, std::map<ARRAY_INDEX, std::pair<long, bool>>> *buffer, 
-// TIME_UNIT step, long slots, std::map<ARRAY_INDEX, long> condition) {
-//   dataflow->reset_computation();
-//   std::pair<TIME_UNIT, PHASE_INDEX> newExec(dataflow->getVertexDuration(this->actor,
-//                                                                       this->getPhase()),
-//                                           this->getPhase());
-//   {ForInputEdges(dataflow, this->actor, e) {
-//     dataflow->setPreload(e, dataflow->getPreload(e) - this->getExecRate(e));
-//     TIME_UNIT end_t = step+newExec.first; //without considering respective slot
-//     TIME_UNIT new_t;
-//     long end_t_mod = (int) end_t % slots;
-//     long correct_slot = condition[dataflow->getEdgeId(e)];
-//     if (end_t_mod <= correct_slot){
-//       new_t = end_t + (correct_slot - end_t_mod);
-//     } else{
-//       new_t = end_t + slots - (end_t_mod - correct_slot);
-//     }
-//     if (!(*buffer)[new_t].count(dataflow->getEdgeId(e))){ // prepare event where tokens=0 (to be filled in later) and actor execution=false
-//       (*buffer)[new_t][dataflow->getEdgeId(e)] = {0, false};
-//     }
-//   }}
-//   s.addExecution(this->actor, newExec);
-//   this->numExecs++;
-//   this->isExecuting = true;
-// }
-
-// Only stores record for to-be executed actors at their respective slots
-// void Actor::execNextStartWithMod(models::Dataflow* const dataflow, State &s, std::map<TIME_UNIT, std::map<ARRAY_INDEX, std::pair<long, bool>>> *buffer, 
-// TIME_UNIT step, long slots, std::map<ARRAY_INDEX, long> condition) {
-//   std::pair<TIME_UNIT, PHASE_INDEX> newExec(dataflow->getVertexDuration(this->actor,
-//                                                                       this->getPhase()),
-//                                           this->getPhase());
-//   {ForInputEdges(dataflow, this->actor, e) {
-//     TIME_UNIT t_mod = (int) step % slots;
-//     long correct_slot = condition[dataflow->getEdgeId(e)];
-//     TIME_UNIT next_t;
-//     if (t_mod <= correct_slot){
-//        next_t = step + (correct_slot - t_mod);
-//     } else{
-//       next_t = step + slots - (t_mod - correct_slot);
-//     }
-//     (*buffer)[next_t][dataflow->getEdgeId(e)].first += 0; // do not affect the token val that will be released at next_t
-//     (*buffer)[next_t][dataflow->getEdgeId(e)].second = true; // add execution event at slot
-//   s.addExecution(this->actor, newExec);
-//   this->numExecs++;
-//   this->isExecuting = true;
-//   }}
-// }
 
 // End actor's execution, producing tokens into output channels
 void Actor::execEnd(models::Dataflow* const dataflow, State &s) {
@@ -248,7 +184,22 @@ TIME_UNIT step, long slots, std::map<ARRAY_INDEX, long> condition) {
       } else{
         end_time = step + slots - (end_t_mod - correct_slot);
       }
-      // (*buffer)[step][dataflow->getEdgeId(e)].first += this->getExecRate(e, currentPhase);
+      end_time += dataflow->getRoute(e).size();
+      // TIME_UNIT prev_time = step - dataflow->getVertexDuration(this->actor, this->getPhase());
+      // TIME_UNIT time_past = 0;
+      // long prev_t_mod = (int) prev_time % slots;
+      // for (auto & p : condition[dataflow->getEdgeId(e)]){
+      //   if (p < prev_t_mod){ // next mod cycle : time + remaining
+      //     time_past += (slots - prev_t_mod + p);
+      //   }
+      //   prev_t_mod = p;
+      // }
+      // time_past += (prev_t_mod);
+      // if (time_past > dataflow->getVertexDuration(this->actor, this->getPhase())){
+      //   end_time = prev_time + time_past;
+      // } else {
+      //   end_time = step;
+      // }
       (*buffer).push_back({end_time, {dataflow->getEdgeId(e), this->getExecRate(e, currentPhase)}});
       /// buffer[dtep].puhback(pair<>(edgeid,execrate))
     }}

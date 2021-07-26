@@ -47,7 +47,7 @@ std::string models::Scheduling::asText () {
 					<< std::endl;
 		}
 
-		returnStream << printers::Scheduling2Tikz(*this);
+		// returnStream << printers::Scheduling2Tikz(*this);
 
 		return returnStream.str();
 
