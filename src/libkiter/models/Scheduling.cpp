@@ -306,15 +306,31 @@ bool models::Scheduling::check_valid_schedule (){
 
 	scheduling_t s = this->getTaskSchedule();
 
+	// defining and initializing the first "next_task"
 	task_track next_task;
+	auto first_task = s.begin();
+	next_task.id = first_task->first;
+	next_task.schedule = first_task->second;
+	next_task.exec_time = first_task->second.initial_starts[0];
+
+
+
+	int iter = 0;
+	TIME_UNIT max_time = std::numeric_limits<TIME_UNIT>::max();
 	
 	while(total > 0){
 
+		//
+		VERBOSE_INFO("######## LOOP ITERATION " << iter << " ###########")
+		iter++;
+		//
+
 		// Finding next task in schedule
 		
-		TIME_UNIT exec_time = std::numeric_limits<TIME_UNIT>::max();
-		ARRAY_INDEX task_id;
-		task_schedule_t task_schedule;
+		TIME_UNIT* exec_time =& max_time;
+
+		ARRAY_INDEX* task_id;
+		task_schedule_t* task_schedule;
 
 		for (auto val : s){
 
@@ -332,10 +348,15 @@ bool models::Scheduling::check_valid_schedule (){
 					}
 				}
 
-				if (val.second.initial_starts[i] < exec_time){
-					task_id = val.first;
-					task_schedule = val.second;
-					exec_time = val.second.initial_starts[i];
+				if (val.second.initial_starts[i] < *exec_time){
+					ARRAY_INDEX task_id_tmp = val.first;
+					task_id =& task_id_tmp;
+
+					task_schedule_t task_schedule_tmp = val.second;
+					task_schedule =& val.second;
+					
+					TIME_UNIT exec_time_tmp = val.second.initial_starts[i];
+					exec_time =& exec_time_tmp;
 				}
 
 			} else {
@@ -351,17 +372,27 @@ bool models::Scheduling::check_valid_schedule (){
 					}
 				}
 
-				if (val.second.periodic_starts.second[i] < exec_time){
-					task_id = val.first;
-					task_schedule = val.second;
-					exec_time = val.second.periodic_starts.second[i];
+				if (val.second.periodic_starts.second[i] < *exec_time){
+					ARRAY_INDEX task_id_tmp = val.first;
+					task_id =& task_id_tmp;
+
+					task_schedule_t task_schedule_tmp = val.second;
+					task_schedule =& val.second;
+
+					TIME_UNIT exec_time_tmp = val.second.periodic_starts.second[i];
+					exec_time =& exec_time_tmp;
 				}
 			}
 		}
 
-		next_task.exec_time = exec_time;
-		next_task.id = task_id;
-		next_task.schedule = task_schedule;
+		next_task.exec_time = *exec_time;
+		next_task.id = *task_id;
+		next_task.schedule = *task_schedule;
+
+		//
+		VERBOSE_INFO("Next Task ID: " << next_task.id << " | Next Task Phase: " << task_log[next_task.id].cur_phase);
+		VERBOSE_INFO("Next task EXEC TIME: " << next_task.exec_time);
+		//
 
 		// Finding all tasks that completed execution before next_task consumes
 
@@ -371,15 +402,20 @@ bool models::Scheduling::check_valid_schedule (){
 
 			ARRAY_INDEX id = val.first;
 			TIME_UNIT phase_time = (task_log[id].phase_durations)[task_log[id].cur_phase];
-			TIME_UNIT task_finish_time;
+			TIME_UNIT* task_finish_time;
 
 			if (val.second.initial_starts.empty()){
-				TIME_UNIT task_finish_time = val.second.initial_starts[0] + phase_time;
+				TIME_UNIT q = val.second.initial_starts[0] + phase_time;
+				task_finish_time =& q;
 			} else {
-				TIME_UNIT task_finish_time = val.second.periodic_starts.second[0] + phase_time;
+				TIME_UNIT p = val.second.periodic_starts.second[0] + phase_time;
+				task_finish_time =& p;
 			}
 
-			if (task_finish_time <= next_task.exec_time){
+			if (*task_finish_time <= next_task.exec_time){ // getting unused variable task_finish_time warning?
+					//
+					VERBOSE_INFO("Task " << id << " completes execution at time " << task_finish_time )
+					//
 					out_tasks.push_back(id);
 				}
 
@@ -401,6 +437,9 @@ bool models::Scheduling::check_valid_schedule (){
 			TOKEN_UNIT reqCount = (g->getEdgeOutVector(inE))[task_log[next_task.id].cur_phase];
 			TOKEN_UNIT inCount  = buffer_load[g->getEdgeId(inE)];
 			buffer_load[g->getEdgeId(inE)] = inCount - reqCount;
+			//
+			VERBOSE_INFO("Buffer " << g->getEdgeId(inE) << " has " << inCount - reqCount << "tokens");
+			//
 			if (!(buffer_load[g->getEdgeId(inE)] >= 0)) {
 				return false;
 			}

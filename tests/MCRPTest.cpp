@@ -57,20 +57,20 @@ long MCRP_performance_tester (models::Dataflow* dataflow){
 
 BOOST_AUTO_TEST_CASE( generate_event_graph__performance_test )
 {
-	for (int i = MAX_ITER/10; i <= MAX_ITER; i += MAX_ITER/10) {
-		int buf_num = std::rand() % (i/2) + i; 
-		models::Dataflow*  g = generate_random_graph(i, buf_num,  MAX_PHASE_COUNT, i, i);
-		std::cout << event_graph_performance_tester(g);
-	};
+	// for (int i = MAX_ITER/10; i <= MAX_ITER; i += MAX_ITER/10) {
+	// 	int buf_num = std::rand() % (i/2) + i; 
+	// 	models::Dataflow*  g = generate_random_graph(i, buf_num,  MAX_PHASE_COUNT, i, i);
+	// 	std::cout << event_graph_performance_tester(g);
+	// };
 }
 
 BOOST_AUTO_TEST_CASE( MCRP_performance_test )
 {
-	for (int i = MAX_ITER/10; i <= MAX_ITER; i += MAX_ITER/10) {
-		int buf_num = std::rand() % (i/2) + i; 
-		models::Dataflow*  g = generate_random_graph(i, buf_num,  MAX_PHASE_COUNT, i, i);
-		std::cout << MCRP_performance_tester(g);
-	};
+// 	for (int i = MAX_ITER/10; i <= MAX_ITER; i += MAX_ITER/10) {
+// 		int buf_num = std::rand() % (i/2) + i; 
+// 		models::Dataflow*  g = generate_random_graph(i, buf_num,  MAX_PHASE_COUNT, i, i);
+// 		std::cout << MCRP_performance_tester(g);
+// 	};
 }
 
 BOOST_AUTO_TEST_SUITE_END()

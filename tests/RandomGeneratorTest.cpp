@@ -14,7 +14,7 @@
 #include "helpers/random_generator.h" //
 #include <chrono>
 
-#define MAX_ITER 4000
+#define MAX_ITER 100
 #define MAX_PHASE_COUNT 10
 
 static void verify_dataflow (models::Dataflow * dataflow, RandomGeneratorConfiguration config) {
@@ -53,51 +53,51 @@ BOOST_AUTO_TEST_CASE( generator_test_two_HSDF_tasks ) {
 	performance_random_dataflow (2, 1, 1, 1, 1);
 }
 
-BOOST_AUTO_TEST_CASE( dataflow_generator_test_HSDF ) {
+// BOOST_AUTO_TEST_CASE( dataflow_generator_test_HSDF ) {
 
-	std::cout << "" << "actor number"
-			<< ", " << "buffer number"
-			<< ", " << "generation time";
+// 	std::cout << "" << "actor number"
+// 			<< ", " << "buffer number"
+// 			<< ", " << "generation time";
 
-	for (int i = MAX_ITER/10; i <= MAX_ITER; i += MAX_ITER/10) {
-		int buf_num = std::rand() % (i/2) + i; 
+// 	for (int i = MAX_ITER/10; i <= MAX_ITER; i += MAX_ITER/10) {
+// 		int buf_num = std::rand() % (i/2) + i; 
 
-		std::cout << "" << i
-			<< ", " << buf_num
-			<< ", " << performance_random_dataflow(i, buf_num, 1, 1, 1);
-	}
-}
+// 		std::cout << "" << i
+// 			<< ", " << buf_num
+// 			<< ", " << performance_random_dataflow(i, buf_num, 1, 1, 1);
+// 	}
+// }
 
-BOOST_AUTO_TEST_CASE( dataflow_generator_test_SDF ) {
+// BOOST_AUTO_TEST_CASE( dataflow_generator_test_SDF ) {
 
-	std::cout << "" << "actor number"
-			<< ", " << "buffer number"
-			<< ", " << "generation time";
+// 	std::cout << "" << "actor number"
+// 			<< ", " << "buffer number"
+// 			<< ", " << "generation time";
 
-	for (int i = MAX_ITER/10; i <= MAX_ITER; i += MAX_ITER/10) {
-		int buf_num = std::rand() % (i/2) + i; 
+// 	for (int i = MAX_ITER/10; i <= MAX_ITER; i += MAX_ITER/10) {
+// 		int buf_num = std::rand() % (i/2) + i; 
 
-		std::cout << "" << i
-			<< ", " << buf_num
-			<< ", " << performance_random_dataflow(i, buf_num, 1, i, i);
-	}
-}
+// 		std::cout << "" << i
+// 			<< ", " << buf_num
+// 			<< ", " << performance_random_dataflow(i, buf_num, 1, i, i);
+// 	}
+// }
 
 
-BOOST_AUTO_TEST_CASE( dataflow_generator_test_CSDF ) {
+// BOOST_AUTO_TEST_CASE( dataflow_generator_test_CSDF ) {
 
-	std::cout << "" << "actor number"
-			<< ", " << "buffer number"
-			<< ", " << "generation time";
+// 	std::cout << "" << "actor number"
+// 			<< ", " << "buffer number"
+// 			<< ", " << "generation time";
 
-	for (int i = MAX_ITER/10; i <= MAX_ITER; i += MAX_ITER/10) {
-		int buf_num = std::rand() % (i/2) + i; 
+// 	for (int i = MAX_ITER/10; i <= MAX_ITER; i += MAX_ITER/10) {
+// 		int buf_num = std::rand() % (i/2) + i; 
 
-		std::cout << "" << i
-			<< ", " << buf_num
-			<< ", " << performance_random_dataflow(i, buf_num, MAX_PHASE_COUNT, i, i);
-	}
-}
+// 		std::cout << "" << i
+// 			<< ", " << buf_num
+// 			<< ", " << performance_random_dataflow(i, buf_num, MAX_PHASE_COUNT, i, i);
+// 	}
+// }
 
 BOOST_AUTO_TEST_SUITE_END()
 
