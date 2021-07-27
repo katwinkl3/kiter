@@ -30,6 +30,10 @@ public:
 	void set (ARRAY_INDEX i, task_schedule_t ts) {
 		_data[i] = ts;
 	}
+
+	ARRAY_INDEX size () {
+		return _data.size();
+	}
 	//task_schedule_t operator [](ARRAY_INDEX i) const {return _data[i];}
 	task_schedule_t& operator [](ARRAY_INDEX i)  {return _data[i];}
 

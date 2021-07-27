@@ -56,13 +56,24 @@ BOOST_AUTO_TEST_CASE( small_graph_test_valid_schedule)
 		total += Ni;
 	}}
 
-    VERBOSE_INFO("STEP 0 COMPLETE")
+    VERBOSE_INFO("STEP 0 COMPLETE");
 
 	// Step 1: Symbolic execution
 
 	scheduling_t s = sched.getTaskSchedule();
 
-    VERBOSE_INFO(s[0].initial_starts.size())
+    VERBOSE_INFO("Size of s is" << s.size());
+
+    for (auto pattern : s) {
+    	VERBOSE_INFO(" - Key: " << commons::toString(pattern.first));
+    	VERBOSE_INFO(" - initial_starts: " << commons::toString(pattern.second.initial_starts));
+    	//VERBOSE_INFO(" - periodic_starts:" << pattern.periodic_starts.first << "," << pattern.periodic_starts.second);
+    }
+
+
+    VERBOSE_INFO("END OF PRINTING");
+
+    VERBOSE_INFO(s[0].initial_starts.size());
 
 	// defining and initializing the first "next_task"
 	task_track next_task;
@@ -71,7 +82,7 @@ BOOST_AUTO_TEST_CASE( small_graph_test_valid_schedule)
 	next_task.schedule = first_task->second;
 	next_task.exec_time = first_task->second.initial_starts[0];
 
-    VERBOSE_INFO(next_task.id << " *** " << next_task.exec_time)
+    VERBOSE_INFO(next_task.id << " *** " << next_task.exec_time);
 
 
 

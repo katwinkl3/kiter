@@ -12,7 +12,6 @@ void models::Scheduling::verbose_print() {
 
 	for (auto  key : this->_tasks_schedule) {
 			auto task_vtx = _dataflow->getVertexById(key.first);
-			key.second.periodic_starts.second.pop_back(); //TODO: resolve this later aiya
 
 			std::cout << "Task " <<  _dataflow->getVertexName(task_vtx)
 					<<  " : duration=[ " << commons::toString(_dataflow->getVertexPhaseDuration(task_vtx)) <<  "]"
