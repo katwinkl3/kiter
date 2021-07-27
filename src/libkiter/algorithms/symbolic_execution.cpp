@@ -8,7 +8,7 @@
 #include <models/Dataflow.h>
 #include <models/EventGraph.h>
 #include <algorithms/symbolic_execution.h>
-#include <algorithms/nperiodic.h>
+
 
 
 using namespace models;
