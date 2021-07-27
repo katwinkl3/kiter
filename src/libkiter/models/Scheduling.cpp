@@ -7,7 +7,6 @@
 
 #include "Scheduling.h"
 #include <models/Dataflow.h>
-#include <printers/stdout.h>
 
 void models::Scheduling::verbose_print() {
 
@@ -47,7 +46,6 @@ std::string models::Scheduling::asText () {
 					<< std::endl;
 		}
 
-		returnStream << printers::Scheduling2Tikz(*this);
 
 		return returnStream.str();
 
