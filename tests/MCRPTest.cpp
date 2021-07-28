@@ -15,8 +15,8 @@
 #include <chrono>
 
 
-#define MAX_ITER 100
-#define MAX_PHASE_COUNT 10
+#define MAX_ITER 30
+#define MAX_PHASE_COUNT 5
 
 /* how to define bound? */
 

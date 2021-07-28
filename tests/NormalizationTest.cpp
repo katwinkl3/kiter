@@ -13,8 +13,8 @@
 #include <chrono>
 
 
-#define MAX_ITER 100
-#define MAX_PHASE_COUNT 10
+#define MAX_ITER 30
+#define MAX_PHASE_COUNT 5
 
 BOOST_FIXTURE_TEST_SUITE( normalization_test_suite , WITH_VERBOSE)
 
@@ -29,17 +29,17 @@ long generate_normalization_vector (models::Dataflow* dataflow){
 BOOST_AUTO_TEST_CASE( generate_normalization_vector__performance_test )
 {
 
-	// std::cout << "" << "actor number"
-	// 		<< ", " << "buffer number"
-	// 		<<", " <<  "repetition vector" << std::endl;
+	std::cout << "" << "actor number"
+			<< ", " << "buffer number"
+			<<", " <<  "repetition vector" << std::endl;
 
-	// for (int i = MAX_ITER/10; i <= MAX_ITER; i += MAX_ITER/10) {
-	// 	int buf_num = std::rand() % (i/2) + i; 
-	// 	models::Dataflow*  g = generate_random_graph(i, buf_num,  MAX_PHASE_COUNT, i, i);
-	// 	std::cout << "" << i
-	// 		<< ", " << buf_num
-	// 		<< ", " << generate_normalization_vector(g);
-	// }
+	for (int i = MAX_ITER/10; i <= MAX_ITER; i += MAX_ITER/10) {
+		int buf_num = std::rand() % (i/2) + i; 
+		models::Dataflow*  g = generate_random_graph(i, buf_num,  MAX_PHASE_COUNT, i, i);
+		std::cout << "" << i
+			<< ", " << buf_num
+			<< ", " << generate_normalization_vector(g);
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()

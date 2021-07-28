@@ -106,23 +106,23 @@ long generate_pipeline (int iter) {
 
 BOOST_FIXTURE_TEST_SUITE( performance_test_suite, WITH_VERBOSE)
 
-#define MAX_ITER 4000
+#define MAX_ITER 100
 BOOST_AUTO_TEST_CASE( generate_pipeline_test )
 {
 
-	// std::cout << "" << "iter"
-	// 		<<", " <<  "empty"
-	// 		<<", " << "with_ids"
-	// 		<<", " << "with_names"
-	// 		<<", " << "with_names_ids" << std::endl;
+	std::cout << "" << "iter"
+			<<", " <<  "empty"
+			<<", " << "with_ids"
+			<<", " << "with_names"
+			<<", " << "with_names_ids" << std::endl;
 
-	// for (int i = MAX_ITER / 10 ; i <= MAX_ITER ; i += MAX_ITER / 10) {
-	// 	std::cout << "" << i
-	// 			<<", " << generate_pipeline(i)
-	// 			<<", " << generate_pipeline_with_ids(i)
-	// 			<<", " << generate_pipeline_with_names(i)
-	// 			<<", " << generate_pipeline_with_names_ids(i) << std::endl;
-	// }
+	for (int i = MAX_ITER / 10 ; i <= MAX_ITER ; i += MAX_ITER / 10) {
+		std::cout << "" << i
+				<<", " << generate_pipeline(i)
+				<<", " << generate_pipeline_with_ids(i)
+				<<", " << generate_pipeline_with_names(i)
+				<<", " << generate_pipeline_with_names_ids(i) << std::endl;
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()

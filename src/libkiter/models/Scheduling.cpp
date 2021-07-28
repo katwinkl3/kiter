@@ -267,14 +267,14 @@ std::string models::Scheduling::asASCII (int line_size) {
 
 struct task_track {
 	ARRAY_INDEX id;
-	task_schedule_t schedule;
 	TIME_UNIT exec_time;
 };
 
-struct task_execution {
+struct task_catalog {
 	EXEC_COUNT cur_phase;
 	EXEC_COUNT task_Ni;
 	std::vector<TIME_UNIT> phase_durations;
+	std::vector<TIME_UNIT> schedule;
 };
 
 bool models::Scheduling::check_valid_schedule (){
@@ -282,147 +282,106 @@ bool models::Scheduling::check_valid_schedule (){
 	// Step 0: Setting up symbolic execution
 
 	const models::Dataflow* g = this->getDataflow();
+	scheduling_t s = this->getTaskSchedule();
 	
 	std::vector<EXEC_COUNT> buffer_load (g->getMaxEdgeId());
+
 	{ForEachEdge(g,c) {
 		buffer_load[g->getEdgeId(c)] = g->getPreload(c);
+		// ###
+		VERBOSE_INFO("EDGE ID: " << g->getEdgeId(c) << " | EDGE INIT " << buffer_load[g->getEdgeId(c)]);
+		// ###
 	}}
+
+
+	std::map<ARRAY_INDEX, task_catalog> task_log;
 
 	EXEC_COUNT total = 0 ;
-	std::vector<task_execution>  task_log (g->getMaxVertexId());
 	{ForEachVertex(g,t) {
 		ARRAY_INDEX id = g->getVertexId(t); 
-		EXEC_COUNT Ni =  g->getNi(t) ;
-		task_log[id].cur_phase = 0;
-		task_log[id].task_Ni = Ni;
-		task_log[id].phase_durations = g->getVertexPhaseDuration((g->getVertexById(id)));
+		EXEC_COUNT Ni =  g->getNi(t);
+		task_catalog t;
+		t.cur_phase = 0;
+		t.task_Ni = Ni;
+		t.phase_durations = g->getVertexPhaseDuration((g->getVertexById(id)));
 		total += Ni;
+		task_log[id] = t;
 	}}
 
+	// Creating one centralized schedule vector for each task
+
+	for (std::pair<const ARRAY_INDEX, task_schedule_t> task : s){
+
+		ARRAY_INDEX task_id = task.first;
+
+		task_log[task_id].schedule = task.second.initial_starts;
+		total += task.second.initial_starts.size(); 
+
+		for (int i = 0; i <= task_log[task_id].task_Ni; i++){
+			TIME_UNIT task_period = s[task_id].periodic_starts.first;
+			TIME_UNIT out_exec_time = s[task_id].periodic_starts.second[0];
+			task_log[task_id].schedule.push_back(out_exec_time);
+
+			s[task_id].periodic_starts.second.push_back(out_exec_time + task_period);
+			s[task_id].periodic_starts.second.erase(s[task_id].periodic_starts.second.begin());
+		}
+	}
+
+	// ###
+	for(auto task : task_log){ VERBOSE_INFO("TASK ID: " << task.first << " | Ni: " << task.second.task_Ni << " | PhaseDur: " << commons::toString(task.second.phase_durations) << " | Schedule: " << commons::toString(task.second.schedule)); }
+	// ###
+
+	
 	// Step 1: Symbolic execution
 
-	scheduling_t s = this->getTaskSchedule();
-
-	// defining and initializing the first "next_task"
 	task_track next_task;
-	auto first_task = s.begin();
-	next_task.id = first_task->first;
-	next_task.schedule = first_task->second;
-	next_task.exec_time = first_task->second.initial_starts[0];
 
-
-
-	int iter = 0;
-	TIME_UNIT max_time = std::numeric_limits<TIME_UNIT>::max();
+	// Tracking most recent next tasks of each task
+	std::vector<TIME_UNIT> task_history (g->getMaxEdgeId()); 
 	
-	while(total > 0){
-
-		//
-		VERBOSE_INFO("######## LOOP ITERATION " << iter << " ###########")
-		iter++;
-		//
-
-		// Finding next task in schedule
-		
-		TIME_UNIT* exec_time =& max_time;
-
-		ARRAY_INDEX* task_id;
-		task_schedule_t* task_schedule;
-
-		for (auto val : s){
-
-			if(!(val.second.initial_starts.empty())){
-
-				// if same task, need to find next phase to execute
-				EXEC_COUNT i = 0;
-				if (val.first == next_task.id){
-					while (val.second.initial_starts[i] <= next_task.exec_time){
-						i++;
-					}
-				} else {
-					while (val.second.initial_starts[i] < next_task.exec_time){
-						i++;
-					}
-				}
-
-				if (val.second.initial_starts[i] < *exec_time){
-					ARRAY_INDEX task_id_tmp = val.first;
-					task_id =& task_id_tmp;
-
-					task_schedule_t task_schedule_tmp = val.second;
-					task_schedule =& val.second;
-					
-					TIME_UNIT exec_time_tmp = val.second.initial_starts[i];
-					exec_time =& exec_time_tmp;
-				}
-
-			} else {
-
-				EXEC_COUNT i = 0;
-				if (val.first == next_task.id){
-					while (val.second.periodic_starts.second[i] <= next_task.exec_time){
-						i++;
-					} 
-				} else {
-					while (val.second.periodic_starts.second[i] < next_task.exec_time){
-						i++;
-					}
-				}
-
-				if (val.second.periodic_starts.second[i] < *exec_time){
-					ARRAY_INDEX task_id_tmp = val.first;
-					task_id =& task_id_tmp;
-
-					task_schedule_t task_schedule_tmp = val.second;
-					task_schedule =& val.second;
-
-					TIME_UNIT exec_time_tmp = val.second.periodic_starts.second[i];
-					exec_time =& exec_time_tmp;
-				}
-			}
+	// Initializing next task
+	for (std::pair<const ARRAY_INDEX, task_catalog> task : task_log){
+		if (task.second.schedule[0] == 0){
+			next_task.id = task.first;
+			next_task.exec_time = 0;
 		}
+	}
 
-		next_task.exec_time = *exec_time;
-		next_task.id = *task_id;
-		next_task.schedule = *task_schedule;
+	// ###
+	VERBOSE_INFO("INIT TASK ID: " << next_task.id << " | EXEC TIME: " << next_task.exec_time);
+	// ###
 
-		//
-		VERBOSE_INFO("Next Task ID: " << next_task.id << " | Next Task Phase: " << task_log[next_task.id].cur_phase);
-		VERBOSE_INFO("Next task EXEC TIME: " << next_task.exec_time);
-		//
 
-		// Finding all tasks that completed execution before next_task consumes
+	while(total > task_log.size()){ // not sure about setting task_log size here
+
+		// Finding all tasks that completed execution before next_task is consumed
 
 		std::vector<ARRAY_INDEX> out_tasks;
 
-		for (auto val : s){
-
-			ARRAY_INDEX id = val.first;
+		for (std::pair<const ARRAY_INDEX, task_catalog> task : task_log){
+			
+			ARRAY_INDEX id = task.first;
 			TIME_UNIT phase_time = (task_log[id].phase_durations)[task_log[id].cur_phase];
-			TIME_UNIT* task_finish_time;
+			TIME_UNIT finish_time = phase_time + task_log[id].schedule[0];
 
-			if (val.second.initial_starts.empty()){
-				TIME_UNIT q = val.second.initial_starts[0] + phase_time;
-				task_finish_time =& q;
-			} else {
-				TIME_UNIT p = val.second.periodic_starts.second[0] + phase_time;
-				task_finish_time =& p;
-			}
+			if (finish_time <= next_task.exec_time){
+				out_tasks.push_back(id);
 
-			if (*task_finish_time <= next_task.exec_time){ // getting unused variable task_finish_time warning?
-					//
-					VERBOSE_INFO("Task " << id << " completes execution at time " << task_finish_time )
-					//
-					out_tasks.push_back(id);
-				}
-
+				// ###
+				VERBOSE_INFO("OUT TASK ID: " << id << " | FINISH TIME: " << finish_time << " | PHASE:" << task_log[id].cur_phase);
+				// ###
+			} 
 		}
 
-		// Simulating task execution
-		
-		for (auto out_id : out_tasks){
+		// ###
+		VERBOSE_INFO("OUT TASKS: " << commons::toString(out_tasks));
+		// ###
 
-			{ForOutputEdges(g,out_id,inE){
+		// Executing symbolic executon
+
+		for (ARRAY_INDEX out_id : out_tasks){
+			Vertex out_v = g->getVertexById(out_id);
+			{ForOutputEdges(g,out_v,inE){
 				TOKEN_UNIT reqCount = (g->getEdgeInVector(inE))[task_log[out_id].cur_phase];
 				TOKEN_UNIT inCount  = buffer_load[g->getEdgeId(inE)];
 				buffer_load[g->getEdgeId(inE)] = inCount + reqCount;
@@ -430,47 +389,72 @@ bool models::Scheduling::check_valid_schedule (){
 
 		}
 
-		{ForInputEdges(g,next_task.id,inE)	{
+		Vertex in_v = g->getVertexById(next_task.id);
+		{ForInputEdges(g,in_v,inE)	{
 			TOKEN_UNIT reqCount = (g->getEdgeOutVector(inE))[task_log[next_task.id].cur_phase];
 			TOKEN_UNIT inCount  = buffer_load[g->getEdgeId(inE)];
 			buffer_load[g->getEdgeId(inE)] = inCount - reqCount;
-			//
-			VERBOSE_INFO("Buffer " << g->getEdgeId(inE) << " has " << inCount - reqCount << "tokens");
-			//
+
+			// ###
+			VERBOSE_INFO("BUFFER " << g->getEdgeId(inE) << " has " << inCount - reqCount << " TOKENS");
+			// ###
+
 			if (!(buffer_load[g->getEdgeId(inE)] >= 0)) {
 				return false;
 			}
 		}}
 
-		// Clearing executed tasks from schedule
-
-		for (auto out_id : out_tasks){
-			
-			// Adjusting current phase iteration of executed task
+		for (ARRAY_INDEX out_id : out_tasks){
 			task_log[out_id].cur_phase = (task_log[out_id].cur_phase + 1) % task_log[out_id].phase_durations.size();
+			task_log[out_id].schedule.erase(task_log[out_id].schedule.begin());
+		}
 
-			// Popping execution from schedule 
+		// ###
+		VERBOSE_INFO("TASK HISTORY: " << commons::toString(task_history));
+		// ###
+		
 
-			if (!(s[out_id].initial_starts.empty())){
-				s[out_id].initial_starts.erase(s[out_id].initial_starts.begin());
-			} else {
-				// Appending periodic total
-				total -= 1;
-				EXEC_COUNT periodic_executions_left = task_log[out_id].task_Ni;
-				task_log[out_id].task_Ni = periodic_executions_left - 1;
+		// ###
+		VERBOSE_INFO("######## LOOP ITERATIONS LEFT: " << total << " ###########");
+		// ###
 
-				// Adding next periodic execution and removing the one that was just executed 
-				TIME_UNIT task_period = s[out_id].periodic_starts.first;
-				TIME_UNIT out_exec_time = s[out_id].periodic_starts.second[0];
-				s[out_id].periodic_starts.second.push_back(out_exec_time + task_period);
-				s[out_id].periodic_starts.second.erase(s[next_task.id].periodic_starts.second.begin());
+		// Finding next task in schedule
+		task_history[next_task.id] = next_task.exec_time;
+
+		std::map<TIME_UNIT, ARRAY_INDEX> potential_next_tasks;
+
+		for (std::pair<const ARRAY_INDEX, task_catalog> task : task_log){
+		if (!(task.second.schedule.empty())){
+
+			std::size_t i = 0;
+			while(task.second.schedule[i] < next_task.exec_time || task.second.schedule[i] <= task_history[task.first]){
+				if (i + 1 == task.second.schedule.size()){ break; }
+				i++;			
 			}
 
-		}
-	
-	}
+			if (task.second.schedule[i] > task_history[task.first]){
+			potential_next_tasks[task.second.schedule[i]] = task.first;
+			}
+		}}
+
+		next_task.id = (potential_next_tasks.begin())->second;
+		next_task.exec_time = (potential_next_tasks.begin())->first;
+
+		// ###
+		for(auto task : task_log){ VERBOSE_INFO("TASK ID: " << task.first <<" | SCHEDULE " << commons::toString(task.second.schedule)); }
+		VERBOSE_INFO("BUFFER LOAD: " << commons::toString(buffer_load));
+		VERBOSE_INFO("NEXT TASK ID: " << next_task.id << " | EXEC TIME: " << next_task.exec_time);
+		// ### 
+
+		total--;
+
+	}	
 
 	return true;
 
 }
 
+
+
+
+	
