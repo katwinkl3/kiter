@@ -97,7 +97,7 @@ public :
 	std::string asASCII (int line_size) ;
 	std::string asASCIINew (int line_size) ;
 	std::string asASCIINewNew (int line_size) ;
-	bool check_valid_schedule () ;
+	bool is_valid_schedule () ;
 
 };
 }

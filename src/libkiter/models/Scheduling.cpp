@@ -7,6 +7,7 @@
 
 #include "Scheduling.h"
 #include <models/Dataflow.h>
+#include <numeric>
 
 void models::Scheduling::verbose_print() {
 
@@ -265,11 +266,6 @@ std::string models::Scheduling::asASCII (int line_size) {
 }
 
 
-struct task_track {
-	ARRAY_INDEX id;
-	TIME_UNIT exec_time;
-};
-
 struct task_catalog {
 	EXEC_COUNT cur_phase;
 	EXEC_COUNT task_Ni;
@@ -277,7 +273,7 @@ struct task_catalog {
 	std::vector<TIME_UNIT> schedule;
 };
 
-bool models::Scheduling::check_valid_schedule (){
+bool models::Scheduling::is_valid_schedule (){
 
 	// Step 0: Setting up symbolic execution
 
@@ -296,7 +292,7 @@ bool models::Scheduling::check_valid_schedule (){
 
 	std::map<ARRAY_INDEX, task_catalog> task_log;
 
-	EXEC_COUNT total = 0 ;
+	// EXEC_COUNT total = 0 ;
 	{ForEachVertex(g,t) {
 		ARRAY_INDEX id = g->getVertexId(t); 
 		EXEC_COUNT Ni =  g->getNi(t);
@@ -304,37 +300,64 @@ bool models::Scheduling::check_valid_schedule (){
 		t.cur_phase = 0;
 		t.task_Ni = Ni;
 		t.phase_durations = g->getVertexPhaseDuration((g->getVertexById(id)));
-		total += Ni;
+		// total += Ni;
 		task_log[id] = t;
 	}}
 
 	// Creating one centralized schedule vector for each task
+
+	std::vector<EXEC_COUNT> exec_left (g->getMaxEdgeId());
 
 	for (std::pair<const ARRAY_INDEX, task_schedule_t> task : s){
 
 		ARRAY_INDEX task_id = task.first;
 
 		task_log[task_id].schedule = task.second.initial_starts;
-		total += task.second.initial_starts.size(); 
+		exec_left[task_id] = task.second.initial_starts.size() + task_log[task_id].task_Ni;
 
-		for (int i = 0; i <= task_log[task_id].task_Ni; i++){
+		// total += task.second.initial_starts.size(); 
+
+		for (int i = 0; i <= task_log[task_id].task_Ni + 1; i++){
 			TIME_UNIT task_period = s[task_id].periodic_starts.first;
 			TIME_UNIT out_exec_time = s[task_id].periodic_starts.second[0];
 			task_log[task_id].schedule.push_back(out_exec_time);
-
 			s[task_id].periodic_starts.second.push_back(out_exec_time + task_period);
 			s[task_id].periodic_starts.second.erase(s[task_id].periodic_starts.second.begin());
 		}
 	}
 
-	// ###
-	for(auto task : task_log){ VERBOSE_INFO("TASK ID: " << task.first << " | Ni: " << task.second.task_Ni << " | PhaseDur: " << commons::toString(task.second.phase_durations) << " | Schedule: " << commons::toString(task.second.schedule)); }
-	// ###
+	for(auto task : task_log){ VERBOSE_INFO("TASK ID: " << task.first << " | Pre filled Schedule: " << commons::toString(task.second.schedule)); }
 
+	// Filling out the schedules
+
+	TIME_UNIT max_time = 0;
+	for (auto task : task_log){
+		if (task.second.schedule.back() > max_time){
+			max_time = task.second.schedule.back();
+		}
+	}
+	VERBOSE_INFO("MAX TIME: " << commons::toString(max_time) );
+	for (auto task : task_log){
+		ARRAY_INDEX task_id = task.first;
+		TIME_UNIT end_time = task.second.schedule.back();
+		while (end_time < max_time){
+			TIME_UNIT task_period = s[task_id].periodic_starts.first;
+			TIME_UNIT out_exec_time = s[task_id].periodic_starts.second[0];
+			task_log[task_id].schedule.push_back(out_exec_time);
+			s[task_id].periodic_starts.second.push_back(out_exec_time + task_period);
+			s[task_id].periodic_starts.second.erase(s[task_id].periodic_starts.second.begin());
+			end_time = out_exec_time;	
+		}
+	};
+
+	// ###
+	for(auto task : task_log){ VERBOSE_INFO("TASK ID: " << task.first << " | PhaseDur: " << commons::toString(task.second.phase_durations) << " | Schedule: " << commons::toString(task.second.schedule)); }
+	VERBOSE_INFO("REMAINING EXECUTIONS: " << commons::toString(exec_left));
+	// ###
 	
 	// Step 1: Symbolic execution
 
-	task_track next_task;
+	std::pair<ARRAY_INDEX, TIME_UNIT> next_task;
 
 	// Tracking most recent next tasks of each task
 	std::vector<TIME_UNIT> task_history (g->getMaxEdgeId()); 
@@ -342,17 +365,18 @@ bool models::Scheduling::check_valid_schedule (){
 	// Initializing next task
 	for (std::pair<const ARRAY_INDEX, task_catalog> task : task_log){
 		if (task.second.schedule[0] == 0){
-			next_task.id = task.first;
-			next_task.exec_time = 0;
+			next_task.first = task.first;
+			next_task.second = 0;
 		}
 	}
 
 	// ###
-	VERBOSE_INFO("INIT TASK ID: " << next_task.id << " | EXEC TIME: " << next_task.exec_time);
+	VERBOSE_INFO("INIT TASK ID: " << next_task.first << " | EXEC TIME: " << next_task.second);
 	// ###
 
+	int iter = 0;
 
-	while(total > task_log.size()){ // not sure about setting task_log size here
+	while(std::accumulate(exec_left.begin(), exec_left.end(), 0) != 0){
 
 		// Finding all tasks that completed execution before next_task is consumed
 
@@ -364,7 +388,7 @@ bool models::Scheduling::check_valid_schedule (){
 			TIME_UNIT phase_time = (task_log[id].phase_durations)[task_log[id].cur_phase];
 			TIME_UNIT finish_time = phase_time + task_log[id].schedule[0];
 
-			if (finish_time <= next_task.exec_time){
+			if (finish_time <= next_task.second){
 				out_tasks.push_back(id);
 
 				// ###
@@ -389,9 +413,9 @@ bool models::Scheduling::check_valid_schedule (){
 
 		}
 
-		Vertex in_v = g->getVertexById(next_task.id);
+		Vertex in_v = g->getVertexById(next_task.first);
 		{ForInputEdges(g,in_v,inE)	{
-			TOKEN_UNIT reqCount = (g->getEdgeOutVector(inE))[task_log[next_task.id].cur_phase];
+			TOKEN_UNIT reqCount = (g->getEdgeOutVector(inE))[task_log[next_task.first].cur_phase];
 			TOKEN_UNIT inCount  = buffer_load[g->getEdgeId(inE)];
 			buffer_load[g->getEdgeId(inE)] = inCount - reqCount;
 
@@ -407,6 +431,7 @@ bool models::Scheduling::check_valid_schedule (){
 		for (ARRAY_INDEX out_id : out_tasks){
 			task_log[out_id].cur_phase = (task_log[out_id].cur_phase + 1) % task_log[out_id].phase_durations.size();
 			task_log[out_id].schedule.erase(task_log[out_id].schedule.begin());
+			if (exec_left[out_id] > 0){ exec_left[out_id]--; }
 		}
 
 		// ###
@@ -415,11 +440,12 @@ bool models::Scheduling::check_valid_schedule (){
 		
 
 		// ###
-		VERBOSE_INFO("######## LOOP ITERATIONS LEFT: " << total << " ###########");
+		VERBOSE_INFO("######## ITERATION: " << iter << " ###########");
+		iter++;
 		// ###
 
 		// Finding next task in schedule
-		task_history[next_task.id] = next_task.exec_time;
+		task_history[next_task.first] = next_task.second;
 
 		std::map<TIME_UNIT, ARRAY_INDEX> potential_next_tasks;
 
@@ -427,7 +453,7 @@ bool models::Scheduling::check_valid_schedule (){
 		if (!(task.second.schedule.empty())){
 
 			std::size_t i = 0;
-			while(task.second.schedule[i] < next_task.exec_time || task.second.schedule[i] <= task_history[task.first]){
+			while(task.second.schedule[i] < next_task.second || task.second.schedule[i] <= task_history[task.first]){
 				if (i + 1 == task.second.schedule.size()){ break; }
 				i++;			
 			}
@@ -437,16 +463,17 @@ bool models::Scheduling::check_valid_schedule (){
 			}
 		}}
 
-		next_task.id = (potential_next_tasks.begin())->second;
-		next_task.exec_time = (potential_next_tasks.begin())->first;
+		next_task.first = (potential_next_tasks.begin())->second;
+		next_task.second = (potential_next_tasks.begin())->first;
 
 		// ###
 		for(auto task : task_log){ VERBOSE_INFO("TASK ID: " << task.first <<" | SCHEDULE " << commons::toString(task.second.schedule)); }
 		VERBOSE_INFO("BUFFER LOAD: " << commons::toString(buffer_load));
-		VERBOSE_INFO("NEXT TASK ID: " << next_task.id << " | EXEC TIME: " << next_task.exec_time);
+		VERBOSE_INFO("REMAINING EXECUTIONS: " << commons::toString(exec_left));
+		VERBOSE_INFO("NEXT TASK ID: " << next_task.first << " | EXEC TIME: " << next_task.second);
 		// ### 
 
-		total--;
+		// total--;
 
 	}	
 

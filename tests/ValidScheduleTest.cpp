@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE( small_graph_test_valid_schedule)
 
     models::Scheduling sched = algorithms::scheduling::CSDF_SPeriodicScheduling(gg);
     sched.verbose_print();
-    VERBOSE_ASSERT(sched.check_valid_schedule(), "Invalid Schedule");
+    VERBOSE_ASSERT(sched.is_valid_schedule(), "Invalid Schedule");
 
     delete gg;
 
