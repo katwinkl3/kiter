@@ -292,7 +292,6 @@ bool models::Scheduling::is_valid_schedule (){
 
 	std::map<ARRAY_INDEX, task_catalog> task_log;
 
-	// EXEC_COUNT total = 0 ;
 	{ForEachVertex(g,t) {
 		ARRAY_INDEX id = g->getVertexId(t); 
 		EXEC_COUNT Ni =  g->getNi(t);
@@ -300,7 +299,6 @@ bool models::Scheduling::is_valid_schedule (){
 		t.cur_phase = 0;
 		t.task_Ni = Ni;
 		t.phase_durations = g->getVertexPhaseDuration((g->getVertexById(id)));
-		// total += Ni;
 		task_log[id] = t;
 	}}
 
@@ -317,7 +315,7 @@ bool models::Scheduling::is_valid_schedule (){
 
 		// total += task.second.initial_starts.size(); 
 
-		for (int i = 0; i <= task_log[task_id].task_Ni + 1; i++){
+		for (int i = 0; i <= task_log[task_id].task_Ni; i++){
 			TIME_UNIT task_period = s[task_id].periodic_starts.first;
 			TIME_UNIT out_exec_time = s[task_id].periodic_starts.second[0];
 			task_log[task_id].schedule.push_back(out_exec_time);
@@ -325,8 +323,6 @@ bool models::Scheduling::is_valid_schedule (){
 			s[task_id].periodic_starts.second.erase(s[task_id].periodic_starts.second.begin());
 		}
 	}
-
-	for(auto task : task_log){ VERBOSE_INFO("TASK ID: " << task.first << " | Pre filled Schedule: " << commons::toString(task.second.schedule)); }
 
 	// Filling out the schedules
 
@@ -336,7 +332,6 @@ bool models::Scheduling::is_valid_schedule (){
 			max_time = task.second.schedule.back();
 		}
 	}
-	VERBOSE_INFO("MAX TIME: " << commons::toString(max_time) );
 	for (auto task : task_log){
 		ARRAY_INDEX task_id = task.first;
 		TIME_UNIT end_time = task.second.schedule.back();
@@ -373,8 +368,6 @@ bool models::Scheduling::is_valid_schedule (){
 	// ###
 	VERBOSE_INFO("INIT TASK ID: " << next_task.first << " | EXEC TIME: " << next_task.second);
 	// ###
-
-	int iter = 0;
 
 	while(std::accumulate(exec_left.begin(), exec_left.end(), 0) != 0){
 
@@ -418,14 +411,9 @@ bool models::Scheduling::is_valid_schedule (){
 			TOKEN_UNIT reqCount = (g->getEdgeOutVector(inE))[task_log[next_task.first].cur_phase];
 			TOKEN_UNIT inCount  = buffer_load[g->getEdgeId(inE)];
 			buffer_load[g->getEdgeId(inE)] = inCount - reqCount;
-
-			// ###
-			VERBOSE_INFO("BUFFER " << g->getEdgeId(inE) << " has " << inCount - reqCount << " TOKENS");
-			// ###
-
-			if (!(buffer_load[g->getEdgeId(inE)] >= 0)) {
-				return false;
-			}
+		
+			// Invalid Schedule Conditon - negative buffer load
+			if (buffer_load[g->getEdgeId(inE)] < 0) { return false; }
 		}}
 
 		for (ARRAY_INDEX out_id : out_tasks){
@@ -435,13 +423,11 @@ bool models::Scheduling::is_valid_schedule (){
 		}
 
 		// ###
-		VERBOSE_INFO("TASK HISTORY: " << commons::toString(task_history));
+		VERBOSE_INFO("PREVIOUS TASK EXECUTION TIMES: " << commons::toString(task_history));
 		// ###
 		
-
 		// ###
-		VERBOSE_INFO("######## ITERATION: " << iter << " ###########");
-		iter++;
+		VERBOSE_INFO("######## NEW ITERATION ###########");
 		// ###
 
 		// Finding next task in schedule
@@ -473,7 +459,9 @@ bool models::Scheduling::is_valid_schedule (){
 		VERBOSE_INFO("NEXT TASK ID: " << next_task.first << " | EXEC TIME: " << next_task.second);
 		// ### 
 
-		// total--;
+		// Invalid Schedule Condition - infeasible task execution
+		TIME_UNIT task_duration = task_log[next_task.first].phase_durations[task_log[next_task.first].cur_phase];
+		if (next_task.second < task_history[next_task.first] + task_duration){ return false; }
 
 	}	
 
