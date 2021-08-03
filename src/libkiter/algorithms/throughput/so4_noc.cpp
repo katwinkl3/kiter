@@ -18,29 +18,9 @@
 #include "../../models/Scheduling.h"
 #include "../scc.h"
 
-std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(models::Dataflow* const dataflow,
-                                                 std::pair<ARRAY_INDEX, EXEC_COUNT> &minActorInfo, scheduling_t schedule, std::string filename) {
-  VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
-  VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
-  StateList visitedStates;
-  EXEC_COUNT minRepFactor = INT_MAX; // EXEC_COUNT is of type long int, and LONG_MAX has same max value
-  ARRAY_INDEX minRepActorId;
-  TOKEN_UNIT minRepActorExecCount = 0;
-  TIME_UNIT timeStep;
-
-  int periodic_state_idx;
-  TIME_UNIT thr;
-  bool end_check = false; // temp workaround before replacing with mathematical solution
-  int actors_left = 0; // seems more efficient to use a counter check than to check through the array
-  std::map<ARRAY_INDEX, TIME_UNIT> actors_check;
-  {ForEachTask(dataflow, t){
-    ++actors_left;
-    actors_check[dataflow->getVertexId(t)] = -1;
-  }}
-
+std::tuple<std::map<ARRAY_INDEX, long>, long> generateConditions(models::Dataflow* const dataflow, std::string filename){
   std::map<ARRAY_INDEX, long> condition; // dataflow edge : [slot]
   long slots = 0;
-
   std::filesystem::path file(filename);
   if (file.extension() == ".xml"){
     std::map<edge_id_t, long> condition_param; //noc edge id : slot
@@ -106,6 +86,31 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
       }
     }}
   }
+  return {condition, slots};
+}
+
+std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(models::Dataflow* const dataflow,
+                                                 std::pair<ARRAY_INDEX, EXEC_COUNT> &minActorInfo, scheduling_t schedule, std::string filename) {
+  VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
+  VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+  StateList visitedStates;
+  EXEC_COUNT minRepFactor = INT_MAX; // EXEC_COUNT is of type long int, and LONG_MAX has same max value
+  ARRAY_INDEX minRepActorId;
+  TOKEN_UNIT minRepActorExecCount = 0;
+  TIME_UNIT timeStep; // total time passed
+  int periodic_state_idx; // idx of first periodic state in statelist
+  TIME_UNIT thr;
+  bool end_check = false; // 
+  int actors_left = 0;
+  std::map<ARRAY_INDEX, TIME_UNIT> actors_check;
+  {ForEachTask(dataflow, t){
+    ++actors_left;
+    actors_check[dataflow->getVertexId(t)] = -1;
+  }}
+
+  std::map<ARRAY_INDEX, long> condition;
+  long slots;
+  std::tie(condition, slots) = generateConditions(dataflow, filename);
   
   std::map<TIME_UNIT, std::map<ARRAY_INDEX, std::pair<long, bool>>> *buffer = new std::map<TIME_UNIT, std::map<ARRAY_INDEX, std::pair<long, bool>>>();; //slot: [channel (actor's edge): {tokens released, if actor needs to execute}]
   std::deque<std::pair<TIME_UNIT, std::pair<ARRAY_INDEX, long>>> *n_buffer = new std::deque<std::pair<TIME_UNIT, std::pair<ARRAY_INDEX, long>>>();; //[timeslot, channel, token]
@@ -297,8 +302,8 @@ void algorithms::scheduling::So4Scheduling(models::Dataflow* const dataflow,
     std::cout << res.asText();
     // std::cout << printers::Scheduling2Tikz(res);
 
-    std::cout << "ASAP throughput is  " << minThroughput << std::endl;
-    std::cout << "ASAP period is  " << omega << std::endl;
+    std::cout << "So4 throughput is  " << minThroughput << std::endl;
+    std::cout << "So4 period is  " << omega << std::endl;
 
     return;
   }
@@ -313,8 +318,8 @@ void algorithms::scheduling::So4Scheduling(models::Dataflow* const dataflow,
   std::cout << res.asASCII(linesize);
   std::cout << res.asText();
 
-  std::cout << "ASAP throughput is  " << minThroughput << std::endl;
-  std::cout << "ASAP period is  " << omega << std::endl;
+  std::cout << "So4 throughput is  " << minThroughput << std::endl;
+  std::cout << "So4 period is  " << omega << std::endl;
 
   return;
 }
