@@ -9,7 +9,7 @@
 #define SRC_LIBKITER_ALGORITHMS_TRANSFORMATIONS_H_
 
 #include <commons/KiterRegistry.h>
-
+#include "transformation/singleOutput.h"
 namespace models {
 	class Dataflow;
 }
