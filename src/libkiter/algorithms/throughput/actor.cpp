@@ -118,11 +118,14 @@ EXEC_COUNT Actor::getNumExecutions() {
 }
 
 // Given current state of graph, returns whether actor is ready to execute or not
-bool Actor::isReadyForExec(State s) {
+bool Actor::isReadyForExec(State s, std::set<ARRAY_INDEX> new_edges) {
   // Execution conditions (for given phase):
   // (1) enough room in output channel, (2) enough tokens in input channel, (3) not currently executing
   bool isExecutable = true;
   for (auto const &e : this->consPhaseCount) {
+    // if (new_edges.find(dataflow->getEdgeId(e)) != new_edges.end()){
+    //   continue;
+    // }
     if (s.getTokens(e.first) < this->getExecRate(e.first) || this->isExecuting) {
       isExecutable = false;
     }
@@ -179,12 +182,16 @@ TIME_UNIT step, long slots, std::map<ARRAY_INDEX, long> condition) {
       TIME_UNIT end_time;
       long end_t_mod = (int) step % slots;
       long correct_slot = condition[dataflow->getEdgeId(e)];
-      if (end_t_mod <= correct_slot){
-        end_time = step + (correct_slot - end_t_mod);
-      } else{
-        end_time = step + slots - (end_t_mod - correct_slot);
+      if (dataflow->getEdgeType(e) == VIRTUAL_EDGE){ // virtual buffer
+        end_time = step;
+      } else {
+        if (end_t_mod <= correct_slot){
+          end_time = step + (correct_slot - end_t_mod);
+        } else{
+          end_time = step + slots - (end_t_mod - correct_slot);
+        }
+        end_time += dataflow->getRoute(e).size();
       }
-      end_time += dataflow->getRoute(e).size();
       // TIME_UNIT prev_time = step - dataflow->getVertexDuration(this->actor, this->getPhase());
       // TIME_UNIT time_past = 0;
       // long prev_t_mod = (int) prev_time % slots;

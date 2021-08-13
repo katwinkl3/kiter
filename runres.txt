@@ -1,74 +1,15 @@
-benchmarks/ascenttestbench/one_h263decoder.xml random map random route so4
-So4 throughput is  0.0001
-So4 period is  10000
-benchmarks/ascenttestbench/one_h263decoder.xml random map xy route so4
-So4 throughput is  0.0001
-So4 period is  10000
-benchmarks/ascenttestbench/one_modem.xml random map random route so4
-    1 |@                                                                               
-    2 |      @                                                                         
-    3 |                   @                                                            
-    4 |                             @                                                  
-    5 |                                        @                                       
-    6 |                                                 @@                             
-    7 |                                                                    @           
-    8 |                                                                    @           
-   12 |@                                                                               
-   13 |                                                                                
-   14 |                                                                                
-    1) fork1 | starts:{0,91} | period:168 | periodic starts:{175,259} | durations:{};[{1}]
-    2) biq | starts:{6,104} | period:84 | periodic starts:{188} | durations:{};[{1}]
-    3) bi | starts:{19,104} | period:84 | periodic starts:{188} | durations:{};[{1}]
-    4) add | starts:{29,115} | period:84 | periodic starts:{199} | durations:{};[{1}]
-    5) ac | starts:{40,124} | period:84 | periodic starts:{208} | durations:{};[{1}]
-    6) fork2 | starts:{49,50,133,134} | period:84 | periodic starts:{217,218} | durations:{};[{1}]
-    7) conj | starts:{68,152} | period:84 | periodic starts:{236} | durations:{};[{1}]
-    8) mul1 | starts:{68,152} | period:84 | periodic starts:{236} | durations:{};[{1}]
-   12) eq | starts:{0} | period:168 | periodic starts:{105,189} | durations:{};[{1}]
-   13) mul2 | starts:{91,175} | period:84 | periodic starts:{259} | durations:{};[{1}]
-   14) deci | starts:{85,169} | period:84 | periodic starts:{253} | durations:{};[{1}]
-So4 throughput is  0.0119048
-So4 period is  84
-benchmarks/ascenttestbench/one_modem.xml random map xy route so4
-    1 |@                                                                               
-    2 |      @                                                                         
-    3 |                   @                                                            
-    4 |                             @                                                  
-    5 |                                        @                                       
-    6 |                                                 @@                             
-    7 |                                                                    @           
-    8 |                                                                    @           
-   12 |@                                                                               
-   13 |                                                                                
-   14 |                                                                                
-    1) fork1 | starts:{0,91} | period:168 | periodic starts:{175,259} | durations:{};[{1}]
-    2) biq | starts:{6,104} | period:84 | periodic starts:{188} | durations:{};[{1}]
-    3) bi | starts:{19,104} | period:84 | periodic starts:{188} | durations:{};[{1}]
-    4) add | starts:{29,115} | period:84 | periodic starts:{199} | durations:{};[{1}]
-    5) ac | starts:{40,124} | period:84 | periodic starts:{208} | durations:{};[{1}]
-    6) fork2 | starts:{49,50,133,134} | period:84 | periodic starts:{217,218} | durations:{};[{1}]
-    7) conj | starts:{68,152} | period:84 | periodic starts:{236} | durations:{};[{1}]
-    8) mul1 | starts:{68,152} | period:84 | periodic starts:{236} | durations:{};[{1}]
-   12) eq | starts:{0} | period:168 | periodic starts:{105,189} | durations:{};[{1}]
-   13) mul2 | starts:{91,175} | period:84 | periodic starts:{259} | durations:{};[{1}]
-   14) deci | starts:{85,169} | period:84 | periodic starts:{253} | durations:{};[{1}]
-So4 throughput is  0.0119048
-So4 period is  84
-benchmarks/ascenttestbench/one_mp3decoder.xml random map random route so4
-So4 throughput is  0.00757576
-So4 period is  132
-benchmarks/ascenttestbench/one_mp3decoder.xml random map xy route so4
-So4 throughput is  0.00757576
-So4 period is  132
-benchmarks/ascenttestbench/one_samplerate.xml random map random route so4
-So4 throughput is  0.00104167
-So4 period is  960
-benchmarks/ascenttestbench/one_samplerate.xml random map xy route so4
-So4 throughput is  0.00104167
-So4 period is  960
-benchmarks/ascenttestbench/one_satellite.xml random map random route so4
-So4 throughput is  0.00094697
-So4 period is  1056
-benchmarks/ascenttestbench/one_satellite.xml random map xy route so4
-So4 throughput is  0.00094697
-So4 period is  1056
+benchmarks/ascenttestbench/one_h263decoder.xml :
+ASAPScheduling : 0.0001 , 0.0001, 0.0001
+So4Scheduling : 2.11703 , 2.11703, 2.11703
+benchmarks/ascenttestbench/one_modem.xml :
+ASAPScheduling : 0.0625 , 0.0625, 0.0625
+So4Scheduling : 0.00420168 , 0.00420168, 0.00446429
+benchmarks/ascenttestbench/one_mp3decoder.xml :
+ASAPScheduling : 0.00757576 , 0.00757576, 0.00757576
+So4Scheduling : 0.00297619 , 0.00297619, 0.00297619
+benchmarks/ascenttestbench/one_samplerate.xml :
+ASAPScheduling : 0.00104167 , 0.00104167, 0.00104167
+So4Scheduling : 0.000341763 , 0.000341763, 0.000340136
+benchmarks/ascenttestbench/one_satellite.xml :
+ASAPScheduling : 0.00094697 , 0.00094697, 0.00094697
+So4Scheduling : 0.000135281 , 0.000135281, 0.000135281

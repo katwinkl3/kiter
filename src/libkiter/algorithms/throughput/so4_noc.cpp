@@ -17,8 +17,9 @@
 #include <printers/stdout.h>
 #include "../../models/Scheduling.h"
 #include "../scc.h"
+#include "../buffersizing/periodic_fixed.h"
 
-std::tuple<std::map<ARRAY_INDEX, long>, long> generateConditions(models::Dataflow* const dataflow, std::string filename){
+std::tuple<std::map<ARRAY_INDEX, long>, long> generateConditions(models::Dataflow* const dataflow, std::string filename, std::set<ARRAY_INDEX> new_edges){
   std::map<ARRAY_INDEX, long> condition; // dataflow edge : [slot]
   long slots = 0;
   std::filesystem::path file(filename);
@@ -55,7 +56,16 @@ std::tuple<std::map<ARRAY_INDEX, long>, long> generateConditions(models::Dataflo
     }
     xmlFreeDoc(doc);
     {ForEachEdge(dataflow,e){
-    condition.insert({dataflow->getEdgeId(e), condition_param[dataflow->getRoute(e)[0]]});
+      if (dataflow->getEdgeType(e) == VIRTUAL_EDGE){
+        condition.insert({dataflow->getEdgeId(e), -1});
+      } else {
+        condition.insert({dataflow->getEdgeId(e), condition_param[dataflow->getRoute(e)[0]]});
+      }
+      // if (new_edges.find(dataflow->getEdgeId(e)) != new_edges.end()){
+      //   condition.insert({dataflow->getEdgeId(e), -1});
+      // } else {
+      //   condition.insert({dataflow->getEdgeId(e), condition_param[dataflow->getRoute(e)[0]]});
+      // }
     }}
   }
   if (file.extension() == ".txt"){
@@ -78,11 +88,15 @@ std::tuple<std::map<ARRAY_INDEX, long>, long> generateConditions(models::Dataflo
     }
     readfile.close();
     {ForEachEdge(dataflow,e){
-      if (condition_param.find({ dataflow->getMapping(dataflow->getEdgeSource(e)), dataflow->getMapping(dataflow->getEdgeTarget(e)) }) != condition_param.end()){
-        condition.insert({dataflow->getEdgeId(e), condition_param[{dataflow->getMapping(dataflow->getEdgeSource(e)), dataflow->getMapping(dataflow->getEdgeTarget(e))}] });
+      if (dataflow->getEdgeType(e) == VIRTUAL_EDGE){
+        condition.insert({dataflow->getEdgeId(e), -1}); //actually has no use
       } else {
-        std::cout << "Missing TDMA rule for edge " << dataflow->getEdgeId(e) << "src=" << dataflow->getMapping(dataflow->getEdgeSource(e)) << " dest=" << dataflow->getMapping(dataflow->getEdgeTarget(e))<< std::endl;
-        condition.insert({dataflow->getEdgeId(e), 0});
+        if (condition_param.find({ dataflow->getMapping(dataflow->getEdgeSource(e)), dataflow->getMapping(dataflow->getEdgeTarget(e)) }) != condition_param.end()){
+          condition.insert({dataflow->getEdgeId(e), condition_param[{dataflow->getMapping(dataflow->getEdgeSource(e)), dataflow->getMapping(dataflow->getEdgeTarget(e))}] });
+        } else {
+          std::cout << "Missing TDMA rule for edge " << dataflow->getEdgeId(e) << "src=" << dataflow->getMapping(dataflow->getEdgeSource(e)) << " dest=" << dataflow->getMapping(dataflow->getEdgeTarget(e))<< std::endl;
+          condition.insert({dataflow->getEdgeId(e), 0});
+        }
       }
     }}
   }
@@ -90,7 +104,7 @@ std::tuple<std::map<ARRAY_INDEX, long>, long> generateConditions(models::Dataflo
 }
 
 std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(models::Dataflow* const dataflow,
-                                                 std::pair<ARRAY_INDEX, EXEC_COUNT> &minActorInfo, scheduling_t schedule, std::string filename) {
+                                       std::pair<ARRAY_INDEX, EXEC_COUNT> &minActorInfo, scheduling_t schedule, std::string filename, std::set<ARRAY_INDEX> new_edges) {
   VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
   VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
   StateList visitedStates;
@@ -110,7 +124,7 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
 
   std::map<ARRAY_INDEX, long> condition;
   long slots;
-  std::tie(condition, slots) = generateConditions(dataflow, filename);
+  std::tie(condition, slots) = generateConditions(dataflow, filename, new_edges);
   
   std::map<TIME_UNIT, std::map<ARRAY_INDEX, std::pair<long, bool>>> *buffer = new std::map<TIME_UNIT, std::map<ARRAY_INDEX, std::pair<long, bool>>>();; //slot: [channel (actor's edge): {tokens released, if actor needs to execute}]
   std::deque<std::pair<TIME_UNIT, std::pair<ARRAY_INDEX, long>>> *n_buffer = new std::deque<std::pair<TIME_UNIT, std::pair<ARRAY_INDEX, long>>>();; //[timeslot, channel, token]
@@ -128,8 +142,8 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
   {ForEachTask(dataflow, t) {
       actorMap[dataflow->getVertexId(t)] = Actor(dataflow, t);
     }}
-  State prevState(dataflow, actorMap);
-  State currState(dataflow, actorMap);
+  State prevState(dataflow, actorMap, new_edges);
+  State currState(dataflow, actorMap, new_edges);
   {ForEachTask(dataflow, t) {
       // track actor with lowest repetition factor (determines when states are stored)
       if (actorMap[dataflow->getVertexId(t)].getRepFactor() < minRepFactor) {
@@ -142,8 +156,11 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
   // Start ASAP execution loop
   while (true) {
     {ForEachEdge(dataflow, e) {
+      if (new_edges.find(dataflow->getEdgeId(e)) != new_edges.end()){
+        continue;
+      }
         prevState.setTokens(e, currState.getTokens(e));
-      }}
+    }}
     // end actor firing
     {ForEachTask(dataflow, t) {
         while (actorMap[dataflow->getVertexId(t)].isReadyToEndExec(currState)) {
@@ -170,7 +187,7 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
           }
           actorMap[dataflow->getVertexId(t)].execEndWithMod(dataflow, currState, n_buffer, curr_step, slots, condition);
           // NOTE updating tokens/phase in state done separately from execEnd function, might be a cause for bugs
-          // std::cout <<"END FIRING\n"<< std::endl;
+          // std::cout <<"END FIRING\n"<< std::endl; 
           // std::cout << currState.print(dataflow) << std::endl;
         }
       }}
@@ -191,16 +208,16 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
       (*n_buffer).pop_front();
       cast_out_idx--;
     }
-    currState.updateState(dataflow, actorMap);
+    currState.updateState(dataflow, actorMap, new_edges);
 
     {ForEachTask(dataflow, t) {
 
       // if (skip_time != 0 && dataflow->getVertexId(t) != skip_vertex){
       //   continue;
       // }
-        if(actorMap[dataflow->getVertexId(t)].isReadyForExec(currState)) {
+        if(actorMap[dataflow->getVertexId(t)].isReadyForExec(currState, new_edges)) {
             actorMap[dataflow->getVertexId(t)].execStart(dataflow, currState);
-              currState.updateState(dataflow, actorMap);
+              currState.updateState(dataflow, actorMap, new_edges);
               // std::cout <<"FIRING\n"<< std::endl;
               // std::cout << currState.print(dataflow) << std::endl;
               if (end_check){
@@ -260,6 +277,9 @@ void algorithms::scheduling::So4Scheduling(models::Dataflow* const dataflow,
   scheduling_t scheduling_result;
   int linesize = param_list.count("LINE")? commons::fromString<int>(param_list["LINE"]) : 80;
 
+  // Temp fix to turn graph into 1 SCC
+  std::set<ARRAY_INDEX> new_edges = {};//add_vbuffers(dataflow, param_list);
+
   // generate SCCs if any
   sccMap = computeSCCKosaraju(dataflow);
   if (sccMap.size() > 1) { // if the original graph isn't one SCC, need to break into SCC subgraphs
@@ -267,7 +287,7 @@ void algorithms::scheduling::So4Scheduling(models::Dataflow* const dataflow,
     for (auto g : sccDataflows) {
       if (g->getEdgesCount() > 0) {
         std::pair<ARRAY_INDEX, EXEC_COUNT> actorInfo;
-        auto res_pair = computeComponentSo4Schedule(g, actorInfo, scheduling_result, param_list["TDMA"]);
+        auto res_pair = computeComponentSo4Schedule(g, actorInfo, scheduling_result, param_list["TDMA"], new_edges);
         TIME_UNIT componentThroughput = res_pair.first;
         scheduling_result = res_pair.second;
         TIME_UNIT scaledThroughput = (componentThroughput * actorInfo.second) /
@@ -309,7 +329,7 @@ void algorithms::scheduling::So4Scheduling(models::Dataflow* const dataflow,
   }
   // if graph is strongly connected, just need to use computeComponentThroughput
   std::pair<ARRAY_INDEX, EXEC_COUNT> actorInfo; // look at note for computeComponentThroughput
-  auto res_pair = computeComponentSo4Schedule(dataflow, actorInfo, scheduling_result, param_list["TDMA"]);
+  auto res_pair = computeComponentSo4Schedule(dataflow, actorInfo, scheduling_result, param_list["TDMA"], new_edges);
   minThroughput = res_pair.first;
   scheduling_result = res_pair.second;
   std::cout << "Throughput of graph: " << minThroughput << std::endl;

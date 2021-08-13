@@ -18,10 +18,12 @@ State::State()
 
 // construct state using current graph and actor map information
 State::State(models::Dataflow* const dataflow,
-             std::map<ARRAY_INDEX, Actor> actorMap) {
+             std::map<ARRAY_INDEX, Actor> actorMap, std::set<ARRAY_INDEX> new_edges) {
   {ForEachEdge(dataflow, e) {
-      currentTokens[e] = dataflow->getPreload(e);
-    }}
+    // if (new_edges.find(dataflow->getEdgeId(e)) == new_edges.end()){
+    currentTokens[e] = dataflow->getPreload(e);
+    // }
+  }}
   {ForEachTask(dataflow, t) {
       actorPhases[t] = actorMap[dataflow->getVertexId(t)].getPhase();
       actors.push_back(t);
@@ -87,13 +89,15 @@ void State::setTimeElapsed(TIME_UNIT time) {
 
 // update phase count for each actor and token counts per channel
 void State::updateState(models::Dataflow* const dataflow,
-                        std::map<ARRAY_INDEX, Actor> actorMap) {
+                        std::map<ARRAY_INDEX, Actor> actorMap, std::set<ARRAY_INDEX> new_edges) {
   {ForEachTask(dataflow, t) {
-      setPhase(t, actorMap[dataflow->getVertexId(t)].getPhase());
-    }}
+    setPhase(t, actorMap[dataflow->getVertexId(t)].getPhase());
+  }}
   {ForEachEdge(dataflow, e) {
-      setTokens(e, dataflow->getPreload(e));
-    }}
+    // if (new_edges.find(dataflow->getEdgeId(e)) == new_edges.end()){
+    setTokens(e, dataflow->getPreload(e));
+    // }
+  }}
 }
 
 TIME_UNIT State::advanceTime() {
