@@ -31,8 +31,13 @@ typedef std::map< ARRAY_INDEX, unsigned int> vid_to_nocEid;
 //add intermediate nodes based on the path between them
 static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list, conflictEtype& returnValue, conflictConfigs& configs, vid_to_nocEid& vid_to_conflict_map, bool addConfigNode)
 {
-	d->reset_computation();
 	std::vector<Vertex> new_vertices;
+
+	if (list.size() == 0) {
+		return new_vertices;
+	}
+
+	d->reset_computation();
 	// We store infos about edge to be deleted
 	auto source_vtx = d->getEdgeSource(c);
 	auto target_vtx = d->getEdgeTarget(c);
@@ -294,6 +299,6 @@ void algorithms::ModelNoCConflictFreeCommunication(models::Dataflow* const  data
 
 		VERBOSE_INFO ("  - " << item.first << ":"  << item.second);
 	}
-
+	dataflow->reset_computation();
 }
 

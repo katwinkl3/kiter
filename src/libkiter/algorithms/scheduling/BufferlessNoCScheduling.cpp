@@ -195,8 +195,8 @@ void algorithms::BufferlessNoCScheduling(models::Dataflow* const  _dataflow, par
 
 	VERBOSE_INFO("Step 1 - ModelNoCConflictFreeCommunication");
 	algorithms::ModelNoCConflictFreeCommunication(to) ;
-
 	print_graph(to, "ModelNoCConflictFreeCommunication");
+	VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 
 	VERBOSE_INFO("Step 2 - Identify task that we care about");
 	std::vector<std::vector<ARRAY_INDEX>> bags = get_overlaps(to);
@@ -211,20 +211,15 @@ void algorithms::BufferlessNoCScheduling(models::Dataflow* const  _dataflow, par
 			for (auto e : bag) {
 				VERBOSE_ASSERT(old_mapping == to->getMapping( to->getVertexById( e ) ) , "Should not try to merge task from different mapping.");
 			}
-			to->reset_computation();
-			VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
+
 			models::Scheduling scheduling_res = CSDF_SCHEDULING_FUNCTION(to);
 
-			print_graph(to, "before_mergeCSDFFromKperiodicSchedule_" + new_name);
 			algorithms::transformation::mergeCSDFFromSchedule(to,new_name,bag,&scheduling_res);
+			Vertex new_task = to->getVertexByName(new_name);
+			to->setMapping(new_task,old_mapping);
 			print_graph(to, "after_mergeCSDFFromKperiodicSchedule_" + new_name);
 			VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 
-
-			Vertex new_task = to->getVertexByName(new_name);
-			to->setMapping(new_task,old_mapping);
-
-			print_graph(to, "mergeCSDFFromKperiodicSchedule_" + new_name);
 		}
 	}
 

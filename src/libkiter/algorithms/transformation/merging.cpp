@@ -289,6 +289,7 @@ inline std::ostream& operator<< (std::ostream &out,const task_execution_t& e)		{
 bool algorithms::transformation::mergeCSDFFromSchedule (models::Dataflow* to, std::string name, const std::vector< ARRAY_INDEX >& mergeNodes, const models::Scheduling* scheduling_res) {
 
 	VERBOSE_INFO("Start mergeCSDFFromSchedule");
+	VERBOSE_ASSERT(computeRepetitionVector(to),"Merge operator requires graph to be consistent.");
 
 	// Check tasks
 	// we assume there is no init phases to merge
@@ -687,7 +688,7 @@ bool algorithms::transformation::mergeCSDFFromSchedule (models::Dataflow* to, st
 		}
 
 	}
-
+	to->reset_computation();
 	return true;
 }
 
