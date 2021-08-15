@@ -22,8 +22,8 @@ struct kperiodic_result_t {
 	std::set<Edge> critical_edges;
 };
 
-scheduling_t period2scheduling    (const models::Dataflow* const  dataflow,  periodicity_vector_t & kvector , TIME_UNIT throughput) ;
-models::Scheduling  period2Scheduling    (const models::Dataflow* const  dataflow,  periodicity_vector_t & kvector , kperiodic_result_t &) ;
+scheduling_t period2scheduling    (const models::Dataflow* const  dataflow, const periodicity_vector_t & kvector , TIME_UNIT throughput) ;
+models::Scheduling  period2Scheduling    (const models::Dataflow* const  dataflow, const  periodicity_vector_t & kvector , kperiodic_result_t &) ;
 
 namespace algorithms {
 

@@ -223,7 +223,14 @@ bool algorithms::setNormalization(models::Dataflow *to, std::map<Vertex,TOKEN_UN
 
 std::map<Vertex,TOKEN_UNIT> * algorithms::rationalNormalize(models::Dataflow *from ) {
 
-    if (from->getEdgesCount() <= 0 ) return NULL;
+    if (from->getEdgesCount() <= 0 ) {
+
+        std::map<Vertex,TOKEN_UNIT> * res = new  std::map<Vertex,TOKEN_UNIT>();
+        {ForEachVertex(from,v) {
+        	(*res)[v] = 1;
+        }}
+    	return res;
+    }
 
     VERBOSE_INFO("Start Rational normalization...");
 

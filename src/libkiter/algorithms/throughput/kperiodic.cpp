@@ -55,7 +55,7 @@ std::string algorithms::cc2string  (const models::Dataflow* const dataflow,criti
 
 }
 
-std::string algorithms::print_schedule (models::EventGraph* eg, models::Dataflow* const dataflow,  std::map<Vertex,EXEC_COUNT> & kvector, TIME_UNIT res) {
+std::string algorithms::print_schedule (models::EventGraph* eg, models::Dataflow* const dataflow, const periodicity_vector_t & kvector, TIME_UNIT res) {
 	std::ostringstream returnStream;
 
 	TIME_UNIT omega = 1 / res ;
@@ -74,7 +74,7 @@ std::string algorithms::print_schedule (models::EventGraph* eg, models::Dataflow
 			TIME_UNIT start = eg->getStartingTime(e);
 			Vertex v = dataflow->getVertexById(ti);
 			TIME_UNIT duration = dataflow->getVertexDuration(v,tp);
-			TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
+			TIME_UNIT period = kvector.at(v) *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
 			EXEC_COUNT repeat = dataflow->getNi(v) * TOTAL_REPEAT;
 			maxtime = std::max ( maxtime, start + period * repeat);
 			ordered_edges.push_back(std::pair<EXEC_COUNT, TIME_UNIT>(ti,start));
@@ -108,7 +108,7 @@ std::string algorithms::print_schedule (models::EventGraph* eg, models::Dataflow
 		std::replace( latexName.begin(), latexName.end(), '_', '-');
 		if (new_task_ids.count(tid)) {
 			returnStream << "\\taskname{"  << new_task_ids[tid] <<  "}{"  <<latexName <<  "}"
-				<< "% ki=" << kvector[v]   << " Ni=" << dataflow->getNi(v)  << std::endl;
+				<< "% ki=" << kvector.at(v)   << " Ni=" << dataflow->getNi(v)  << std::endl;
 		}
 	}}
 
@@ -122,7 +122,7 @@ std::string algorithms::print_schedule (models::EventGraph* eg, models::Dataflow
 		TIME_UNIT start = eg->getStartingTime(e);
 		Vertex v = dataflow->getVertexById(tid);
 		TIME_UNIT duration = dataflow->getVertexDuration(v,tp);
-		TIME_UNIT period = kvector[v] *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
+		TIME_UNIT period = kvector.at(v) *  dataflow->getPhasesQuantity(v) * omega / dataflow->getNi(v);
 		EXEC_COUNT repeat = (EXEC_COUNT) std::floor ( (maxtime - start - period) / period ) ;
 
 		if (new_task_ids.count(tid)) {
@@ -131,7 +131,7 @@ std::string algorithms::print_schedule (models::EventGraph* eg, models::Dataflow
 					<< "{}"
 					<< "{"  << duration <<  "}"
 					<< "{"  << start    <<  "}"
-					<< " % " << kvector[v]  << " *  " << dataflow->getPhasesQuantity(v) <<  " * " <<  omega <<  "/" <<  dataflow->getNi(v)  << std::endl;
+					<< " % " << kvector.at(v)  << " *  " << dataflow->getPhasesQuantity(v) <<  " * " <<  omega <<  "/" <<  dataflow->getNi(v)  << std::endl;
 
 			returnStream << "\\addperiodictask[repeatblock]{"  << new_task_ids[tid] <<  "}"
 					<< "{}"
@@ -139,7 +139,7 @@ std::string algorithms::print_schedule (models::EventGraph* eg, models::Dataflow
 					<< "{"  << start + period    <<  "}"
 					<< "{"  << period   <<  "}"
 					<< "{"  << repeat - 1  <<  "}"
-					<< " % " << kvector[v]  << " *  " << dataflow->getPhasesQuantity(v) <<  " * " <<  omega <<  "/" <<  dataflow->getNi(v)  << std::endl;
+					<< " % " << kvector.at(v)  << " *  " << dataflow->getPhasesQuantity(v) <<  " * " <<  omega <<  "/" <<  dataflow->getNi(v)  << std::endl;
 
 
 		}
@@ -150,7 +150,7 @@ std::string algorithms::print_schedule (models::EventGraph* eg, models::Dataflow
 }
 
 
-void print_function (models::Dataflow* const dataflow, std::map<Vertex,EXEC_COUNT> & kvector, TIME_UNIT res, bool printXML = false, bool printTikz = false, bool printSchedule = false){
+void print_function (models::Dataflow* const dataflow, const periodicity_vector_t & kvector, TIME_UNIT res, bool printXML = false, bool printTikz = false, bool printSchedule = false){
 	//STEP 1 - Generate Event Graph
 	models::EventGraph* eg = algorithms::generateKPeriodicEventGraph(dataflow,&kvector);
 
@@ -161,7 +161,7 @@ void print_function (models::Dataflow* const dataflow, std::map<Vertex,EXEC_COUN
 }
 
 
-models::Scheduling period2Scheduling (const models::Dataflow* const  dataflow,  std::map<Vertex,EXEC_COUNT> & kvector , kperiodic_result_t & result){
+models::Scheduling period2Scheduling (const models::Dataflow* const  dataflow, const periodicity_vector_t & kvector , kperiodic_result_t & result){
 
 	TIME_UNIT omega = 1.0 / result.throughput ;
 	VERBOSE_INFO("models::Scheduling period2Scheduling   omega = "  << std::setprecision( 9 )  << omega  );
@@ -169,7 +169,7 @@ models::Scheduling period2Scheduling (const models::Dataflow* const  dataflow,  
 	return models::Scheduling(dataflow, omega, scheduling_result, result.critical_edges);
 }
 
-scheduling_t period2scheduling (const models::Dataflow* const dataflow,  std::map<Vertex,EXEC_COUNT> & kvector, TIME_UNIT throughput){
+scheduling_t period2scheduling (const models::Dataflow* const dataflow,  const periodicity_vector_t & kvector, TIME_UNIT throughput){
 
 	VERBOSE_INFO("scheduling_t period2scheduling throughput = " << std::setprecision( 9 ) << throughput  );
 
@@ -190,11 +190,11 @@ scheduling_t period2scheduling (const models::Dataflow* const dataflow,  std::ma
 		ARRAY_INDEX tid = dataflow->getVertexId(v);
 		EXEC_COUNT pq = dataflow->getPhasesQuantity(v);
 		EXEC_COUNT ipq = dataflow->getInitPhasesQuantity(v);
-		auto maxki = kvector[v];
+		auto maxki = kvector.at(v);
 
 		auto first_pi = 1 - ipq;
 
-		TIME_UNIT period = (kvector[v] *  dataflow->getPhasesQuantity(v) * omega) / dataflow->getNi(v);
+		TIME_UNIT period = (kvector.at(v) *  dataflow->getPhasesQuantity(v) * omega) / dataflow->getNi(v);
 		scheduling_result[dataflow->getVertexId(v)].periodic_starts.first = period;
 
 		for (EXEC_COUNT ki = 1  ; ki <= maxki ; ki++) {
@@ -224,7 +224,7 @@ void algorithms::print_kperiodic_scheduling (models::Dataflow* const  dataflow, 
 	VERBOSE_INFO("Please note you can specify the values of K (like -pA=1 -pB=2).");
 	VERBOSE_INFO("You can also output the XML with -pXML=1, the dependency graph wth -pDEP=1, and the scheduling with -pSCHED=1.");
 	// STEP 1 - generate 1-periodic schedule
-	std::map<Vertex,EXEC_COUNT> kvector;
+	periodicity_vector_t kvector;
 	{ForEachVertex(dataflow,v) {
 		kvector[v] = 1;
 		if (param_list.count(dataflow->getVertexName(v)) == 1) {
@@ -243,7 +243,7 @@ void algorithms::print_kperiodic_scheduling (models::Dataflow* const  dataflow, 
 	print_function (dataflow, kvector , result.throughput , do_xml, do_dep, do_sched);
 }
 
-kperiodic_result_t algorithms::KSchedule(models::Dataflow* const dataflow, std::map<Vertex,EXEC_COUNT> * kvector, TIME_UNIT bound){
+kperiodic_result_t algorithms::KSchedule(models::Dataflow* const dataflow, const periodicity_vector_t * kvector, TIME_UNIT bound){
 
 	kperiodic_result_t result;
 
@@ -292,7 +292,7 @@ kperiodic_result_t algorithms::KSchedule(models::Dataflow* const dataflow, std::
 	return result;
 }
 
-kperiodic_result_t algorithms::KScheduleBufferLess(models::Dataflow *  const dataflow ,std::map<Vertex,EXEC_COUNT> * kvector , TIME_UNIT bound )  {
+kperiodic_result_t algorithms::KScheduleBufferLess(models::Dataflow *  const dataflow ,const periodicity_vector_t * kvector , TIME_UNIT bound )  {
 
 	kperiodic_result_t result;
 
@@ -342,7 +342,7 @@ kperiodic_result_t algorithms::KScheduleBufferLess(models::Dataflow *  const dat
 }
 
 
-models::EventGraph* algorithms::generateKPeriodicEventGraph(const models::Dataflow * const dataflow , std::map<Vertex,EXEC_COUNT> * kValues ) {
+models::EventGraph* algorithms::generateKPeriodicEventGraph(const models::Dataflow * const dataflow , const periodicity_vector_t * kValues ) {
 
 	VERBOSE_KPERIODIC_DEBUG("generateKPeriodicEventGraph Starts ");
 	VERBOSE_ASSERT((dataflow->has_repetition_vector()),"inconsistent graph or repetition vector not computed");
@@ -386,7 +386,7 @@ models::EventGraph* algorithms::generateKPeriodicEventGraph(const models::Datafl
 }
 
 
-models::EventGraph* algorithms::updateEventGraph(const models::Dataflow * const dataflow, std::map<Vertex,EXEC_COUNT> * oldkvector, critical_circuit_t* cc, models::EventGraph* g) {
+models::EventGraph* algorithms::updateEventGraph(const models::Dataflow * const dataflow, periodicity_vector_t * oldkvector, critical_circuit_t* cc, models::EventGraph* g) {
 
 	VERBOSE_ASSERT(dataflow,"error");
 	VERBOSE_ASSERT(oldkvector,"error");
@@ -399,8 +399,8 @@ models::EventGraph* algorithms::updateEventGraph(const models::Dataflow * const 
 	VERBOSE_INFO("Update event graph - Step 0 - Compute new K and check changed");
 	//VERBOSE_INFO("Update event graph -  Critical path = " << commons::toString(*cc) );
 
-	std::map<Vertex,EXEC_COUNT>  kvector ;
-	for ( std::map<Vertex,EXEC_COUNT>::iterator it = oldkvector->begin() ; it != oldkvector->end(); it++ ) {
+	periodicity_vector_t  kvector ;
+	for ( auto it = oldkvector->begin() ; it != oldkvector->end(); it++ ) {
 		kvector[it->first] = it->second;
 	}
 
@@ -505,7 +505,7 @@ models::EventGraph* algorithms::updateEventGraph(const models::Dataflow * const 
 				}}
 	}
 
-	for ( std::map<Vertex,EXEC_COUNT>::iterator it = oldkvector->begin() ; it != oldkvector->end(); it++ ) {
+	for ( auto it = oldkvector->begin() ; it != oldkvector->end(); it++ ) {
 		oldkvector->at(it->first) = kvector.at(it->first);
 	}
 
@@ -513,7 +513,7 @@ models::EventGraph* algorithms::updateEventGraph(const models::Dataflow * const 
 }
 
 
-void algorithms::generateKPeriodicConstraint(const models::Dataflow * const dataflow, std::map<Vertex,EXEC_COUNT> * kValues,  models::EventGraph* g, Edge c) {
+void algorithms::generateKPeriodicConstraint(const models::Dataflow * const dataflow, const periodicity_vector_t * kValues,  models::EventGraph* g, Edge c) {
 
 	VERBOSE_KPERIODIC_DEBUG("Constraint for " << dataflow->getEdgeName(c) );
 
@@ -688,7 +688,7 @@ void algorithms::generateKperiodicSelfloop (const models::Dataflow * const dataf
 }
 
 
-bool algorithms::updateVectorWithLocalNi(const models::Dataflow *  const dataflow ,std::map<Vertex,EXEC_COUNT> * kvector , critical_circuit_t * cc) {
+bool algorithms::updateVectorWithLocalNi(const models::Dataflow *  const dataflow , periodicity_vector_t * kvector , critical_circuit_t * cc) {
 
 	bool changed = false;
 
@@ -732,7 +732,7 @@ void algorithms::compute_NKperiodic_throughput (models::Dataflow* const  dataflo
 	VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
 
 	// STEP 0.2 - Assert SDF
-	std::map<Vertex,EXEC_COUNT> kvector;
+	periodicity_vector_t kvector;
 	{ForEachVertex(dataflow,t) {
 		kvector[t] = dataflow->getNi(t);
 	}}
@@ -751,7 +751,7 @@ void algorithms::compute_2Kperiodic_throughput (models::Dataflow* const  dataflo
 	VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
 
 	// STEP 0.2 - Assert SDF
-	std::map<Vertex,EXEC_COUNT> kvector;
+	periodicity_vector_t kvector;
 	{ForEachVertex(dataflow,t) {
 		kvector[t] = 2;
 	}}
@@ -773,7 +773,7 @@ void algorithms::compute_1Kperiodic_throughput (models::Dataflow* const  dataflo
 	VERBOSE_INFO("Please note you cna use the print parameter.");
 
 	// STEP 0.2 - Assert SDF
-	std::map<Vertex,EXEC_COUNT> kvector = algorithms::scheduling::generate1PeriodicVector(dataflow);
+	periodicity_vector_t kvector = algorithms::scheduling::generate1PeriodicVector(dataflow);
 
 	kperiodic_result_t result = KSchedule(dataflow,&kvector);
 
@@ -871,7 +871,7 @@ void algorithms::compute_Kperiodic_throughput (models::Dataflow* const dataflow,
 	EXEC_COUNT iteration_count = 0;
 
 	// STEP 1 - generate initial vector
-	std::map<Vertex,EXEC_COUNT> kvector = algorithms::scheduling::generate1PeriodicVector(dataflow);
+	periodicity_vector_t kvector = algorithms::scheduling::generate1PeriodicVector(dataflow);
 
 	kperiodic_result_t result;
 

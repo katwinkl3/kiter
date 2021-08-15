@@ -3,6 +3,20 @@
  *
  *  Created on: 15 Aug 2021
  *      Author: Bruno, based on original code from Vanchi
+ *
+ *  TODO: Temporary, need to be rewritten using internal Kiter resources.
+ *
+ *  Current wa yto run it:
+ *  ./Release/bin/kiter -f ./benchmarks/ascenttestbench/one_modem.xml -pslotfile=./benchmarks/temporary/slot_4x4
+ *                                                                    -ppktfile=./benchmarks/temporary/modem.txt
+ *                                                                    -pmapfile=./benchmarks/temporary/modem_task
+ *                                                                    -a TDMASchedule
+ *
+ * slot_4x4 is the s4noc NoC scheduling
+ * modem_task contains "10000,5,6,9,10,11,7,3,1,12,8,4,0,2,15,14,13"
+ * modem.txt can be generated with the SymbolicExecutionWP action in kiter.
+ *
+ *
  */
 
 #ifndef SRC_LIBKITER_ALGORITHMS_SCHEDULING_TDMASCHEDULER_H_
