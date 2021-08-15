@@ -92,12 +92,12 @@ public :
 	 	return this->_critical_edges;
 	 }
 
-	void verbose_print ();
-	std::string asText () ;
-	std::string asASCII (int line_size) ;
-	std::string asASCIINew (int line_size) ;
-	std::string asASCIINewNew (int line_size) ;
-	bool is_valid_schedule () ;
+	void verbose_print () const;
+	std::string asText () const;
+	std::string asASCII (int line_size) const;
+	std::string asASCIINew (int line_size) const;
+	std::string asASCIINewNew (int line_size) const;
+	bool is_valid_schedule () const;
 
 };
 }

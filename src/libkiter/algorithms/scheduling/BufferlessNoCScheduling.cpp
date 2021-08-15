@@ -214,7 +214,11 @@ void algorithms::BufferlessNoCScheduling(models::Dataflow* const  _dataflow, par
 			to->reset_computation();
 			VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 			models::Scheduling scheduling_res = CSDF_SCHEDULING_FUNCTION(to);
+
+			print_graph(to, "before_mergeCSDFFromKperiodicSchedule_" + new_name);
 			algorithms::transformation::mergeCSDFFromSchedule(to,new_name,bag,&scheduling_res);
+			print_graph(to, "after_mergeCSDFFromKperiodicSchedule_" + new_name);
+			VERBOSE_ASSERT(computeRepetitionVector(to),"inconsistent graph");
 
 
 			Vertex new_task = to->getVertexByName(new_name);

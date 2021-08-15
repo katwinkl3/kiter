@@ -9,23 +9,23 @@
 #include <models/Dataflow.h>
 #include <numeric>
 
-void models::Scheduling::verbose_print() {
+void models::Scheduling::verbose_print() const {
 
 	for (auto  key : this->_tasks_schedule) {
 			auto task_vtx = _dataflow->getVertexById(key.first);
 
 			std::cout << "Task " <<  _dataflow->getVertexName(task_vtx)
 					<<  " : duration=[ " << commons::toString(_dataflow->getVertexPhaseDuration(task_vtx)) <<  "]"
-					<<     " starts=[ " << commons::toString(key.second.initial_starts) << "]"
+					<<     " initial starts=[ " << commons::toString(key.second.initial_starts) << "]"
+					<<     " periodic starts=[ " << commons::toString(key.second.periodic_starts.second) << "]"
 					<<     " period=" <<  key.second.periodic_starts.first 
-					<<     " periods=[ " << commons::toString(key.second.periodic_starts.second) << "]"
 					<< std::endl;
 
 	}
 }
 
 
-std::string models::Scheduling::asText () {
+std::string models::Scheduling::asText () const{
 
 		std::ostringstream returnStream;
 
@@ -51,7 +51,7 @@ std::string models::Scheduling::asText () {
 
 	}
 
-std::string models::Scheduling::asASCIINewNew (int line_size) {
+std::string models::Scheduling::asASCIINewNew (int line_size) const{
 
 
 	std::ostringstream returnStream;
@@ -152,7 +152,7 @@ std::string models::Scheduling::asASCIINewNew (int line_size) {
 }
 
 
-std::string models::Scheduling::asASCIINew (int line_size) {
+std::string models::Scheduling::asASCIINew (int line_size) const{
 
 
 	std::ostringstream returnStream;
@@ -221,7 +221,7 @@ std::string models::Scheduling::asASCIINew (int line_size) {
 	return returnStream.str();
 }
 
-std::string models::Scheduling::asASCII (int line_size) {
+std::string models::Scheduling::asASCII (int line_size) const{
 
 	return asASCIINewNew(line_size);
 
@@ -273,7 +273,7 @@ struct task_catalog {
 	std::vector<TIME_UNIT> schedule;
 };
 
-bool models::Scheduling::is_valid_schedule (){
+bool models::Scheduling::is_valid_schedule () const{
 
 	// Step 0: Setting up symbolic execution
 
@@ -461,7 +461,10 @@ bool models::Scheduling::is_valid_schedule (){
 
 		// Invalid Schedule Condition - infeasible task execution
 		TIME_UNIT task_duration = task_log[next_task.first].phase_durations[task_log[next_task.first].cur_phase];
-		if (next_task.second < task_history[next_task.first] + task_duration){ return false; }
+		if (next_task.second < task_history[next_task.first] + task_duration){
+			VERBOSE_ERROR("Invalide scheduling condition: Next task " << next_task.first << " expected t=" << next_task.second << " is lower than t=" << task_history[next_task.first] + task_duration);
+			return false;
+		}
 
 	}	
 
