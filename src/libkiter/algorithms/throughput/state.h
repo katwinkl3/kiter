@@ -21,7 +21,7 @@ class State {
  public:
   State();
   State(models::Dataflow* const dataflow,
-        std::map<ARRAY_INDEX, Actor> actorMap);
+        std::map<ARRAY_INDEX, Actor> actorMap, std::set<ARRAY_INDEX> new_edges);
   PHASE_INDEX getPhase(Vertex a) const; // returns current phase of actor
   TOKEN_UNIT getTokens(Edge e) const; // returns current tokens in edge
   std::list<std::pair<TIME_UNIT, PHASE_INDEX>> getRemExecTime(Vertex a) const; // returns amount of time left for execution
@@ -34,7 +34,7 @@ class State {
   void advanceRemExecTime(Vertex a, TIME_UNIT timeStep);
   void setTimeElapsed(TIME_UNIT time);
   void updateState(models::Dataflow* const dataflow,
-                   std::map<ARRAY_INDEX, Actor> actorMap); // updates state with current status of graph
+                   std::map<ARRAY_INDEX, Actor> actorMap, std::set<ARRAY_INDEX> new_edges); // updates state with current status of graph
   TIME_UNIT advanceTime();
   TIME_UNIT advanceTimeWithMod();
   bool operator==(const State& s) const;

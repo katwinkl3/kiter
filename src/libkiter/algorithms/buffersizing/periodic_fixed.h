@@ -11,9 +11,11 @@
 #include <commons/KiterRegistry.h>
 #include <models/Dataflow.h>
 #include <algorithms/buffersizing.h>
+#include <vector>
 
 namespace models {
 	class EventGraph;
+        class Dataflow;
 }
 
 namespace algorithms {
@@ -33,6 +35,7 @@ namespace algorithms {
     void compute_strictly_periodic_memory(models::Dataflow* const  dataflow, parameters_list_t params);
     void compute_fixed_offset_buffer_sizing (models::Dataflow* const dataflow, parameters_list_t params);
 
+    void add_vbuffers (models::Dataflow* const  dataflow, parameters_list_t params);
 
 } // end of namespace algorithms
 
@@ -41,5 +44,7 @@ ADD_TRANSFORMATION(SPeriodicSizing,
 transformation_t({ "SPeriodicSizing" , "Minimal Buffer size estimation by periodic scheduling with StrictlyPeriodic policy.", algorithms::compute_strictly_periodic_memory}));
 ADD_TRANSFORMATION(FixedOffsetBufferSizing,
 transformation_t({ "FixedOffsetBufferSizing" , "Minimal Buffer size estimation by periodic scheduling with fixed offset buffer sizing techniques (BURST, AVERAGE, MINMAX, WIGGERS). Define chosen sizing technique as parameter.", algorithms::compute_fixed_offset_buffer_sizing}));
+ADD_TRANSFORMATION(AddVBuffers,
+transformation_t({ "AddVBuffers" , "Add virtual buffers for each edge in dataflow graph", algorithms::add_vbuffers}));
 
 #endif /* PERIODIC_FIXED_H_ */

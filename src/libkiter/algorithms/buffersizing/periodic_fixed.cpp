@@ -49,6 +49,8 @@ void algorithms::checkOffsets (models::Dataflow * const dataflow,TIME_UNIT OMEGA
             //VERBOSE_ASSERT((offsets[pTask][(int)(k-1)] + dataflow->getVertexDuration(pTask,k)) <= mut, "negative offset !");
         }
     }}
+
+
 }
 
 BufferSizingResult algorithms::speriodic_memory_sizing_csdf (models::Dataflow* const  dataflow, TIME_UNIT period, bool solve_ilp, bool gen_only) {
@@ -108,6 +110,49 @@ void algorithms::compute_strictly_periodic_memory (models::Dataflow* const dataf
             std::cout << "SPeriodicSizing size is " << total_buffer_size << std::endl;
 }
 
+   void algorithms::add_vbuffers (models::Dataflow* const  dataflow, parameters_list_t params) {
+        std::map<Vertex,std::vector<TIME_UNIT> > offsets;
+        std::set<ARRAY_INDEX> vbuffers;
+
+        VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+        TIME_UNIT period    = commons::get_parameter<TIME_UNIT>(params, "PERIOD", 0.0) ; // assumes period is available in param list
+        VERBOSE_ASSERT (period > 0, "The period must be defined");
+        VERBOSE_ASSERT (period != std::numeric_limits<TIME_UNIT>::infinity(), "The period must be defined");
+        bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
+        bool      gen_only  = commons::get_parameter<bool>(params, "GENONLY", false) ;
+        generateStrictlyPeriodicOffsets(dataflow,period,offsets);
+        checkOffsets(dataflow,period,offsets);
+        BufferSizingResult buf_res = compute_periodic_fixed_memory(dataflow, offsets,period, solve_ilp, gen_only);
+        dataflow->reset_computation();
+
+        std::vector<ARRAY_INDEX> id_list; // no known way of getting a static edge list
+        ForEachEdge(dataflow, e){ // for each virtual buffer, add max token, set (inversed) in and out edge phases, and record new edges in set
+            id_list.push_back(dataflow->getEdgeId(e));
+        }
+        for (auto & id : id_list){
+            Edge e = dataflow->getEdgeById(id);
+            long buf_size = buf_res.get_edge_size(dataflow->getEdgeId(e));
+            Edge v_e = dataflow->addEdge(dataflow->getEdgeTarget(e), dataflow->getEdgeSource(e), "vir_" + dataflow->getEdgeName(e) );
+            dataflow->setPreload(v_e, buf_size-dataflow->getPreload(e)); // TODO: useful tokens from preload
+            std::vector<TOKEN_UNIT> inphase;
+            for (PHASE_INDEX ip = 1; ip <= dataflow->getEdgeOutPhasesCount(e); ip++){
+                inphase.push_back(dataflow->getEdgeOutPhase(e, ip));
+            }
+            dataflow->setEdgeInPhases(v_e, inphase);
+            std::vector<TOKEN_UNIT> outphase;
+            for (PHASE_INDEX op = 1; op <= dataflow->getEdgeInPhasesCount(e); op++){
+                outphase.push_back(dataflow->getEdgeInPhase(e, op));
+            }
+            dataflow->setEdgeOutPhases(v_e, outphase);
+            dataflow->setTokenSize(v_e, dataflow->getTokenSize(e));
+            // dataflow->setEdgeName(v_e, dataflow->getEdgeName(e));
+            dataflow->setEdgeType(v_e, VIRTUAL_EDGE);
+            vbuffers.insert(dataflow->getEdgeId(v_e));
+        }
+
+        // return vbuffers;
+    }
+
 
 void algorithms::compute_fixed_offset_buffer_sizing (models::Dataflow* const dataflow, parameters_list_t params){
     std::map<Vertex,std::vector<TIME_UNIT> > offsets;
@@ -141,16 +186,21 @@ void algorithms::compute_fixed_offset_buffer_sizing (models::Dataflow* const dat
 
     checkOffsets(dataflow,period,offsets);
     auto total_buffer_size = compute_periodic_fixed_memory(dataflow, offsets,period, solve_ilp, gen_only).total_size();
+
     std::cout << "Total buffer size : " << total_buffer_size
                 << " + 2 * " << dataflow->getVerticesCount() << " = "
                 << total_buffer_size + 2 * dataflow->getVerticesCount() << std::endl ;
     std::cout << (std::string) mem << " Sizing size is " << total_buffer_size << std::endl;
 }
 
+
 bool algorithms::generateStrictlyPeriodicOffsets  (models::Dataflow * dataflow, TIME_UNIT OMEGA, std::map<Vertex,std::vector<TIME_UNIT> > & res) {
+
     VERBOSE_DEBUG("generateStrictlyPeriodicOffsets");
 
-    if (OMEGA == 0 ) { return false; }
+	   if (OMEGA == 0 ) {
+		   return false;
+	   }
 
     res.clear();
 
@@ -160,6 +210,7 @@ bool algorithms::generateStrictlyPeriodicOffsets  (models::Dataflow * dataflow, 
         TIME_UNIT shift = OMEGA / dataflow->getNi(pTask) ;
 
         res.insert(std::pair<Vertex ,  std::vector<TIME_UNIT> > (pTask, std::vector<TIME_UNIT>()));
+
 
         VERBOSE_DEBUG("Task " << dataflow->getVertexName(pTask) << " max_k=" << max_k << " shift=" << shift);
 
@@ -183,8 +234,11 @@ bool algorithms::generateStrictlyPeriodicOffsets  (models::Dataflow * dataflow, 
 }
 
 
+
 bool algorithms::generateBurstOffsets(models::Dataflow * const dataflow,std::map<Vertex,std::vector<TIME_UNIT> > & res) {
     //recuperer les transition
+
+
     res.clear();
 
     {ForEachVertex(dataflow,pTask) {
@@ -192,8 +246,10 @@ bool algorithms::generateBurstOffsets(models::Dataflow * const dataflow,std::map
         res.insert(std::pair<Vertex ,  std::vector<TIME_UNIT> > (pTask, std::vector<TIME_UNIT>()));
         TIME_UNIT val = 0;
         for (EXEC_COUNT k = 1 ; k <= max_k ; k++) {
+
             if (k > 1) val += dataflow->getVertexDuration(pTask,k-1);
             res[pTask].push_back(val);
+
         }
     }}
     return true;
@@ -236,14 +292,19 @@ bool algorithms::generateAverageOffsets(models::Dataflow * dataflow, TIME_UNIT O
 
 
 bool algorithms::generateWiggersOffsets(models::Dataflow * dataflow, TIME_UNIT PERIOD, std::map<Vertex,std::vector<TIME_UNIT> > & res){
+
     //recuperer les transition
     res.clear();
 
+
     VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
+
+
 
     // STEP 0 - Need the repetition vector
     VERBOSE_INFO("STEP 0 :  Need the repetition vector");
     VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+
 
     std::map<std::pair<Vertex,EXEC_COUNT>,TIME_UNIT> s;
 
@@ -265,6 +326,7 @@ bool algorithms::generateWiggersOffsets(models::Dataflow * dataflow, TIME_UNIT P
         }
         VERBOSE_DEBUG(verbose_line);
     }}
+
 
     std::map<Edge,TOKEN_UNIT> lambda_prod;
     std::map<Edge,TOKEN_UNIT> lambda_cons;
@@ -329,16 +391,20 @@ bool algorithms::generateWiggersOffsets(models::Dataflow * dataflow, TIME_UNIT P
         VERBOSE_ASSERT(beta_prod[e]==beta_e,TXT_NEVER_HAPPEND);
     }}
 
-    // STEP 3 - retiming of starting times
+
+
+       //step 3 - retiming of starting times
     VERBOSE_INFO("STEP 3 : Retiming.");
 
     std::map<std::pair<Vertex,EXEC_COUNT>,TIME_UNIT> g; // new start time
     std::map<std::pair<Vertex,EXEC_COUNT>,TIME_UNIT> h; // new end time
 
+
     {ForEachVertex(dataflow,vi){
 
         VERBOSE_DEBUG("Retiming of " << dataflow->getVertexName(vi));
         const EXEC_COUNT maxk = dataflow->getPhasesQuantity(vi);
+
 
 
         h[std::make_pair(vi,maxk)] = mu[vi];
@@ -399,6 +465,7 @@ bool algorithms::generateWiggersOffsets(models::Dataflow * dataflow, TIME_UNIT P
         } else {
             for (EXEC_COUNT k = 1; k <= maxk;k++) {
                 VERBOSE_DEBUG("g(" << dataflow->getVertexName(vi) << ","<< k << ") = " << g[std::make_pair(vi,k)]);
+
                 res.at(vi).push_back(g[std::make_pair(vi,k)]);
             }
         }
@@ -408,6 +475,7 @@ bool algorithms::generateWiggersOffsets(models::Dataflow * dataflow, TIME_UNIT P
 }
 
 bool algorithms::generateMinMaxOffsets(models::Dataflow * dataflow, TIME_UNIT OMEGA, std::map<Vertex,std::vector<TIME_UNIT> > & res){
+
     //recuperer les transition
     res.clear();
 
@@ -464,6 +532,7 @@ bool algorithms::generateMinMaxOffsets(models::Dataflow * dataflow, TIME_UNIT OM
        VERBOSE_INFO("generateMinMaxOffsets : Real Begin");
 
        /********************************************** PREPARE LP ***************************************************/
+
 
        // on considere une tache 't'.
 
@@ -525,6 +594,7 @@ bool algorithms::generateMinMaxOffsets(models::Dataflow * dataflow, TIME_UNIT OM
 
        // A : definition des alpha
 
+
        {ForOutputEdges(dataflow,t,pChannel) {
 	   
 
@@ -585,6 +655,8 @@ bool algorithms::generateMinMaxOffsets(models::Dataflow * dataflow, TIME_UNIT OM
            }
 
 
+
+
        }}
 
        {ForInputEdges(dataflow,t,pChannel) {
@@ -642,6 +714,7 @@ bool algorithms::generateMinMaxOffsets(models::Dataflow * dataflow, TIME_UNIT OM
 
 
 
+
                Dainppluspred += dataflow->getEdgeOutPhase(pChannel,k);
 
 
@@ -654,6 +727,7 @@ bool algorithms::generateMinMaxOffsets(models::Dataflow * dataflow, TIME_UNIT OM
        /********************************************** SOLVE LP ***************************************************/
 
        bool sol = g.solve();
+
 
        if (sol) {
 
@@ -671,8 +745,13 @@ bool algorithms::generateMinMaxOffsets(models::Dataflow * dataflow, TIME_UNIT OM
    }
 
 
+
+
+
+
     BufferSizingResult algorithms::compute_periodic_fixed_memory (models::Dataflow* const  dataflow, std::map<Vertex,std::vector<TIME_UNIT> > & offsets,  TIME_UNIT PERIOD, bool ilp_solving, bool gen_only){
 
+    BufferSizingResult res;
         commons::ValueKind CONTINUE_OR_INTEGER = commons::KIND_CONTINUE;
         if (ilp_solving) CONTINUE_OR_INTEGER = commons::KIND_INTEGER;
 
@@ -694,12 +773,17 @@ bool algorithms::generateMinMaxOffsets(models::Dataflow * dataflow, TIME_UNIT OM
         const std::string problemName =  "PeriodicSizingFixed_" + dataflow->getGraphName() + "_" + commons::toString(FREQUENCY) + ((CONTINUE_OR_INTEGER == commons::KIND_INTEGER) ? "_INT" : "");
         commons::GLPSol g = commons::GLPSol(problemName,commons::MIN_OBJ);
 
+
         // Starting times
         //******************************************************************
         {ForEachVertex(dataflow,pVertex) {
             std::string name = dataflow->getVertexName(pVertex);
             g.addColumn("s_" + name,commons::KIND_CONTINUE,commons::bound_s(commons::LOW_BOUND,0),0);
         }}
+
+
+
+
 
 
        // Constraints
@@ -824,6 +908,7 @@ bool algorithms::generateMinMaxOffsets(models::Dataflow * dataflow, TIME_UNIT OM
                            g.addRow (local_mo_name + "_L",commons::bound_s(commons::LOW_BOUND, - crajm1 + cwai  - gcdz ));
                            g.addCoef(local_mo_name + "_L",local_mo_name        , (double) gcdz   );
                            g.addCoef(local_mo_name + "_L",feedback_mo_name     , 1       );
+
 
 
                            // resume
@@ -959,6 +1044,7 @@ bool algorithms::generateMinMaxOffsets(models::Dataflow * dataflow, TIME_UNIT OM
                 //TOKEN_UNIT from_integer_mop          = commons::floor(g.getIntegerValue(feedback_mo_name),1);
 
                  TOKEN_UNIT buffersize =  feedbackmopmax  + dataflow->getPreload(c);
+                 res.add_edge_size(dataflow->getEdgeId(c), buffersize);
                  total_buffer_size += buffersize * dataflow->getTokenSize(c);
                  VERBOSE_INFO(dataflow->getEdgeName(c) << " :" << g.getValue(feedback_mo_name) << " + " << dataflow->getPreload(c) << " -> " << feedbackmopmax << " + " << dataflow->getPreload(c)<< " = " << buffersize);
 
@@ -966,10 +1052,13 @@ bool algorithms::generateMinMaxOffsets(models::Dataflow * dataflow, TIME_UNIT OM
 
              VERBOSE_INFO("Loopback buffers : " << dataflow->getVerticesCount());
 
-        	 return BufferSizingResult(total_buffer_size);
+             res.set_validity(true);
+             res.set_total_size(total_buffer_size);
+        	 return res;
        } else {
            VERBOSE_ERROR("No feasible solution");
        }
        return BufferSizingResult();
+
 
    }
