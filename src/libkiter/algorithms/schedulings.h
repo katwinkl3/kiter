@@ -66,7 +66,8 @@ void BufferlessNoCScheduling(models::Dataflow* const  dataflow, parameters_list_
 		 models::Scheduling ASAPScheduling       (const models::Dataflow* const dataflow) ;
 		 void ASAPScheduling (models::Dataflow*  dataflow, parameters_list_t ) ;
 
-		 
+		 models::Scheduling So4Scheduling       (const models::Dataflow* const dataflow) ;
+		 void So4Scheduling (models::Dataflow*  dataflow, parameters_list_t ) ;
 
 	}
 }
@@ -100,6 +101,9 @@ transformation_t({ "1PeriodicScheduling" , "CSDF 1-Periodic Scheduling [Bodin201
 
 ADD_TRANSFORMATION(ASAPScheduling,
 transformation_t({ "ASAPScheduling" , "Symbolic Execution", algorithms::scheduling::ASAPScheduling}));
+
+ADD_TRANSFORMATION(So4Scheduling,
+transformation_t({ "So4Scheduling" , "Symbolic Execution with TDMA", algorithms::scheduling::So4Scheduling}));
 
 // Throughput techniques
 ADD_TRANSFORMATION(BufferlessNoCScheduling,

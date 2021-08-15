@@ -31,13 +31,17 @@ class Actor {
   TOKEN_UNIT getExecRate(Edge e, PHASE_INDEX p);
   EXEC_COUNT getNumExecutions();
   bool isReadyForExec(State s);
-  bool isReadyForExecWithMod(models::Dataflow* const dataflow, State s, std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> cond, long step);
   bool isReadyToEndExec(State s);
-  bool isReadyToEndExecWithMod(State s, models::Dataflow* const dataflow, std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> cond, long step);
+  // int isReadyForExecWithMod(State s);
+  // bool isReadyToEndExecWithMod(State s, models::Dataflow* const dataflow, std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> cond, long step);
   void execStart(models::Dataflow* const dataflow, State &s);
-  void execStartWithMod(models::Dataflow* const dataflow, State &s, std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> cond, long step);
-  void execEnd(models::Dataflow* const dataflow, State &s);
-  void execEndWithMod(models::Dataflow* const dataflow, State &s, std::map<std::pair<ARRAY_INDEX, ARRAY_INDEX>, long> cond, long step);
+  // void execStartWithMod(models::Dataflow* const dataflow, State &s, std::map<TIME_UNIT, std::map<ARRAY_INDEX, std::pair<long, bool>>> *buffer, 
+  // TIME_UNIT step, long slots, std::map<ARRAY_INDEX, long> condition);
+  // void execNextStartWithMod(models::Dataflow* const dataflow, State &s, std::map<TIME_UNIT, std::map<ARRAY_INDEX, std::pair<long, bool>>> *buffer, 
+  // TIME_UNIT step, long slots, std::map<ARRAY_INDEX, long> condition);
+  void execEnd(models::Dataflow* const dataflow, State &s);  
+  void execEndWithMod(models::Dataflow* const dataflow, State &s, std::deque<std::pair<TIME_UNIT, std::pair<ARRAY_INDEX, long>>>* buffer,
+  TIME_UNIT step, long slots, std::map<ARRAY_INDEX, long> condition);
   std::string printStatus(models::Dataflow* const dataflow);
  private:
   Vertex actor;

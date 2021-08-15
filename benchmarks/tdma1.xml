@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tdma slots='2'>
+	<rule id='12' slot='0'/>
+	<rule id='40' slot='0'/>
+	<rule id='9' slot='0'/>
+	<rule id='16' slot='0'/>
+	<rule id='10' slot='0'/>
+	<rule id='24' slot='0'/>
+	<rule id='30' slot='0'/>
+	<rule id='58' slot='0'/>
+	<rule id='27' slot='0'/>
+	<rule id='10' slot='0'/>
+	<rule id='19' slot='0'/>
+	<rule id='21' slot='0'/>
+	<rule id='24' slot='0'/>
+	<rule id='27' slot='0'/>
+	<rule id='33' slot='0'/>
+	<rule id='34' slot='0'/>
+	<rule id='39' slot='0'/>
+	<rule id='49' slot='0'/>
+	<rule id='67' slot='1'/>
+</tdma>                                                                                                                           
