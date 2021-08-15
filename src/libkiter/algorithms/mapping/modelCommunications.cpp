@@ -33,7 +33,8 @@ static std::vector<Vertex> addPathNode(models::Dataflow* d, Edge c, route_t list
 {
 	std::vector<Vertex> new_vertices;
 
-	if (list.size() == 0) {
+	if (list.size() == 0 and d->getEdgeType(c) == EDGE_TYPE::VIRTUAL_EDGE) {
+
 		return new_vertices;
 	}
 
