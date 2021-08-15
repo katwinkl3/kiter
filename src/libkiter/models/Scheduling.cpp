@@ -461,6 +461,7 @@ bool models::Scheduling::is_valid_schedule () const{
 
 		// Invalid Schedule Condition - infeasible task execution
 		TIME_UNIT task_duration = task_log[next_task.first].phase_durations[task_log[next_task.first].cur_phase];
+		if (not g->getReentrancyFactor(g->getVertexById(next_task.first))) // only when task has reentrancy loop
 		if (next_task.second < task_history[next_task.first] + task_duration){
 			VERBOSE_ERROR("Invalide scheduling condition: Next task " << next_task.first << " expected t=" << next_task.second << " is lower than t=" << task_history[next_task.first] + task_duration);
 			return false;
