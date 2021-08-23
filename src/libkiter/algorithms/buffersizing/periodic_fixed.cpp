@@ -117,6 +117,7 @@
 
         VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
         TIME_UNIT period    = commons::get_parameter<TIME_UNIT>(params, "PERIOD", 0.0) ; // assumes period is available in param list
+        int multiplier    = commons::get_parameter<TIME_UNIT>(params, "MUL", 1.0) ; // multiplier for buffer size
         VERBOSE_ASSERT (period > 0, "The period must be defined");
         VERBOSE_ASSERT (period != std::numeric_limits<TIME_UNIT>::infinity(), "The period must be defined");
         bool      solve_ilp = commons::get_parameter<bool>(params, "ILP", false) ;
@@ -134,7 +135,7 @@
             Edge e = dataflow->getEdgeById(id);
             long buf_size = buf_res.get_edge_size(dataflow->getEdgeId(e));
             Edge v_e = dataflow->addEdge(dataflow->getEdgeTarget(e), dataflow->getEdgeSource(e), "vir_" + dataflow->getEdgeName(e) );
-            dataflow->setPreload(v_e, buf_size-dataflow->getPreload(e)); // TODO: useful tokens from preload
+            dataflow->setPreload(v_e, (buf_size*multiplier)-dataflow->getPreload(e)); // TODO: useful tokens from preload
             std::vector<TOKEN_UNIT> inphase;
             for (PHASE_INDEX ip = 1; ip <= dataflow->getEdgeOutPhasesCount(e); ip++){
                 inphase.push_back(dataflow->getEdgeOutPhase(e, ip));

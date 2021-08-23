@@ -207,7 +207,10 @@ TIME_UNIT step, long slots, std::map<ARRAY_INDEX, long> condition) {
       // } else {
       //   end_time = step;
       // }
-      (*buffer).push_back({end_time, {dataflow->getEdgeId(e), this->getExecRate(e, currentPhase)}});
+      // for (int i = 0; i < this->getExecRate(e, currentPhase); i++){
+      //   (*buffer).push_back({end_time+(correct_slot*i), {dataflow->getEdgeId(e), 1}});
+      // }
+      (*buffer).push_back({end_time, {dataflow->getEdgeId(e), this->getExecRate(e, currentPhase)}}); //TODO: Loop through each token and set token=1 slot= n*slot
       /// buffer[dtep].puhback(pair<>(edgeid,execrate))
     }}
   s.removeFrontExec(this->actor);
