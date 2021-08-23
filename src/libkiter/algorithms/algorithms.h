@@ -12,7 +12,6 @@
 #include <algorithms/dse/periodic.h>
 #include <algorithms/transformation/merging.h>
 #include <algorithms/transformations.h>
-#include <algorithms/nperiodic.h>
 #include <algorithms/symbolic_execution.h>
 #include <algorithms/buffersizing/periodic_fixed.h>
 #include <algorithms/schedulings.h>

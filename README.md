@@ -112,9 +112,15 @@ BlackScholes.xml        Echo.xml        H264.xml        JPEG2000.xml        PDec
 ```
 
 
-## Possible compilation Error
+## Possible compilation Error with Gurobi
 
- - undefined reference to `GRBModel::addVar : you'll need to compile gurobi C++ interface `make -C /path/to/gurobi/build/src/`
+If you end up with something like  `undefined reference to `GRBModel::...`, 
+you'll need to recompile gurobi C++ interface:
+
+```
+make -C /opt/gurobi912/linux64/src/build/
+cp /opt/gurobi912/linux64/src/build/libgurobi_c++.a /opt/gurobi912/linux64/lib/
+```
 
 ## TODOs (to check)
 

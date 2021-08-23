@@ -50,11 +50,13 @@ all : release debug
 sdf3: ${SDF3_BINARY_ROOT}
 
 
-debug: ./Debug/bin/kiter
+debug: ./Debug/Makefile
 	@echo "###########"" ENTER IN $@ : $^  #####################"
+	$(MAKE) -C Debug all
 
-release: ./Release/bin/kiter
+release: ./Release/Makefile
 	@echo "###########"" ENTER IN $@ : $^  #####################"
+	$(MAKE) -C Release all
 
 clean:
 	@echo "###########"" ENTER IN $@ : $^  #####################"
