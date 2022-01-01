@@ -144,6 +144,7 @@ TIME_UNIT State::advanceTimeWithMod() {
     this->advanceRemExecTime(it.first, timeElapsed);
   }
   this->timeElapsed += timeElapsed;
+  std::cout << "time step: " << timeElapsed << std::endl;
   return timeElapsed;
 
 }

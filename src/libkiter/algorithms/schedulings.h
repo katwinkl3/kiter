@@ -69,6 +69,9 @@ void BufferlessNoCScheduling(models::Dataflow* const  dataflow, parameters_list_
 		 models::Scheduling So4Scheduling       (const models::Dataflow* const dataflow) ;
 		 void So4Scheduling (models::Dataflow*  dataflow, parameters_list_t ) ;
 
+		 models::Scheduling CPCompute       (const models::Dataflow* const dataflow) ;
+		 void CPCompute (models::Dataflow*  dataflow, parameters_list_t ) ;
+
 	}
 }
 
@@ -109,5 +112,7 @@ transformation_t({ "So4Scheduling" , "Symbolic Execution with TDMA", algorithms:
 ADD_TRANSFORMATION(BufferlessNoCScheduling,
 		transformation_t({ "BufferlessNoCScheduling" , "BufferlessNoCScheduling, WIP", algorithms::BufferlessNoCScheduling}));
 
+ADD_TRANSFORMATION(CPCompute,
+		transformation_t({ "CPCompute" , "Copmpute CP Model", algorithms::scheduling::CPCompute}));
 
 #endif /* SRC_LIBKITER_ALGORITHMS_SCHEDULINGS_H_ */

@@ -27,7 +27,7 @@ done
 fi
 if [ $mode = "1" ] 
 then
-echo "Store "
+echo "WIP wait ah"
 for f in benchmarks/ascenttestbench/*.xml
 do
 ped="$(./Debug/bin/kiter -f "$f" -a SPeriodicScheduling | grep -P "(?:period\s+is\s+)\K\d+" -o)"
@@ -50,6 +50,21 @@ do
 echo "$(./Debug/bin/kiter -f "$f" -a createNoC -a randomMapping -a randomRouting -a AddVBuffers -a "$a" -p TDMA=benchmark/fbf.txt -p PERIOD="$ped")" >> runres.txt
 echo "$(./Debug/bin/kiter -f "$f" -a createNoC -a randomMapping -a xyRouting -a AddVBuffers -a "$a" -p TDMA=benchmark/fbf.txt -p PERIOD="$ped")" >> runres.txt
 echo "$(./Debug/bin/kiter -f "$f" -a createNoC -a BufferlessNoCMapAndRoute -a AddVBuffers -a "$a" -p TDMA=benchmark/fbf.txt -p PERIOD="$ped")" >> runres.txt
+done
+done
+fi
+if [ $mode = "3" ] 
+then
+echo "Testing Validity of Schedule"
+for f in benchmarks/ascenttestbench/*.xml
+do
+ped="$(./Debug/bin/kiter -f "$f" -a SPeriodicScheduling | grep -P "(?:period\s+is\s+)\K\d+" -o)"
+for a in ASAPScheduling So4Scheduling
+do 
+rr="$(./Debug/bin/kiter -f "$f" -a createNoC -a randomMapping -a randomRouting -a AddVBuffers -a "$a" -p TDMA=benchmarks/fbf.txt -p PERIOD="$ped" -p MUL="$mul" | grep -P "(?:Check:\s+)\K\d" -o)"
+rxy="$(./Debug/bin/kiter -f "$f" -a createNoC -a randomMapping -a xyRouting -a AddVBuffers -a "$a" -p TDMA=benchmarks/fbf.txt -p PERIOD="$ped" -p MUL="$mul" | grep -P "(?:Check:\s+)\K\d" -o)"
+b="$(./Debug/bin/kiter -f "$f" -a createNoC -a BufferlessNoCMapAndRoute -a AddVBuffers -a "$a" -p TDMA=benchmarks/fbf.txt -p PERIOD="$ped" -p MUL="$mul" | grep -P "(?:Check:\s+)\K\d" -o)"
+echo "$a gives:  randomRoute = $rr xyRoute = $rxy bufferlessMR = $b"
 done
 done
 fi

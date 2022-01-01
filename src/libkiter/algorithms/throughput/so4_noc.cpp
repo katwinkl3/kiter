@@ -100,7 +100,7 @@ std::tuple<std::map<ARRAY_INDEX, long>, long> generateConditions(models::Dataflo
       }
     }}
   }
-  return {condition, slots};
+  return {condition, slots+1};
 }
 
 std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(models::Dataflow* const dataflow,
@@ -136,7 +136,6 @@ std::pair<TIME_UNIT, scheduling_t> algorithms::computeComponentSo4Schedule(model
   std::map<ARRAY_INDEX, std::vector<std::vector<TIME_UNIT>>> starts; //{task idx : [[state 0 starts], [state 1 ...]]}
   std::map<ARRAY_INDEX, std::vector<TIME_UNIT>> state_start = {};  //{task idx : [ starts]}, 
   bool periodic_state = false;
-
   // initialise actors
   std::map<ARRAY_INDEX, Actor> actorMap;
   {ForEachTask(dataflow, t) {
@@ -270,6 +269,10 @@ void algorithms::scheduling::So4Scheduling(models::Dataflow* const dataflow,
                                          parameters_list_t param_list) {
   VERBOSE_ASSERT(dataflow,TXT_NEVER_HAPPEND);
   VERBOSE_ASSERT(computeRepetitionVector(dataflow),"inconsistent graph");
+
+  models::Dataflow* const temp_df = new models::Dataflow();
+  *temp_df = *dataflow;
+
   std::map<int, std::vector<ARRAY_INDEX>> sccMap;
   std::vector<models::Dataflow*> sccDataflows;
   TIME_UNIT minThroughput = LONG_MAX; // NOTE should technically be LDBL_MAX cause TIME_UNIT is of type long double
@@ -295,6 +298,7 @@ void algorithms::scheduling::So4Scheduling(models::Dataflow* const dataflow,
         if (scaledThroughput < minThroughput) {
           minThroughput = scaledThroughput;
         }
+
       } else if (g->getVerticesCount() == 1 && g->getEdgesCount() == 0) {
         /* NOTE this is a workaround from ignoring reentrancy edges --- if this
            condition is met, we assume that we have a single actor with re-entrancy */
@@ -325,6 +329,10 @@ void algorithms::scheduling::So4Scheduling(models::Dataflow* const dataflow,
     std::cout << "So4 throughput is  " << minThroughput << std::endl;
     std::cout << "So4 period is  " << omega << std::endl;
 
+    temp_df->is_consistent();
+    models::Scheduling test = models::Scheduling(temp_df, omega, scheduling_result);
+    std::cout << "Schedule Check: " << test.is_valid_schedule() << std::endl;
+
     return;
   }
   // if graph is strongly connected, just need to use computeComponentThroughput
@@ -334,12 +342,18 @@ void algorithms::scheduling::So4Scheduling(models::Dataflow* const dataflow,
   scheduling_result = res_pair.second;
   std::cout << "Throughput of graph: " << minThroughput << std::endl;
   TIME_UNIT omega = 1.0 / minThroughput ;
+
+  temp_df->is_consistent();
+
   models::Scheduling res = models::Scheduling(dataflow, omega, scheduling_result);
   std::cout << res.asASCII(linesize);
   std::cout << res.asText();
 
   std::cout << "So4 throughput is  " << minThroughput << std::endl;
   std::cout << "So4 period is  " << omega << std::endl;
+
+  models::Scheduling check_sched = models::Scheduling(temp_df, omega, scheduling_result);
+  std::cout << "Schedule Check: " << check_sched.is_valid_schedule() << std::endl;
 
   return;
 }

@@ -192,26 +192,10 @@ TIME_UNIT step, long slots, std::map<ARRAY_INDEX, long> condition) {
         }
         end_time += dataflow->getRoute(e).size();
       }
-      // TIME_UNIT prev_time = step - dataflow->getVertexDuration(this->actor, this->getPhase());
-      // TIME_UNIT time_past = 0;
-      // long prev_t_mod = (int) prev_time % slots;
-      // for (auto & p : condition[dataflow->getEdgeId(e)]){
-      //   if (p < prev_t_mod){ // next mod cycle : time + remaining
-      //     time_past += (slots - prev_t_mod + p);
-      //   }
-      //   prev_t_mod = p;
-      // }
-      // time_past += (prev_t_mod);
-      // if (time_past > dataflow->getVertexDuration(this->actor, this->getPhase())){
-      //   end_time = prev_time + time_past;
-      // } else {
-      //   end_time = step;
-      // }
       // for (int i = 0; i < this->getExecRate(e, currentPhase); i++){
       //   (*buffer).push_back({end_time+(correct_slot*i), {dataflow->getEdgeId(e), 1}});
       // }
-      (*buffer).push_back({end_time, {dataflow->getEdgeId(e), this->getExecRate(e, currentPhase)}}); //TODO: Loop through each token and set token=1 slot= n*slot
-      /// buffer[dtep].puhback(pair<>(edgeid,execrate))
+      (*buffer).push_back({end_time, {dataflow->getEdgeId(e), this->getExecRate(e, currentPhase)}});
     }}
   s.removeFrontExec(this->actor);
   this->isExecuting = false;

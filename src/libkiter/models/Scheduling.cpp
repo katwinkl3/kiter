@@ -276,7 +276,6 @@ struct task_catalog {
 bool models::Scheduling::is_valid_schedule () const{
 
 	// Step 0: Setting up symbolic execution
-
 	const models::Dataflow* g = this->getDataflow();
 	scheduling_t s = this->getTaskSchedule();
 	
@@ -294,7 +293,7 @@ bool models::Scheduling::is_valid_schedule () const{
 
 	{ForEachVertex(g,t) {
 		ARRAY_INDEX id = g->getVertexId(t); 
-		EXEC_COUNT Ni =  g->getNi(t);
+		EXEC_COUNT Ni =  g->getNi(t); //assertion error in dataflow for scc graphs
 		task_catalog t;
 		t.cur_phase = 0;
 		t.task_Ni = Ni;
@@ -328,12 +327,15 @@ bool models::Scheduling::is_valid_schedule () const{
 
 	TIME_UNIT max_time = 0;
 	for (auto task : task_log){
-		if (task.second.schedule.back() > max_time){
+		if ( task.second.schedule.back() > max_time){ // did not account for non executed actors on non-scc graphs - prevented by changing df given
 			max_time = task.second.schedule.back();
 		}
 	}
 	for (auto task : task_log){
 		ARRAY_INDEX task_id = task.first;
+		// if (task.second.schedule.empty()){
+		// 	continue;
+		// }
 		TIME_UNIT end_time = task.second.schedule.back();
 		while (end_time < max_time){
 			TIME_UNIT task_period = s[task_id].periodic_starts.first;
@@ -359,6 +361,9 @@ bool models::Scheduling::is_valid_schedule () const{
 	
 	// Initializing next task
 	for (std::pair<const ARRAY_INDEX, task_catalog> task : task_log){
+		// if (task.second.schedule.empty()){
+		// 	continue;
+		// }
 		if (task.second.schedule[0] == 0){
 			next_task.first = task.first;
 			next_task.second = 0;
@@ -376,6 +381,10 @@ bool models::Scheduling::is_valid_schedule () const{
 		std::vector<ARRAY_INDEX> out_tasks;
 
 		for (std::pair<const ARRAY_INDEX, task_catalog> task : task_log){
+
+			// if (task.second.schedule.empty()){
+			// 	continue;
+			// }
 			
 			ARRAY_INDEX id = task.first;
 			TIME_UNIT phase_time = (task_log[id].phase_durations)[task_log[id].cur_phase];
